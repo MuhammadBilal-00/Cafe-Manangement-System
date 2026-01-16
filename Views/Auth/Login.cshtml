@@ -1,0 +1,94 @@
+﻿@model Cafe.Models.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Cafe Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/StyleSheet.css" />
+    @if (ViewBag.DebugInfo != null)
+    {
+        <div class="alert alert-info">
+            <strong>Debug Info:</strong> @ViewBag.DebugInfo
+        </div>
+    }
+   
+</head>
+
+
+<body>
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 text-indigo-500 mb-4">
+                <i class="fas fa-utensils text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">Cafe Management System</h1>
+            <p class="text-gray-600">Sign in to your account</p>
+        </div>
+
+        <form asp-action="Login" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-lg"></div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm">
+                    @TempData["Success"]
+                </div>
+            }
+
+            <div class="mb-4">
+                <label asp-for="Email" class="block text-gray-700 text-sm font-medium mb-2"></label>
+                <input asp-for="Email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150" placeholder="name@cafe.com" />
+                <span asp-validation-for="Email" class="text-red-500 text-xs mt-1"></span>
+            </div>
+
+            <div class="mb-6">
+                <label asp-for="Password" class="block text-gray-700 text-sm font-medium mb-2"></label>
+                <input asp-for="Password" type="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150" placeholder="••••••••" />
+                <span asp-validation-for="Password" class="text-red-500 text-xs mt-1"></span>
+            </div>
+
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <input asp-for="RememberMe" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                    <label asp-for="RememberMe" class="ml-2 block text-sm text-gray-700">Remember me</label>
+                </div>
+
+                <a href="#" class="text-sm text-blue-600 hover:text-blue-500 transition duration-150">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 font-medium transition duration-150">
+                Sign in
+            </button>
+        </form>
+
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                Don't have an account?
+                <a asp-action="Register" class="text-blue-600 hover:text-blue-500 font-medium transition duration-150">Register here</a>
+            </p>
+        </div>
+
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+            <p class="text-sm text-gray-600 text-center">
+                <strong>Demo Accounts:</strong><br>
+                <span class="text-xs">Owner: owner@cafe.com / owner123</span><br>
+                <span class="text-xs">Manager: manager@cafe.com / manager123</span><br>
+                <span class="text-xs">Staff: staff@cafe.com / staff123</span>
+            </p>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

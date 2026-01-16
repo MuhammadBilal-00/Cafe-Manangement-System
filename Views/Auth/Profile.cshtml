@@ -1,0 +1,82 @@
+﻿@model Cafe.Models.User
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-user-circle"></i> My Profile</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> @Model.Name</p>
+                        <p><strong>Email:</strong> @Model.Email</p>
+                        <p><strong>Phone:</strong> @Model.Phone</p>
+                        <p>
+                            <strong>Role:</strong>
+                            <span class="badge bg-@(Model.Role == "Owner" ? "danger" : Model.Role == "BranchManager" ? "warning" : Model.Role == "Staff" ? "info" : "secondary")">
+                                @Model.Role
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Member Since:</strong> @Model.CreatedDate.ToString("MMM dd, yyyy")</p>
+                        <p><strong>Account Status:</strong> <span class="text-success">Active</span></p>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary">
+                        <i class="fas fa-key"></i> Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-cog"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                @if (ViewBag.UserRole == "Customer")
+                {
+                    <a asp-controller="CustomerOrder" asp-action="Menu" class="btn btn-sm btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-utensils"></i> Browse Menu
+                    </a>
+                    <a asp-controller="CustomerOrder" asp-action="Index" class="btn btn-sm btn-outline-info w-100 mb-2">
+                        <i class="fas fa-receipt"></i> My Orders
+                    </a>
+                }
+                @if (ViewBag.UserRole == "Staff" || ViewBag.UserRole == "BranchManager" || ViewBag.UserRole == "Owner")
+                {
+                    <a asp-controller="Order" asp-action="Index" class="btn btn-sm btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-clipboard-list"></i> Manage Orders
+                    </a>
+                    <a asp-controller="InventoryItem" asp-action="Index" class="btn btn-sm btn-outline-warning w-100 mb-2">
+                        <i class="fas fa-boxes"></i> Inventory
+                    </a>
+                }
+                @if (ViewBag.UserRole == "Owner" || ViewBag.UserRole == "BranchManager")
+                {
+                    <a asp-controller="Reports" asp-action="Index" class="btn btn-sm btn-outline-success w-100 mb-2">
+                        <i class="fas fa-chart-bar"></i> Reports
+                    </a>
+                }
+
+                <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline w-100">
+                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

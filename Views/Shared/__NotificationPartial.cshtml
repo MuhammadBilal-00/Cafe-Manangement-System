@@ -1,0 +1,41 @@
+﻿@if (TempData["Success"] != null)
+{
+    <div class="fixed top-4 right-4 z-50 max-w-sm w-full">
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-lg">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-500"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium">@TempData["Success"]</p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <button onclick="this.parentElement.parentElement.style.display='none'" class="text-green-500 hover:text-green-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="fixed top-4 right-4 z-50 max-w-sm w-full">
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-lg">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-500"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium">@TempData["Error"]</p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <button onclick="this.parentElement.parentElement.style.display='none'" class="text-red-500 hover:text-red-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}

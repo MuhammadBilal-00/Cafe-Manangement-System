@@ -1,0 +1,84 @@
+﻿@model Cafe.Models.Branch
+
+@{
+    ViewData["Title"] = "Edit Branch";
+}
+
+<div class="max-w-4xl mx-auto">
+    <div class="flex items-center mb-6">
+        <a asp-action="Index" class="text-blue-600 hover:text-blue-800 mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-800">Edit Branch</h1>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form asp-action="Edit" class="space-y-6">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CreatedDate" />
+
+            <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-3 rounded-lg"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Name -->
+                <div>
+                    <label asp-for="Name" class="block text-sm font-medium text-gray-700 mb-2"></label>
+                    <input asp-for="Name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150" />
+                    <span asp-validation-for="Name" class="text-red-600 text-sm mt-1"></span>
+                </div>
+
+                <!-- Location -->
+                <div>
+                    <label asp-for="Location" class="block text-sm font-medium text-gray-700 mb-2"></label>
+                    <input asp-for="Location" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150" />
+                    <span asp-validation-for="Location" class="text-red-600 text-sm mt-1"></span>
+                </div>
+
+                <!-- Contact Info -->
+                <div>
+                    <label asp-for="ContactInfo" class="block text-sm font-medium text-gray-700 mb-2"></label>
+                    <input asp-for="ContactInfo" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150" />
+                    <span asp-validation-for="ContactInfo" class="text-red-600 text-sm mt-1"></span>
+                </div>
+
+                <!-- Manager -->
+                <div>
+                    <label asp-for="ManagerId" class="block text-sm font-medium text-gray-700 mb-2">Manager</label>
+                    <select asp-for="ManagerId" asp-items="ViewBag.Managers" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150">
+                        <option value="">Select a Manager</option>
+                    </select>
+                    <span asp-validation-for="ManagerId" class="text-red-600 text-sm mt-1"></span>
+                </div>
+
+                <!-- Opening Hours -->
+                <div class="md:col-span-2">
+                    <label asp-for="OpeningHours" class="block text-sm font-medium text-gray-700 mb-2"></label>
+                    <textarea asp-for="OpeningHours" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150" rows="3"></textarea>
+                    <span asp-validation-for="OpeningHours" class="text-red-600 text-sm mt-1"></span>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="flex items-center">
+                <input asp-for="IsActive" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                <label asp-for="IsActive" class="ml-2 block text-sm text-gray-700">Active Branch</label>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                <a asp-action="Index" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-150">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150">
+                    Update Branch
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

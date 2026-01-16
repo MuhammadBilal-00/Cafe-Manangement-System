@@ -1,0 +1,42 @@
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+
+namespace Cafe.Models
+{
+    public class Order
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(20)]
+        public string OrderNumber { get; set; }
+
+        [Required]
+        public int CustomerId { get; set; }
+
+        [Required]
+        public int BranchId { get; set; }
+
+        public DateTime OrderDate { get; set; } = DateTime.Now;
+
+        [Required]
+        [StringLength(20)]
+        public string Status { get; set; } = "Pending"; // Pending, Completed, Cancelled
+
+        [Required]
+        [Range(0.01, double.MaxValue)]
+        public decimal TotalAmount { get; set; }
+
+        [StringLength(500)]
+        public string? Notes { get; set; }
+
+        // Navigation Properties
+        [ForeignKey("CustomerId")]
+        public User Customer { get; set; }
+
+        [ForeignKey("BranchId")]
+        public Branch Branch { get; set; }
+
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    }
+}

@@ -1,0 +1,141 @@
+﻿@model Cafe.Models.MenuItem
+
+@{
+    ViewData["Title"] = "Manage Ingredients for " + Model.Name;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>@ViewData["Title"]</h1>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Current Ingredients</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Ingredients.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Ingredient</th>
+                                        <th>Quantity</th>
+                                        <th>Unit</th>
+                                        <th>Optional</th>
+                                        <th>Extra Charge</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var ingredient in Model.Ingredients)
+                                    {
+                                        <tr>
+                                            <td>@ingredient.Ingredient?.Name</td>
+                                            <td>@ingredient.Quantity</td>
+                                            <td>@ingredient.Unit</td>
+                                            <td>
+                                                @if (ingredient.IsOptional)
+                                                {
+                                                    <span class="badge bg-info">Yes</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">No</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (ingredient.ExtraCharge.HasValue)
+                                                {
+                                                    <span class="text-success">$@ingredient.ExtraCharge.Value</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <form asp-action="RemoveIngredient" method="post" class="d-inline">
+                                                    <input type="hidden" name="menuItemId" value="@Model.Id" />
+                                                    <input type="hidden" name="ingredientId" value="@ingredient.IngredientId" />
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i> Remove
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            No ingredients added yet.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Add New Ingredient</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AddIngredient" method="post">
+                        <input type="hidden" name="menuItemId" value="@Model.Id" />
+
+                        <div class="form-group mb-3">
+                            <label class="control-label">Ingredient</label>
+                            <select name="ingredientId" asp-items="ViewBag.AvailableIngredients" class="form-select" required>
+                                <option value="">Select Ingredient</option>
+                            </select>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Quantity</label>
+                                    <input type="number" name="quantity" class="form-control" step="0.01" min="0" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Unit</label>
+                                    <input type="text" name="unit" class="form-control" value="g" required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" name="isOptional" class="form-check-input" value="true" />
+                                <label class="form-check-label">Optional Ingredient</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="control-label">Extra Charge ($)</label>
+                            <input type="number" name="extraCharge" class="form-control" step="0.01" min="0" />
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-plus"></i> Add Ingredient
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

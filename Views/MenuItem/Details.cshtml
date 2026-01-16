@@ -1,0 +1,119 @@
+﻿@model Cafe.Models.MenuItem
+
+@{
+    ViewData["Title"] = "Menu Item Details";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>@ViewData["Title"]</h1>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Name:</dt>
+                        <dd class="col-sm-8">@Model.Name</dd>
+
+                        <dt class="col-sm-4">Description:</dt>
+                        <dd class="col-sm-8">@Model.Description</dd>
+
+                        <dt class="col-sm-4">Category:</dt>
+                        <dd class="col-sm-8">@Model.Category?.Name</dd>
+
+                        <dt class="col-sm-4">Branch:</dt>
+                        <dd class="col-sm-8">@Model.Branch?.Name</dd>
+
+                        <dt class="col-sm-4">Price:</dt>
+                        <dd class="col-sm-8">$@Model.Price</dd>
+
+                        <dt class="col-sm-4">Cost Price:</dt>
+                        <dd class="col-sm-8">$@Model.CostPrice</dd>
+
+                        <dt class="col-sm-4">Preparation Time:</dt>
+                        <dd class="col-sm-8">@Model.PreparationTime minutes</dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Availability)
+                            {
+                                <span class="badge bg-success">Available</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Unavailable</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Dietary Info:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.IsVegetarian)
+                            {
+                                <span class="badge bg-success me-1">Vegetarian</span>
+                            }
+                            @if (Model.IsVegan)
+                            {
+                                <span class="badge bg-success me-1">Vegan</span>
+                            }
+                            @if (Model.IsGlutenFree)
+                            {
+                                <span class="badge bg-warning me-1">Gluten-Free</span>
+                            }
+                            @if (Model.IsDairyFree)
+                            {
+                                <span class="badge bg-info me-1">Dairy-Free</span>
+                            }
+                            @if (Model.IsSpicy)
+                            {
+                                <span class="badge bg-danger me-1">Spicy</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Spice Level:</dt>
+                        <dd class="col-sm-8">@(Model.SpiceLevel?.ToString() ?? "N/A")</dd>
+
+                        <dt class="col-sm-4">Created Date:</dt>
+                        <dd class="col-sm-8">@Model.CreatedDate.ToString("yyyy-MM-dd")</dd>
+
+                        <dt class="col-sm-4">Last Updated:</dt>
+                        <dd class="col-sm-8">@Model.LastUpdated?.ToString("yyyy-MM-dd")</dd>
+
+                        <dt class="col-sm-4">Tags:</dt>
+                        <dd class="col-sm-8">@Model.Tags</dd>
+                    </dl>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.LongDescription))
+            {
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h5>Long Description</h5>
+                        <p>@Model.LongDescription</p>
+                    </div>
+                </div>
+            }
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="btn-group">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a asp-action="ManageIngredients" asp-route-id="@Model.Id" class="btn btn-info">
+                            <i class="fas fa-list"></i> Manage Ingredients
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

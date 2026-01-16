@@ -1,0 +1,268 @@
+﻿@model Cafe.Models.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Register";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - Cafe Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/RegisterDesign.css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3a506b',
+                        secondary: '#5c6bc0',
+                        accent: '#ff9f43',
+                        success: '#4caf50',
+                        warning: '#ff9800',
+                        danger: '#f44336',
+                    }
+                }
+            }
+        }
+    </script>
+   
+</head>
+<body>
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary bg-opacity-10 text-primary mb-4">
+                <i class="fas fa-user-plus text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">Create Account</h1>
+            <p class="text-gray-600">Join our cafe management system</p>
+        </div>
+
+        <form asp-action="Register" method="post" class="space-y-4">
+            <div asp-validation-summary="ModelOnly" class="text-danger text-sm bg-danger bg-opacity-10 p-3 rounded-lg"></div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="p-3 bg-success bg-opacity-10 text-success rounded-lg text-sm">
+                    @TempData["Success"]
+                </div>
+            }
+
+            <!-- Name Field -->
+            <div>
+                <label asp-for="Name" class="block text-gray-700 text-sm font-medium mb-2"></label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-user text-gray-400"></i>
+                    </div>
+                    <input asp-for="Name" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-150" placeholder="Your full name" />
+                </div>
+                <span asp-validation-for="Name" class="text-danger text-xs mt-1"></span>
+            </div>
+
+            <!-- Email Field -->
+            <div>
+                <label asp-for="Email" class="block text-gray-700 text-sm font-medium mb-2"></label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-envelope text-gray-400"></i>
+                    </div>
+                    <input asp-for="Email" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-150" placeholder="name@cafe.com" />
+                </div>
+                <span asp-validation-for="Email" class="text-danger text-xs mt-1"></span>
+            </div>
+
+            <!-- Phone Field -->
+            <div>
+                <label asp-for="Phone" class="block text-gray-700 text-sm font-medium mb-2"></label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-phone text-gray-400"></i>
+                    </div>
+                    <input asp-for="Phone" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-150" placeholder="+1234567890" />
+                </div>
+                <span asp-validation-for="Phone" class="text-danger text-xs mt-1"></span>
+            </div>
+
+            <!-- Role Field -->
+            <div>
+                <label asp-for="Role" class="block text-gray-700 text-sm font-medium mb-2"></label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-user-tag text-gray-400"></i>
+                    </div>
+                    <select asp-for="Role" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-150 appearance-none">
+                        <option value="">Select Role</option>
+                        <option value="Customer">Customer</option>
+                        <option value="Staff">Staff</option>
+                        <option value="BranchManager">Branch Manager</option>
+                        <option value="Owner">Owner</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </div>
+                </div>
+                <span asp-validation-for="Role" class="text-danger text-xs mt-1"></span>
+            </div>
+
+            <!-- Address Field -->
+            <div>
+                <label asp-for="Address" class="block text-gray-700 text-sm font-medium mb-2"></label>
+                <div class="relative">
+                    <div class="absolute top-3 left-3 flex items-center pointer-events-none">
+                        <i class="fas fa-map-marker-alt text-gray-400"></i>
+                    </div>
+                    <textarea asp-for="Address" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-150" placeholder="Your address (optional)" rows="2"></textarea>
+                </div>
+                <span asp-validation-for="Address" class="text-danger text-xs mt-1"></span>
+            </div>
+
+            <!-- Password Field -->
+            <div>
+                <label asp-for="Password" class="block text-gray-700 text-sm font-medium mb-2"></label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-gray-400"></i>
+                    </div>
+                    <input asp-for="Password" type="password" id="password" class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-150" placeholder="••••••••" />
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        <button type="button" onclick="togglePassword('password')" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <span asp-validation-for="Password" class="text-danger text-xs mt-1"></span>
+                <div id="password-strength" class="mt-2 hidden">
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="password-strength-text">Strength:</span>
+                        <div class="flex-1 h-2 bg-gray-200 rounded-full">
+                            <div id="password-strength-bar" class="h-2 rounded-full transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirm Password Field -->
+            <div>
+                <label asp-for="ConfirmPassword" class="block text-gray-700 text-sm font-medium mb-2"></label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-gray-400"></i>
+                    </div>
+                    <input asp-for="ConfirmPassword" type="password" id="confirmPassword" class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-150" placeholder="••••••••" />
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        <button type="button" onclick="togglePassword('confirmPassword')" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <span asp-validation-for="ConfirmPassword" class="text-danger text-xs mt-1"></span>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary font-medium transition duration-150">
+                Create Account
+            </button>
+        </form>
+
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                Already have an account?
+                <a asp-action="Login" class="text-primary hover:text-primary-dark font-medium transition duration-150">Sign in here</a>
+            </p>
+        </div>
+
+        <!-- Demo Accounts Info -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+            <p class="text-sm text-gray-600 text-center">
+                <strong>Demo Accounts Info:</strong><br>
+                <span class="text-xs">Select "Owner" role for full access</span><br>
+                <span class="text-xs">Select "Branch Manager" for branch management</span><br>
+                <span class="text-xs">Select "Staff" for limited access</span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.parentNode.querySelector('button i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Password strength indicator
+        const passwordInput = document.getElementById('password');
+        const strengthBar = document.getElementById('password-strength-bar');
+        const strengthContainer = document.getElementById('password-strength');
+
+        if (passwordInput && strengthBar && strengthContainer) {
+            passwordInput.addEventListener('input', function() {
+                const password = this.value;
+                let strength = 0;
+
+                if (password.length > 0) {
+                    strengthContainer.classList.remove('hidden');
+
+                    // Length check
+                    if (password.length >= 8) strength += 25;
+
+                    // Contains lowercase
+                    if (/[a-z]/.test(password)) strength += 25;
+
+                    // Contains uppercase
+                    if (/[A-Z]/.test(password)) strength += 25;
+
+                    // Contains numbers or special characters
+                    if (/[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password)) strength += 25;
+
+                    // Update strength bar
+                    strengthBar.style.width = strength + '%';
+
+                    // Update color based on strength
+                    if (strength < 50) {
+                        strengthBar.className = 'h-2 rounded-full bg-danger transition-all duration-300';
+                    } else if (strength < 75) {
+                        strengthBar.className = 'h-2 rounded-full bg-warning transition-all duration-300';
+                    } else {
+                        strengthBar.className = 'h-2 rounded-full bg-success transition-all duration-300';
+                    }
+                } else {
+                    strengthContainer.classList.add('hidden');
+                }
+            });
+        }
+
+        // Add smooth transitions
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentNode.classList.add('ring-2', 'ring-primary', 'ring-opacity-50');
+                });
+
+                input.addEventListener('blur', function() {
+                    this.parentNode.classList.remove('ring-2', 'ring-primary', 'ring-opacity-50');
+                });
+            });
+        });
+    </script>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

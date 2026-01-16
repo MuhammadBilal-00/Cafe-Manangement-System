@@ -1,0 +1,818 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Management - Cafe System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="~/css/MenuDesign.css" />
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h1><i class="fas fa-utensils"></i> Cafe Manager</h1>
+            <p class="text-gray-300 text-sm mt-1">Owner Dashboard</p>
+        </div>
+
+        <a href="#" class="nav-item">
+            <i class="fas fa-chart-pie"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-store"></i>
+            <span>Branches</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-users"></i>
+            <span>Staff</span>
+        </a>
+        <a href="#" class="nav-item active">
+            <i class="fas fa-book-open"></i>
+            <span>Menu</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Orders</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-boxes"></i>
+            <span>Inventory</span>
+        </a>
+
+        <div class="mt-6 pt-6 border-t border-gray-700">
+            <a href="#" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h2 class="text-2xl font-semibold text-gray-800">Menu Management</h2>
+            <div class="flex items-center space-x-4">
+                <div class="user-info flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">O</div>
+                    <div class="ml-3">
+                        <div class="text-sm font-medium text-gray-700">Owner</div>
+                        <div class="text-xs text-gray-500">Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Tabs -->
+            <div class="tab-container">
+                <div class="tab active" onclick="switchTab('list-view')">List View</div>
+                <div class="tab" onclick="switchTab('grid-view')">Grid View</div>
+                <div class="tab" onclick="switchTab('categories')">Categories</div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="card mb-6">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <div class="form-group mb-0">
+                            <input type="text" class="form-input" placeholder="Search menu items..." style="min-width: 300px;">
+                        </div>
+                        <select class="form-select" style="width: 150px;">
+                            <option>All Categories</option>
+                            <option>Coffee</option>
+                            <option>Tea</option>
+                            <option>Pastries</option>
+                            <option>Sandwiches</option>
+                        </select>
+                        <select class="form-select" style="width: 150px;">
+                            <option>All Branches</option>
+                            <option>Downtown Branch</option>
+                            <option>Uptown Branch</option>
+                        </select>
+                        <select class="form-select" style="width: 150px;">
+                            <option>Dietary Filters</option>
+                            <option>Vegetarian</option>
+                            <option>Vegan</option>
+                            <option>Gluten-Free</option>
+                            <option>Dairy-Free</option>
+                            <option>Spicy</option>
+                        </select>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-sm">Show Inactive</span>
+                        </label>
+                    </div>
+                    <button class="btn btn-primary" onclick="openCreateModal()">
+                        <i class="fas fa-plus mr-2"></i> New Menu Item
+                    </button>
+                </div>
+            </div>
+
+            <!-- List View -->
+            <div id="list-view" class="view">
+                <div class="card">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Branch</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Dietary</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="font-medium">Cappuccino</div>
+                                    <div class="text-sm text-gray-500">Espresso with steamed milk</div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-primary">Coffee</span>
+                                </td>
+                                <td>Downtown Branch</td>
+                                <td class="font-medium text-green-600">$4.50</td>
+                                <td>
+                                    <span class="status status-available">Available</span>
+                                </td>
+                                <td>
+                                    <span class="dietary-tag vegetarian">Vegetarian</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-outline btn-sm" onclick="openViewModal()">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline btn-sm" onclick="openEditModal()">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline btn-sm">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="font-medium">Chocolate Cake</div>
+                                    <div class="text-sm text-gray-500">Rich chocolate cake with frosting</div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-warning">Pastries</span>
+                                </td>
+                                <td>Uptown Branch</td>
+                                <td class="font-medium text-green-600">$5.75</td>
+                                <td>
+                                    <span class="status status-available">Available</span>
+                                </td>
+                                <td>
+                                    <span class="dietary-tag vegetarian">Vegetarian</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-outline btn-sm" onclick="openViewModal()">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline btn-sm" onclick="openEditModal()">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline btn-sm">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="font-medium">Green Tea</div>
+                                    <div class="text-sm text-gray-500">Traditional Japanese green tea</div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-success">Tea</span>
+                                </td>
+                                <td>Downtown Branch</td>
+                                <td class="font-medium text-green-600">$3.25</td>
+                                <td>
+                                    <span class="status status-available">Available</span>
+                                </td>
+                                <td>
+                                    <span class="dietary-tag vegan">Vegan</span>
+                                    <span class="dietary-tag gluten-free">GF</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-outline btn-sm" onclick="openViewModal()">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline btn-sm" onclick="openEditModal()">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline btn-sm">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="font-medium">Turkey Club</div>
+                                    <div class="text-sm text-gray-500">Turkey with bacon and avocado</div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">Sandwiches</span>
+                                </td>
+                                <td>Uptown Branch</td>
+                                <td class="font-medium text-green-600">$8.95</td>
+                                <td>
+                                    <span class="status status-unavailable">Unavailable</span>
+                                </td>
+                                <td>
+                                    <span class="dietary-tag dairy-free">DF</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-outline btn-sm" onclick="openViewModal()">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline btn-sm" onclick="openEditModal()">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline btn-sm">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Grid View -->
+            <div id="grid-view" class="view" style="display: none;">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Menu Item Card -->
+                    <div class="menu-item-card">
+                        <div class="menu-item-image">
+                            <i class="fas fa-coffee fa-3x"></i>
+                        </div>
+                        <div class="menu-item-content">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-semibold text-lg">Cappuccino</h3>
+                                <span class="menu-item-price">$4.50</span>
+                            </div>
+                            <p class="text-gray-500 text-sm mt-1">Espresso with steamed milk</p>
+                            <div class="mt-2">
+                                <span class="badge badge-primary">Coffee</span>
+                                <span class="dietary-tag vegetarian">Vegetarian</span>
+                            </div>
+                            <div class="nutrition-grid mt-3">
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">120</div>
+                                    <div class="nutrition-label">Calories</div>
+                                </div>
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">6g</div>
+                                    <div class="nutrition-label">Protein</div>
+                                </div>
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">10g</div>
+                                    <div class="nutrition-label">Carbs</div>
+                                </div>
+                            </div>
+                            <div class="menu-item-actions">
+                                <button class="btn btn-outline btn-sm flex-1" onclick="openViewModal()">
+                                    <i class="fas fa-eye mr-1"></i> View
+                                </button>
+                                <button class="btn btn-outline btn-sm flex-1" onclick="openEditModal()">
+                                    <i class="fas fa-edit mr-1"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Menu Item Card -->
+                    <div class="menu-item-card">
+                        <div class="menu-item-image">
+                            <i class="fas fa-birthday-cake fa-3x"></i>
+                        </div>
+                        <div class="menu-item-content">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-semibold text-lg">Chocolate Cake</h3>
+                                <span class="menu-item-price">$5.75</span>
+                            </div>
+                            <p class="text-gray-500 text-sm mt-1">Rich chocolate cake with frosting</p>
+                            <div class="mt-2">
+                                <span class="badge badge-warning">Pastries</span>
+                                <span class="dietary-tag vegetarian">Vegetarian</span>
+                            </div>
+                            <div class="nutrition-grid mt-3">
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">350</div>
+                                    <div class="nutrition-label">Calories</div>
+                                </div>
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">5g</div>
+                                    <div class="nutrition-label">Protein</div>
+                                </div>
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">45g</div>
+                                    <div class="nutrition-label">Carbs</div>
+                                </div>
+                            </div>
+                            <div class="menu-item-actions">
+                                <button class="btn btn-outline btn-sm flex-1" onclick="openViewModal()">
+                                    <i class="fas fa-eye mr-1"></i> View
+                                </button>
+                                <button class="btn btn-outline btn-sm flex-1" onclick="openEditModal()">
+                                    <i class="fas fa-edit mr-1"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Menu Item Card -->
+                    <div class="menu-item-card">
+                        <div class="menu-item-image">
+                            <i class="fas fa-mug-hot fa-3x"></i>
+                        </div>
+                        <div class="menu-item-content">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-semibold text-lg">Green Tea</h3>
+                                <span class="menu-item-price">$3.25</span>
+                            </div>
+                            <p class="text-gray-500 text-sm mt-1">Traditional Japanese green tea</p>
+                            <div class="mt-2">
+                                <span class="badge badge-success">Tea</span>
+                                <span class="dietary-tag vegan">Vegan</span>
+                                <span class="dietary-tag gluten-free">GF</span>
+                            </div>
+                            <div class="nutrition-grid mt-3">
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">0</div>
+                                    <div class="nutrition-label">Calories</div>
+                                </div>
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">0g</div>
+                                    <div class="nutrition-label">Protein</div>
+                                </div>
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">0g</div>
+                                    <div class="nutrition-label">Carbs</div>
+                                </div>
+                            </div>
+                            <div class="menu-item-actions">
+                                <button class="btn btn-outline btn-sm flex-1" onclick="openViewModal()">
+                                    <i class="fas fa-eye mr-1"></i> View
+                                </button>
+                                <button class="btn btn-outline btn-sm flex-1" onclick="openEditModal()">
+                                    <i class="fas fa-edit mr-1"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Menu Item Card -->
+                    <div class="menu-item-card">
+                        <div class="menu-item-image">
+                            <i class="fas fa-utensils fa-3x"></i>
+                        </div>
+                        <div class="menu-item-content">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-semibold text-lg">Turkey Club</h3>
+                                <span class="menu-item-price">$8.95</span>
+                            </div>
+                            <p class="text-gray-500 text-sm mt-1">Turkey with bacon and avocado</p>
+                            <div class="mt-2">
+                                <span class="badge badge-info">Sandwiches</span>
+                                <span class="dietary-tag dairy-free">DF</span>
+                            </div>
+                            <div class="nutrition-grid mt-3">
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">450</div>
+                                    <div class="nutrition-label">Calories</div>
+                                </div>
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">25g</div>
+                                    <div class="nutrition-label">Protein</div>
+                                </div>
+                                <div class="nutrition-item">
+                                    <div class="nutrition-value">35g</div>
+                                    <div class="nutrition-label">Carbs</div>
+                                </div>
+                            </div>
+                            <div class="menu-item-actions">
+                                <button class="btn btn-outline btn-sm flex-1" onclick="openViewModal()">
+                                    <i class="fas fa-eye mr-1"></i> View
+                                </button>
+                                <button class="btn btn-outline btn-sm flex-1" onclick="openEditModal()">
+                                    <i class="fas fa-edit mr-1"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories View -->
+            <div id="categories" class="view" style="display: none;">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Category Card -->
+                    <div class="card">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-lg">Coffee</h3>
+                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">12 items</span>
+                        </div>
+                        <p class="text-gray-500 mb-4">Hot and cold coffee beverages</p>
+                        <div class="flex justify-between">
+                            <button class="btn btn-outline btn-sm">View Items</button>
+                            <div>
+                                <button class="btn btn-outline btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline btn-sm">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Card -->
+                    <div class="card">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-lg">Tea</h3>
+                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">8 items</span>
+                        </div>
+                        <p class="text-gray-500 mb-4">Traditional and herbal teas</p>
+                        <div class="flex justify-between">
+                            <button class="btn btn-outline btn-sm">View Items</button>
+                            <div>
+                                <button class="btn btn-outline btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline btn-sm">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Card -->
+                    <div class="card">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-lg">Pastries</h3>
+                            <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">15 items</span>
+                        </div>
+                        <p class="text-gray-500 mb-4">Fresh baked pastries and desserts</p>
+                        <div class="flex justify-between">
+                            <button class="btn btn-outline btn-sm">View Items</button>
+                            <div>
+                                <button class="btn btn-outline btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline btn-sm">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Card -->
+                    <div class="card">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-lg">Sandwiches</h3>
+                            <span class="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded">10 items</span>
+                        </div>
+                        <p class="text-gray-500 mb-4">Fresh made sandwiches and wraps</p>
+                        <div class="flex justify-between">
+                            <button class="btn btn-outline btn-sm">View Items</button>
+                            <div>
+                                <button class="btn btn-outline btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline btn-sm">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-plus mr-2"></i> Add New Category
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex justify-between items-center mt-6">
+                <div class="text-sm text-gray-500">
+                    Showing 1 to 4 of 42 menu items
+                </div>
+                <div class="flex space-x-2">
+                    <button class="btn btn-outline btn-sm">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-primary btn-sm">1</button>
+                    <button class="btn btn-outline btn-sm">2</button>
+                    <button class="btn btn-outline btn-sm">3</button>
+                    <button class="btn btn-outline btn-sm">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Menu Item Modal -->
+    <div class="modal" id="viewMenuItemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Cappuccino Details</h3>
+                <button onclick="closeModal('viewMenuItemModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <div class="menu-item-image" style="height: 250px;">
+                            <i class="fas fa-coffee fa-5x"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <h2 class="text-2xl font-bold">Cappuccino</h2>
+                            <span class="menu-item-price text-2xl">$4.50</span>
+                        </div>
+
+                        <div class="mb-4">
+                            <span class="badge badge-primary">Coffee</span>
+                            <span class="dietary-tag vegetarian">Vegetarian</span>
+                        </div>
+
+                        <p class="text-gray-600 mb-4">Espresso with steamed milk and a deep layer of foam. Perfect balance of rich espresso and creamy texture.</p>
+
+                        <div class="mb-4">
+                            <div class="form-label">Branch</div>
+                            <div class="font-medium">Downtown Branch</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-label">Preparation Time</div>
+                            <div class="font-medium">5 minutes</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-label">Status</div>
+                            <div><span class="status status-available">Available</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <h4 class="font-medium mb-3">Nutritional Information</h4>
+                    <div class="nutrition-grid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="nutrition-item">
+                            <div class="nutrition-value">120</div>
+                            <div class="nutrition-label">Calories</div>
+                        </div>
+                        <div class="nutrition-item">
+                            <div class="nutrition-value">6g</div>
+                            <div class="nutrition-label">Protein</div>
+                        </div>
+                        <div class="nutrition-item">
+                            <div class="nutrition-value">10g</div>
+                            <div class="nutrition-label">Carbs</div>
+                        </div>
+                        <div class="nutrition-item">
+                            <div class="nutrition-value">4g</div>
+                            <div class="nutrition-label">Fat</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <h4 class="font-medium mb-3">Ingredients</h4>
+                    <ul class="list-disc list-inside text-gray-600">
+                        <li>Espresso (2 shots)</li>
+                        <li>Steamed Milk (150ml)</li>
+                        <li>Milk Foam</li>
+                        <li>Cocoa Powder (optional)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('viewMenuItemModal')">Close</button>
+                <button class="btn btn-primary">Edit Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Menu Item Modal -->
+    <div class="modal" id="createMenuItemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Create New Menu Item</h3>
+                <button onclick="closeModal('createMenuItemModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-input" placeholder="Enter item name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select class="form-select">
+                            <option>Select category</option>
+                            <option>Coffee</option>
+                            <option>Tea</option>
+                            <option>Pastries</option>
+                            <option>Sandwiches</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price ($)</label>
+                        <input type="number" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cost Price ($)</label>
+                        <input type="number" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Branch</label>
+                        <select class="form-select">
+                            <option>Select branch</option>
+                            <option>Downtown Branch</option>
+                            <option>Uptown Branch</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Preparation Time (minutes)</label>
+                        <input type="number" class="form-input" placeholder="15">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" rows="2" placeholder="Short description"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Long Description</label>
+                    <textarea class="form-textarea" rows="3" placeholder="Detailed description"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">Calories</label>
+                        <input type="number" class="form-input" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Protein (g)</label>
+                        <input type="number" class="form-input" placeholder="0.0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Carbohydrates (g)</label>
+                        <input type="number" class="form-input" placeholder="0.0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fat (g)</label>
+                        <input type="number" class="form-input" placeholder="0.0" step="0.1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Dietary Information</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" class="form-checkbox">
+                            <span>Vegetarian</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" class="form-checkbox">
+                            <span>Vegan</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" class="form-checkbox">
+                            <span>Gluten-Free</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" class="form-checkbox">
+                            <span>Dairy-Free</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" class="form-checkbox">
+                            <span>Nut-Free</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" class="form-checkbox">
+                            <span>Spicy</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Spice Level (if spicy)</label>
+                    <select class="form-select">
+                        <option value="">Select level</option>
+                        <option value="1">Mild</option>
+                        <option value="2">Medium</option>
+                        <option value="3">Hot</option>
+                        <option value="4">Very Hot</option>
+                        <option value="5">Extremely Hot</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tags (comma separated)</label>
+                    <input type="text" class="form-input" placeholder="breakfast, popular, seasonal">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Image</label>
+                    <input type="file" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select class="form-select">
+                        <option>Available</option>
+                        <option>Unavailable</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('createMenuItemModal')">Cancel</button>
+                <button class="btn btn-primary">Create Item</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        function switchTab(tabId) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(view => {
+                view.style.display = 'none';
+            });
+
+            // Show selected view
+            document.getElementById(tabId).style.display = 'block';
+
+            // Update active tab
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+        }
+
+        // Modal functionality
+        function openViewModal() {
+            document.getElementById('viewMenuItemModal').style.display = 'flex';
+        }
+
+        function openCreateModal() {
+            document.getElementById('createMenuItemModal').style.display = 'flex';
+        }
+
+        function openEditModal() {
+            // In a real app, this would open an edit modal with pre-filled data
+            alert('Edit menu item functionality would open here');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        };
+    </script>
+</body>
+</html>
+

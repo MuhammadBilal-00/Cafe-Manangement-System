@@ -1,0 +1,240 @@
+﻿<!-- Index.cshtml -->
+@model IEnumerable<Cafe.Models.MenuItem>
+
+@{
+    ViewData["Title"] = "Menu Items";
+}
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Menu Management</h1>
+    <a asp-action="Create" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
+        <i class="fas fa-plus mr-2"></i> Add New Item
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+            <select name="branchId" asp-items="ViewBag.Branches" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All Branches</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select name="categoryId" asp-items="ViewBag.Categories" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All Categories</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Dietary Filter</label>
+            <select name="dietaryFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All Items</option>
+                <option value="vegetarian">Vegetarian</option>
+                <option value="vegan">Vegan</option>
+                <option value="glutenfree">Gluten Free</option>
+                <option value="dairyfree">Dairy Free</option>
+                <option value="spicy">Spicy</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <input type="text" name="search" value="@ViewBag.Search" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search items...">
+        </div>
+        <div class="flex items-end">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200 w-full">
+                <i class="fas fa-filter mr-2"></i> Apply Filters
+            </button>
+        </div>
+        <div class="flex items-center">
+            <input type="checkbox" name="showInactive" id="showInactive" value="true" @(ViewBag.ShowInactive ? "checked" : "") class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+            <label for="showInactive" class="ml-2 block text-sm text-gray-700">Show Inactive Items</label>
+        </div>
+    </form>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+        <div class="flex items-center">
+            <div class="p-3 rounded-lg bg-blue-100 text-blue-600 mr-4">
+                <i class="fas fa-utensils text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Total Menu Items</p>
+                <p class="text-2xl font-bold text-gray-800">@Model.Count()</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+        <div class="flex items-center">
+            <div class="p-3 rounded-lg bg-green-100 text-green-600 mr-4">
+                <i class="fas fa-check-circle text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Available Items</p>
+                <p class="text-2xl font-bold text-gray-800">@Model.Count(m => m.Availability)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+        <div class="flex items-center">
+            <div class="p-3 rounded-lg bg-yellow-100 text-yellow-600 mr-4">
+                <i class="fas fa-star text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Featured Items</p>
+                <p class="text-2xl font-bold text-gray-800">@Model.Count(m => m.IsFeatured)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+        <div class="flex items-center">
+            <div class="p-3 rounded-lg bg-purple-100 text-purple-600 mr-4">
+                <i class="fas fa-fire text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Special Items</p>
+                <p class="text-2xl font-bold text-gray-800">@Model.Count(m => m.IsSpecial)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Menu Items Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    @foreach (var item in Model)
+    {
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-200">
+            @if (!string.IsNullOrEmpty(item.ImageUrl))
+            {
+                <img src="@item.ImageUrl" alt="@item.Name" class="w-full h-48 object-cover">
+            }
+            else
+            {
+                <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                    <i class="fas fa-image text-4xl text-gray-400"></i>
+                </div>
+            }
+
+            <div class="p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-lg font-semibold text-gray-800">@item.Name</h3>
+                    <span class="text-lg font-bold text-blue-600">$@item.Price</span>
+                </div>
+
+                <p class="text-gray-600 text-sm mb-3 line-clamp-2">@item.Description</p>
+
+                <div class="flex flex-wrap gap-1 mb-3">
+                    @if (item.IsVegetarian)
+                    {
+                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Vegetarian</span>
+                    }
+                    @if (item.IsVegan)
+                    {
+                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Vegan</span>
+                    }
+                    @if (item.IsGlutenFree)
+                    {
+                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">Gluten Free</span>
+                    }
+                    @if (item.IsSpicy)
+                    {
+                        <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Spicy</span>
+                    }
+                    @if (item.IsFeatured)
+                    {
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Featured</span>
+                    }
+                </div>
+
+                <div class="flex justify-between items-center text-sm text-gray-500">
+                    <div>
+                        <i class="fas fa-store mr-1"></i> @item.Branch.Name
+                    </div>
+                    <div>
+                        <i class="fas fa-clock mr-1"></i> @item.PreparationTime min
+                    </div>
+                </div>
+
+                <div class="flex items-center mt-3 pt-3 border-t border-gray-100">
+                    @if (item.AverageRating.HasValue)
+                    {
+                        <div class="flex items-center mr-4">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <i class="fas fa-star @(i <= Math.Round(item.AverageRating.Value) ? "text-yellow-400" : "text-gray-300") text-sm"></i>
+                            }
+                            <span class="ml-1 text-sm text-gray-600">(@item.TotalRatings)</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-sm text-gray-400">No ratings yet</span>
+                    }
+
+                    <div class="ml-auto flex space-x-2">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="text-yellow-600 hover:text-yellow-800">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a asp-action="ManageIngredients" asp-route-id="@item.Id" class="text-green-600 hover:text-green-800">
+                            <i class="fas fa-list"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            @if (!item.Availability)
+            {
+                <div class="bg-red-100 text-red-800 text-center py-1 text-sm">
+                    <i class="fas fa-times-circle mr-1"></i> Not Available
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center py-12 bg-white rounded-lg shadow-md">
+        <div class="text-gray-400 text-5xl mb-4">
+            <i class="fas fa-utensils"></i>
+        </div>
+        <h3 class="text-lg font-medium text-gray-600">No menu items found</h3>
+        <p class="text-gray-500 mt-1">Get started by adding your first menu item.</p>
+        <div class="mt-6">
+            <a asp-action="Create" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 inline-flex items-center">
+                <i class="fas fa-plus mr-2"></i> Add First Item
+            </a>
+        </div>
+    </div>
+}
+
+<!-- Bulk Actions -->
+@* @if (Model.Any() && Context.Session.IsManagerOrOwner()) *@
+@* { *@
+@*     <div class="mt-8 bg-blue-50 rounded-lg p-6"> *@
+@*         <h3 class="text-lg font-medium text-blue-800 mb-4">Bulk Actions</h3> *@
+@*         <div class="flex flex-wrap gap-4"> *@
+@*             <form asp-action="BulkUpdateAvailability" method="post" class="flex items-center gap-2"> *@
+@*                 <input type="hidden" name="availability" value="true"> *@
+@*                 <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center"> *@
+@*                     <i class="fas fa-check-circle mr-2"></i> Activate Selected *@
+@*                 </button> *@
+@*             </form> *@
+@*             <form asp-action="BulkUpdateAvailability" method="post" class="flex items-center gap-2"> *@
+@*                 <input type="hidden" name="availability" value="false"> *@
+@*                 <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center"> *@
+@*                     <i class="fas fa-times-circle mr-2"></i> Deactivate Selected *@
+@*                 </button> *@
+@*             </form> *@
+@*         </div> *@
+@*     </div> *@
+@* } *@

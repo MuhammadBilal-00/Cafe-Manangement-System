@@ -1,0 +1,271 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Cafe Management System</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="~/css/LayoutDesign.css" />
+
+    <!-- Your existing files for compatibility -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="bg-gray-50">
+    <!-- Mobile overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="sidebar bg-[#3a506b] text-white w-64 min-h-screen flex flex-col fixed">
+            <div class="p-5 border-b border-gray-700">
+                <h1 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-utensils mr-2"></i>
+                    Cafe Manager
+                </h1>
+                <p class="text-gray-300 text-sm">
+                    @if (Context.Session.GetString("UserRole") != null)
+                    {
+                        @Context.Session.GetString("UserRole") <text>Dashboard</text>
+                    }
+                    else
+                    {
+                        <text>Please login</text>
+                    }
+                </p>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-4">
+                <div class="px-4 space-y-2">
+                    <!-- Dashboard -->
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="Home" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-chart-pie mr-3"></i>
+                            Dashboard
+                        </a>
+                    </div>
+
+                    <!-- Branches -->
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="Branch" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-store mr-3"></i>
+                            Branches
+                        </a>
+                    </div>
+
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="Staff" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-users mr-3"></i>
+                            Staff
+                        </a>
+                    </div>
+
+                    <!-- Menu -->
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="MenuItem" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-book-open mr-3"></i>
+                            Menu
+                        </a>
+                    </div>
+
+                    <!-- Orders -->
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="Order" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-shopping-cart mr-3"></i>
+                            Orders
+                        </a>
+                    </div>
+
+                    <!-- Inventory -->
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="InventoryItem" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-boxes mr-3"></i>
+                            Inventory
+                        </a>
+                    </div>
+
+                    <!-- Reports -->
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="Report" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-chart-line mr-3"></i>
+                            Reports
+                        </a>
+                    </div>
+
+                    <!-- Feedback -->
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="Feedback" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-star mr-3"></i>
+                            Feedback
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Account Section -->
+                <div class="mt-10 px-4">
+                    <p class="text-gray-400 text-xs uppercase mb-2 px-3">Account</p>
+
+                    <!-- Profile -->
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="User" asp-action="Profile" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-user mr-3"></i>
+                            Profile
+                        </a>
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="User" asp-action="Settings" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-cog mr-3"></i>
+                            Settings
+                        </a>
+                    </div>
+
+                    <!-- Login/Logout -->
+                    @if (Context.Session.GetString("UserId") != null)
+                    {
+                        <div class="rounded-lg py-2 px-3">
+                            <form asp-controller="Auth" asp-action="Logout" method="post" class="inline">
+                                <button type="submit" class="flex items-center text-gray-300 hover:text-white transition-colors w-full">
+                                    <i class="fas fa-sign-out-alt mr-3"></i>
+                                    Logout
+                                </button>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="Auth" asp-action="Login" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-sign-in-alt mr-3"></i>
+                                Login
+                            </a>
+                        </div>
+                    }
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main content area -->
+        <div class="main-content flex-1 ml-64">
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center">
+                        <button id="mobileMenuButton" class="md:hidden mr-3 text-gray-600">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-2xl font-semibold text-gray-800">@ViewData["Title"]</h2>
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <!-- Notifications -->
+                        <div class="relative">
+                            <button class="text-gray-500 hover:text-gray-700 transition-colors">
+                                <i class="fas fa-bell text-xl"></i>
+                            </button>
+                            <span class="notification-dot">3</span>
+                        </div>
+
+                        <!-- User info -->
+                        <div class="flex items-center space-x-3">
+                            <div class="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
+                                @if (Context.Session.GetString("UserName") != null)
+                                {
+                                    @Context.Session.GetString("UserName").Substring(0, 1).ToUpper()
+                                }
+                                else
+                                {
+                                    <i class="fas fa-user"></i>
+                                }
+                            </div>
+                            <div class="hidden md:block">
+                                <div class="text-sm font-medium text-gray-700">
+                                    @Context.Session.GetString("UserName") 
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    @Context.Session.GetString("UserRole") 
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-500"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main content -->
+            <main class="p-6">
+                <!-- Notifications -->
+                @if (TempData["Success"] != null)
+                {
+                    <div class="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle mr-3"></i>
+                            <span>@TempData["Success"]</span>
+                        </div>
+                    </div>
+                }
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle mr-3"></i>
+                            <span>@TempData["Error"]</span>
+                        </div>
+                    </div>
+                }
+
+                <!-- Page content -->
+                @RenderBody()
+            </main>
+
+            <!-- Footer -->
+            <footer class="bg-white border-t border-gray-200 mt-auto">
+                <div class="max-w-7xl mx-auto py-4 px-6">
+                    <div class="text-center text-gray-500 text-sm">
+                        &copy; 2025 - Cafe Management System - <a asp-controller="Home" asp-action="Privacy" class="text-indigo-600 hover:text-indigo-500">Privacy</a>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script>
+        // Mobile menu functionality
+        document.getElementById('mobileMenuButton')?.addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('open');
+        });
+
+        document.getElementById('overlay')?.addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.remove('open');
+            this.classList.remove('open');
+        });
+
+        // Add active class to current page
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('nav a');
+
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && currentPath.includes(href)) {
+                    link.classList.add('nav-link-active');
+                    link.classList.remove('text-gray-300');
+                }
+            });
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

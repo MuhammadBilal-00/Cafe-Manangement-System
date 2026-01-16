@@ -1,0 +1,185 @@
+﻿@model Cafe.Models.MenuItem
+
+@{
+    ViewData["Title"] = "Edit Menu Item";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>@ViewData["Title"]</h1>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="Edit">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CreatedDate" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <!-- Same form fields as Create.cshtml but with existing values -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label asp-for="Name" class="control-label"></label>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label asp-for="CategoryId" class="control-label">Category</label>
+                            <select asp-for="CategoryId" asp-items="ViewBag.Categories" class="form-select">
+                                <option value="">Select Category</option>
+                            </select>
+                            <span asp-validation-for="CategoryId" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label asp-for="Price" class="control-label"></label>
+                            <input asp-for="Price" class="form-control" type="number" step="0.01" />
+                            <span asp-validation-for="Price" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label asp-for="BranchId" class="control-label">Branch</label>
+                            <select asp-for="BranchId" asp-items="ViewBag.Branches" class="form-select">
+                                <option value="">Select Branch</option>
+                            </select>
+                            <span asp-validation-for="BranchId" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="Description" class="control-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="LongDescription" class="control-label">Long Description</label>
+                    <textarea asp-for="LongDescription" class="form-control" rows="4"></textarea>
+                    <span asp-validation-for="LongDescription" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label asp-for="CostPrice" class="control-label">Cost Price</label>
+                            <input asp-for="CostPrice" class="form-control" type="number" step="0.01" />
+                            <span asp-validation-for="CostPrice" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label asp-for="OriginalPrice" class="control-label">Original Price</label>
+                            <input asp-for="OriginalPrice" class="form-control" type="number" step="0.01" />
+                            <span asp-validation-for="OriginalPrice" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label asp-for="PreparationTime" class="control-label">Prep Time (min)</label>
+                            <input asp-for="PreparationTime" class="form-control" />
+                            <span asp-validation-for="PreparationTime" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="ImageUrl" class="control-label">Image URL</label>
+                    <input asp-for="ImageUrl" class="form-control" />
+                    <span asp-validation-for="ImageUrl" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label">Dietary Information</label>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input asp-for="IsVegetarian" class="form-check-input" />
+                                <label asp-for="IsVegetarian" class="form-check-label">Vegetarian</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input asp-for="IsVegan" class="form-check-input" />
+                                <label asp-for="IsVegan" class="form-check-label">Vegan</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input asp-for="IsGlutenFree" class="form-check-input" />
+                                <label asp-for="IsGlutenFree" class="form-check-label">Gluten-Free</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input asp-for="IsDairyFree" class="form-check-input" />
+                                <label asp-for="IsDairyFree" class="form-check-label">Dairy-Free</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input asp-for="IsSpicy" class="form-check-input" />
+                                <label asp-for="IsSpicy" class="form-check-label">Spicy</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3" id="spiceLevelContainer" style="display: none;">
+                    <label asp-for="SpiceLevel" class="control-label">Spice Level</label>
+                    <select asp-for="SpiceLevel" asp-items="ViewBag.SpiceLevels" class="form-select">
+                        <option value="">Select Spice Level</option>
+                    </select>
+                    <span asp-validation-for="SpiceLevel" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="Tags" class="control-label"></label>
+                    <input asp-for="Tags" class="form-control" placeholder="comma,separated,tags" />
+                    <span asp-validation-for="Tags" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <div class="form-check">
+                        <input asp-for="Availability" class="form-check-input" />
+                        <label asp-for="Availability" class="form-check-label">Available</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const spicyCheckbox = document.getElementById('IsSpicy');
+            const spiceLevelContainer = document.getElementById('spiceLevelContainer');
+
+            function toggleSpiceLevel() {
+                spiceLevelContainer.style.display = spicyCheckbox.checked ? 'block' : 'none';
+            }
+
+            spicyCheckbox.addEventListener('change', toggleSpiceLevel);
+            toggleSpiceLevel(); // Initial check
+        });
+    </script>
+}
