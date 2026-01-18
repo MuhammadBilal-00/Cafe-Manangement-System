@@ -141,35 +141,33 @@ namespace Cafe.Controllers
         [RequireManagerOrOwner]
         public async Task<IActionResult> Create(MenuItem menuItem)
         {
-            // Debug logging - remove after fixing
-            System.Diagnostics.Debug.WriteLine($"Creating menu item: {menuItem.Name}");
-            System.Diagnostics.Debug.WriteLine($"Branch ID: {menuItem.BranchId}");
-            System.Diagnostics.Debug.WriteLine($"Model State Valid: {ModelState.IsValid}");
-
-            // If user is not owner, enforce their branch
-            Console.WriteLine("=== CREATE METHOD CALLED ===");
-            Console.WriteLine($"Name: '{menuItem.Name}'");
-            Console.WriteLine($"Price: {menuItem.Price}");
-            Console.WriteLine($"CostPrice: {menuItem.CostPrice}");
-            Console.WriteLine($"CategoryId: {menuItem.CategoryId}");
-            Console.WriteLine($"BranchId: {menuItem.BranchId}");
-            Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
-
-            if (!ModelState.IsValid)
+            // Enforce branch for non-owners
+            if (!HttpContext.Session.IsOwner())
             {
-                Console.WriteLine("=== MODEL STATE ERRORS ===");
-                foreach (var modelError in ModelState)
+                var branchId = HttpContext.Session.GetManagedBranchId() 
+                            ?? HttpContext.Session.GetStaffBranchId();
+                if (branchId.HasValue) 
                 {
-                    var key = modelError.Key;
-                    var errors = modelError.Value.Errors;
-                    Console.WriteLine($"Field: {key}");
-                    foreach (var error in errors)
-                    {
-                        Console.WriteLine($"  Error: {error.ErrorMessage}");
-                        Console.WriteLine($"  Exception: {error.Exception?.Message}");
-                    }
+                    menuItem.BranchId = branchId.Value;
                 }
             }
+            
+            // Check access
+            if (!CanAccessBranch(menuItem.BranchId))
+            {
+                TempData["Error"] = "Access denied to this branch.";
+                await PopulateDropdowns();
+                return View(menuItem);
+            }
+            
+            // Validate
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please check all required fields.";
+                await PopulateDropdowns();
+                return View(menuItem);
+            }
+            
             try
             {
                 // Set timestamps
@@ -186,28 +184,17 @@ namespace Cafe.Controllers
                 }
 
                 _context.Add(menuItem);
-                int result = await _context.SaveChangesAsync();
-
-                System.Diagnostics.Debug.WriteLine($"Save result: {result} rows affected");
-
-                if (result > 0)
-                {
-                    TempData["Success"] = "Menu item created successfully!";
-                    return RedirectToAction(nameof(Index));
-                }
-                else
-                {
-                    TempData["Error"] = "Failed to save menu item.";
-                }
+                await _context.SaveChangesAsync();
+                
+                TempData["Success"] = "Menu item created successfully!";
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Exception: {ex.Message}");
                 TempData["Error"] = $"Error creating menu item: {ex.Message}";
+                await PopulateDropdowns();
+                return View(menuItem);
             }
-
-            await PopulateDropdowns();
-            return View(menuItem);
         }
         [RequireManagerOrOwner]
         public async Task<IActionResult> Edit(int? id)
@@ -430,6 +417,70 @@ namespace Cafe.Controllers
             }
 
             return RedirectToAction("ManageIngredients", new { id = menuItemId });
+        }
+
+        [RequireManagerOrOwner]
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var menuItem = await _context.MenuItems
+                .Include(m => m.Category)
+                .Include(m => m.Branch)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (menuItem == null) return NotFound();
+
+            if (!CanAccessBranch(menuItem.BranchId))
+            {
+                return AccessDenied();
+            }
+
+            return View(menuItem);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        [RequireManagerOrOwner]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var menuItem = await _context.MenuItems.FindAsync(id);
+            
+            if (menuItem == null)
+            {
+                TempData["Error"] = "Menu item not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!CanAccessBranch(menuItem.BranchId))
+            {
+                return AccessDenied();
+            }
+
+            // Check if menu item is used in any orders
+            var hasOrders = await _context.OrderItems
+                .AnyAsync(oi => oi.MenuItemId == id);
+
+            if (hasOrders)
+            {
+                // Soft delete - just mark as unavailable
+                menuItem.Availability = false;
+                menuItem.LastUpdated = DateTime.Now;
+                _context.Update(menuItem);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Menu item marked as unavailable (has order history).";
+            }
+            else
+            {
+                // Hard delete
+                _context.MenuItems.Remove(menuItem);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Menu item deleted successfully!";
+            }
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }
