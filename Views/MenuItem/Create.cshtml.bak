@@ -1,0 +1,513 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Menu Item - Debug Version</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+
+    <!-- Debug Create.cshtml for MenuItem -->
+    <div class="min-h-screen py-8">
+        <div class="max-w-5xl mx-auto px-4">
+            <!-- Header -->
+            <div class="flex items-center mb-8">
+                <a href="/MenuItem/Index" class="text-blue-600 hover:text-blue-800 mr-4 transition-colors">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </a>
+                <h1 class="text-3xl font-bold text-gray-800">Add New Menu Item</h1>
+            </div>
+
+            <!-- Debug Panel -->
+            <div id="debugPanel" class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h3 class="text-lg font-semibold text-yellow-800 mb-2">Debug Information</h3>
+                <div class="text-sm text-yellow-700">
+                    <p><strong>Form Data Preview:</strong></p>
+                    <pre id="formDataPreview" class="mt-2 p-2 bg-yellow-100 rounded text-xs overflow-x-auto"></pre>
+                </div>
+            </div>
+
+            <!-- Error Messages Display -->
+            <div id="errorDisplay" class="hidden mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
+                <div class="flex">
+                    <i class="fas fa-exclamation-triangle text-red-400 mt-1"></i>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">Validation Errors:</h3>
+                        <ul id="errorList" class="mt-2 text-sm text-red-700 list-disc list-inside"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Form Container -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <form id="menuItemForm" class="p-8" method="post" action="/MenuItem/Create">
+                    <!-- Anti-forgery token - This needs to be added by your Razor view -->
+                    <input name="__RequestVerificationToken" type="hidden" value="DEBUG_TOKEN" />
+
+                    <!-- Hidden fields for model binding -->
+                    <input type="hidden" name="Id" value="0" />
+                    <input type="hidden" name="CreatedDate" value="" />
+                    <input type="hidden" name="LastUpdated" value="" />
+                    <input type="hidden" name="TotalRatings" value="0" />
+                    <input type="hidden" name="PopularityScore" value="0" />
+
+                    <!-- Basic Information Section -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Basic Information</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Name (Required) -->
+                            <div class="md:col-span-2">
+                                <label for="Name" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Item Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text"
+                                       id="Name"
+                                       name="Name"
+                                       required
+                                       maxlength="100"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                       placeholder="Enter menu item name"
+                                       data-debug="Required field" />
+                                <span class="text-red-500 text-xs mt-1 hidden" id="Name-error"></span>
+                            </div>
+
+                            <!-- Description (Optional) -->
+                            <div class="md:col-span-2">
+                                <label for="Description" class="block text-sm font-semibold text-gray-700 mb-2">Short Description</label>
+                                <textarea id="Description"
+                                          name="Description"
+                                          rows="2"
+                                          maxlength="500"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+                                          placeholder="Brief description of the item"
+                                          data-debug="Optional field"></textarea>
+                            </div>
+
+                            <!-- Long Description (Optional) -->
+                            <div class="md:col-span-2">
+                                <label for="LongDescription" class="block text-sm font-semibold text-gray-700 mb-2">Detailed Description</label>
+                                <textarea id="LongDescription"
+                                          name="LongDescription"
+                                          rows="3"
+                                          maxlength="1000"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+                                          placeholder="Detailed description"
+                                          data-debug="Optional field"></textarea>
+                            </div>
+
+                            <!-- Category (Required) -->
+                            <div>
+                                <label for="CategoryId" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Category <span class="text-red-500">*</span>
+                                </label>
+                                <select id="CategoryId"
+                                        name="CategoryId"
+                                        required
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                        data-debug="Required field">
+                                    <option value="">-- Select Category --</option>
+                                    <option value="1">Appetizers</option>
+                                    <option value="2">Main Courses</option>
+                                    <option value="3">Desserts</option>
+                                    <option value="4">Beverages</option>
+                                    <option value="5">Salads</option>
+                                </select>
+                                <span class="text-red-500 text-xs mt-1 hidden" id="CategoryId-error"></span>
+                            </div>
+
+                            <!-- Branch (Required) -->
+                            <div>
+                                <label for="BranchId" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Branch <span class="text-red-500">*</span>
+                                </label>
+                                <select id="BranchId"
+                                        name="BranchId"
+                                        required
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                        data-debug="Required field">
+                                    <option value="">-- Select Branch --</option>
+                                    <option value="1">Main Branch</option>
+                                    <option value="2">Downtown Branch</option>
+                                    <option value="3">Mall Branch</option>
+                                </select>
+                                <span class="text-red-500 text-xs mt-1 hidden" id="BranchId-error"></span>
+                            </div>
+
+                            <!-- Image URL (Optional) -->
+                            <div class="md:col-span-2">
+                                <label for="ImageUrl" class="block text-sm font-semibold text-gray-700 mb-2">Image URL</label>
+                                <input type="text"
+                                       id="ImageUrl"
+                                       name="ImageUrl"
+                                       maxlength="500"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                       placeholder="https://example.com/image.jpg"
+                                       data-debug="Optional field" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Section -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Pricing Information</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Price (Required) -->
+                            <div>
+                                <label for="Price" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Selling Price <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">$</span>
+                                    <input type="number"
+                                           step="0.01"
+                                           min="0.01"
+                                           id="Price"
+                                           name="Price"
+                                           required
+                                           class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                           placeholder="0.00"
+                                           data-debug="Required field" />
+                                </div>
+                                <span class="text-red-500 text-xs mt-1 hidden" id="Price-error"></span>
+                            </div>
+
+                            <!-- Original Price (Optional) -->
+                            <div>
+                                <label for="OriginalPrice" class="block text-sm font-semibold text-gray-700 mb-2">Original Price</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">$</span>
+                                    <input type="number"
+                                           step="0.01"
+                                           min="0"
+                                           id="OriginalPrice"
+                                           name="OriginalPrice"
+                                           class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                           placeholder="0.00"
+                                           data-debug="Optional field" />
+                                </div>
+                            </div>
+
+                            <!-- Cost Price (Required) -->
+                            <div>
+                                <label for="CostPrice" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Cost Price <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">$</span>
+                                    <input type="number"
+                                           step="0.01"
+                                           min="0"
+                                           id="CostPrice"
+                                           name="CostPrice"
+                                           required
+                                           value="0"
+                                           class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                           placeholder="0.00"
+                                           data-debug="Required field" />
+                                </div>
+                                <span class="text-red-500 text-xs mt-1 hidden" id="CostPrice-error"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Settings Section -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Business Settings</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="PreparationTime" class="block text-sm font-semibold text-gray-700 mb-2">Preparation Time (minutes)</label>
+                                <input type="number"
+                                       min="1"
+                                       id="PreparationTime"
+                                       name="PreparationTime"
+                                       value="15"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" />
+                            </div>
+
+                            <div>
+                                <label for="DisplayOrder" class="block text-sm font-semibold text-gray-700 mb-2">Display Order</label>
+                                <input type="number"
+                                       min="0"
+                                       id="DisplayOrder"
+                                       name="DisplayOrder"
+                                       value="0"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" />
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label for="Tags" class="block text-sm font-semibold text-gray-700 mb-2">Tags</label>
+                                <input type="text"
+                                       id="Tags"
+                                       name="Tags"
+                                       maxlength="100"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                       placeholder="breakfast, popular, new (comma-separated)" />
+                            </div>
+                        </div>
+
+                        <!-- Status Checkboxes -->
+                        <div class="mt-6">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-4">Status Options</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                                    <input type="checkbox"
+                                           id="Availability"
+                                           name="Availability"
+                                           value="true"
+                                           checked
+                                           class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" />
+                                    <input type="hidden" name="Availability" value="false" />
+                                    <label for="Availability" class="text-sm font-medium text-gray-700">Available</label>
+                                </div>
+                                <div class="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
+                                    <input type="checkbox"
+                                           id="IsFeatured"
+                                           name="IsFeatured"
+                                           value="true"
+                                           class="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded" />
+                                    <input type="hidden" name="IsFeatured" value="false" />
+                                    <label for="IsFeatured" class="text-sm font-medium text-gray-700">Featured</label>
+                                </div>
+                                <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                                    <input type="checkbox"
+                                           id="IsVegetarian"
+                                           name="IsVegetarian"
+                                           value="true"
+                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                                    <input type="hidden" name="IsVegetarian" value="false" />
+                                    <label for="IsVegetarian" class="text-sm font-medium text-gray-700">Vegetarian</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-8 border-t border-gray-200">
+                        <button type="button"
+                                onclick="debugFormData()"
+                                class="w-full sm:w-auto px-6 py-2 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 transition-all duration-200">
+                            <i class="fas fa-bug mr-2"></i>Debug Form
+                        </button>
+                        <button type="button"
+                                onclick="window.location.href='/MenuItem/Index'"
+                                class="w-full sm:w-auto px-8 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-all duration-200">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </button>
+                        <button type="submit"
+                                id="submitBtn"
+                                class="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg">
+                            <i class="fas fa-plus mr-2"></i>Create Menu Item
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('menuItemForm');
+            const debugPanel = document.getElementById('debugPanel');
+            const formDataPreview = document.getElementById('formDataPreview');
+            const errorDisplay = document.getElementById('errorDisplay');
+            const errorList = document.getElementById('errorList');
+
+            // Update debug panel in real-time
+            function updateDebugPanel() {
+                const formData = new FormData(form);
+                const debugInfo = {};
+
+                // Collect all form data
+                for (let [key, value] of formData.entries()) {
+                    if (debugInfo[key]) {
+                        // Handle multiple values (like checkboxes)
+                        if (Array.isArray(debugInfo[key])) {
+                            debugInfo[key].push(value);
+                        } else {
+                            debugInfo[key] = [debugInfo[key], value];
+                        }
+                    } else {
+                        debugInfo[key] = value;
+                    }
+                }
+
+                // Check required fields
+                const requiredFields = ['Name', 'Price', 'CostPrice', 'CategoryId', 'BranchId'];
+                const missingFields = [];
+
+                requiredFields.forEach(field => {
+                    const value = debugInfo[field];
+                    if (!value || value === '' || value === '0' && field.includes('Id')) {
+                        missingFields.push(field);
+                    }
+                });
+
+                // Update preview
+                const preview = {
+                    'Form Data': debugInfo,
+                    'Missing Required Fields': missingFields,
+                    'Validation Status': missingFields.length === 0 ? '✅ Valid' : '❌ Invalid'
+                };
+
+                formDataPreview.textContent = JSON.stringify(preview, null, 2);
+
+                // Update error display
+                if (missingFields.length > 0) {
+                    errorList.innerHTML = '';
+                    missingFields.forEach(field => {
+                        const li = document.createElement('li');
+                        li.textContent = `${field} is required`;
+                        errorList.appendChild(li);
+                    });
+                    errorDisplay.classList.remove('hidden');
+                } else {
+                    errorDisplay.classList.add('hidden');
+                }
+            }
+
+            // Update debug panel on form changes
+            form.addEventListener('input', updateDebugPanel);
+            form.addEventListener('change', updateDebugPanel);
+
+            // Initial update
+            updateDebugPanel();
+
+            // Form submission with debugging
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                console.log('=== FORM SUBMISSION DEBUG ===');
+
+                const formData = new FormData(form);
+                console.log('Form Data:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(`${key}: "${value}" (type: ${typeof value})`);
+                }
+
+                // Validate required fields
+                const requiredFields = {
+                    'Name': document.getElementById('Name').value,
+                    'Price': document.getElementById('Price').value,
+                    'CostPrice': document.getElementById('CostPrice').value,
+                    'CategoryId': document.getElementById('CategoryId').value,
+                    'BranchId': document.getElementById('BranchId').value
+                };
+
+                console.log('Required Fields Check:');
+                let hasErrors = false;
+                Object.entries(requiredFields).forEach(([field, value]) => {
+                    const isValid = value && value !== '' && value !== '0';
+                    console.log(`${field}: "${value}" - ${isValid ? '✅ Valid' : '❌ Invalid'}`);
+                    if (!isValid) hasErrors = true;
+                });
+
+                if (hasErrors) {
+                    alert('Please fill in all required fields before submitting');
+                    return;
+                }
+
+                // Show loading state
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creating...';
+                submitBtn.disabled = true;
+
+                // Submit form
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+
+                    return response.text();
+                })
+                .then(html => {
+                    console.log('Response HTML (first 500 chars):', html.substring(0, 500));
+
+                    // Check if response contains error indicators
+                    if (html.includes('Please check all required fields') ||
+                        html.includes('validation-summary') ||
+                        html.includes('field-validation-error')) {
+
+                        // Parse and display server validation errors
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const validationSummary = doc.querySelector('[data-valmsg-summary]') ||
+                                                doc.querySelector('.validation-summary') ||
+                                                doc.querySelector('.field-validation-error');
+
+                        if (validationSummary) {
+                            alert('Server Validation Errors Found:\n' + validationSummary.textContent);
+                        } else {
+                            alert('Form validation failed on server. Check console for details.');
+                        }
+                    } else {
+                        // Success - redirect to index
+                        window.location.href = '/MenuItem/Index';
+                    }
+                })
+                .catch(error => {
+                    console.error('Submission error:', error);
+                    alert('Network error occurred: ' + error.message);
+                })
+                .finally(() => {
+                    // Reset button
+                    submitBtn.innerHTML = '<i class="fas fa-plus mr-2"></i>Create Menu Item';
+                    submitBtn.disabled = false;
+                });
+            });
+        });
+
+        // Global debug function
+        function debugFormData() {
+            const form = document.getElementById('menuItemForm');
+            const formData = new FormData(form);
+
+            console.clear();
+            console.log('=== FORM DEBUG REPORT ===');
+            console.log('Form Action:', form.action);
+            console.log('Form Method:', form.method);
+            console.log('');
+
+            console.log('All Form Fields:');
+            for (let [key, value] of formData.entries()) {
+                const element = document.querySelector(`[name="${key}"]`);
+                const isRequired = element ? element.hasAttribute('required') : false;
+                const maxLength = element ? element.getAttribute('maxlength') : 'none';
+
+                console.log(`${key}:`);
+                console.log(`  Value: "${value}"`);
+                console.log(`  Type: ${typeof value}`);
+                console.log(`  Length: ${value.length}`);
+                console.log(`  Required: ${isRequired}`);
+                console.log(`  Max Length: ${maxLength}`);
+                console.log(`  Valid: ${value !== '' || !isRequired}`);
+                console.log('');
+            }
+
+            // Check for common issues
+            console.log('=== COMMON ISSUES CHECK ===');
+
+            // Check CategoryId and BranchId
+            const categoryId = formData.get('CategoryId');
+            const branchId = formData.get('BranchId');
+
+            console.log(`CategoryId: "${categoryId}" (should be > 0)`);
+            console.log(`BranchId: "${branchId}" (should be > 0)`);
+
+            // Check price fields
+            const price = formData.get('Price');
+            const costPrice = formData.get('CostPrice');
+
+            console.log(`Price: "${price}" (should be > 0)`);
+            console.log(`Cost Price: "${costPrice}" (should be >= 0)`);
+
+            alert('Debug information has been logged to the console. Press F12 to view.');
+        }
+    </script>
+
+</body>
+</html>
