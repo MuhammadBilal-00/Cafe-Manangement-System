@@ -203,8 +203,6 @@ namespace Cafe.Services
 
         public async Task<string> GetInventoryStatus(decimal currentQuantity, decimal minimumThreshold)
         {
-            await Task.CompletedTask; // For async consistency
-            
             if (currentQuantity <= 0)
                 return "Out of Stock";
             else if (currentQuantity <= minimumThreshold)

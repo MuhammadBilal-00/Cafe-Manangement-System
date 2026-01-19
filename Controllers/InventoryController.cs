@@ -536,7 +536,7 @@ namespace Cafe.Controllers
                     MenuItemId = menuItemId,
                     InventoryItemId = inventoryItemId,
                     QuantityRequired = quantityRequired,
-                    Unit = unit
+                    Unit = inventoryItem.Unit // Auto-populate from inventory item
                 };
 
                 _context.InventoryRecipeMappings.Add(mapping);

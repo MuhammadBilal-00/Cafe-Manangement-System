@@ -18,7 +18,7 @@ namespace Cafe.Models
         public decimal QuantityRequired { get; set; } // Quantity of inventory item needed per menu item
 
         [StringLength(20)]
-        public string Unit { get; set; } = "g"; // Should match inventory item unit
+        public string Unit { get; set; } = ""; // Will be populated from inventory item unit
 
         // Navigation Properties
         [ForeignKey("MenuItemId")]
