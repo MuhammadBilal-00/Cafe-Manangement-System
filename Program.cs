@@ -14,6 +14,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Add authentication services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddHttpContextAccessor();
 
 // Add session support

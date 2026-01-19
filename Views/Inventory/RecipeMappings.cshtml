@@ -1,0 +1,251 @@
+@model List<Cafe.Models.ViewModels.RecipeMappingViewModel>
+@{
+    ViewData["Title"] = "Recipe Mappings";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="p-6 space-y-6">
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-800">Inventory Recipe Mappings</h2>
+        <div class="flex gap-2">
+            <a href="@Url.Action("Index")" class="text-blue-600 hover:text-blue-800">← Back to Inventory</a>
+            <button onclick="showAddModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                + Add Mapping
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
+        <h3 class="font-bold text-blue-800 mb-1">ℹ️ About Recipe Mappings</h3>
+        <p class="text-blue-700 text-sm">Recipe mappings link menu items to inventory items. When an order is placed, inventory is automatically deducted based on these mappings.</p>
+    </div>
+
+    <!-- Branch Filter -->
+    @if (ViewBag.IsOwner)
+    {
+        <div class="flex items-center gap-4">
+            <label class="font-semibold">Branch:</label>
+            <select id="branchFilter" class="border rounded px-3 py-2" onchange="window.location.href='@Url.Action("RecipeMappings")?branchId=' + this.value">
+                <option value="">Select Branch</option>
+                @foreach (var branch in ViewBag.Branches as List<Cafe.Models.Branch>)
+                {
+                    var selected = ViewBag.SelectedBranchId == branch.Id ? "selected" : "";
+                    <option value="@branch.Id" selected="@selected">@branch.Name</option>
+                }
+            </select>
+        </div>
+    }
+
+    <!-- Filter by Menu Item -->
+    <div class="flex items-center gap-4">
+        <form method="get" class="flex gap-4">
+            @if (ViewBag.SelectedBranchId != null)
+            {
+                <input type="hidden" name="branchId" value="@ViewBag.SelectedBranchId" />
+            }
+            <select name="menuItemId" class="border rounded px-3 py-2">
+                <option value="">All Menu Items</option>
+                @if (ViewBag.MenuItems != null)
+                {
+                    @foreach (var item in ViewBag.MenuItems as List<Cafe.Models.MenuItem>)
+                    {
+                        var menuItemIdQuery = Context.Request.Query["menuItemId"].ToString();
+                        var selected = menuItemIdQuery == item.Id.ToString() ? "selected" : "";
+                        <option value="@item.Id" selected="@selected">
+                            @item.Name
+                        </option>
+                    }
+                }
+            </select>
+            <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">Filter</button>
+        </form>
+    </div>
+
+    <!-- Mappings Table -->
+    <div class="overflow-x-auto border rounded-lg shadow-sm bg-white">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-2 text-left">Menu Item</th>
+                    <th class="px-4 py-2 text-left">Inventory Item</th>
+                    <th class="px-4 py-2 text-right">Quantity Required</th>
+                    <th class="px-4 py-2 text-left">Unit</th>
+                    <th class="px-4 py-2 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                @if (Model.Any())
+                {
+                    @foreach (var mapping in Model)
+                    {
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2 font-semibold">@mapping.MenuItemName</td>
+                            <td class="px-4 py-2">@mapping.InventoryItemName</td>
+                            <td class="px-4 py-2 text-right font-semibold">@mapping.QuantityRequired</td>
+                            <td class="px-4 py-2">@mapping.Unit</td>
+                            <td class="px-4 py-2 text-center">
+                                <button onclick="deleteMapping(@mapping.Id)" class="text-red-600 hover:text-red-800" title="Delete">
+                                    🗑️ Delete
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-8 text-gray-500">
+                            @if (ViewBag.SelectedBranchId == null)
+                            {
+                                <text>Please select a branch to view recipe mappings</text>
+                            }
+                            else
+                            {
+                                <text>No recipe mappings found. Click "Add Mapping" to create one.</text>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Mapping Modal -->
+<div id="addMappingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-96">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold">Add Recipe Mapping</h3>
+            <button onclick="closeAddModal()" class="text-gray-500 hover:text-black">✕</button>
+        </div>
+        
+        <form id="addMappingForm" class="space-y-4">
+            @Html.AntiForgeryToken()
+            
+            <div>
+                <label class="block font-semibold mb-1">Menu Item *</label>
+                <select id="menuItemId" name="menuItemId" class="border rounded px-3 py-2 w-full" required>
+                    <option value="">Select Menu Item</option>
+                    @if (ViewBag.MenuItems != null)
+                    {
+                        @foreach (var item in ViewBag.MenuItems as List<Cafe.Models.MenuItem>)
+                        {
+                            <option value="@item.Id">@item.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold mb-1">Inventory Item *</label>
+                <select id="inventoryItemId" name="inventoryItemId" class="border rounded px-3 py-2 w-full" required>
+                    <option value="">Select Inventory Item</option>
+                    @if (ViewBag.InventoryItems != null)
+                    {
+                        @foreach (var item in ViewBag.InventoryItems as List<Cafe.Models.InventoryItem>)
+                        {
+                            <option value="@item.Id" data-unit="@item.Unit">@item.Name (@item.Category)</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold mb-1">Quantity Required (per serving) *</label>
+                <input id="quantityRequired" name="quantityRequired" type="number" step="0.01" min="0.01" class="border rounded px-3 py-2 w-full" required />
+            </div>
+
+            <div>
+                <label class="block font-semibold mb-1">Unit *</label>
+                <input id="unit" name="unit" type="text" class="border rounded px-3 py-2 w-full" readonly />
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeAddModal()" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Mapping</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function showAddModal() {
+            document.getElementById('addMappingModal').classList.remove('hidden');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addMappingModal').classList.add('hidden');
+            document.getElementById('addMappingForm').reset();
+        }
+
+        // Auto-fill unit when inventory item is selected
+        document.getElementById('inventoryItemId').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const unit = selectedOption.dataset.unit || '';
+            document.getElementById('unit').value = unit;
+        });
+
+        // Handle form submission
+        document.getElementById('addMappingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {
+                menuItemId: parseInt(formData.get('menuItemId')),
+                inventoryItemId: parseInt(formData.get('inventoryItemId')),
+                quantityRequired: parseFloat(formData.get('quantityRequired')),
+                unit: formData.get('unit')
+            };
+
+            try {
+                const response = await fetch('/Inventory/AddRecipeMapping', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    closeAddModal();
+                    location.reload();
+                } else {
+                    alert(result.message || 'Error adding mapping');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error adding mapping');
+            }
+        });
+
+        async function deleteMapping(id) {
+            if (!confirm('Are you sure you want to delete this mapping?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Inventory/DeleteRecipeMapping/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    alert(result.message || 'Error deleting mapping');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error deleting mapping');
+            }
+        }
+    </script>
+}

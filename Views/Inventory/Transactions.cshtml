@@ -1,0 +1,181 @@
+@model List<Cafe.Models.ViewModels.InventoryTransactionViewModel>
+@{
+    ViewData["Title"] = "Inventory Transactions";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="p-6 space-y-6">
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-800">Inventory Transaction History</h2>
+        <a href="@Url.Action("Index")" class="text-blue-600 hover:text-blue-800">← Back to Inventory</a>
+    </div>
+
+    <!-- Branch Filter -->
+    @if (ViewBag.IsOwner)
+    {
+        <div class="flex items-center gap-4">
+            <label class="font-semibold">Branch:</label>
+            <select id="branchFilter" class="border rounded px-3 py-2" onchange="window.location.href='@Url.Action("Transactions")?branchId=' + this.value">
+                <option value="">Select Branch</option>
+                @foreach (var branch in ViewBag.Branches as List<Cafe.Models.Branch>)
+                {
+                    var selected = ViewBag.SelectedBranchId == branch.Id ? "selected" : "";
+                    <option value="@branch.Id" selected="@selected">@branch.Name</option>
+                }
+            </select>
+        </div>
+    }
+
+    <!-- Filters -->
+    <div class="flex flex-wrap items-center gap-4">
+        <form method="get" class="flex flex-wrap gap-4">
+            @if (ViewBag.SelectedBranchId != null)
+            {
+                <input type="hidden" name="branchId" value="@ViewBag.SelectedBranchId" />
+            }
+            
+            <select name="inventoryItemId" class="border rounded px-3 py-2">
+                <option value="">All Items</option>
+                @if (ViewBag.InventoryItems != null)
+                {
+                    @foreach (var item in ViewBag.InventoryItems as List<Cafe.Models.InventoryItem>)
+                    {
+                        var inventoryItemIdQuery = Context.Request.Query["inventoryItemId"].ToString();
+                        var selected = inventoryItemIdQuery == item.Id.ToString() ? "selected" : "";
+                        <option value="@item.Id" selected="@selected">
+                            @item.Name
+                        </option>
+                    }
+                }
+            </select>
+
+            <select name="transactionType" class="border rounded px-3 py-2">
+                <option value="">All Types</option>
+                @{
+                    var transactionTypeQuery = Context.Request.Query["transactionType"].ToString();
+                }
+                <option value="Stock In" selected="@(transactionTypeQuery == "Stock In" ? "selected" : "")">Stock In</option>
+                <option value="Stock Out" selected="@(transactionTypeQuery == "Stock Out" ? "selected" : "")">Stock Out</option>
+                <option value="Order Usage" selected="@(transactionTypeQuery == "Order Usage" ? "selected" : "")">Order Usage</option>
+                <option value="Wastage" selected="@(transactionTypeQuery == "Wastage" ? "selected" : "")">Wastage</option>
+                <option value="Expiry" selected="@(transactionTypeQuery == "Expiry" ? "selected" : "")">Expiry</option>
+            </select>
+
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Apply Filters
+            </button>
+        </form>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="overflow-x-auto border rounded-lg shadow-sm bg-white">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-2 text-left">Date & Time</th>
+                    <th class="px-4 py-2 text-left">Item</th>
+                    <th class="px-4 py-2 text-left">Type</th>
+                    <th class="px-4 py-2 text-right">Quantity</th>
+                    <th class="px-4 py-2 text-right">Before</th>
+                    <th class="px-4 py-2 text-right">After</th>
+                    <th class="px-4 py-2 text-left">Performed By</th>
+                    <th class="px-4 py-2 text-left">Notes</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                @if (Model.Any())
+                {
+                    @foreach (var transaction in Model)
+                    {
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2">@transaction.TransactionDate.ToString("MMM dd, yyyy HH:mm")</td>
+                            <td class="px-4 py-2 font-semibold">@transaction.InventoryItemName</td>
+                            <td class="px-4 py-2">
+                                @{
+                                    var typeClass = transaction.TransactionType == "Stock In" ? "bg-green-100 text-green-800" :
+                                                  transaction.TransactionType == "Order Usage" ? "bg-blue-100 text-blue-800" :
+                                                  "bg-red-100 text-red-800";
+                                }
+                                <span class="px-2 py-1 rounded text-xs font-semibold @typeClass">
+                                    @transaction.TransactionType
+                                </span>
+                            </td>
+                            <td class="px-4 py-2 text-right font-semibold">
+                                @{
+                                    var sign = transaction.TransactionType == "Stock In" ? "+" : "-";
+                                    var quantityClass = transaction.TransactionType == "Stock In" ? "text-green-600" : "text-red-600";
+                                }
+                                <span class="@quantityClass">@sign@transaction.Quantity</span>
+                            </td>
+                            <td class="px-4 py-2 text-right">@transaction.QuantityBefore</td>
+                            <td class="px-4 py-2 text-right font-semibold">@transaction.QuantityAfter</td>
+                            <td class="px-4 py-2">@(transaction.PerformedBy ?? "System")</td>
+                            <td class="px-4 py-2 text-sm text-gray-600">@(transaction.Notes ?? "-")</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-gray-500">
+                            @if (ViewBag.SelectedBranchId == null)
+                            {
+                                <text>Please select a branch to view transactions</text>
+                            }
+                            else
+                            {
+                                <text>No transactions found</text>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <div class="flex justify-center gap-2 mt-4">
+            @{
+                var inventoryItemIdQuery = Context.Request.Query["inventoryItemId"].ToString();
+                var transactionTypeQuery = Context.Request.Query["transactionType"].ToString();
+            }
+            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                var pageClass = i == ViewBag.CurrentPage ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300";
+                <a href="@Url.Action("Transactions", new { 
+                    branchId = ViewBag.SelectedBranchId, 
+                    inventoryItemId = inventoryItemIdQuery, 
+                    transactionType = transactionTypeQuery,
+                    page = i 
+                })" class="px-3 py-1 rounded @pageClass">
+                    @i
+                </a>
+            }
+        </div>
+    }
+
+    <!-- Summary Statistics -->
+    @if (Model.Any())
+    {
+        <div class="grid grid-cols-3 gap-4 mt-6">
+            <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-600">
+                <h3 class="text-green-800 font-semibold">Total Stock In</h3>
+                <p class="text-2xl font-bold text-green-600">
+                    @Model.Where(t => t.TransactionType == "Stock In").Sum(t => t.Quantity).ToString("N2")
+                </p>
+            </div>
+            <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-600">
+                <h3 class="text-red-800 font-semibold">Total Stock Out</h3>
+                <p class="text-2xl font-bold text-red-600">
+                    @Model.Where(t => t.TransactionType != "Stock In").Sum(t => t.Quantity).ToString("N2")
+                </p>
+            </div>
+            <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-600">
+                <h3 class="text-blue-800 font-semibold">Total Transactions</h3>
+                <p class="text-2xl font-bold text-blue-600">@Model.Count</p>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,122 @@
+@model Cafe.Models.ViewModels.StockInViewModel
+@{
+    ViewData["Title"] = "Stock In";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="p-6 max-w-2xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Stock In - Add Inventory</h2>
+        <a href="@Url.Action("Index")" class="text-blue-600 hover:text-blue-800">← Back to Inventory</a>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="bg-red-100 border-l-4 border-red-600 text-red-800 p-4 mb-4 rounded">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="bg-green-100 border-l-4 border-green-600 text-green-800 p-4 mb-4 rounded">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <div class="bg-white p-6 rounded-lg shadow">
+        <form asp-action="StockIn" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+
+            <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded mb-4">
+                <h3 class="font-bold text-blue-800 mb-1">ℹ️ Stock In Information</h3>
+                <p class="text-blue-700 text-sm">Use this form to record incoming inventory from purchases, deliveries, or stock transfers.</p>
+            </div>
+
+            <div>
+                <label asp-for="InventoryItemId" class="block font-semibold mb-1">Select Inventory Item *</label>
+                <select asp-for="InventoryItemId" id="inventoryItemSelect" class="border rounded px-3 py-2 w-full" required>
+                    <option value="">-- Select an item --</option>
+                    @if (ViewBag.InventoryItems != null)
+                    {
+                        @foreach (var item in ViewBag.InventoryItems as List<Cafe.Models.InventoryItem>)
+                        {
+                            <option value="@item.Id" data-unit="@item.Unit" data-current="@item.CurrentQuantity">
+                                @item.Name (@item.Category) - Current: @item.CurrentQuantity @item.Unit
+                            </option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="InventoryItemId" class="text-red-600 text-sm"></span>
+            </div>
+
+            <div id="currentStockInfo" class="bg-gray-100 p-3 rounded hidden">
+                <p class="text-sm"><strong>Current Stock:</strong> <span id="currentStock"></span></p>
+            </div>
+
+            <div>
+                <label asp-for="Quantity" class="block font-semibold mb-1">Quantity to Add *</label>
+                <input asp-for="Quantity" type="number" step="0.01" min="0.01" class="border rounded px-3 py-2 w-full" required />
+                <span asp-validation-for="Quantity" class="text-red-600 text-sm"></span>
+                <p class="text-xs text-gray-500 mt-1">Enter the amount being added to inventory</p>
+            </div>
+
+            <div id="newStockInfo" class="bg-green-100 p-3 rounded hidden">
+                <p class="text-sm font-semibold text-green-800">New Stock Level: <span id="newStock"></span></p>
+            </div>
+
+            <div>
+                <label asp-for="Notes" class="block font-semibold mb-1">Notes</label>
+                <textarea asp-for="Notes" rows="3" class="border rounded px-3 py-2 w-full" placeholder="Optional: Purchase order number, supplier name, delivery notes, etc."></textarea>
+                <span asp-validation-for="Notes" class="text-red-600 text-sm"></span>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-6">
+                <a href="@Url.Action("Index")" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</a>
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Stock</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const inventorySelect = document.getElementById('inventoryItemSelect');
+        const quantityInput = document.querySelector('input[name="Quantity"]');
+        const currentStockInfo = document.getElementById('currentStockInfo');
+        const newStockInfo = document.getElementById('newStockInfo');
+        const currentStockSpan = document.getElementById('currentStock');
+        const newStockSpan = document.getElementById('newStock');
+
+        let selectedUnit = '';
+        let currentQuantity = 0;
+
+        inventorySelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                selectedUnit = selectedOption.dataset.unit;
+                currentQuantity = parseFloat(selectedOption.dataset.current);
+                currentStockSpan.textContent = `${currentQuantity} ${selectedUnit}`;
+                currentStockInfo.classList.remove('hidden');
+                updateNewStock();
+            } else {
+                currentStockInfo.classList.add('hidden');
+                newStockInfo.classList.add('hidden');
+            }
+        });
+
+        quantityInput.addEventListener('input', updateNewStock);
+
+        function updateNewStock() {
+            const quantity = parseFloat(quantityInput.value) || 0;
+            if (quantity > 0 && selectedUnit) {
+                const newQuantity = currentQuantity + quantity;
+                newStockSpan.textContent = `${newQuantity.toFixed(2)} ${selectedUnit}`;
+                newStockInfo.classList.remove('hidden');
+            } else {
+                newStockInfo.classList.add('hidden');
+            }
+        }
+    </script>
+}
