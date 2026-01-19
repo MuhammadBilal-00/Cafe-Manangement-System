@@ -1,0 +1,174 @@
+@model Cafe.Models.InventoryItem
+@{
+    ViewData["Title"] = "Inventory Item Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="p-6 max-w-4xl mx-auto space-y-6">
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-800">Inventory Item Details</h2>
+        <div class="flex gap-2">
+            <a href="@Url.Action("Index", new { branchId = Model.BranchId })" class="text-blue-600 hover:text-blue-800">← Back</a>
+            @if (ViewBag.IsOwner || ViewBag.IsBranchManager)
+            {
+                <a href="@Url.Action("Edit", new { id = Model.Id })" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Edit</a>
+            }
+        </div>
+    </div>
+
+    <!-- Main Details Card -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <div class="grid grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-lg font-bold mb-4 border-b pb-2">Basic Information</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-gray-600 text-sm">Item Name</label>
+                        <p class="font-semibold text-lg">@Model.Name</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600 text-sm">Category</label>
+                        <p class="font-semibold">@Model.Category</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600 text-sm">Branch</label>
+                        <p class="font-semibold">@Model.Branch.Name - @Model.Branch.Location</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600 text-sm">Supplier</label>
+                        <p class="font-semibold">@(Model.Supplier ?? "Not specified")</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-bold mb-4 border-b pb-2">Stock Information</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-gray-600 text-sm">Current Quantity</label>
+                        <p class="font-semibold text-2xl text-blue-600">@Model.CurrentQuantity @Model.Unit</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600 text-sm">Minimum Threshold</label>
+                        <p class="font-semibold">@Model.MinimumThreshold @Model.Unit</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600 text-sm">Status</label>
+                        <p>
+                            @{
+                                var statusClass = Model.Status == "In Stock" ? "bg-green-100 text-green-800" :
+                                                Model.Status == "Low Stock" ? "bg-orange-100 text-orange-800" :
+                                                "bg-red-100 text-red-800";
+                            }
+                            <span class="px-3 py-1 rounded font-semibold @statusClass">@Model.Status</span>
+                        </p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600 text-sm">Last Updated</label>
+                        <p class="font-semibold">@Model.LastUpdated.ToString("MMM dd, yyyy hh:mm tt")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 pt-6 border-t">
+            <h3 class="text-lg font-bold mb-4">Financial Information</h3>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-gray-50 p-4 rounded">
+                    <label class="text-gray-600 text-sm">Cost Per Unit</label>
+                    <p class="font-semibold text-xl">$@Model.CostPerUnit.ToString("N2")</p>
+                </div>
+                <div class="bg-blue-50 p-4 rounded">
+                    <label class="text-gray-600 text-sm">Total Stock Value</label>
+                    <p class="font-semibold text-xl text-blue-600">$@((Model.CurrentQuantity * Model.CostPerUnit).ToString("N2"))</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded">
+                    <label class="text-gray-600 text-sm">Unit Measurement</label>
+                    <p class="font-semibold text-xl">@Model.Unit</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h3 class="text-lg font-bold mb-4">Recent Transactions (Last 10)</h3>
+        @if (Model.Transactions.Any())
+        {
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Date</th>
+                            <th class="px-4 py-2 text-left">Type</th>
+                            <th class="px-4 py-2 text-right">Quantity</th>
+                            <th class="px-4 py-2 text-right">Before</th>
+                            <th class="px-4 py-2 text-right">After</th>
+                            <th class="px-4 py-2 text-left">Performed By</th>
+                            <th class="px-4 py-2 text-left">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @foreach (var transaction in Model.Transactions)
+                        {
+                            <tr>
+                                <td class="px-4 py-2">@transaction.TransactionDate.ToString("MMM dd, yyyy HH:mm")</td>
+                                <td class="px-4 py-2">
+                                    @{
+                                        var typeClass = transaction.TransactionType == "Stock In" ? "text-green-600" :
+                                                      transaction.TransactionType == "Order Usage" ? "text-blue-600" :
+                                                      "text-red-600";
+                                    }
+                                    <span class="@typeClass font-semibold">@transaction.TransactionType</span>
+                                </td>
+                                <td class="px-4 py-2 text-right font-semibold">@transaction.Quantity @Model.Unit</td>
+                                <td class="px-4 py-2 text-right">@transaction.QuantityBefore</td>
+                                <td class="px-4 py-2 text-right">@transaction.QuantityAfter</td>
+                                <td class="px-4 py-2">@(transaction.PerformedBy ?? "System")</td>
+                                <td class="px-4 py-2 text-sm text-gray-600">@(transaction.Notes ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4 text-center">
+                <a href="@Url.Action("Transactions", new { inventoryItemId = Model.Id })" class="text-blue-600 hover:text-blue-800">
+                    View All Transactions →
+                </a>
+            </div>
+        }
+        else
+        {
+            <p class="text-gray-500 text-center py-4">No transactions recorded yet</p>
+        }
+    </div>
+
+    <!-- Recipe Mappings -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h3 class="text-lg font-bold mb-4">Used In Menu Items</h3>
+        @if (Model.RecipeMappings.Any())
+        {
+            <div class="grid grid-cols-2 gap-4">
+                @foreach (var mapping in Model.RecipeMappings)
+                {
+                    <div class="border rounded p-3 hover:bg-gray-50">
+                        <p class="font-semibold">@mapping.MenuItem.Name</p>
+                        <p class="text-sm text-gray-600">Required: @mapping.QuantityRequired @mapping.Unit per serving</p>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-gray-500 text-center py-4">Not linked to any menu items</p>
+            @if (ViewBag.IsOwner || ViewBag.IsBranchManager)
+            {
+                <div class="text-center mt-2">
+                    <a href="@Url.Action("RecipeMappings")" class="text-blue-600 hover:text-blue-800">
+                        Add Recipe Mappings →
+                    </a>
+                </div>
+            }
+        }
+    </div>
+</div>
