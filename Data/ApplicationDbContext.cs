@@ -36,6 +36,8 @@ namespace Cafe.Data
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
+        public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
+        public DbSet<InventoryRecipeMapping> InventoryRecipeMappings { get; set; }
 
         // Feedback & Reports
         public DbSet<Feedback> Feedbacks { get; set; }
@@ -84,7 +86,31 @@ namespace Cafe.Data
                 .HasPrecision(10, 2);
 
             modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.UnitPrice)
+                .Property(i => i.CostPerUnit)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<InventoryItem>()
+                .Property(i => i.CurrentQuantity)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<InventoryItem>()
+                .Property(i => i.MinimumThreshold)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<InventoryTransaction>()
+                .Property(it => it.Quantity)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<InventoryTransaction>()
+                .Property(it => it.QuantityBefore)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<InventoryTransaction>()
+                .Property(it => it.QuantityAfter)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<InventoryRecipeMapping>()
+                .Property(irm => irm.QuantityRequired)
                 .HasPrecision(10, 2);
 
             modelBuilder.Entity<Purchase>()
@@ -276,6 +302,44 @@ namespace Cafe.Data
                 .HasForeignKey(p => p.ItemId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<InventoryItem>()
+                .HasMany(i => i.Transactions)
+                .WithOne(t => t.InventoryItem)
+                .HasForeignKey(t => t.InventoryItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<InventoryItem>()
+                .HasMany(i => i.RecipeMappings)
+                .WithOne(rm => rm.InventoryItem)
+                .HasForeignKey(rm => rm.InventoryItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // InventoryTransaction relationships
+            modelBuilder.Entity<InventoryTransaction>()
+                .HasOne(it => it.Branch)
+                .WithMany()
+                .HasForeignKey(it => it.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InventoryTransaction>()
+                .HasOne(it => it.Order)
+                .WithMany()
+                .HasForeignKey(it => it.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // InventoryRecipeMapping relationships
+            modelBuilder.Entity<InventoryRecipeMapping>()
+                .HasOne(irm => irm.MenuItem)
+                .WithMany()
+                .HasForeignKey(irm => irm.MenuItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<InventoryRecipeMapping>()
+                .HasOne(irm => irm.InventoryItem)
+                .WithMany(i => i.RecipeMappings)
+                .HasForeignKey(irm => irm.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Many-to-many for MenuItemIngredients
             modelBuilder.Entity<MenuItemIngredient>()
                 .HasKey(mii => new { mii.MenuItemId, mii.IngredientId });
@@ -359,11 +423,11 @@ namespace Cafe.Data
                 .HasDefaultValue("Pending");
 
             modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.Quantity)
+                .Property(i => i.CurrentQuantity)
                 .HasDefaultValue(0);
 
             modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.ReorderLevel)
+                .Property(i => i.MinimumThreshold)
                 .HasDefaultValue(0);
 
             modelBuilder.Entity<InventoryItem>()
@@ -371,8 +435,16 @@ namespace Cafe.Data
                 .HasDefaultValueSql("GETDATE()");
 
             modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.UnitPrice)
+                .Property(i => i.CostPerUnit)
                 .HasDefaultValue(0);
+
+            modelBuilder.Entity<InventoryItem>()
+                .Property(i => i.Status)
+                .HasDefaultValue("In Stock");
+
+            modelBuilder.Entity<InventoryTransaction>()
+                .Property(it => it.TransactionDate)
+                .HasDefaultValueSql("GETDATE()");
 
             modelBuilder.Entity<Purchase>()
                 .Property(p => p.DatePurchased)
@@ -494,10 +566,25 @@ namespace Cafe.Data
                 .HasCheckConstraint("CK_Staff_PerformanceRating", "[PerformanceRating] >= 1 AND [PerformanceRating] <= 5");
 
             modelBuilder.Entity<InventoryItem>()
-                .HasCheckConstraint("CK_InventoryItem_Quantity", "[Quantity] >= 0");
+                .HasCheckConstraint("CK_InventoryItem_CurrentQuantity", "[CurrentQuantity] >= 0");
 
             modelBuilder.Entity<InventoryItem>()
-                .HasCheckConstraint("CK_InventoryItem_ReorderLevel", "[ReorderLevel] >= 0");
+                .HasCheckConstraint("CK_InventoryItem_MinimumThreshold", "[MinimumThreshold] >= 0");
+
+            modelBuilder.Entity<InventoryItem>()
+                .HasCheckConstraint("CK_InventoryItem_CostPerUnit", "[CostPerUnit] >= 0");
+
+            modelBuilder.Entity<InventoryTransaction>()
+                .HasCheckConstraint("CK_InventoryTransaction_Quantity", "[Quantity] > 0");
+
+            modelBuilder.Entity<InventoryTransaction>()
+                .HasCheckConstraint("CK_InventoryTransaction_QuantityBefore", "[QuantityBefore] >= 0");
+
+            modelBuilder.Entity<InventoryTransaction>()
+                .HasCheckConstraint("CK_InventoryTransaction_QuantityAfter", "[QuantityAfter] >= 0");
+
+            modelBuilder.Entity<InventoryRecipeMapping>()
+                .HasCheckConstraint("CK_InventoryRecipeMapping_QuantityRequired", "[QuantityRequired] > 0");
 
             modelBuilder.Entity<Purchase>()
                 .HasCheckConstraint("CK_Purchase_QuantityPurchased", "[QuantityPurchased] > 0");
