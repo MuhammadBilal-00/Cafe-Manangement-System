@@ -1,5 +1,373 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model IEnumerable<InventoryItem>
+
 @{
+    ViewData["Title"] = "Inventory Management";
+    var branches = ViewBag.Branches as List<Branch> ?? new List<Branch>();
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+    var currentBranch = ViewBag.CurrentBranch as string ?? "All Branches";
+
+    // Group items by branch
+    var itemsByBranch = Model.GroupBy(i => i.Branch).ToList();
 }
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'bounce-slow': 'bounce 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+
+    <!-- Hero Section -->
+    <div class="relative bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 text-white overflow-hidden">
+        <div class="absolute inset-0 bg-black opacity-10"></div>
+        <div class="absolute top-10 right-10 text-9xl opacity-10 animate-bounce-slow">📦</div>
+        <div class="absolute bottom-10 left-10 text-7xl opacity-10 animate-float">🏢</div>
+
+        <div class="container mx-auto px-6 py-16 relative z-10">
+            <div class="text-center">
+                <h1 class="text-5xl md:text-6xl font-black mb-4 tracking-tight">
+                    📦 Multi-Branch Inventory
+                </h1>
+                <p class="text-xl md:text-2xl text-purple-100 mb-8">
+                    Manage stock across all cafe locations
+                </p>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12 max-w-5xl mx-auto">
+                    <div class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-105">
+                        <div class="text-4xl font-bold mb-2">@Model.Count()</div>
+                        <div class="text-sm uppercase tracking-wider opacity-90">Total Items</div>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-105">
+                        <div class="text-4xl font-bold mb-2">@branches.Count</div>
+                        <div class="text-sm uppercase tracking-wider opacity-90">Branches</div>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-105">
+                        <div class="text-4xl font-bold mb-2 text-yellow-300">@Model.Count(i => i.Quantity <= i.ReorderLevel)</div>
+                        <div class="text-sm uppercase tracking-wider opacity-90">Need Reorder</div>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-105">
+                        <div class="text-4xl font-bold mb-2">$@Model.Sum(i => i.Quantity * i.UnitPrice).ToString("N0")</div>
+                        <div class="text-sm uppercase tracking-wider opacity-90">Total Value</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-12">
+        <!-- Controls -->
+        <div class="bg-white rounded-3xl shadow-2xl p-6 mb-8 border border-gray-100">
+            <div class="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                <!-- Search Bar -->
+                <div class="relative flex-1 w-full lg:w-auto min-w-[300px]">
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="🔍 Search inventory items..."
+                           class="w-full px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-500 transition-all duration-300">
+                </div>
+
+                <!-- Branch Filter -->
+                <div class="flex gap-3 flex-wrap justify-center">
+                    <a href="@Url.Action("Index")"
+                       class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 @(selectedBranchId == null ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-300" : "bg-gray-100 text-gray-700 hover:bg-gray-200")">
+                        🌐 All Branches
+                    </a>
+                    @foreach (var branch in branches)
+                    {
+                        <a href="@Url.Action("Index", new { branchId = branch.Id })"
+                           class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 @(selectedBranchId == branch.Id ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-300" : "bg-gray-100 text-gray-700 hover:bg-gray-200")">
+                            🏢 @branch.Name
+                        </a>
+                    }
+                </div>
+
+                <!-- Filter Buttons -->
+                <div class="flex gap-3 flex-wrap">
+                    <button data-filter="all" class="filter-btn px-5 py-3 rounded-2xl font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+                        All
+                    </button>
+                    <button data-filter="reorder" class="filter-btn px-5 py-3 rounded-2xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        ⚠️ Reorder
+                    </button>
+                    <button data-filter="out" class="filter-btn px-5 py-3 rounded-2xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        🚫 Out
+                    </button>
+                </div>
+
+                <!-- Add Button -->
+                <a href="@Url.Action("Create")"
+                   class="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2 whitespace-nowrap">
+                    <span class="text-xl">➕</span> Add Item
+                </a>
+            </div>
+        </div>
+
+        @if (Model.Any())
+        {
+            @if (selectedBranchId == null)
+            {
+                <!-- Branch-wise view -->
+                @foreach (var branchGroup in itemsByBranch)
+                {
+                    var branch = branchGroup.Key;
+                    var items = branchGroup.ToList();
+                    var needReorder = items.Count(i => i.Quantity <= i.ReorderLevel);
+                    var outOfStock = items.Count(i => i.Quantity == 0);
+                    var totalValue = items.Sum(i => i.Quantity * i.UnitPrice);
+
+                    <div class="mb-12 branch-section" data-branch-id="@branch.Id">
+                        <!-- Branch Header -->
+                        <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl shadow-2xl p-8 mb-6 text-white relative overflow-hidden">
+                            <div class="absolute inset-0 bg-black opacity-10"></div>
+                            <div class="absolute -right-10 -top-10 text-9xl opacity-10 transform rotate-12">🏢</div>
+
+                            <div class="relative z-10">
+                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                                    <div>
+                                        <h2 class="text-4xl font-black mb-2">@branch.Name</h2>
+                                        <p class="text-purple-100 text-lg">📍 @branch.Location</p>
+                                    </div>
+
+                                    <div class="grid grid-cols-3 gap-4">
+                                        <div class="bg-white/20 backdrop-blur-lg rounded-xl p-4 text-center border border-white/30">
+                                            <div class="text-3xl font-bold">@items.Count</div>
+                                            <div class="text-xs uppercase tracking-wider opacity-90">Items</div>
+                                        </div>
+                                        <div class="bg-white/20 backdrop-blur-lg rounded-xl p-4 text-center border border-white/30">
+                                            <div class="text-3xl font-bold text-yellow-300">@needReorder</div>
+                                            <div class="text-xs uppercase tracking-wider opacity-90">Reorder</div>
+                                        </div>
+                                        <div class="bg-white/20 backdrop-blur-lg rounded-xl p-4 text-center border border-white/30">
+                                            <div class="text-2xl font-bold">$@totalValue.ToString("N0")</div>
+                                            <div class="text-xs uppercase tracking-wider opacity-90">Value</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            @foreach (var item in items)
+                            {
+                                @await Html.PartialAsync("_InventoryItemCard", item)
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <!-- Single branch view -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    @foreach (var item in Model)
+                    {
+                        @await Html.PartialAsync("_InventoryItemCard", item)
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <!-- Empty State -->
+            <div class="text-center py-20">
+                <div class="text-9xl mb-6 opacity-20 animate-bounce-slow">📦</div>
+                <h3 class="text-3xl font-bold text-gray-700 mb-4">No Inventory Items</h3>
+                <p class="text-gray-500 mb-8">Start adding items to manage your inventory across branches</p>
+                <a href="@Url.Action("Create")"
+                   class="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+                    <span class="text-2xl">➕</span> Add First Item
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- Restock Modal -->
+    <div id="restockModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-slide-up">
+            <button onclick="closeRestockModal()" class="absolute top-6 right-6 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 transition-all duration-300 hover:rotate-90">
+                ✕
+            </button>
+
+            <div class="text-center mb-6">
+                <div class="text-5xl mb-4">📦</div>
+                <h2 class="text-3xl font-black text-gray-800 mb-2">Restock Item</h2>
+                <p id="restockItemName" class="text-lg text-gray-600"></p>
+            </div>
+
+            <form id="restockForm" onsubmit="handleRestock(event)" class="space-y-6">
+                <input type="hidden" id="restockItemId">
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Add Quantity</label>
+                    <input type="number"
+                           id="restockQuantity"
+                           class="w-full px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-500 transition-all duration-300 text-lg font-semibold"
+                           min="1"
+                           step="0.01"
+                           required>
+                    <small id="unitDisplay" class="text-gray-500 mt-2 block"></small>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button"
+                            onclick="closeRestockModal()"
+                            class="flex-1 px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-2xl font-bold transition-all duration-300">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="flex-1 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                        ✅ Confirm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Search functionality
+        document.getElementById('searchInput')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            filterCards();
+        });
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('bg-gradient-to-r', 'from-purple-600', 'to-pink-600', 'text-white');
+                    b.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                });
+                this.classList.add('bg-gradient-to-r', 'from-purple-600', 'to-pink-600', 'text-white');
+                this.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                filterCards();
+            });
+        });
+
+        function filterCards() {
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            const activeFilter = document.querySelector('.filter-btn.text-white')?.dataset.filter || 'all';
+            const cards = document.querySelectorAll('.inventory-card');
+
+            cards.forEach(card => {
+                const name = card.dataset.name;
+                const stockStatus = card.dataset.stockStatus;
+
+                let shouldShow = true;
+
+                if (searchTerm && !name.includes(searchTerm)) {
+                    shouldShow = false;
+                }
+
+                if (activeFilter === 'reorder' && stockStatus !== 'low' && stockStatus !== 'critical') {
+                    shouldShow = false;
+                } else if (activeFilter === 'out' && stockStatus !== 'critical') {
+                    shouldShow = false;
+                }
+
+                card.style.display = shouldShow ? 'block' : 'none';
+            });
+        }
+
+        function openRestockModal(id, name, unit) {
+            document.getElementById('restockItemId').value = id;
+            document.getElementById('restockItemName').textContent = name;
+            document.getElementById('unitDisplay').textContent = `Unit: ${unit}`;
+            document.getElementById('restockQuantity').value = '';
+            document.getElementById('restockModal').classList.remove('hidden');
+        }
+
+        function closeRestockModal() {
+            document.getElementById('restockModal').classList.add('hidden');
+        }
+
+        function handleRestock(e) {
+            e.preventDefault();
+            const itemId = document.getElementById('restockItemId').value;
+            const quantity = document.getElementById('restockQuantity').value;
+
+            fetch('@Url.Action("Restock")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `id=${itemId}&quantity=${quantity}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('✅ Stock updated successfully!', 'success');
+                    closeRestockModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('❌ Failed to update stock', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('❌ Failed to update stock', 'error');
+                console.error('Error:', error);
+            });
+        }
+
+        function confirmDelete(id, name) {
+            if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+                window.location.href = `@Url.Action("Delete")?id=${id}`;
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-6 right-6 px-6 py-4 rounded-2xl shadow-2xl z-50 font-bold transform transition-all duration-300 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+            notification.textContent = message;
+            notification.style.transform = 'translateX(400px)';
+
+            document.body.appendChild(notification);
+            setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+            setTimeout(() => {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Close modal on outside click
+        document.getElementById('restockModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRestockModal();
+            }
+        });
+    </script>
+
+</body>
+</html>
