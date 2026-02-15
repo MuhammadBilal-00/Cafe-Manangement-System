@@ -1,6 +1,5 @@
 ﻿using Cafe.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 
 namespace Cafe.Data
 {
@@ -45,19 +44,10 @@ namespace Cafe.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure decimal precision for all monetary values
             ConfigureDecimalPrecision(modelBuilder);
-
-            // Configure unique constraints
             ConfigureUniqueConstraints(modelBuilder);
-
-            // Configure relationships
             ConfigureRelationships(modelBuilder);
-
-            // Configure default values
             ConfigureDefaultValues(modelBuilder);
-
-            // Configure check constraints
             ConfigureCheckConstraints(modelBuilder);
         }
 
@@ -276,7 +266,7 @@ namespace Cafe.Data
                 .HasForeignKey(p => p.ItemId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Many-to-many for MenuItemIngredients
+            // Many-to-many: MenuItemIngredients
             modelBuilder.Entity<MenuItemIngredient>()
                 .HasKey(mii => new { mii.MenuItemId, mii.IngredientId });
 
@@ -469,47 +459,63 @@ namespace Cafe.Data
 
         private void ConfigureCheckConstraints(ModelBuilder modelBuilder)
         {
+            // ── NEW SYNTAX: ToTable(t => t.HasCheckConstraint(...)) ──
+
             modelBuilder.Entity<Feedback>()
-                .HasCheckConstraint("CK_Feedback_Rating", "[Rating] >= 1 AND [Rating] <= 5");
+                .ToTable(t => t.HasCheckConstraint("CK_Feedback_Rating",
+                    "[Rating] >= 1 AND [Rating] <= 5"));
 
             modelBuilder.Entity<MenuItemReview>()
-                .HasCheckConstraint("CK_MenuItemReview_Rating", "[Rating] >= 1 AND [Rating] <= 5");
+                .ToTable(t => t.HasCheckConstraint("CK_MenuItemReview_Rating",
+                    "[Rating] >= 1 AND [Rating] <= 5"));
 
             modelBuilder.Entity<MenuItem>()
-                .HasCheckConstraint("CK_MenuItem_Price", "[Price] > 0");
+                .ToTable(t => t.HasCheckConstraint("CK_MenuItem_Price",
+                    "[Price] > 0"));
 
             modelBuilder.Entity<MenuItem>()
-                .HasCheckConstraint("CK_MenuItem_SpiceLevel", "[SpiceLevel] >= 0 AND [SpiceLevel] <= 5");
+                .ToTable(t => t.HasCheckConstraint("CK_MenuItem_SpiceLevel",
+                    "[SpiceLevel] >= 0 AND [SpiceLevel] <= 5"));
 
             modelBuilder.Entity<Order>()
-                .HasCheckConstraint("CK_Order_TotalAmount", "[TotalAmount] > 0");
+                .ToTable(t => t.HasCheckConstraint("CK_Order_TotalAmount",
+                    "[TotalAmount] > 0"));
 
             modelBuilder.Entity<OrderItem>()
-                .HasCheckConstraint("CK_OrderItem_Quantity", "[Quantity] > 0");
+                .ToTable(t => t.HasCheckConstraint("CK_OrderItem_Quantity",
+                    "[Quantity] > 0"));
 
             modelBuilder.Entity<OrderItem>()
-                .HasCheckConstraint("CK_OrderItem_Price", "[Price] > 0");
+                .ToTable(t => t.HasCheckConstraint("CK_OrderItem_Price",
+                    "[Price] > 0"));
 
             modelBuilder.Entity<Staff>()
-                .HasCheckConstraint("CK_Staff_PerformanceRating", "[PerformanceRating] >= 1 AND [PerformanceRating] <= 5");
+                .ToTable(t => t.HasCheckConstraint("CK_Staff_PerformanceRating",
+                    "[PerformanceRating] >= 1 AND [PerformanceRating] <= 5"));
 
             modelBuilder.Entity<InventoryItem>()
-                .HasCheckConstraint("CK_InventoryItem_Quantity", "[Quantity] >= 0");
+                .ToTable(t => t.HasCheckConstraint("CK_InventoryItem_Quantity",
+                    "[Quantity] >= 0"));
 
             modelBuilder.Entity<InventoryItem>()
-                .HasCheckConstraint("CK_InventoryItem_ReorderLevel", "[ReorderLevel] >= 0");
+                .ToTable(t => t.HasCheckConstraint("CK_InventoryItem_ReorderLevel",
+                    "[ReorderLevel] >= 0"));
 
             modelBuilder.Entity<Purchase>()
-                .HasCheckConstraint("CK_Purchase_QuantityPurchased", "[QuantityPurchased] > 0");
+                .ToTable(t => t.HasCheckConstraint("CK_Purchase_QuantityPurchased",
+                    "[QuantityPurchased] > 0"));
 
             modelBuilder.Entity<Purchase>()
-                .HasCheckConstraint("CK_Purchase_TotalCost", "[TotalCost] > 0");
+                .ToTable(t => t.HasCheckConstraint("CK_Purchase_TotalCost",
+                    "[TotalCost] > 0"));
 
             modelBuilder.Entity<Ingredient>()
-                .HasCheckConstraint("CK_Ingredient_CostPerUnit", "[CostPerUnit] >= 0");
+                .ToTable(t => t.HasCheckConstraint("CK_Ingredient_CostPerUnit",
+                    "[CostPerUnit] >= 0"));
 
             modelBuilder.Entity<DailySpecial>()
-                .HasCheckConstraint("CK_DailySpecial_SpecialPrice", "[SpecialPrice] >= 0");
+                .ToTable(t => t.HasCheckConstraint("CK_DailySpecial_SpecialPrice",
+                    "[SpecialPrice] >= 0"));
         }
     }
 }
