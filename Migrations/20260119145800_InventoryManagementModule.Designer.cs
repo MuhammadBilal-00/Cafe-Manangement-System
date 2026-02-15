@@ -4,6 +4,7 @@ using Cafe.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Cafe.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119145800_InventoryManagementModule")]
+    partial class InventoryManagementModule
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -347,15 +350,41 @@ namespace Cafe.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("Quantity")
+                    b.Property<string>("Status")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("In Stock");
 
-                    b.Property<int>("ReorderLevel")
+                    b.Property<string>("Supplier")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.ToTable("InventoryItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_InventoryItem_CostPerUnit", "[CostPerUnit] >= 0");
+
+                            t.HasCheckConstraint("CK_InventoryItem_CurrentQuantity", "[CurrentQuantity] >= 0");
+
+                            t.HasCheckConstraint("CK_InventoryItem_MinimumThreshold", "[MinimumThreshold] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("Cafe.Models.InventoryRecipeMapping", b =>
+                {
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
@@ -374,7 +403,21 @@ namespace Cafe.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<decimal>("UnitPrice")
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryItemId");
+
+                    b.HasIndex("MenuItemId");
+
+                    b.ToTable("InventoryRecipeMappings", t =>
+                        {
+                            t.HasCheckConstraint("CK_InventoryRecipeMapping_QuantityRequired", "[QuantityRequired] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Cafe.Models.InventoryTransaction", b =>
+                {
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
@@ -407,18 +450,33 @@ namespace Cafe.Migrations
 
                     b.Property<decimal>("QuantityBefore")
                         .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)")
-                        .HasDefaultValue(0m);
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
 
-                    b.ToTable("InventoryItems", t =>
-                        {
-                            t.HasCheckConstraint("CK_InventoryItem_Quantity", "[Quantity] >= 0");
+                    b.HasIndex("InventoryItemId");
 
-                            t.HasCheckConstraint("CK_InventoryItem_ReorderLevel", "[ReorderLevel] >= 0");
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("InventoryTransactions", t =>
+                        {
+                            t.HasCheckConstraint("CK_InventoryTransaction_Quantity", "[Quantity] > 0");
+
+                            t.HasCheckConstraint("CK_InventoryTransaction_QuantityAfter", "[QuantityAfter] >= 0");
+
+                            t.HasCheckConstraint("CK_InventoryTransaction_QuantityBefore", "[QuantityBefore] >= 0");
                         });
                 });
 

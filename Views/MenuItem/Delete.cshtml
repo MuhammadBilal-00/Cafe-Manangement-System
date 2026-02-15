@@ -1,0 +1,112 @@
+@model Cafe.Models.MenuItem
+
+@{
+    ViewData["Title"] = "Delete Menu Item";
+}
+
+<div class="container-fluid px-4 py-6">
+    <div class="max-w-3xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">@ViewData["Title"]</h1>
+            <a asp-action="Index" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i> Back to List
+            </a>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-red-50 border-l-4 border-red-400 p-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-red-400 text-2xl"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-lg font-medium text-red-800">Confirm Deletion</h3>
+                        <p class="mt-2 text-sm text-red-700">
+                            Are you sure you want to delete this menu item? This action cannot be undone.
+                        </p>
+                        <p class="mt-2 text-sm text-red-600 font-semibold">
+                            Note: If this item has been used in orders, it will be marked as unavailable instead of being deleted.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8">
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 mb-1">Item Name</dt>
+                        <dd class="text-lg text-gray-900">@Model.Name</dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 mb-1">Category</dt>
+                        <dd class="text-lg text-gray-900">@Model.Category.Name</dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 mb-1">Branch</dt>
+                        <dd class="text-lg text-gray-900">@Model.Branch.Name</dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 mb-1">Price</dt>
+                        <dd class="text-lg text-gray-900">$@Model.Price.ToString("F2")</dd>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="md:col-span-2">
+                            <dt class="text-sm font-semibold text-gray-600 mb-1">Description</dt>
+                            <dd class="text-gray-900">@Model.Description</dd>
+                        </div>
+                    }
+
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 mb-1">Status</dt>
+                        <dd>
+                            @if (Model.Availability)
+                            {
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1"></i> Available
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                    <i class="fas fa-times-circle mr-1"></i> Unavailable
+                                </span>
+                            }
+                        </dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 mb-1">Created Date</dt>
+                        <dd class="text-gray-900">@Model.CreatedDate.ToString("MMM dd, yyyy")</dd>
+                    </div>
+                </dl>
+
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <div class="mt-6">
+                        <dt class="text-sm font-semibold text-gray-600 mb-2">Image Preview</dt>
+                        <img src="@Model.ImageUrl" alt="@Model.Name" class="w-48 h-48 object-cover rounded-lg shadow-md" onerror="this.style.display='none'" />
+                    </div>
+                }
+
+                <form asp-action="Delete" method="post" class="mt-8 pt-8 border-t border-gray-200">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+                        <a asp-action="Index" class="w-full sm:w-auto px-8 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-all duration-200 text-center">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="w-full sm:w-auto px-8 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg">
+                            <i class="fas fa-trash mr-2"></i>Confirm Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

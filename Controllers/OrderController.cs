@@ -5,6 +5,7 @@ using Cafe.Data;
 using Cafe.Models;
 using Cafe.Attributes;
 using Cafe.Helpers;
+using Cafe.Services;
 using System.Text.Json;
 using Cafe.Models.Requests;
 
@@ -13,7 +14,12 @@ namespace Cafe.Controllers
     [RequireStaffOrAbove]
     public class OrderController : BaseController
     {
-        public OrderController(ApplicationDbContext context) : base(context) { }
+        private readonly IInventoryService _inventoryService;
+
+        public OrderController(ApplicationDbContext context, IInventoryService inventoryService) : base(context)
+        {
+            _inventoryService = inventoryService;
+        }
 
         // Main Index Page - Works with your HTML
         public async Task<IActionResult> Index(int? branchId, string status, string search, DateTime? orderDate)
@@ -169,6 +175,25 @@ namespace Cafe.Controllers
                     return Json(new { success = false, message = "Access denied to this branch" });
                 }
 
+                // Check inventory availability for all items before creating order
+                foreach (var item in request.Items)
+                {
+                    var hasInventory = await _inventoryService.CheckInventoryAvailability(
+                        item.MenuItemId, 
+                        item.Quantity, 
+                        request.BranchId
+                    );
+
+                    if (!hasInventory)
+                    {
+                        var menuItem = await _context.MenuItems.FindAsync(item.MenuItemId);
+                        return Json(new { 
+                            success = false, 
+                            message = $"Insufficient inventory for {menuItem?.Name}. Please check stock levels." 
+                        });
+                    }
+                }
+
                 var order = new Order
                 {
                     OrderNumber = await GenerateOrderNumber(request.BranchId),
@@ -217,6 +242,23 @@ namespace Cafe.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Deduct inventory
+                var userName = HttpContext.Session.GetUserName() ?? "System";
+                var inventoryDeducted = await _inventoryService.DeductInventoryForOrder(
+                    order.Id, 
+                    request.BranchId, 
+                    userName
+                );
+
+                if (!inventoryDeducted)
+                {
+                    // If inventory deduction fails, we still keep the order but log a warning
+                    order.Notes = string.IsNullOrEmpty(order.Notes) 
+                        ? "Warning: Inventory deduction failed" 
+                        : $"{order.Notes}\nWarning: Inventory deduction failed";
+                    await _context.SaveChangesAsync();
+                }
 
                 return Json(new { success = true, orderId = order.Id, orderNumber = order.OrderNumber });
             }
