@@ -36,7 +36,7 @@ namespace Cafe.Controllers
                 ViewBag.CurrentBranch = "All Branches";
             }
 
-            return View(await items.OrderBy(i => i.Quantity).ToListAsync());
+            return View(await items.OrderBy(i => i.CurrentQuantity).ToListAsync());
         }
 
         // GET: InventoryItem/Create
@@ -50,7 +50,7 @@ namespace Cafe.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("Name,Quantity,Unit,BranchId,ReorderLevel,UnitPrice")] InventoryItem inventoryItem)
+            [Bind("Name,CurrentQuantity,Unit,BranchId,MinimumThreshold,CostPerUnit,Category,Supplier")] InventoryItem inventoryItem)
         {
             ModelState.Remove("Branch");
             ModelState.Remove("Purchases");
@@ -90,7 +90,7 @@ namespace Cafe.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Id,Name,Quantity,Unit,BranchId,ReorderLevel,UnitPrice")] InventoryItem inventoryItem)
+            [Bind("Id,Name,CurrentQuantity,Unit,BranchId,MinimumThreshold,CostPerUnit,Category,Supplier")] InventoryItem inventoryItem)
         {
             if (id != inventoryItem.Id) return NotFound();
 
@@ -170,11 +170,11 @@ namespace Cafe.Controllers
             if (item == null)
                 return Json(new { success = false, message = "Item not found" });
 
-            item.Quantity += quantity;
+            item.CurrentQuantity += quantity;
             item.LastUpdated = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, newQuantity = item.Quantity });
+            return Json(new { success = true, newQuantity = item.CurrentQuantity });
         }
 
         // POST: InventoryItem/AdjustStock (AJAX)
@@ -188,11 +188,11 @@ namespace Cafe.Controllers
             if (item == null)
                 return Json(new { success = false });
 
-            item.Quantity = newQuantity;
+            item.CurrentQuantity = newQuantity;
             item.LastUpdated = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, newQuantity = item.Quantity });
+            return Json(new { success = true, newQuantity = item.CurrentQuantity });
         }
 
         private async Task PopulateBranchesDropdown(int? selectedId = null)

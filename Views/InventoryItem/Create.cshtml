@@ -148,14 +148,14 @@
                                     <label class="block text-xs font-semibold text-slate-600 mb-1.5">
                                         Current Quantity
                                     </label>
-                                    @Html.TextBoxFor(m => m.Quantity, new
+                                    @Html.TextBoxFor(m => m.CurrentQuantity, new
                                         {
                                             type = "number",
                                             step = "0.01",
                                             min = "0",
                                             @class = "w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-400/70"
                                         })
-                                    @Html.ValidationMessageFor(m => m.Quantity, "", new { @class = "text-xs text-red-500 mt-1" })
+                                    @Html.ValidationMessageFor(m => m.CurrentQuantity, "", new { @class = "text-xs text-red-500 mt-1" })
                                 </div>
 
                                 <!-- Unit Price -->
@@ -167,7 +167,7 @@
                                         <span class="pointer-events-none absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 text-sm">
                                             $
                                         </span>
-                                        @Html.TextBoxFor(m => m.UnitPrice, new
+                                        @Html.TextBoxFor(m => m.CostPerUnit, new
                                             {
                                                 type = "number",
                                                 step = "0.01",
@@ -175,7 +175,7 @@
                                                 @class = "w-full rounded-2xl border border-slate-200 bg-white pl-7 pr-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-400/70"
                                             })
                                     </div>
-                                    @Html.ValidationMessageFor(m => m.UnitPrice, "", new { @class = "text-xs text-red-500 mt-1" })
+                                    @Html.ValidationMessageFor(m => m.CostPerUnit, "", new { @class = "text-xs text-red-500 mt-1" })
                                 </div>
 
                                 <!-- Reorder Level -->
@@ -183,14 +183,14 @@
                                     <label class="block text-xs font-semibold text-slate-600 mb-1.5">
                                         Reorder Level
                                     </label>
-                                    @Html.TextBoxFor(m => m.ReorderLevel, new
+                                    @Html.TextBoxFor(m => m.MinimumThreshold, new
                                         {
                                             type = "number",
                                             step = "0.01",
                                             min = "0",
                                             @class = "w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/70 focus:border-amber-400/70"
                                         })
-                                    @Html.ValidationMessageFor(m => m.ReorderLevel, "", new { @class = "text-xs text-red-500 mt-1" })
+                                    @Html.ValidationMessageFor(m => m.MinimumThreshold, "", new { @class = "text-xs text-red-500 mt-1" })
                                 </div>
                             </div>
 
@@ -287,10 +287,10 @@
     <script>
         // Live preview updates
         const nameInput = document.getElementById('@Html.IdFor(m => m.Name)');
-        const qtyInput = document.getElementById('@Html.IdFor(m => m.Quantity)');
-        const priceInput = document.getElementById('@Html.IdFor(m => m.UnitPrice)');
+        const qtyInput = document.getElementById('@Html.IdFor(m => m.CurrentQuantity)');
+        const priceInput = document.getElementById('@Html.IdFor(m => m.CostPerUnit)');
         const unitInput = document.getElementById('@Html.IdFor(m => m.Unit)');
-        const reorderInput = document.getElementById('@Html.IdFor(m => m.ReorderLevel)');
+        const reorderInput = document.getElementById('@Html.IdFor(m => m.MinimumThreshold)');
         const branchSelect = document.getElementById('BranchId'); // using plain DropDownList("BranchId")
 
         const previewName = document.getElementById('previewName');
