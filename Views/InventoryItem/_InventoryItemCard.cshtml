@@ -1,16 +1,16 @@
 ﻿@model InventoryItem
 
 @{
-    var stockPercentage = Model.ReorderLevel > 0 ? Math.Min(100, (decimal)(Model.Quantity * 100) / (Model.ReorderLevel * 3)) : 100;
-    var needsReorder = Model.Quantity <= Model.ReorderLevel;
-    var isOutOfStock = Model.Quantity == 0;
-    var stockStatus = isOutOfStock ? "critical" : needsReorder ? "low" : Model.Quantity <= (Model.ReorderLevel * 2) ? "medium" : "good";
+    var stockPercentage = Model.MinimumThreshold > 0 ? Math.Min(100, (decimal)(Model.CurrentQuantity * 100) / (Model.MinimumThreshold * 3)) : 100;
+    var needsReorder = Model.CurrentQuantity <= Model.MinimumThreshold;
+    var isOutOfStock = Model.CurrentQuantity == 0;
+    var stockStatus = isOutOfStock ? "critical" : needsReorder ? "low" : Model.CurrentQuantity <= (Model.MinimumThreshold * 2) ? "medium" : "good";
 
     var badgeColor = isOutOfStock ? "bg-red-500" : needsReorder ? "bg-yellow-500" : "bg-green-500";
     var badgeText = isOutOfStock ? "Out of Stock" : needsReorder ? "Reorder Now" : "In Stock";
     var progressColor = isOutOfStock ? "bg-gradient-to-r from-red-500 to-red-600" :
                        needsReorder ? "bg-gradient-to-r from-yellow-500 to-orange-500" :
-                       Model.Quantity <= (Model.ReorderLevel * 2) ? "bg-gradient-to-r from-blue-500 to-indigo-500" :
+                       Model.CurrentQuantity <= (Model.MinimumThreshold * 2) ? "bg-gradient-to-r from-blue-500 to-indigo-500" :
                        "bg-gradient-to-r from-green-500 to-emerald-600";
 
     var icon = Model.Unit.ToLower() switch
@@ -61,26 +61,26 @@
             <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-600 font-medium">Current Stock</span>
                 <span class="text-2xl font-black @(isOutOfStock ? "text-red-500" : needsReorder ? "text-yellow-600" : "text-purple-600")">
-                    @Model.Quantity <span class="text-sm font-normal text-gray-500">@Model.Unit</span>
+                    @Model.CurrentQuantity <span class="text-sm font-normal text-gray-500">@Model.Unit</span>
                 </span>
             </div>
 
             <div class="flex justify-between items-center py-2 border-t border-gray-200">
                 <span class="text-sm text-gray-600">Reorder Level</span>
-                <span class="text-sm font-bold text-gray-800">@Model.ReorderLevel @Model.Unit</span>
+                <span class="text-sm font-bold text-gray-800">@Model.MinimumThreshold @Model.Unit</span>
             </div>
 
             <div class="flex justify-between items-center py-2 border-t border-gray-200">
                 <span class="text-sm text-gray-600">Unit Price</span>
                 <span class="text-sm font-bold bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-800 px-3 py-1 rounded-lg">
-                    $@Model.UnitPrice.ToString("F2")
+                    $@Model.CostPerUnit.ToString("F2")
                 </span>
             </div>
 
             <div class="flex justify-between items-center py-2 border-t border-gray-200">
                 <span class="text-sm text-gray-600 font-semibold">Total Value</span>
                 <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-                    $@((Model.Quantity * Model.UnitPrice).ToString("F2"))
+                    $@((Model.CurrentQuantity * Model.CostPerUnit).ToString("F2"))
                 </span>
             </div>
         </div>

@@ -36,7 +36,7 @@ namespace Cafe.Controllers
                 ViewBag.CurrentBranch = "All Branches";
             }
 
-            return View(await items.OrderBy(i => i.Quantity).ToListAsync());
+            return View(await items.OrderBy(i => i.CurrentQuantity).ToListAsync());
         }
 
         // GET: InventoryItem/Create
@@ -50,14 +50,20 @@ namespace Cafe.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("Name,Quantity,Unit,BranchId,ReorderLevel,UnitPrice")] InventoryItem inventoryItem)
+            [Bind("Name,CurrentQuantity,Unit,BranchId,MinimumThreshold,CostPerUnit")] InventoryItem inventoryItem)
         {
             ModelState.Remove("Branch");
             ModelState.Remove("Purchases");
+            ModelState.Remove("Category"); // Will be set manually
 
             if (ModelState.IsValid)
             {
                 inventoryItem.LastUpdated = DateTime.Now;
+                // Set default Category if not bound
+                if (string.IsNullOrEmpty(inventoryItem.Category))
+                {
+                    inventoryItem.Category = "General";
+                }
                 _context.Add(inventoryItem);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = $"✅ '{inventoryItem.Name}' added to inventory!";
@@ -90,18 +96,25 @@ namespace Cafe.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Id,Name,Quantity,Unit,BranchId,ReorderLevel,UnitPrice")] InventoryItem inventoryItem)
+            [Bind("Id,Name,CurrentQuantity,Unit,BranchId,MinimumThreshold,CostPerUnit")] InventoryItem inventoryItem)
         {
             if (id != inventoryItem.Id) return NotFound();
 
             ModelState.Remove("Branch");
             ModelState.Remove("Purchases");
+            ModelState.Remove("Category"); // Will be preserved from existing
 
             if (ModelState.IsValid)
             {
                 try
                 {
                     inventoryItem.LastUpdated = DateTime.Now;
+                    // Preserve Category from existing item if not bound
+                    var existingItem = await _context.InventoryItems.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
+                    if (existingItem != null && string.IsNullOrEmpty(inventoryItem.Category))
+                    {
+                        inventoryItem.Category = existingItem.Category;
+                    }
                     _context.Update(inventoryItem);
                     await _context.SaveChangesAsync();
                     TempData["Success"] = $"✅ '{inventoryItem.Name}' updated!";
@@ -170,11 +183,11 @@ namespace Cafe.Controllers
             if (item == null)
                 return Json(new { success = false, message = "Item not found" });
 
-            item.Quantity += quantity;
+            item.CurrentQuantity += quantity;
             item.LastUpdated = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, newQuantity = item.Quantity });
+            return Json(new { success = true, newQuantity = item.CurrentQuantity });
         }
 
         // POST: InventoryItem/AdjustStock (AJAX)
@@ -188,11 +201,11 @@ namespace Cafe.Controllers
             if (item == null)
                 return Json(new { success = false });
 
-            item.Quantity = newQuantity;
+            item.CurrentQuantity = newQuantity;
             item.LastUpdated = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, newQuantity = item.Quantity });
+            return Json(new { success = true, newQuantity = item.CurrentQuantity });
         }
 
         private async Task PopulateBranchesDropdown(int? selectedId = null)

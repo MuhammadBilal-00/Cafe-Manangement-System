@@ -74,7 +74,7 @@
                             <div class="rounded-xl bg-slate-50 border border-slate-200 p-2.5">
                                 <p class="text-slate-500 uppercase tracking-[0.12em] mb-0.5">Qty</p>
                                 <p class="text-sm font-semibold text-slate-900">
-                                    @Model.Quantity.ToString("0.##")
+                                    @Model.CurrentQuantity.ToString("0.##")
                                 </p>
                             </div>
                             <div class="rounded-xl bg-slate-50 border border-slate-200 p-2.5">
@@ -86,7 +86,7 @@
                             <div class="rounded-xl bg-slate-50 border border-slate-200 p-2.5">
                                 <p class="text-slate-500 uppercase tracking-[0.12em] mb-0.5">Value</p>
                                 <p class="text-sm font-semibold text-emerald-700">
-                                    $@((Model.Quantity * Model.UnitPrice).ToString("F2"))
+                                    $@((Model.CurrentQuantity * Model.CostPerUnit).ToString("F2"))
                                 </p>
                             </div>
                         </div>
