@@ -36,7 +36,7 @@ namespace Cafe.Controllers
                 ViewBag.CurrentBranch = "All Branches";
             }
 
-            return View(await items.OrderBy(i => i.Quantity).ToListAsync());
+            return View(await items.OrderBy(i => i.CurrentQuantity).ToListAsync());
         }
 
         // GET: InventoryItem/Details/5
@@ -69,6 +69,11 @@ namespace Cafe.Controllers
             if (ModelState.IsValid)
             {
                 inventoryItem.LastUpdated = DateTime.Now;
+                // Set default Category if not bound
+                if (string.IsNullOrEmpty(inventoryItem.Category))
+                {
+                    inventoryItem.Category = "General";
+                }
                 _context.Add(inventoryItem);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Inventory item created successfully!";
@@ -103,6 +108,12 @@ namespace Cafe.Controllers
                 try
                 {
                     inventoryItem.LastUpdated = DateTime.Now;
+                    // Preserve Category from existing item if not bound
+                    var existingItem = await _context.InventoryItems.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
+                    if (existingItem != null && string.IsNullOrEmpty(inventoryItem.Category))
+                    {
+                        inventoryItem.Category = existingItem.Category;
+                    }
                     _context.Update(inventoryItem);
                     await _context.SaveChangesAsync();
                     TempData["Success"] = "Inventory item updated successfully!";
