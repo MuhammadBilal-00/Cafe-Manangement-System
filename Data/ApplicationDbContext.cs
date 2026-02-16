@@ -292,17 +292,7 @@ namespace Cafe.Data
                 .HasForeignKey(p => p.ItemId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<InventoryItem>()
-                .HasMany(i => i.Transactions)
-                .WithOne(t => t.InventoryItem)
-                .HasForeignKey(t => t.InventoryItemId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<InventoryItem>()
-                .HasMany(i => i.RecipeMappings)
-                .WithOne(rm => rm.InventoryItem)
-                .HasForeignKey(rm => rm.InventoryItemId)
-                .OnDelete(DeleteBehavior.Cascade);
+            
 
             // Many-to-many: MenuItemIngredients
             modelBuilder.Entity<MenuItemIngredient>()
@@ -402,9 +392,7 @@ namespace Cafe.Data
                 .Property(i => i.UnitPrice)
                 .HasDefaultValue(0);
 
-            modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.Status)
-                .HasDefaultValue("In Stock");
+            
 
             modelBuilder.Entity<InventoryTransaction>()
                 .Property(it => it.TransactionDate)

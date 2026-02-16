@@ -47,9 +47,7 @@ namespace Cafe.Controllers
             var dashboard = new InventoryDashboardViewModel
             {
                 TotalItems = items.Count,
-                LowStockItems = items.Count(i => i.Status == "Low Stock"),
-                OutOfStockItems = items.Count(i => i.Status == "Out of Stock"),
-                InStockItems = items.Count(i => i.Status == "In Stock"),
+  
                 TotalInventoryValue = items.Sum(i => i.Quantity * i.UnitPrice),
                 RecentlyUpdated = items
                     .OrderByDescending(i => i.LastUpdated)
@@ -57,7 +55,6 @@ namespace Cafe.Controllers
                     .Select(i => MapToViewModel(i))
                     .ToList(),
                 LowStockAlerts = items
-                    .Where(i => i.Status == "Low Stock" || i.Status == "Out of Stock")
                     .OrderBy(i => i.Quantity)
                     .Select(i => MapToViewModel(i))
                     .ToList()
@@ -81,21 +78,7 @@ namespace Cafe.Controllers
                 .Where(i => i.BranchId == selectedBranchId.Value);
 
             // Apply filters
-            if (!string.IsNullOrEmpty(category))
-            {
-                query = query.Where(i => i.Category == category);
-            }
-
-            if (!string.IsNullOrEmpty(status))
-            {
-                query = query.Where(i => i.Status == status);
-            }
-
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(i => i.Name.Contains(search) || 
-                                       (i.Supplier != null && i.Supplier.Contains(search)));
-            }
+            
 
             var totalCount = await query.CountAsync();
 
@@ -107,13 +90,10 @@ namespace Cafe.Controllers
                 {
                     id = i.Id,
                     name = i.Name,
-                    category = i.Category,
                     unit = i.Unit,
                     currentQuantity = i.Quantity,
                     minimumThreshold = i.ReorderLevel,
                     costPerUnit = i.UnitPrice,
-                    supplier = i.Supplier,
-                    status = i.Status,
                     lastUpdated = i.LastUpdated.ToString("yyyy-MM-dd HH:mm"),
                     branchName = i.Branch.Name,
                     totalValue = i.Quantity * i.UnitPrice
@@ -154,7 +134,6 @@ namespace Cafe.Controllers
                 if (ModelState.IsValid)
                 {
                     item.LastUpdated = DateTime.Now;
-                    item.Status = await _inventoryService.GetInventoryStatus(item.Quantity, item.ReorderLevel);
 
                     _context.InventoryItems.Add(item);
                     await _context.SaveChangesAsync();
@@ -212,7 +191,6 @@ namespace Cafe.Controllers
                 if (ModelState.IsValid)
                 {
                     item.LastUpdated = DateTime.Now;
-                    item.Status = await _inventoryService.GetInventoryStatus(item.Quantity, item.ReorderLevel);
 
                     _context.Update(item);
                     await _context.SaveChangesAsync();
@@ -237,9 +215,6 @@ namespace Cafe.Controllers
         {
             var item = await _context.InventoryItems
                 .Include(i => i.Branch)
-                .Include(i => i.Transactions.OrderByDescending(t => t.TransactionDate).Take(10))
-                .Include(i => i.RecipeMappings)
-                    .ThenInclude(rm => rm.MenuItem)
                 .FirstOrDefaultAsync(i => i.Id == id);
 
             if (item == null || !CanAccessBranch(item.BranchId))
@@ -585,14 +560,11 @@ namespace Cafe.Controllers
             {
                 Id = item.Id,
                 Name = item.Name,
-                Category = item.Category,
                 Unit = item.Unit,
                 CurrentQuantity = item.Quantity,
                 MinimumThreshold = item.ReorderLevel,
                 CostPerUnit = item.UnitPrice,
-                Supplier = item.Supplier,
                 LastUpdated = item.LastUpdated,
-                Status = item.Status,
                 BranchId = item.BranchId,
                 BranchName = item.Branch?.Name ?? ""
             };

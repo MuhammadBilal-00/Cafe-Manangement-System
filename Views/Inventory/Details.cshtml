@@ -26,18 +26,12 @@
                         <label class="text-gray-600 text-sm">Item Name</label>
                         <p class="font-semibold text-lg">@Model.Name</p>
                     </div>
-                    <div>
-                        <label class="text-gray-600 text-sm">Category</label>
-                        <p class="font-semibold">@Model.Category</p>
-                    </div>
+                 
                     <div>
                         <label class="text-gray-600 text-sm">Branch</label>
                         <p class="font-semibold">@Model.Branch.Name - @Model.Branch.Location</p>
                     </div>
-                    <div>
-                        <label class="text-gray-600 text-sm">Supplier</label>
-                        <p class="font-semibold">@(Model.Supplier ?? "Not specified")</p>
-                    </div>
+               
                 </div>
             </div>
 
@@ -146,18 +140,7 @@
     <!-- Recipe Mappings -->
     <div class="bg-white p-6 rounded-lg shadow">
         <h3 class="text-lg font-bold mb-4">Used In Menu Items</h3>
-        @if (Model.RecipeMappings.Any())
-        {
-            <div class="grid grid-cols-2 gap-4">
-                @foreach (var mapping in Model.RecipeMappings)
-                {
-                    <div class="border rounded p-3 hover:bg-gray-50">
-                        <p class="font-semibold">@mapping.MenuItem.Name</p>
-                        <p class="text-sm text-gray-600">Required: @mapping.QuantityRequired @mapping.Unit per serving</p>
-                    </div>
-                }
-            </div>
-        }
+        
         else
         {
             <p class="text-gray-500 text-center py-4">Not linked to any menu items</p>

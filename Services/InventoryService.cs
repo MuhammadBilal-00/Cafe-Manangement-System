@@ -198,7 +198,7 @@ namespace Cafe.Services
             if (item == null)
                 return;
 
-            item.Status = await GetInventoryStatus(item.Quantity, item.ReorderLevel);
+           
         }
 
         public async Task<string> GetInventoryStatus(decimal currentQuantity, decimal minimumThreshold)
