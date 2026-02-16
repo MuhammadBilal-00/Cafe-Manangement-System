@@ -1,0 +1,138 @@
+﻿@model Cafe.Models.InventoryItem
+
+@{
+    ViewData["Title"] = "Delete Inventory Item";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>@ViewData["Title"] - Cafe Inventory</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-slate-900 min-h-screen antialiased">
+
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+        <!-- Header -->
+        <div class="mb-8 flex items-center justify-between gap-4">
+            <div class="space-y-1">
+                <div class="inline-flex items-center gap-2 rounded-full bg-rose-50 border border-rose-200 px-3 py-1 text-[11px] font-medium text-rose-700 shadow-sm">
+                    <span class="flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] text-white">
+                        !
+                    </span>
+                    Danger Zone
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+                    Delete Inventory Item
+                </h1>
+                <p class="text-sm text-slate-500">
+                    This action cannot be undone. Please confirm you want to permanently remove this item.
+                </p>
+            </div>
+
+            <a href="@Url.Action("Index")"
+               class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-800">
+                <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white border border-slate-200 shadow-sm">
+                    ←
+                </span>
+                Back to Inventory
+            </a>
+        </div>
+
+        <div class="relative">
+            <div class="pointer-events-none absolute -top-20 -right-16 h-44 w-44 rounded-full bg-rose-200/50 blur-3xl"></div>
+
+            <!-- Card -->
+            <div class="relative rounded-3xl bg-white/95 border border-rose-100 shadow-[0_20px_55px_rgba(248,113,113,0.25)] p-6 sm:p-7 lg:p-8">
+                <div class="flex flex-col gap-6">
+                    <!-- Item summary -->
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div class="flex items-start gap-3">
+                            <div class="h-11 w-11 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-500 text-xl">
+                                🗑
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold text-rose-600 tracking-wide uppercase">
+                                    Item to be deleted
+                                </p>
+                                <h2 class="text-lg sm:text-xl font-semibold text-slate-900">
+                                    @Model.Name
+                                </h2>
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                    Branch:
+                                    <span class="font-medium text-slate-700">
+                                        @Model.Branch?.Name ?? "No branch"
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 text-center text-[11px] md:w-1/2">
+                            <div class="rounded-xl bg-slate-50 border border-slate-200 p-2.5">
+                                <p class="text-slate-500 uppercase tracking-[0.12em] mb-0.5">Qty</p>
+                                <p class="text-sm font-semibold text-slate-900">
+                                    @Model.Quantity.ToString("0.##")
+                                </p>
+                            </div>
+                            <div class="rounded-xl bg-slate-50 border border-slate-200 p-2.5">
+                                <p class="text-slate-500 uppercase tracking-[0.12em] mb-0.5">Unit</p>
+                                <p class="text-sm font-semibold text-slate-900">
+                                    @Model.Unit
+                                </p>
+                            </div>
+                            <div class="rounded-xl bg-slate-50 border border-slate-200 p-2.5">
+                                <p class="text-slate-500 uppercase tracking-[0.12em] mb-0.5">Value</p>
+                                <p class="text-sm font-semibold text-emerald-700">
+                                    $@((Model.Quantity * Model.UnitPrice).ToString("F2"))
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-rose-100/70 pt-4 space-y-3">
+                        <p class="text-sm text-slate-600">
+                            Are you sure you want to delete this inventory item? This will remove it from all branch stock views
+                            and you will no longer see it in reports.
+                        </p>
+                        <ul class="text-xs text-slate-500 list-disc pl-5 space-y-1">
+                            <li>The current quantity and value will be lost.</li>
+                            <li>Any historical references in reports may become incomplete.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Confirm form -->
+                    @using (Html.BeginForm("Delete", "InventoryItem", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.Id)
+
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+                            <div class="text-xs text-slate-500 flex items-center gap-2">
+                                <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-rose-50 text-rose-500 text-xs">
+                                    !
+                                </span>
+                                This operation cannot be undone.
+                            </div>
+
+                            <div class="flex gap-2 justify-end">
+                                <a href="@Url.Action("Index")"
+                                   class="inline-flex items-center px-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+                                    Cancel
+                                </a>
+                                <button type="submit"
+                                        class="inline-flex items-center px-5 py-2.5 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 text-sm font-semibold text-white shadow-lg shadow-rose-400/40 hover:-translate-y-0.5 hover:shadow-rose-500/60 transition-all duration-200">
+                                    <span class="mr-2">🗑</span>
+                                    Yes, Delete Item
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

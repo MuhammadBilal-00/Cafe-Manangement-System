@@ -82,8 +82,8 @@
                 @foreach (var item in Model.LowStockAlerts.Take(5))
                 {
                     <div class="flex justify-between items-center text-sm">
-                        <span class="text-red-700">@item.Name</span>
-                        <span class="text-red-600 font-semibold">@item.Quantity @item.Unit (Reorder: @item.ReorderLevel)</span>
+                        <span class="text-red-700">@item.Name (@item.Category)</span>
+                        <span class="text-red-600 font-semibold">@item.CurrentQuantity @item.Unit (Min: @item.MinimumThreshold)</span>
                     </div>
                 }
             </div>
@@ -93,6 +93,16 @@
     <!-- Filters and Search -->
     <div class="flex flex-wrap items-center gap-4">
         <input id="search" type="text" placeholder="Search items..." class="border rounded px-3 py-2 w-64">
+        <select id="categoryFilter" class="border rounded px-3 py-2">
+            <option value="">All Categories</option>
+            <option value="Dairy">Dairy</option>
+            <option value="Beverage">Beverage</option>
+            <option value="Bakery">Bakery</option>
+            <option value="Raw Material">Raw Material</option>
+            <option value="Vegetables">Vegetables</option>
+            <option value="Meat">Meat</option>
+            <option value="Other">Other</option>
+        </select>
         <select id="statusFilter" class="border rounded px-3 py-2">
             <option value="">All Status</option>
             <option value="In Stock">In Stock</option>
@@ -107,10 +117,12 @@
             <thead class="bg-gray-100">
                 <tr>
                     <th class="px-4 py-2 text-left">Name</th>
+                    <th class="px-4 py-2 text-left">Category</th>
                     <th class="px-4 py-2 text-right">Quantity</th>
-                    <th class="px-4 py-2 text-right">Reorder Level</th>
-                    <th class="px-4 py-2 text-right">Unit Price</th>
+                    <th class="px-4 py-2 text-right">Min Threshold</th>
+                    <th class="px-4 py-2 text-right">Cost/Unit</th>
                     <th class="px-4 py-2 text-right">Total Value</th>
+                    <th class="px-4 py-2 text-left">Supplier</th>
                     <th class="px-4 py-2 text-center">Status</th>
                     <th class="px-4 py-2 text-left">Last Updated</th>
                     <th class="px-4 py-2 text-center">Actions</th>
@@ -149,14 +161,15 @@
         // Load inventory items
         function loadInventory(page = 1) {
             if (!branchId) {
-                document.getElementById('inventoryTable').innerHTML = '<tr><td colspan="8" class="text-center py-4">Please select a branch</td></tr>';
+                document.getElementById('inventoryTable').innerHTML = '<tr><td colspan="10" class="text-center py-4">Please select a branch</td></tr>';
                 return;
             }
 
             const search = document.getElementById('search').value;
+            const category = document.getElementById('categoryFilter').value;
             const status = document.getElementById('statusFilter').value;
 
-            fetch(`/Inventory/GetInventoryItems?branchId=${branchId}&status=${status}&search=${search}&page=${page}&pageSize=${pageSize}`)
+            fetch(`/Inventory/GetInventoryItems?branchId=${branchId}&category=${category}&status=${status}&search=${search}&page=${page}&pageSize=${pageSize}`)
                 .then(response => response.json())
                 .then(data => {
                     const tbody = document.getElementById('inventoryTable');
@@ -171,10 +184,12 @@
                             const row = `
                                 <tr>
                                     <td class="px-4 py-2 font-semibold">${item.name}</td>
-                                    <td class="px-4 py-2 text-right">${item.quantity} ${item.unit}</td>
-                                    <td class="px-4 py-2 text-right">${item.reorderLevel} ${item.unit}</td>
-                                    <td class="px-4 py-2 text-right">$${item.unitPrice.toFixed(2)}</td>
+                                    <td class="px-4 py-2">${item.category}</td>
+                                    <td class="px-4 py-2 text-right">${item.currentQuantity} ${item.unit}</td>
+                                    <td class="px-4 py-2 text-right">${item.minimumThreshold} ${item.unit}</td>
+                                    <td class="px-4 py-2 text-right">$${item.costPerUnit.toFixed(2)}</td>
                                     <td class="px-4 py-2 text-right font-semibold">$${item.totalValue.toFixed(2)}</td>
+                                    <td class="px-4 py-2">${item.supplier || '-'}</td>
                                     <td class="px-4 py-2 text-center">
                                         <span class="px-2 py-1 rounded text-xs font-semibold ${statusClass}">
                                             ${item.status}
@@ -201,13 +216,13 @@
                         document.getElementById('itemCount').textContent = `Showing ${data.items.length} of ${data.totalCount} items`;
                         renderPagination(data.currentPage, data.totalPages);
                     } else {
-                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-gray-500">No inventory items found</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4 text-gray-500">No inventory items found</td></tr>';
                         document.getElementById('itemCount').textContent = 'No items found';
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById('inventoryTable').innerHTML = '<tr><td colspan="8" class="text-center py-4 text-red-600">Error loading inventory</td></tr>';
+                    document.getElementById('inventoryTable').innerHTML = '<tr><td colspan="10" class="text-center py-4 text-red-600">Error loading inventory</td></tr>';
                 });
         }
 
@@ -265,6 +280,7 @@
 
         // Event listeners
         document.getElementById('search').addEventListener('input', () => loadInventory(1));
+        document.getElementById('categoryFilter').addEventListener('change', () => loadInventory(1));
         document.getElementById('statusFilter').addEventListener('change', () => loadInventory(1));
 
         // Initial load

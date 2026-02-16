@@ -15,25 +15,17 @@ namespace Cafe.Models.ViewModels
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public string Category { get; set; }
         public string Unit { get; set; }
-        public decimal Quantity { get; set; }
-        public decimal ReorderLevel { get; set; }
-        public decimal UnitPrice { get; set; }
+        public decimal CurrentQuantity { get; set; }
+        public decimal MinimumThreshold { get; set; }
+        public decimal CostPerUnit { get; set; }
+        public string? Supplier { get; set; }
         public DateTime LastUpdated { get; set; }
+        public string Status { get; set; }
         public int BranchId { get; set; }
         public string BranchName { get; set; }
-        public decimal TotalValue => Quantity * UnitPrice;
-        
-        // Computed properties for UI
-        public string Status
-        {
-            get
-            {
-                if (Quantity == 0) return "Out of Stock";
-                if (Quantity <= ReorderLevel) return "Low Stock";
-                return "In Stock";
-            }
-        }
+        public decimal TotalValue => CurrentQuantity * CostPerUnit;
     }
 
     public class StockInViewModel

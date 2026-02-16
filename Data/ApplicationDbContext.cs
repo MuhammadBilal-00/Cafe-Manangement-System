@@ -76,15 +76,15 @@ namespace Cafe.Data
                 .HasPrecision(10, 2);
 
             modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.UnitPrice)
+                .Property(i => i.CostPerUnit)
                 .HasPrecision(10, 2);
 
             modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.Quantity)
+                .Property(i => i.CurrentQuantity)
                 .HasPrecision(10, 2);
 
             modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.ReorderLevel)
+                .Property(i => i.MinimumThreshold)
                 .HasPrecision(10, 2);
 
             modelBuilder.Entity<InventoryTransaction>()
@@ -387,11 +387,11 @@ namespace Cafe.Data
                 .HasDefaultValue("Pending");
 
             modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.Quantity)
+                .Property(i => i.CurrentQuantity)
                 .HasDefaultValue(0);
 
             modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.ReorderLevel)
+                .Property(i => i.MinimumThreshold)
                 .HasDefaultValue(0);
 
             modelBuilder.Entity<InventoryItem>()
@@ -399,8 +399,12 @@ namespace Cafe.Data
                 .HasDefaultValueSql("GETDATE()");
 
             modelBuilder.Entity<InventoryItem>()
-                .Property(i => i.UnitPrice)
+                .Property(i => i.CostPerUnit)
                 .HasDefaultValue(0);
+
+            modelBuilder.Entity<InventoryItem>()
+                .Property(i => i.Status)
+                .HasDefaultValue("In Stock");
 
             modelBuilder.Entity<InventoryTransaction>()
                 .Property(it => it.TransactionDate)
