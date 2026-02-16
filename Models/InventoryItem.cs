@@ -12,22 +12,33 @@ namespace Cafe.Models
         public string Name { get; set; }
 
         [Required]
+        [StringLength(50)]
+        public string Category { get; set; } // Dairy, Beverage, Bakery, Raw Material, etc.
+
+        [Required]
         [StringLength(20)]
         public string Unit { get; set; } // kg, liters, pieces, packs, etc.
 
         [Required]
         [Range(0, double.MaxValue)]
-        public decimal Quantity { get; set; }
+        public decimal CurrentQuantity { get; set; }
 
         [Required]
         [Range(0, double.MaxValue)]
-        public decimal ReorderLevel { get; set; }
+        public decimal MinimumThreshold { get; set; }
 
         [Required]
         [Range(0.01, double.MaxValue)]
-        public decimal UnitPrice { get; set; }
+        public decimal CostPerUnit { get; set; }
+
+        [StringLength(100)]
+        public string? Supplier { get; set; }
 
         public DateTime LastUpdated { get; set; } = DateTime.Now;
+
+        [Required]
+        [StringLength(20)]
+        public string Status { get; set; } = "In Stock"; // In Stock, Low Stock, Out of Stock
 
         [Required]
         public int BranchId { get; set; }

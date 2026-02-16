@@ -1,0 +1,333 @@
+﻿@model InventoryItem
+
+@{
+    ViewData["Title"] = "Add Inventory Item";
+    var branches = ViewBag.Branches as List<Branch> ?? new List<Branch>();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>@ViewData["Title"] - Cafe Inventory</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'blob': 'blob 7s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(12px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        blob: {
+                            '0%':   { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%':  { transform: 'translate(12px, -20px) scale(1.05)' },
+                            '66%':  { transform: 'translate(-10px, 16px) scale(0.95)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-slate-900 min-h-screen antialiased">
+
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <!-- Header -->
+        <div class="mb-8 flex items-center justify-between gap-4">
+            <div class="space-y-1">
+                <div class="inline-flex items-center gap-2 rounded-full bg-white/80 border border-slate-200 px-3 py-1 text-[11px] font-medium text-slate-600 shadow-sm">
+                    <span class="flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-tr from-pink-500 to-violet-500 text-[10px] text-white">
+                        📦
+                    </span>
+                    Inventory • New Item
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+                    Add Inventory Item
+                </h1>
+                <p class="text-sm text-slate-500">
+                    Define stock, pricing and reorder rules for this item.
+                </p>
+            </div>
+
+            <a href="@Url.Action("Index")"
+               class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-800">
+                <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white border border-slate-200 shadow-sm">
+                    ←
+                </span>
+                Back to Inventory
+            </a>
+        </div>
+
+        <!-- Decorative blobs -->
+        <div class="relative">
+            <div class="pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full bg-pink-200/40 blur-3xl animate-blob"></div>
+            <div class="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-cyan-200/40 blur-3xl animate-blob"></div>
+
+            <!-- Form Card -->
+            <div class="relative rounded-3xl bg-white/90 border border-slate-200 shadow-[0_20px_55px_rgba(15,23,42,0.12)] p-6 sm:p-7 lg:p-8 animate-slide-up">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Left side: main fields -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <h2 class="text-sm font-semibold text-slate-700 tracking-wide uppercase mb-1">
+                            Item Details
+                        </h2>
+
+                        @using (Html.BeginForm("Create", "InventoryItem", FormMethod.Post, new { @class = "space-y-6" }))
+                        {
+                            @Html.AntiForgeryToken()
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Name -->
+                                <div class="col-span-1 sm:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                                        Item Name
+                                    </label>
+                                    @Html.TextBoxFor(m => m.Name, new
+                                        {
+                                            @class = "w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500/70 focus:border-pink-400/70",
+                                            placeholder = "e.g. Caramel Latte (Medium)"
+                                        })
+                                    @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-xs text-red-500 mt-1" })
+                                </div>
+
+                                <!-- Branch -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                                        Branch
+                                    </label>
+                                    @if (branches.Any())
+                                    {
+                                        @Html.DropDownList(
+                                                 "BranchId",
+                                                 new SelectList(branches, "Id", "Name"),
+                                                 "-- Select Branch --",
+                                                 new
+                                                 {
+                                                     @class = "w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500/70 focus:border-pink-400/70"
+                                                 })
+                                    }
+                                    else
+                                    {
+                                        <select class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-400" disabled>
+                                            <option>No branches available</option>
+                                        </select>
+                                    }
+                                    @* If your model has BranchId, swap DropDownList(...) for DropDownListFor(m => m.BranchId, ...) *@
+                                </div>
+
+                                <!-- Unit -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                                        Unit
+                                    </label>
+                                    @Html.TextBoxFor(m => m.Unit, new
+                                        {
+                                            @class = "w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500/70 focus:border-pink-400/70",
+                                            placeholder = "e.g. Cups, Kg, Pack"
+                                        })
+                                    @Html.ValidationMessageFor(m => m.Unit, "", new { @class = "text-xs text-red-500 mt-1" })
+                                </div>
+
+                                <!-- Quantity -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                                        Current Quantity
+                                    </label>
+                                    @Html.TextBoxFor(m => m.Quantity, new
+                                        {
+                                            type = "number",
+                                            step = "0.01",
+                                            min = "0",
+                                            @class = "w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-400/70"
+                                        })
+                                    @Html.ValidationMessageFor(m => m.Quantity, "", new { @class = "text-xs text-red-500 mt-1" })
+                                </div>
+
+                                <!-- Unit Price -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                                        Unit Price
+                                    </label>
+                                    <div class="relative">
+                                        <span class="pointer-events-none absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 text-sm">
+                                            $
+                                        </span>
+                                        @Html.TextBoxFor(m => m.UnitPrice, new
+                                            {
+                                                type = "number",
+                                                step = "0.01",
+                                                min = "0",
+                                                @class = "w-full rounded-2xl border border-slate-200 bg-white pl-7 pr-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-400/70"
+                                            })
+                                    </div>
+                                    @Html.ValidationMessageFor(m => m.UnitPrice, "", new { @class = "text-xs text-red-500 mt-1" })
+                                </div>
+
+                                <!-- Reorder Level -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                                        Reorder Level
+                                    </label>
+                                    @Html.TextBoxFor(m => m.ReorderLevel, new
+                                        {
+                                            type = "number",
+                                            step = "0.01",
+                                            min = "0",
+                                            @class = "w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/70 focus:border-amber-400/70"
+                                        })
+                                    @Html.ValidationMessageFor(m => m.ReorderLevel, "", new { @class = "text-xs text-red-500 mt-1" })
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                                <div class="text-xs text-slate-500 flex items-center gap-2">
+                                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 text-xs">
+                                        ✓
+                                    </span>
+                                    This item will appear instantly in your inventory dashboard.
+                                </div>
+
+                                <div class="flex gap-2 justify-end">
+                                    <a href="@Url.Action("Index")"
+                                       class="inline-flex items-center px-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+                                        Cancel
+                                    </a>
+                                    <button type="submit"
+                                            class="inline-flex items-center px-5 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-400 text-sm font-semibold text-white shadow-lg shadow-pink-400/40 hover:-translate-y-0.5 hover:shadow-pink-500/60 transition-all duration-200">
+                                        <span class="mr-2">💾</span>
+                                        Save Item
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Right side: live preview / summary -->
+                    <div class="space-y-4">
+                        <h2 class="text-sm font-semibold text-slate-700 tracking-wide uppercase mb-1">
+                            Live Summary
+                        </h2>
+                        <div class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50 border border-slate-800 shadow-[0_18px_45px_rgba(15,23,42,0.6)] p-5 relative overflow-hidden">
+                            <div class="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-pink-500/30 blur-3xl"></div>
+                            <div class="absolute -left-10 bottom-0 w-32 h-32 rounded-full bg-cyan-400/25 blur-3xl"></div>
+
+                            <div class="relative space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                                            Inventory Card
+                                        </p>
+                                        <h3 id="previewName" class="text-lg font-bold text-white mt-1">
+                                            New Item
+                                        </h3>
+                                        <p id="previewBranch" class="text-xs text-slate-300 mt-0.5 flex items-center gap-1.5">
+                                            <span class="text-xs">🏢</span>
+                                            Branch
+                                        </p>
+                                    </div>
+                                    <div class="rounded-2xl bg-slate-900/70 border border-slate-700 px-3 py-2 text-right">
+                                        <p class="text-[10px] text-slate-400 uppercase tracking-[0.16em]">
+                                            Value
+                                        </p>
+                                        <p id="previewValue" class="text-lg font-semibold text-emerald-300">
+                                            $0
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-2 text-center text-[11px]">
+                                    <div class="rounded-xl bg-slate-900/60 border border-slate-700 p-2">
+                                        <p class="text-slate-400 uppercase tracking-[0.12em] mb-0.5">Qty</p>
+                                        <p id="previewQty" class="text-sm font-semibold text-slate-50">
+                                            0
+                                        </p>
+                                    </div>
+                                    <div class="rounded-xl bg-slate-900/60 border border-slate-700 p-2">
+                                        <p class="text-slate-400 uppercase tracking-[0.12em] mb-0.5">Unit</p>
+                                        <p id="previewUnit" class="text-sm font-semibold text-slate-50">
+                                            —
+                                        </p>
+                                    </div>
+                                    <div class="rounded-xl bg-slate-900/60 border border-slate-700 p-2">
+                                        <p class="text-slate-400 uppercase tracking-[0.12em] mb-0.5">Reorder</p>
+                                        <p id="previewReorder" class="text-sm font-semibold text-amber-300">
+                                            0
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-2 text-[11px] text-slate-400 border-t border-slate-800 pt-2">
+                                    This is how the item will appear in your
+                                    <span class="text-slate-100 font-semibold">inventory dashboard</span>.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- grid -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Live preview updates
+        const nameInput = document.getElementById('@Html.IdFor(m => m.Name)');
+        const qtyInput = document.getElementById('@Html.IdFor(m => m.Quantity)');
+        const priceInput = document.getElementById('@Html.IdFor(m => m.UnitPrice)');
+        const unitInput = document.getElementById('@Html.IdFor(m => m.Unit)');
+        const reorderInput = document.getElementById('@Html.IdFor(m => m.ReorderLevel)');
+        const branchSelect = document.getElementById('BranchId'); // using plain DropDownList("BranchId")
+
+        const previewName = document.getElementById('previewName');
+        const previewBranch = document.getElementById('previewBranch');
+        const previewValue = document.getElementById('previewValue');
+        const previewQty = document.getElementById('previewQty');
+        const previewUnit = document.getElementById('previewUnit');
+        const previewReorder = document.getElementById('previewReorder');
+
+        function formatCurrency(value) {
+            const num = parseFloat(value);
+            if (isNaN(num)) return '$0';
+            return '$' + num.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        }
+
+        function updatePreview() {
+            previewName.textContent = nameInput?.value || 'New Item';
+
+            const branchText = branchSelect && branchSelect.selectedIndex > 0
+                ? branchSelect.options[branchSelect.selectedIndex].text
+                : 'No branch';
+
+            previewBranch.textContent = branchText;
+
+            const qty = parseFloat(qtyInput?.value || '0') || 0;
+            const price = parseFloat(priceInput?.value || '0') || 0;
+
+            previewQty.textContent = qty.toString();
+            previewUnit.textContent = unitInput?.value || '—';
+            previewReorder.textContent = reorderInput?.value || '0';
+            previewValue.textContent = formatCurrency(qty * price);
+        }
+
+        [nameInput, qtyInput, priceInput, unitInput, reorderInput, branchSelect]
+            .forEach(el => el && el.addEventListener('input', updatePreview));
+
+        updatePreview();
+    </script>
+</body>
+</html>
