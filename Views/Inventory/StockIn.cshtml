@@ -41,8 +41,8 @@
                     {
                         @foreach (var item in ViewBag.InventoryItems as List<Cafe.Models.InventoryItem>)
                         {
-                            <option value="@item.Id" data-unit="@item.Unit" data-current="@item.CurrentQuantity">
-                                @item.Name (@item.Category) - Current: @item.CurrentQuantity @item.Unit
+                            <option value="@item.Id" data-unit="@item.Unit" data-current="@item.Quantity">
+                                @item.Name - Current: @item.Quantity @item.Unit
                             </option>
                         }
                     }

@@ -27,16 +27,12 @@
                         <p class="font-semibold text-lg">@Model.Name</p>
                     </div>
                     <div>
-                        <label class="text-gray-600 text-sm">Category</label>
-                        <p class="font-semibold">@Model.Category</p>
-                    </div>
-                    <div>
                         <label class="text-gray-600 text-sm">Branch</label>
                         <p class="font-semibold">@Model.Branch.Name - @Model.Branch.Location</p>
                     </div>
                     <div>
-                        <label class="text-gray-600 text-sm">Supplier</label>
-                        <p class="font-semibold">@(Model.Supplier ?? "Not specified")</p>
+                        <label class="text-gray-600 text-sm">Unit</label>
+                        <p class="font-semibold">@Model.Unit</p>
                     </div>
                 </div>
             </div>
@@ -46,21 +42,23 @@
                 <div class="space-y-3">
                     <div>
                         <label class="text-gray-600 text-sm">Current Quantity</label>
-                        <p class="font-semibold text-2xl text-blue-600">@Model.CurrentQuantity @Model.Unit</p>
+                        <p class="font-semibold text-2xl text-blue-600">@Model.Quantity @Model.Unit</p>
                     </div>
                     <div>
-                        <label class="text-gray-600 text-sm">Minimum Threshold</label>
-                        <p class="font-semibold">@Model.MinimumThreshold @Model.Unit</p>
+                        <label class="text-gray-600 text-sm">Reorder Level</label>
+                        <p class="font-semibold">@Model.ReorderLevel @Model.Unit</p>
                     </div>
                     <div>
                         <label class="text-gray-600 text-sm">Status</label>
                         <p>
                             @{
-                                var statusClass = Model.Status == "In Stock" ? "bg-green-100 text-green-800" :
-                                                Model.Status == "Low Stock" ? "bg-orange-100 text-orange-800" :
+                                var status = Model.Quantity == 0 ? "Out of Stock" : 
+                                           Model.Quantity <= Model.ReorderLevel ? "Low Stock" : "In Stock";
+                                var statusClass = status == "In Stock" ? "bg-green-100 text-green-800" :
+                                                status == "Low Stock" ? "bg-orange-100 text-orange-800" :
                                                 "bg-red-100 text-red-800";
                             }
-                            <span class="px-3 py-1 rounded font-semibold @statusClass">@Model.Status</span>
+                            <span class="px-3 py-1 rounded font-semibold @statusClass">@status</span>
                         </p>
                     </div>
                     <div>
@@ -73,18 +71,14 @@
 
         <div class="mt-6 pt-6 border-t">
             <h3 class="text-lg font-bold mb-4">Financial Information</h3>
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 gap-4">
                 <div class="bg-gray-50 p-4 rounded">
-                    <label class="text-gray-600 text-sm">Cost Per Unit</label>
-                    <p class="font-semibold text-xl">$@Model.CostPerUnit.ToString("N2")</p>
+                    <label class="text-gray-600 text-sm">Unit Price</label>
+                    <p class="font-semibold text-xl">$@Model.UnitPrice.ToString("N2")</p>
                 </div>
                 <div class="bg-blue-50 p-4 rounded">
                     <label class="text-gray-600 text-sm">Total Stock Value</label>
-                    <p class="font-semibold text-xl text-blue-600">$@((Model.CurrentQuantity * Model.CostPerUnit).ToString("N2"))</p>
-                </div>
-                <div class="bg-purple-50 p-4 rounded">
-                    <label class="text-gray-600 text-sm">Unit Measurement</label>
-                    <p class="font-semibold text-xl">@Model.Unit</p>
+                    <p class="font-semibold text-xl text-blue-600">$@((Model.Quantity * Model.UnitPrice).ToString("N2"))</p>
                 </div>
             </div>
         </div>

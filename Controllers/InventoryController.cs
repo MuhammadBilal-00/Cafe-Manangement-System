@@ -47,18 +47,18 @@ namespace Cafe.Controllers
             var dashboard = new InventoryDashboardViewModel
             {
                 TotalItems = items.Count,
-                LowStockItems = items.Count(i => i.Status == "Low Stock"),
-                OutOfStockItems = items.Count(i => i.Status == "Out of Stock"),
-                InStockItems = items.Count(i => i.Status == "In Stock"),
-                TotalInventoryValue = items.Sum(i => i.CurrentQuantity * i.CostPerUnit),
+                LowStockItems = items.Count(i => _inventoryService.GetInventoryStatus(i.Quantity, i.ReorderLevel) == "Low Stock"),
+                OutOfStockItems = items.Count(i => _inventoryService.GetInventoryStatus(i.Quantity, i.ReorderLevel) == "Out of Stock"),
+                InStockItems = items.Count(i => _inventoryService.GetInventoryStatus(i.Quantity, i.ReorderLevel) == "In Stock"),
+                TotalInventoryValue = items.Sum(i => i.Quantity * i.UnitPrice),
                 RecentlyUpdated = items
                     .OrderByDescending(i => i.LastUpdated)
                     .Take(5)
                     .Select(i => MapToViewModel(i))
                     .ToList(),
                 LowStockAlerts = items
-                    .Where(i => i.Status == "Low Stock" || i.Status == "Out of Stock")
-                    .OrderBy(i => i.CurrentQuantity)
+                    .Where(i => i.Quantity <= i.ReorderLevel)
+                    .OrderBy(i => i.Quantity)
                     .Select(i => MapToViewModel(i))
                     .ToList()
             };
@@ -80,51 +80,82 @@ namespace Cafe.Controllers
                 .Include(i => i.Branch)
                 .Where(i => i.BranchId == selectedBranchId.Value);
 
-            // Apply filters
-            if (!string.IsNullOrEmpty(category))
-            {
-                query = query.Where(i => i.Category == category);
-            }
-
+            // Apply filters - Note: Category and Supplier removed as they don't exist in DB
             if (!string.IsNullOrEmpty(status))
             {
-                query = query.Where(i => i.Status == status);
+                // Filter by computed status
+                var allItems = await query.ToListAsync();
+                allItems = allItems.Where(i => _inventoryService.GetInventoryStatus(i.Quantity, i.ReorderLevel) == status).ToList();
+                
+                if (!string.IsNullOrEmpty(search))
+                {
+                    allItems = allItems.Where(i => i.Name.Contains(search)).ToList();
+                }
+                
+                var totalCount = allItems.Count;
+                var itemsForPage = allItems
+                    .OrderBy(i => i.Name)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(i => new
+                    {
+                        id = i.Id,
+                        name = i.Name,
+                        unit = i.Unit,
+                        quantity = i.Quantity,
+                        reorderLevel = i.ReorderLevel,
+                        unitPrice = i.UnitPrice,
+                        status = _inventoryService.GetInventoryStatus(i.Quantity, i.ReorderLevel),
+                        lastUpdated = i.LastUpdated.ToString("yyyy-MM-dd HH:mm"),
+                        branchName = i.Branch.Name,
+                        totalValue = i.Quantity * i.UnitPrice
+                    })
+                    .ToList();
+                
+                return Json(new
+                {
+                    success = true,
+                    items = itemsForPage,
+                    totalCount = totalCount,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    currentPage = page
+                });
             }
 
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(i => i.Name.Contains(search) || 
-                                       (i.Supplier != null && i.Supplier.Contains(search)));
+                query = query.Where(i => i.Name.Contains(search));
             }
 
-            var totalCount = await query.CountAsync();
+            var count = await query.CountAsync();
 
-            var items = await query
+            var result = await query
                 .OrderBy(i => i.Name)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(i => new
+                .ToListAsync();
+                
+            var items = result.Select(i => new
                 {
                     id = i.Id,
                     name = i.Name,
-                    category = i.Category,
                     unit = i.Unit,
-                    currentQuantity = i.CurrentQuantity,
-                    minimumThreshold = i.MinimumThreshold,
-                    costPerUnit = i.CostPerUnit,
-                    supplier = i.Supplier,
-                    status = i.Status,
+                    quantity = i.Quantity,
+                    reorderLevel = i.ReorderLevel,
+                    unitPrice = i.UnitPrice,
+                    status = _inventoryService.GetInventoryStatus(i.Quantity, i.ReorderLevel),
                     lastUpdated = i.LastUpdated.ToString("yyyy-MM-dd HH:mm"),
                     branchName = i.Branch.Name,
-                    totalValue = i.CurrentQuantity * i.CostPerUnit
+                    totalValue = i.Quantity * i.UnitPrice
                 })
-                .ToListAsync();
+                .ToList();
 
             return Json(new
             {
+                success = true,
                 items = items,
-                totalCount = totalCount,
-                totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                totalCount = count,
+                totalPages = (int)Math.Ceiling((double)count / pageSize),
                 currentPage = page
             });
         }
@@ -154,7 +185,6 @@ namespace Cafe.Controllers
                 if (ModelState.IsValid)
                 {
                     item.LastUpdated = DateTime.Now;
-                    item.Status = await _inventoryService.GetInventoryStatus(item.CurrentQuantity, item.MinimumThreshold);
 
                     _context.InventoryItems.Add(item);
                     await _context.SaveChangesAsync();
@@ -212,7 +242,6 @@ namespace Cafe.Controllers
                 if (ModelState.IsValid)
                 {
                     item.LastUpdated = DateTime.Now;
-                    item.Status = await _inventoryService.GetInventoryStatus(item.CurrentQuantity, item.MinimumThreshold);
 
                     _context.Update(item);
                     await _context.SaveChangesAsync();
@@ -319,7 +348,9 @@ namespace Cafe.Controllers
 
                 if (success)
                 {
-                    TempData["SuccessMessage"] = $"Stock added successfully. New quantity: {item.CurrentQuantity + model.Quantity}";
+                    // Reload item to get updated quantity
+                    await _context.Entry(item).ReloadAsync();
+                    TempData["SuccessMessage"] = $"Stock added successfully. New quantity: {item.Quantity}";
                     return RedirectToAction(nameof(Index), new { branchId = item.BranchId });
                 }
                 else
@@ -366,9 +397,9 @@ namespace Cafe.Controllers
                     return RedirectToAction(nameof(StockOut));
                 }
 
-                if (item.CurrentQuantity < model.Quantity)
+                if (item.Quantity < model.Quantity)
                 {
-                    TempData["ErrorMessage"] = $"Insufficient stock. Current quantity: {item.CurrentQuantity} {item.Unit}";
+                    TempData["ErrorMessage"] = $"Insufficient stock. Current quantity: {item.Quantity} {item.Unit}";
                     return RedirectToAction(nameof(StockOut), new { branchId = item.BranchId });
                 }
 
@@ -383,7 +414,9 @@ namespace Cafe.Controllers
 
                 if (success)
                 {
-                    TempData["SuccessMessage"] = $"Stock removed successfully. New quantity: {item.CurrentQuantity - model.Quantity}";
+                    // Reload item to get updated quantity
+                    await _context.Entry(item).ReloadAsync();
+                    TempData["SuccessMessage"] = $"Stock removed successfully. New quantity: {item.Quantity}";
                     return RedirectToAction(nameof(Index), new { branchId = item.BranchId });
                 }
                 else
@@ -585,14 +618,11 @@ namespace Cafe.Controllers
             {
                 Id = item.Id,
                 Name = item.Name,
-                Category = item.Category,
                 Unit = item.Unit,
-                CurrentQuantity = item.CurrentQuantity,
-                MinimumThreshold = item.MinimumThreshold,
-                CostPerUnit = item.CostPerUnit,
-                Supplier = item.Supplier,
+                Quantity = item.Quantity,
+                ReorderLevel = item.ReorderLevel,
+                UnitPrice = item.UnitPrice,
                 LastUpdated = item.LastUpdated,
-                Status = item.Status,
                 BranchId = item.BranchId,
                 BranchName = item.Branch?.Name ?? ""
             };
