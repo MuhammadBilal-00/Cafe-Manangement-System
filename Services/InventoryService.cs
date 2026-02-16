@@ -10,8 +10,7 @@ namespace Cafe.Services
         Task<bool> StockOut(int inventoryItemId, decimal quantity, string transactionType, string? notes, string performedBy);
         Task<bool> DeductInventoryForOrder(int orderId, int branchId, string performedBy);
         Task<bool> CheckInventoryAvailability(int menuItemId, int quantity, int branchId);
-        Task UpdateInventoryStatus(int inventoryItemId);
-        Task<string> GetInventoryStatus(decimal currentQuantity, decimal minimumThreshold);
+        string GetInventoryStatus(decimal quantity, decimal reorderLevel);
     }
 
     public class InventoryService : IInventoryService
@@ -32,8 +31,8 @@ namespace Cafe.Services
                 if (item == null || quantity <= 0)
                     return false;
 
-                var quantityBefore = item.CurrentQuantity;
-                item.CurrentQuantity += quantity;
+                var quantityBefore = item.Quantity;
+                item.Quantity += quantity;
                 item.LastUpdated = DateTime.Now;
 
                 // Create transaction record
@@ -43,7 +42,7 @@ namespace Cafe.Services
                     TransactionType = "Stock In",
                     Quantity = quantity,
                     QuantityBefore = quantityBefore,
-                    QuantityAfter = item.CurrentQuantity,
+                    QuantityAfter = item.Quantity,
                     Notes = notes,
                     BranchId = item.BranchId,
                     PerformedBy = performedBy,
@@ -51,7 +50,6 @@ namespace Cafe.Services
                 };
 
                 _context.InventoryTransactions.Add(inventoryTransaction);
-                await UpdateInventoryStatus(inventoryItemId);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -70,11 +68,11 @@ namespace Cafe.Services
             try
             {
                 var item = await _context.InventoryItems.FindAsync(inventoryItemId);
-                if (item == null || quantity <= 0 || item.CurrentQuantity < quantity)
+                if (item == null || quantity <= 0 || item.Quantity < quantity)
                     return false;
 
-                var quantityBefore = item.CurrentQuantity;
-                item.CurrentQuantity -= quantity;
+                var quantityBefore = item.Quantity;
+                item.Quantity -= quantity;
                 item.LastUpdated = DateTime.Now;
 
                 // Create transaction record
@@ -84,7 +82,7 @@ namespace Cafe.Services
                     TransactionType = transactionType,
                     Quantity = quantity,
                     QuantityBefore = quantityBefore,
-                    QuantityAfter = item.CurrentQuantity,
+                    QuantityAfter = item.Quantity,
                     Notes = notes,
                     BranchId = item.BranchId,
                     PerformedBy = performedBy,
@@ -92,7 +90,6 @@ namespace Cafe.Services
                 };
 
                 _context.InventoryTransactions.Add(inventoryTransaction);
-                await UpdateInventoryStatus(inventoryItemId);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -132,14 +129,14 @@ namespace Cafe.Services
                         var requiredQuantity = mapping.QuantityRequired * orderItem.Quantity;
                         var item = mapping.InventoryItem;
 
-                        if (item.CurrentQuantity < requiredQuantity)
+                        if (item.Quantity < requiredQuantity)
                         {
                             await transaction.RollbackAsync();
                             return false;
                         }
 
-                        var quantityBefore = item.CurrentQuantity;
-                        item.CurrentQuantity -= requiredQuantity;
+                        var quantityBefore = item.Quantity;
+                        item.Quantity -= requiredQuantity;
                         item.LastUpdated = DateTime.Now;
 
                         // Create transaction record
@@ -149,7 +146,7 @@ namespace Cafe.Services
                             TransactionType = "Order Usage",
                             Quantity = requiredQuantity,
                             QuantityBefore = quantityBefore,
-                            QuantityAfter = item.CurrentQuantity,
+                            QuantityAfter = item.Quantity,
                             Notes = $"Used for Order #{order.OrderNumber}",
                             BranchId = branchId,
                             OrderId = orderId,
@@ -158,7 +155,6 @@ namespace Cafe.Services
                         };
 
                         _context.InventoryTransactions.Add(inventoryTransaction);
-                        await UpdateInventoryStatus(item.Id);
                     }
                 }
 
@@ -183,7 +179,7 @@ namespace Cafe.Services
             foreach (var mapping in recipeMappings)
             {
                 var requiredQuantity = mapping.QuantityRequired * quantity;
-                if (mapping.InventoryItem.CurrentQuantity < requiredQuantity)
+                if (mapping.InventoryItem.Quantity < requiredQuantity)
                 {
                     return false;
                 }
@@ -192,20 +188,11 @@ namespace Cafe.Services
             return true;
         }
 
-        public async Task UpdateInventoryStatus(int inventoryItemId)
+        public string GetInventoryStatus(decimal quantity, decimal reorderLevel)
         {
-            var item = await _context.InventoryItems.FindAsync(inventoryItemId);
-            if (item == null)
-                return;
-
-            item.Status = await GetInventoryStatus(item.CurrentQuantity, item.MinimumThreshold);
-        }
-
-        public async Task<string> GetInventoryStatus(decimal currentQuantity, decimal minimumThreshold)
-        {
-            if (currentQuantity <= 0)
+            if (quantity <= 0)
                 return "Out of Stock";
-            else if (currentQuantity <= minimumThreshold)
+            else if (quantity <= reorderLevel)
                 return "Low Stock";
             else
                 return "In Stock";

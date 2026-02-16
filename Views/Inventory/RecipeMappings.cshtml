@@ -144,7 +144,7 @@
                     {
                         @foreach (var item in ViewBag.InventoryItems as List<Cafe.Models.InventoryItem>)
                         {
-                            <option value="@item.Id" data-unit="@item.Unit">@item.Name (@item.Category)</option>
+                            <option value="@item.Id" data-unit="@item.Unit">@item.Name</option>
                         }
                     }
                 </select>
