@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Cafe.Models;
 using Cafe.Data;
@@ -15,21 +14,22 @@ namespace Cafe.Controllers
             _context = context;
         }
 
-        // GET: InventoryItem/Index
+        // GET: InventoryItem
         public async Task<IActionResult> Index(int? branchId)
         {
-            var branches = await _context.Branches.OrderBy(b => b.Name).ToListAsync();
+            var branches = await _context.Branches.ToListAsync();
             ViewBag.Branches = branches;
             ViewBag.SelectedBranchId = branchId;
 
-            var items = _context.InventoryItems
+            IQueryable<InventoryItem> items = _context.InventoryItems
                 .Include(i => i.Branch)
-                .AsQueryable();
+                .Include(i => i.Purchases);
 
             if (branchId.HasValue)
             {
                 items = items.Where(i => i.BranchId == branchId.Value);
-                ViewBag.CurrentBranch = branches.FirstOrDefault(b => b.Id == branchId.Value)?.Name ?? "All Branches";
+                var selectedBranch = await _context.Branches.FindAsync(branchId.Value);
+                ViewBag.CurrentBranch = selectedBranch?.Name ?? "All Branches";
             }
             else
             {
@@ -39,38 +39,43 @@ namespace Cafe.Controllers
             return View(await items.OrderBy(i => i.Quantity).ToListAsync());
         }
 
+        // GET: InventoryItem/Details/5
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var inventoryItem = await _context.InventoryItems
+                .Include(i => i.Branch)
+                .Include(i => i.Purchases)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (inventoryItem == null) return NotFound();
+
+            return View(inventoryItem);
+        }
+
         // GET: InventoryItem/Create
         public async Task<IActionResult> Create()
         {
-            await PopulateBranchesDropdown();
-            return View(new InventoryItem { LastUpdated = DateTime.Now });
+            ViewBag.Branches = await _context.Branches.ToListAsync();
+            return View();
         }
 
         // POST: InventoryItem/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            [Bind("Name,Quantity,Unit,BranchId,ReorderLevel,UnitPrice")] InventoryItem inventoryItem)
+        public async Task<IActionResult> Create(InventoryItem inventoryItem)
         {
-            ModelState.Remove("Branch");
-            ModelState.Remove("Purchases");
-
             if (ModelState.IsValid)
             {
                 inventoryItem.LastUpdated = DateTime.Now;
                 _context.Add(inventoryItem);
                 await _context.SaveChangesAsync();
-                TempData["Success"] = $"✅ '{inventoryItem.Name}' added to inventory!";
+                TempData["Success"] = "Inventory item created successfully!";
                 return RedirectToAction(nameof(Index));
             }
 
-            // Shows exactly which fields failed — helpful during development
-            var errors = ModelState
-                .Where(x => x.Value!.Errors.Any())
-                .Select(x => $"{x.Key}: {string.Join(", ", x.Value!.Errors.Select(e => e.ErrorMessage))}");
-            TempData["Error"] = "Validation failed: " + string.Join(" | ", errors);
-
-            await PopulateBranchesDropdown(inventoryItem.BranchId);
+            ViewBag.Branches = await _context.Branches.ToListAsync();
             return View(inventoryItem);
         }
 
@@ -78,24 +83,20 @@ namespace Cafe.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
-            var item = await _context.InventoryItems.FindAsync(id);
-            if (item == null) return NotFound();
 
-            await PopulateBranchesDropdown(item.BranchId);
-            return View(item);
+            var inventoryItem = await _context.InventoryItems.FindAsync(id);
+            if (inventoryItem == null) return NotFound();
+
+            ViewBag.Branches = await _context.Branches.ToListAsync();
+            return View(inventoryItem);
         }
 
         // POST: InventoryItem/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            int id,
-            [Bind("Id,Name,Quantity,Unit,BranchId,ReorderLevel,UnitPrice")] InventoryItem inventoryItem)
+        public async Task<IActionResult> Edit(int id, InventoryItem inventoryItem)
         {
             if (id != inventoryItem.Id) return NotFound();
-
-            ModelState.Remove("Branch");
-            ModelState.Remove("Purchases");
 
             if (ModelState.IsValid)
             {
@@ -104,43 +105,33 @@ namespace Cafe.Controllers
                     inventoryItem.LastUpdated = DateTime.Now;
                     _context.Update(inventoryItem);
                     await _context.SaveChangesAsync();
-                    TempData["Success"] = $"✅ '{inventoryItem.Name}' updated!";
-                    return RedirectToAction(nameof(Index));
+                    TempData["Success"] = "Inventory item updated successfully!";
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!InventoryItemExists(inventoryItem.Id)) return NotFound();
+                    if (!InventoryItemExists(inventoryItem.Id))
+                        return NotFound();
                     throw;
                 }
+                return RedirectToAction(nameof(Index));
             }
 
-            await PopulateBranchesDropdown(inventoryItem.BranchId);
+            ViewBag.Branches = await _context.Branches.ToListAsync();
             return View(inventoryItem);
-        }
-
-        // GET: InventoryItem/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null) return NotFound();
-            var item = await _context.InventoryItems
-                .Include(i => i.Branch)
-                .Include(i => i.Purchases)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (item == null) return NotFound();
-            return View(item);
         }
 
         // GET: InventoryItem/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
-            var item = await _context.InventoryItems
+
+            var inventoryItem = await _context.InventoryItems
                 .Include(i => i.Branch)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (item == null) return NotFound();
-            return View(item);
+            if (inventoryItem == null) return NotFound();
+
+            return View(inventoryItem);
         }
 
         // POST: InventoryItem/Delete/5
@@ -148,61 +139,92 @@ namespace Cafe.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var item = await _context.InventoryItems.FindAsync(id);
-            if (item != null)
+            var inventoryItem = await _context.InventoryItems.FindAsync(id);
+            if (inventoryItem != null)
             {
-                var name = item.Name;
-                _context.InventoryItems.Remove(item);
+                _context.InventoryItems.Remove(inventoryItem);
                 await _context.SaveChangesAsync();
-                TempData["Success"] = $"🗑️ '{name}' removed from inventory.";
+                TempData["Success"] = "Inventory item deleted successfully!";
             }
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: InventoryItem/Restock (AJAX)
+        // POST: InventoryItem/Restock
         [HttpPost]
-        public async Task<IActionResult> Restock(int id, int quantity)
+        public async Task<IActionResult> Restock(int id, decimal quantity)
         {
-            if (quantity <= 0)
-                return Json(new { success = false, message = "Quantity must be greater than 0" });
-
-            var item = await _context.InventoryItems.FindAsync(id);
-            if (item == null)
-                return Json(new { success = false, message = "Item not found" });
-
-            item.Quantity += quantity;
-            item.LastUpdated = DateTime.Now;
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, newQuantity = item.Quantity });
+            var inventoryItem = await _context.InventoryItems.FindAsync(id);
+            if (inventoryItem != null)
+            {
+                inventoryItem.Quantity += quantity;
+                inventoryItem.LastUpdated = DateTime.Now;
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            return Json(new { success = false });
         }
 
-        // POST: InventoryItem/AdjustStock (AJAX)
+        // GET: InventoryItem/LowStock
+        public async Task<IActionResult> LowStock()
+        {
+            var lowStockItems = await _context.InventoryItems
+                .Include(i => i.Branch)
+                .Where(i => i.Quantity <= i.ReorderLevel)
+                .OrderBy(i => i.Quantity)
+                .ToListAsync();
+
+            return View(lowStockItems);
+        }
+
+        // GET: InventoryItem/OutOfStock
+        public async Task<IActionResult> OutOfStock()
+        {
+            var outOfStockItems = await _context.InventoryItems
+                .Include(i => i.Branch)
+                .Where(i => i.Quantity == 0)
+                .ToListAsync();
+
+            return View(outOfStockItems);
+        }
+
+        // POST: InventoryItem/AdjustStock
         [HttpPost]
-        public async Task<IActionResult> AdjustStock(int id, int newQuantity)
+        public async Task<IActionResult> AdjustStock(int id, decimal newQuantity, string reason)
         {
-            if (newQuantity < 0)
-                return Json(new { success = false, message = "Quantity cannot be negative" });
-
-            var item = await _context.InventoryItems.FindAsync(id);
-            if (item == null)
-                return Json(new { success = false });
-
-            item.Quantity = newQuantity;
-            item.LastUpdated = DateTime.Now;
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, newQuantity = item.Quantity });
+            var inventoryItem = await _context.InventoryItems.FindAsync(id);
+            if (inventoryItem != null)
+            {
+                inventoryItem.Quantity = newQuantity;
+                inventoryItem.LastUpdated = DateTime.Now;
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            return Json(new { success = false });
         }
 
-        private async Task PopulateBranchesDropdown(int? selectedId = null)
+        // GET: Get inventory value report
+        public async Task<IActionResult> ValueReport()
         {
-            var branches = await _context.Branches.OrderBy(b => b.Name).ToListAsync();
-            ViewBag.Branches = branches;
-            ViewBag.BranchSelectList = new SelectList(branches, "Id", "Name", selectedId);
+            var items = await _context.InventoryItems
+                .Include(i => i.Branch)
+                .ToListAsync();
+
+            var report = items.GroupBy(i => i.Branch)
+                .Select(g => new
+                {
+                    BranchName = g.Key.Name,
+                    TotalItems = g.Count(),
+                    TotalValue = g.Sum(i => i.Quantity * i.UnitPrice),
+                    LowStockItems = g.Count(i => i.Quantity <= i.ReorderLevel)
+                })
+                .ToList();
+
+            return View(report);
         }
 
-        private bool InventoryItemExists(int id) =>
-            _context.InventoryItems.Any(e => e.Id == id);
+        private bool InventoryItemExists(int id)
+        {
+            return _context.InventoryItems.Any(e => e.Id == id);
+        }
     }
 }

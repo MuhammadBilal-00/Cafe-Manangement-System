@@ -32,8 +32,8 @@ namespace Cafe.Services
                 if (item == null || quantity <= 0)
                     return false;
 
-                var quantityBefore = item.CurrentQuantity;
-                item.CurrentQuantity += quantity;
+                var quantityBefore = item.Quantity;
+                item.Quantity += quantity;
                 item.LastUpdated = DateTime.Now;
 
                 // Create transaction record
@@ -43,7 +43,7 @@ namespace Cafe.Services
                     TransactionType = "Stock In",
                     Quantity = quantity,
                     QuantityBefore = quantityBefore,
-                    QuantityAfter = item.CurrentQuantity,
+                    QuantityAfter = item.Quantity,
                     Notes = notes,
                     BranchId = item.BranchId,
                     PerformedBy = performedBy,
@@ -70,11 +70,11 @@ namespace Cafe.Services
             try
             {
                 var item = await _context.InventoryItems.FindAsync(inventoryItemId);
-                if (item == null || quantity <= 0 || item.CurrentQuantity < quantity)
+                if (item == null || quantity <= 0 || item.Quantity < quantity)
                     return false;
 
-                var quantityBefore = item.CurrentQuantity;
-                item.CurrentQuantity -= quantity;
+                var quantityBefore = item.Quantity;
+                item.Quantity -= quantity;
                 item.LastUpdated = DateTime.Now;
 
                 // Create transaction record
@@ -84,7 +84,7 @@ namespace Cafe.Services
                     TransactionType = transactionType,
                     Quantity = quantity,
                     QuantityBefore = quantityBefore,
-                    QuantityAfter = item.CurrentQuantity,
+                    QuantityAfter = item.Quantity,
                     Notes = notes,
                     BranchId = item.BranchId,
                     PerformedBy = performedBy,
@@ -132,14 +132,14 @@ namespace Cafe.Services
                         var requiredQuantity = mapping.QuantityRequired * orderItem.Quantity;
                         var item = mapping.InventoryItem;
 
-                        if (item.CurrentQuantity < requiredQuantity)
+                        if (item.Quantity < requiredQuantity)
                         {
                             await transaction.RollbackAsync();
                             return false;
                         }
 
-                        var quantityBefore = item.CurrentQuantity;
-                        item.CurrentQuantity -= requiredQuantity;
+                        var quantityBefore = item.Quantity;
+                        item.Quantity -= requiredQuantity;
                         item.LastUpdated = DateTime.Now;
 
                         // Create transaction record
@@ -149,7 +149,7 @@ namespace Cafe.Services
                             TransactionType = "Order Usage",
                             Quantity = requiredQuantity,
                             QuantityBefore = quantityBefore,
-                            QuantityAfter = item.CurrentQuantity,
+                            QuantityAfter = item.Quantity,
                             Notes = $"Used for Order #{order.OrderNumber}",
                             BranchId = branchId,
                             OrderId = orderId,
@@ -183,7 +183,7 @@ namespace Cafe.Services
             foreach (var mapping in recipeMappings)
             {
                 var requiredQuantity = mapping.QuantityRequired * quantity;
-                if (mapping.InventoryItem.CurrentQuantity < requiredQuantity)
+                if (mapping.InventoryItem.Quantity < requiredQuantity)
                 {
                     return false;
                 }
@@ -198,7 +198,7 @@ namespace Cafe.Services
             if (item == null)
                 return;
 
-            item.Status = await GetInventoryStatus(item.CurrentQuantity, item.MinimumThreshold);
+            item.Status = await GetInventoryStatus(item.Quantity, item.ReorderLevel);
         }
 
         public async Task<string> GetInventoryStatus(decimal currentQuantity, decimal minimumThreshold)

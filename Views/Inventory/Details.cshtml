@@ -46,11 +46,11 @@
                 <div class="space-y-3">
                     <div>
                         <label class="text-gray-600 text-sm">Current Quantity</label>
-                        <p class="font-semibold text-2xl text-blue-600">@Model.CurrentQuantity @Model.Unit</p>
+                        <p class="font-semibold text-2xl text-blue-600">@Model.Quantity @Model.Unit</p>
                     </div>
                     <div>
                         <label class="text-gray-600 text-sm">Minimum Threshold</label>
-                        <p class="font-semibold">@Model.MinimumThreshold @Model.Unit</p>
+                        <p class="font-semibold">@Model.ReorderLevel @Model.Unit</p>
                     </div>
                     <div>
                         <label class="text-gray-600 text-sm">Status</label>
@@ -76,11 +76,11 @@
             <div class="grid grid-cols-3 gap-4">
                 <div class="bg-gray-50 p-4 rounded">
                     <label class="text-gray-600 text-sm">Cost Per Unit</label>
-                    <p class="font-semibold text-xl">$@Model.CostPerUnit.ToString("N2")</p>
+                    <p class="font-semibold text-xl">$@Model.UnitPrice.ToString("N2")</p>
                 </div>
                 <div class="bg-blue-50 p-4 rounded">
                     <label class="text-gray-600 text-sm">Total Stock Value</label>
-                    <p class="font-semibold text-xl text-blue-600">$@((Model.CurrentQuantity * Model.CostPerUnit).ToString("N2"))</p>
+                    <p class="font-semibold text-xl text-blue-600">$@((Model.Quantity * Model.UnitPrice).ToString("N2"))</p>
                 </div>
                 <div class="bg-purple-50 p-4 rounded">
                     <label class="text-gray-600 text-sm">Unit Measurement</label>

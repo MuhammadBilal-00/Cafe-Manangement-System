@@ -50,7 +50,7 @@ namespace Cafe.Controllers
                 LowStockItems = items.Count(i => i.Status == "Low Stock"),
                 OutOfStockItems = items.Count(i => i.Status == "Out of Stock"),
                 InStockItems = items.Count(i => i.Status == "In Stock"),
-                TotalInventoryValue = items.Sum(i => i.CurrentQuantity * i.CostPerUnit),
+                TotalInventoryValue = items.Sum(i => i.Quantity * i.UnitPrice),
                 RecentlyUpdated = items
                     .OrderByDescending(i => i.LastUpdated)
                     .Take(5)
@@ -58,7 +58,7 @@ namespace Cafe.Controllers
                     .ToList(),
                 LowStockAlerts = items
                     .Where(i => i.Status == "Low Stock" || i.Status == "Out of Stock")
-                    .OrderBy(i => i.CurrentQuantity)
+                    .OrderBy(i => i.Quantity)
                     .Select(i => MapToViewModel(i))
                     .ToList()
             };
@@ -109,14 +109,14 @@ namespace Cafe.Controllers
                     name = i.Name,
                     category = i.Category,
                     unit = i.Unit,
-                    currentQuantity = i.CurrentQuantity,
-                    minimumThreshold = i.MinimumThreshold,
-                    costPerUnit = i.CostPerUnit,
+                    currentQuantity = i.Quantity,
+                    minimumThreshold = i.ReorderLevel,
+                    costPerUnit = i.UnitPrice,
                     supplier = i.Supplier,
                     status = i.Status,
                     lastUpdated = i.LastUpdated.ToString("yyyy-MM-dd HH:mm"),
                     branchName = i.Branch.Name,
-                    totalValue = i.CurrentQuantity * i.CostPerUnit
+                    totalValue = i.Quantity * i.UnitPrice
                 })
                 .ToListAsync();
 
@@ -154,7 +154,7 @@ namespace Cafe.Controllers
                 if (ModelState.IsValid)
                 {
                     item.LastUpdated = DateTime.Now;
-                    item.Status = await _inventoryService.GetInventoryStatus(item.CurrentQuantity, item.MinimumThreshold);
+                    item.Status = await _inventoryService.GetInventoryStatus(item.Quantity, item.ReorderLevel);
 
                     _context.InventoryItems.Add(item);
                     await _context.SaveChangesAsync();
@@ -212,7 +212,7 @@ namespace Cafe.Controllers
                 if (ModelState.IsValid)
                 {
                     item.LastUpdated = DateTime.Now;
-                    item.Status = await _inventoryService.GetInventoryStatus(item.CurrentQuantity, item.MinimumThreshold);
+                    item.Status = await _inventoryService.GetInventoryStatus(item.Quantity, item.ReorderLevel);
 
                     _context.Update(item);
                     await _context.SaveChangesAsync();
@@ -319,7 +319,7 @@ namespace Cafe.Controllers
 
                 if (success)
                 {
-                    TempData["SuccessMessage"] = $"Stock added successfully. New quantity: {item.CurrentQuantity + model.Quantity}";
+                    TempData["SuccessMessage"] = $"Stock added successfully. New quantity: {item.Quantity + model.Quantity}";
                     return RedirectToAction(nameof(Index), new { branchId = item.BranchId });
                 }
                 else
@@ -366,9 +366,9 @@ namespace Cafe.Controllers
                     return RedirectToAction(nameof(StockOut));
                 }
 
-                if (item.CurrentQuantity < model.Quantity)
+                if (item.Quantity < model.Quantity)
                 {
-                    TempData["ErrorMessage"] = $"Insufficient stock. Current quantity: {item.CurrentQuantity} {item.Unit}";
+                    TempData["ErrorMessage"] = $"Insufficient stock. Current quantity: {item.Quantity} {item.Unit}";
                     return RedirectToAction(nameof(StockOut), new { branchId = item.BranchId });
                 }
 
@@ -383,7 +383,7 @@ namespace Cafe.Controllers
 
                 if (success)
                 {
-                    TempData["SuccessMessage"] = $"Stock removed successfully. New quantity: {item.CurrentQuantity - model.Quantity}";
+                    TempData["SuccessMessage"] = $"Stock removed successfully. New quantity: {item.Quantity - model.Quantity}";
                     return RedirectToAction(nameof(Index), new { branchId = item.BranchId });
                 }
                 else
@@ -587,9 +587,9 @@ namespace Cafe.Controllers
                 Name = item.Name,
                 Category = item.Category,
                 Unit = item.Unit,
-                CurrentQuantity = item.CurrentQuantity,
-                MinimumThreshold = item.MinimumThreshold,
-                CostPerUnit = item.CostPerUnit,
+                CurrentQuantity = item.Quantity,
+                MinimumThreshold = item.ReorderLevel,
+                CostPerUnit = item.UnitPrice,
                 Supplier = item.Supplier,
                 LastUpdated = item.LastUpdated,
                 Status = item.Status,
