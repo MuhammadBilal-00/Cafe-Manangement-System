@@ -50,14 +50,20 @@ namespace Cafe.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("Name,CurrentQuantity,Unit,BranchId,MinimumThreshold,CostPerUnit,Category,Supplier")] InventoryItem inventoryItem)
+            [Bind("Name,CurrentQuantity,Unit,BranchId,MinimumThreshold,CostPerUnit")] InventoryItem inventoryItem)
         {
             ModelState.Remove("Branch");
             ModelState.Remove("Purchases");
+            ModelState.Remove("Category"); // Will be set manually
 
             if (ModelState.IsValid)
             {
                 inventoryItem.LastUpdated = DateTime.Now;
+                // Set default Category if not bound
+                if (string.IsNullOrEmpty(inventoryItem.Category))
+                {
+                    inventoryItem.Category = "General";
+                }
                 _context.Add(inventoryItem);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = $"✅ '{inventoryItem.Name}' added to inventory!";
@@ -90,18 +96,25 @@ namespace Cafe.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Id,Name,CurrentQuantity,Unit,BranchId,MinimumThreshold,CostPerUnit,Category,Supplier")] InventoryItem inventoryItem)
+            [Bind("Id,Name,CurrentQuantity,Unit,BranchId,MinimumThreshold,CostPerUnit")] InventoryItem inventoryItem)
         {
             if (id != inventoryItem.Id) return NotFound();
 
             ModelState.Remove("Branch");
             ModelState.Remove("Purchases");
+            ModelState.Remove("Category"); // Will be preserved from existing
 
             if (ModelState.IsValid)
             {
                 try
                 {
                     inventoryItem.LastUpdated = DateTime.Now;
+                    // Preserve Category from existing item if not bound
+                    var existingItem = await _context.InventoryItems.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
+                    if (existingItem != null && string.IsNullOrEmpty(inventoryItem.Category))
+                    {
+                        inventoryItem.Category = existingItem.Category;
+                    }
                     _context.Update(inventoryItem);
                     await _context.SaveChangesAsync();
                     TempData["Success"] = $"✅ '{inventoryItem.Name}' updated!";
