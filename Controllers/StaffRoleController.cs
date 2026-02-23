@@ -89,6 +89,7 @@ public class StaffRoleController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
         var role = await _context.StaffRoles.FindAsync(id);
