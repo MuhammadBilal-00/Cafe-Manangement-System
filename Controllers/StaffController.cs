@@ -10,12 +10,10 @@ namespace Cafe.Controllers
 {
     public class StaffController : BaseController
     {
-        private readonly ApplicationDbContext _context;
         private readonly IAuthService _authService;
 
         public StaffController(ApplicationDbContext context, IAuthService authService) : base(context)
         {
-            _context = context;
             _authService = authService;
         }
 

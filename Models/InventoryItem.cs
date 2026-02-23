@@ -14,31 +14,24 @@ namespace Cafe.Models
         public string Name { get; set; } = null!;
 
         [Required]
-        [Range(0, double.MaxValue)]
-        public decimal Quantity { get; set; }
+        public int Quantity { get; set; }    // int in DB
 
         [Required]
         [StringLength(20)]
-        public string Unit { get; set; } = null!; // kg, liters, pieces, packs, etc.
+        public string Unit { get; set; } = null!;
 
         [Required]
-        public int BranchId { get; set; }
+        public int BranchId { get; set; }    // int in DB
 
         [Required]
-        [Range(0, double.MaxValue)]
-        public decimal ReorderLevel { get; set; }
+        public int ReorderLevel { get; set; }    // int in DB
 
-        public DateTime LastUpdated { get; set; } = DateTime.Now;
+        public DateTime LastUpdated { get; set; } = DateTime.Now; // datetime2
 
         [Required]
-        [Range(0.01, double.MaxValue)]
-        public decimal UnitPrice { get; set; }
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal UnitPrice { get; set; }    // decimal(10,2)
 
-        // Optional: you can still have extra fields if you want:
-        // [StringLength(50)]
-        // public string? Category { get; set; }
-
-        // Navigation Properties
         [ForeignKey("BranchId")]
         public Branch Branch { get; set; } = null!;
 

@@ -1,5 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Cafe.Models
 {
@@ -7,8 +8,8 @@ namespace Cafe.Models
     {
         public int Id { get; set; }
 
-        [Required]
-        public int CustomerId { get; set; }
+        // Nullable for now (no real customer auth)
+        public int? CustomerId { get; set; }
 
         [Required]
         public int BranchId { get; set; }
@@ -22,11 +23,26 @@ namespace Cafe.Models
 
         public DateTime Date { get; set; } = DateTime.Now;
 
-        public bool IsResolved { get; set; } = false;
+        public bool IsResolved { get; set; } = false; // legacy, not used by new status
 
-        // Navigation Properties
+        [StringLength(50)]
+        public string? Category { get; set; } // "Service", "Food", "Drinks", etc.
+
+        [StringLength(50)]
+        public string? Source { get; set; }   // "OrderPage", "QR", "General", ...
+
+        public int? OrderId { get; set; }
+        public Order? Order { get; set; }
+
+        public FeedbackStatus Status { get; set; } = FeedbackStatus.Open;
+
+        [StringLength(200)]
+        public string? StaffNote { get; set; }
+
+        public DateTime? ResolvedAt { get; set; }
+
         [ForeignKey("CustomerId")]
-        public User Customer { get; set; }
+        public User? Customer { get; set; }
 
         [ForeignKey("BranchId")]
         public Branch Branch { get; set; }

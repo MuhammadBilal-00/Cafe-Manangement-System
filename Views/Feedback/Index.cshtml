@@ -1,0 +1,381 @@
+﻿@model List<Cafe.Models.Feedback>
+
+@using Cafe.Models
+
+@{
+    ViewData["Title"] = "Feedback";
+
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    int? selectedBranchId = ViewBag.BranchId as int?;
+    int? rating = ViewBag.Rating as int?;
+    string status = ViewBag.Status as string ?? "";
+    string search = ViewBag.Search as string ?? "";
+    DateTime? from = ViewBag.From as DateTime?;
+    DateTime? to = ViewBag.To as DateTime?;
+
+    int page = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+
+    double avgRating = ViewBag.AverageRating ?? 0.0;
+    int openCount = ViewBag.OpenCount ?? 0;
+    int resolvedCount = ViewBag.ResolvedCount ?? 0;
+    int totalCount = ViewBag.TotalCount ?? 0;
+
+    var ratingDist = ViewBag.RatingDist as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var byCategory = ViewBag.ByCategory as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var byBranch = ViewBag.ByBranch as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    string StatusLabel(FeedbackStatus s) => s switch
+    {
+        FeedbackStatus.Open => "Open",
+        FeedbackStatus.InProgress => "In progress",
+        FeedbackStatus.Resolved => "Resolved",
+        _ => "Open"
+    };
+
+    string StatusColor(FeedbackStatus s) => s switch
+    {
+        FeedbackStatus.Open => "bg-amber-50 text-amber-700 border-amber-200",
+        FeedbackStatus.InProgress => "bg-sky-50 text-sky-700 border-sky-200",
+        FeedbackStatus.Resolved => "bg-emerald-50 text-emerald-700 border-emerald-200",
+        _ => "bg-slate-50 text-slate-700 border-slate-200"
+    };
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - Cafe OS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen antialiased">
+
+<header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="relative w-10 h-10">
+                <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-violet-500 blur-sm opacity-80"></div>
+                <div class="relative w-full h-full rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm">
+                    💬
+                </div>
+            </div>
+            <div>
+                <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400">
+                    Cafe OS
+                </p>
+                <h1 class="text-sm sm:text-base font-semibold tracking-wide text-slate-900">
+                    Customer Feedback
+                </h1>
+            </div>
+        </div>
+
+        <a href="@Url.Action("Index", "Reports")"
+           class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-slate-50 text-xs sm:text-[13px] font-medium px-3 py-1.5 shadow-sm hover:bg-slate-800 transition">
+            ⬅ Reports
+        </a>
+            <a href="@Url.Action("NeedsAttention", "Feedback")"
+               class="inline-flex items-center gap-1.5 rounded-full bg-rose-100 text-rose-700 text-xs px-3 py-1.5 border border-rose-200 hover:bg-rose-200 transition">
+                🔥 Needs attention
+            </a>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
+
+    <!-- Summary strip -->
+    <section class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-wrap gap-4 items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2 text-[11px]">
+                <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Total Feedback</p>
+                <p class="font-semibold text-slate-900">@totalCount</p>
+            </div>
+            <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2 text-[11px]">
+                <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Open</p>
+                <p class="font-semibold text-amber-600">@openCount</p>
+            </div>
+            <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2 text-[11px]">
+                <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Resolved</p>
+                <p class="font-semibold text-emerald-600">@resolvedCount</p>
+            </div>
+            <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2 text-[11px]">
+                <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Avg Rating</p>
+                <p class="font-semibold text-slate-900">
+                    @avgRating.ToString("0.0") / 5
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics mini charts -->
+    <section class="grid md:grid-cols-3 gap-4">
+        <!-- Ratings -->
+        <div class="rounded-2xl bg-white border border-slate-200 p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Ratings</p>
+            @if (ratingDist.Any())
+            {
+                var maxCount = ratingDist.Max(r => (int)r.Count);
+                if (maxCount == 0) maxCount = 1;
+
+                foreach (var r in ratingDist.OrderByDescending(x => (int)x.Rating))
+                {
+                    int count = (int)r.Count;
+                    int pct = (int)Math.Round(count / (double)maxCount * 100);
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="w-12 text-[11px] text-slate-600">@r.Rating ★</div>
+                        <div class="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                            <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-rose-500" style="width:@pct%;"></div>
+                        </div>
+                        <div class="w-8 text-right text-[11px] text-slate-500">@count</div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-[11px] text-slate-400">No feedback.</p>
+            }
+        </div>
+
+        <!-- Categories -->
+        <div class="rounded-2xl bg-white border border-slate-200 p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Categories</p>
+            @if (byCategory.Any())
+            {
+                var total = byCategory.Sum(c => (int)c.Count);
+                if (total == 0) total = 1;
+
+                foreach (var c in byCategory.OrderByDescending(x => (int)x.Count))
+                {
+                    int count = (int)c.Count;
+                    int pct = (int)Math.Round(count / (double)total * 100);
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="w-20 text-[11px] text-slate-600 truncate">@((string)c.Category ?? "Unspecified")</div>
+                        <div class="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                            <div class="h-full rounded-full bg-gradient-to-r from-sky-400 to-violet-500" style="width:@pct%;"></div>
+                        </div>
+                        <div class="w-10 text-right text-[11px] text-slate-500">@pct%</div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-[11px] text-slate-400">No data.</p>
+            }
+        </div>
+
+        <!-- Branches -->
+        <div class="rounded-2xl bg-white border border-slate-200 p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Branches</p>
+            @if (byBranch.Any())
+            {
+                var maxCountB = byBranch.Max(b => (int)b.Count);
+                if (maxCountB == 0) maxCountB = 1;
+
+                foreach (var b in byBranch.OrderByDescending(x => (int)x.Count).Take(4))
+                {
+                    int count = (int)b.Count;
+                    int pct = (int)Math.Round(count / (double)maxCountB * 100);
+                    double avgR = (double)b.AvgRating;
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-600 truncate">@(((Cafe.Models.Branch)b.Branch).Name)</span>
+                                <span class="text-slate-500">@avgR.ToString("0.0") ★</span>
+                            </div>
+                            <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden mt-0.5">
+                                <div class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400" style="width:@pct%;"></div>
+                            </div>
+                        </div>
+                        <div class="w-8 text-right text-[11px] text-slate-500">@count</div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-[11px] text-slate-400">No data.</p>
+            }
+        </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="rounded-3xl bg-white/95 border border-slate-200 shadow-[0_16px_40px_rgba(15,23,42,0.12)] p-4 sm:p-6 lg:p-7 space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div class="space-y-1">
+                <p class="text-xs font-semibold tracking-[0.2em] uppercase text-slate-500">
+                    Filters
+                </p>
+            </div>
+
+            <form method="get" class="w-full lg:w-auto grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3 items-end">
+                <!-- Rating -->
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1 uppercase tracking-[0.16em]">
+                        Rating
+                    </label>
+                    <select name="rating"
+                            class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/60 focus:border-amber-400/60">
+                        <option value="">All</option>
+                        @for (int r = 5; r >= 1; r--)
+                        {
+                            <option value="@r" selected="@(rating == r ? "selected" : null)">
+                                @r ★
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1 uppercase tracking-[0.16em]">
+                        Status
+                    </label>
+                    <select name="status"
+                            class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/60 focus:border-amber-400/60">
+                        <option value="" selected="@(string.IsNullOrEmpty(status) ? "selected" : null)">All</option>
+                        <option value="open" selected="@(status == "open" ? "selected" : null)">Open</option>
+                        <option value="inprogress" selected="@(status == "inprogress" ? "selected" : null)">In progress</option>
+                        <option value="resolved" selected="@(status == "resolved" ? "selected" : null)">Resolved</option>
+                    </select>
+                </div>
+
+                <!-- Branch -->
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1 uppercase tracking-[0.16em]">
+                        Branch
+                    </label>
+                    <select name="branchId"
+                            class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/60 focus:border-amber-400/60">
+                        <option value="">All</option>
+                        @foreach (var b in branches)
+                        {
+                            var isSelected = selectedBranchId == b.Id;
+                            <option value="@b.Id" selected="@(isSelected ? "selected" : null)">
+                                @b.Name
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Search -->
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1 uppercase tracking-[0.16em]">
+                        Search
+                    </label>
+                    <input type="text"
+                           name="search"
+                           value="@search"
+                           placeholder="Customer or text..."
+                           class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/60 focus:border-amber-400/60" />
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-2 sm:gap-3">
+                    <button type="submit"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white text-xs sm:text-sm font-semibold shadow-md shadow-amber-400/40 hover:-translate-y-0.5 hover:shadow-lg transition">
+                        🔍 Apply
+                    </button>
+                    <a href="@Url.Action("Index", "Feedback")"
+                       class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs sm:text-sm font-medium border border-slate-200 hover:bg-slate-200 transition">
+                        Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Feedback list -->
+    <section class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 sm:p-6 space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-900">
+                Feedback items
+            </h2>
+            <p class="text-[11px] text-slate-500">
+                Page of @totalPages
+            </p>
+        </div>
+
+        <div class="space-y-3">
+            @if (Model.Any())
+            {
+                @foreach (var f in Model)
+                {
+                    var ratingStars = new string('★', f.Rating) + new string('☆', 5 - f.Rating);
+
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 flex flex-col gap-2">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 text-[11px]">
+                                    <span class="inline-flex items-center rounded-full px-2.5 py-1 border text-[11px] font-medium @(StatusColor(f.Status))">
+                                        @StatusLabel(f.Status)
+                                    </span>
+                                    <span class="text-amber-500 font-semibold">
+                                        @ratingStars
+                                    </span>
+                                    <span class="text-slate-400">
+                                        · @f.Date.ToString("dd MMM yyyy HH:mm")
+                                    </span>
+                                    @if (!string.IsNullOrWhiteSpace(f.Category))
+                                    {
+                                        <span class="inline-flex items-center rounded-full bg-slate-900 text-slate-50 px-2 py-0.5">
+                                            @f.Category
+                                        </span>
+                                    }
+                                </div>
+                                <p class="text-xs font-semibold text-slate-900 mt-1 line-clamp-2">
+                                    @f.Comments
+                                </p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">
+                                    @f.Customer?.Name · @f.Customer?.Email
+                                </p>
+                            </div>
+                            <div class="flex flex-col items-end gap-1 text-[11px]">
+                                <span class="inline-flex items-center rounded-full bg-slate-900 text-slate-50 px-2 py-0.5">
+                                    @f.Branch?.Name
+                                </span>
+                                <a href="@Url.Action("Details", "Feedback", new { id = f.Id })"
+                                   class="inline-flex items-center gap-1 text-slate-500 hover:text-slate-900">
+                                    View
+                                    <span>→</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-xs text-slate-500">
+                    No feedback matching filters.
+                </p>
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (totalPages > 1)
+        {
+            <div class="flex justify-center mt-4">
+                <div class="inline-flex items-center gap-1 rounded-full bg-slate-50 border border-slate-200 px-2 py-1 text-[11px]">
+                    @for (int p = 1; p <= totalPages; p++)
+                    {
+                        if (p == page)
+                        {
+                            <span class="inline-flex items-center justify-center h-6 min-w-[24px] rounded-full bg-slate-900 text-slate-50 font-semibold">
+                                @p
+                            </span>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Index", new { page = p, rating, status, branchId = selectedBranchId, search })"
+                               class="inline-flex items-center justify-center h-6 min-w-[24px] rounded-full px-2 text-slate-600 hover:bg-slate-200">
+                                @p
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </section>
+</main>
+</body>
+</html>

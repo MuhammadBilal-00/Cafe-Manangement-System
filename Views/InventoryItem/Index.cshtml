@@ -53,35 +53,35 @@
         }
     </script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
+<body class="bg-slate-100 text-slate-900 min-h-screen antialiased">
 
     <!-- Top Glass Navbar -->
-    <header class="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/70 border-b border-white/5">
+    <header class="sticky top-0 z-40 backdrop-blur-xl bg-white/80 border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="relative w-10 h-10">
                     <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-pink-500 via-violet-500 to-cyan-400 blur-sm opacity-80"></div>
-                    <div class="relative w-full h-full rounded-2xl bg-slate-900 flex items-center justify-center text-2xl">
+                    <div class="relative w-full h-full rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm">
                         ☕
                     </div>
                 </div>
                 <div>
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Cafe OS</p>
-                    <h1 class="text-sm sm:text-base font-semibold tracking-wide text-slate-100">
+                    <h1 class="text-sm sm:text-base font-semibold tracking-wide text-slate-900">
                         Multi-Branch Inventory
                     </h1>
                 </div>
             </div>
 
             <div class="flex items-center gap-2 sm:gap-3">
-                <span class="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-slate-900/70 border border-white/5 px-3 py-1 text-[11px] font-medium text-slate-300">
+                <span class="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-[11px] font-medium text-emerald-700 shadow-sm">
                     <span class="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-slow"></span>
                     Live sync enabled
                 </span>
                 <div class="relative">
                     <div class="absolute -inset-0.5 bg-gradient-to-tr from-pink-500 via-violet-500 to-cyan-400 opacity-70 blur-sm rounded-full"></div>
                     <a href="@Url.Action("Create")"
-                       class="relative inline-flex items-center gap-2 bg-slate-950 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold text-slate-100 shadow-lg shadow-pink-500/25 hover:-translate-y-0.5 hover:shadow-pink-500/40 transition-all duration-300">
+                       class="relative inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full text-xs sm:text-sm font-semibold text-slate-900 shadow-md shadow-pink-100 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
                         <span class="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-lime-300 text-slate-950 text-base">
                             +
                         </span>
@@ -93,110 +93,98 @@
     </header>
 
     <!-- Hero / Stats -->
-    <section class="relative overflow-hidden border-b border-white/5">
+    <section class="relative overflow-hidden border-b border-slate-200">
         <div class="pointer-events-none absolute inset-0">
-            <div class="absolute -right-32 top-10 h-64 w-64 rounded-full bg-pink-500/25 blur-3xl animate-blob"></div>
-            <div class="absolute -left-20 bottom-0 h-72 w-72 rounded-full bg-violet-500/30 blur-3xl animate-blob animation-delay-2000"></div>
-            <div class="absolute left-1/2 -translate-x-1/2 -bottom-32 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl animate-blob animation-delay-4000"></div>
+            <div class="absolute -right-32 top-10 h-64 w-64 rounded-full bg-pink-200/40 blur-3xl animate-blob"></div>
+            <div class="absolute -left-20 bottom-0 h-72 w-72 rounded-full bg-violet-200/40 blur-3xl animate-blob animation-delay-2000"></div>
+            <div class="absolute left-1/2 -translate-x-1/2 -bottom-32 h-64 w-64 rounded-full bg-cyan-200/40 blur-3xl animate-blob animation-delay-4000"></div>
         </div>
 
         <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
             <div class="grid lg:grid-cols-5 gap-10 lg:gap-14 items-center">
                 <div class="lg:col-span-3 space-y-6">
-                    <div class="inline-flex items-center gap-2 rounded-full bg-slate-900/70 border border-white/10 px-3 py-1 text-[11px] font-medium text-slate-300">
-                        <span class="flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-tr from-pink-500 to-violet-500 text-[10px]">
-                            📦
-                        </span>
-                        Real-time, multi-branch inventory control
-                    </div>
-                    <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-50 leading-tight">
-                        Inventory Snapshot
-                    </h2>
-
                     <div class="flex flex-wrap items-center gap-3 mt-3">
-                        <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/80 px-3 py-1 text-[11px] font-medium text-slate-300">
+                        <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-medium text-slate-600 shadow-sm">
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                             Viewing:
-                            <span class="font-semibold text-slate-50">
+                            <span class="font-semibold text-slate-900">
                                 @(selectedBranchId == null ? "All Branches" : currentBranch)
                             </span>
                         </span>
                     </div>
                 </div>
 
-                <div class="lg:col-span-2">
-                    <div class="relative rounded-3xl bg-slate-900/80 border border-white/10 shadow-[0_20px_60px_rgba(15,23,42,0.8)] overflow-hidden">
+                <div class="lg:col-span-6">
+                    <div class="relative rounded-3xl bg-white/90 border border-slate-200 shadow-[0_20px_60px_rgba(15,23,42,0.15)] overflow-hidden">
                         <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-pink-400/80 to-transparent"></div>
-                        <div class="absolute right-4 top-4 h-20 w-20 rounded-full bg-gradient-to-br from-pink-500/60 to-amber-400/60 blur-3xl opacity-70"></div>
+                        <div class="absolute right-4 top-4 h-20 w-20 rounded-full bg-gradient-to-br from-pink-300/60 to-amber-300/60 blur-3xl opacity-70"></div>
 
                         <div class="p-5 sm:p-6 space-y-5">
                             <div class="flex items-center justify-between gap-3">
-                                <h3 class="text-xs font-semibold tracking-[0.25em] uppercase text-slate-400">
+                                <h3 class="text-xs font-semibold tracking-[0.25em] uppercase text-slate-500">
                                     Inventory Snapshot
                                 </h3>
-                                <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-800/80 px-2.5 py-1 text-[10px] text-slate-300">
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] text-slate-600 border border-slate-200">
                                     <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                                     Synced
                                 </span>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="relative rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 p-3">
-                                    <p class="text-[11px] text-slate-400 mb-1">Total Items</p>
-                                    <p class="text-2xl sm:text-3xl font-bold text-slate-50 leading-none">
+                            <div class="grid grid-cols-4 gap-3">
+                                <div class="relative rounded-2xl bg-gradient-to-br from-white via-slate-50 to-slate-100 border border-slate-100 p-3">
+                                    <p class="text-[11px] text-slate-500 mb-1">Total Items</p>
+                                    <p class="text-2xl sm:text-3xl font-bold text-slate-900 leading-none">
                                         @Model.Count()
                                     </p>
                                 </div>
-                                <div class="relative rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 p-3">
-                                    <p class="text-[11px] text-slate-400 mb-1">Branches</p>
-                                    <p class="text-2xl sm:text-3xl font-bold text-slate-50 leading-none">
+                                <div class="relative rounded-2xl bg-gradient-to-br from-white via-slate-50 to-slate-100 border border-slate-100 p-3">
+                                    <p class="text-[11px] text-slate-500 mb-1">Branches</p>
+                                    <p class="text-2xl sm:text-3xl font-bold text-slate-900 leading-none">
                                         @branches.Count
                                     </p>
                                 </div>
-                            </div>
 
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="relative rounded-2xl bg-gradient-to-br from-amber-500/15 to-pink-500/10 border border-amber-400/40 p-3">
+                                <div class="relative rounded-2xl bg-amber-50 border border-amber-100 p-3">
                                     <div class="flex items-center justify-between mb-1">
-                                        <p class="text-[11px] text-amber-200/90">Need Reorder</p>
-                                        <span class="inline-flex items-center justify-center rounded-full bg-amber-500/20 text-[10px] text-amber-200 px-2 py-0.5">
+                                        <p class="text-[11px] text-amber-700">Need Reorder</p>
+                                        <span class="inline-flex items-center justify-center rounded-full bg-amber-100 text-[10px] text-amber-800 px-2 py-0.5">
                                             ⚠️ Critical
                                         </span>
                                     </div>
-                                    <p class="text-2xl sm:text-3xl font-bold text-amber-200 leading-none">
+                                    <p class="text-2xl sm:text-3xl font-bold text-amber-800 leading-none">
                                         @Model.Count(i => i.Quantity <= i.ReorderLevel)
                                     </p>
                                 </div>
-                                <div class="relative rounded-2xl bg-gradient-to-br from-emerald-500/15 to-cyan-500/10 border border-emerald-400/40 p-3">
-                                    <p class="text-[11px] text-emerald-100/90 mb-1">Total Value</p>
-                                    <p class="text-lg sm:text-xl font-semibold text-emerald-100 leading-none">
+                                <div class="relative rounded-2xl bg-emerald-50 border border-emerald-100 p-3">
+                                    <p class="text-[11px] text-emerald-700 mb-1">Total Value</p>
+                                    <p class="text-lg sm:text-xl font-semibold text-emerald-800 leading-none">
                                         $@Model.Sum(i => i.Quantity * i.UnitPrice).ToString("N0")
                                     </p>
-                                    <p class="mt-1 text-[10px] text-emerald-200/80">
+                                    <p class="mt-1 text-[10px] text-emerald-700/80">
                                         Live valuation across all branches
                                     </p>
                                 </div>
                             </div>
 
                             <div class="mt-1 space-y-1.5">
-                                <div class="flex items-center justify-between text-[10px] text-slate-400">
+                                <div class="flex items-center justify-between text-[10px] text-slate-500">
                                     <span>Stock Health</span>
                                     @{
                                         var totalItems = Model.Count();
                                         var healthy = totalItems == 0
                                         ? 0
-                                        : (int)(Model.Count(i => i.CurrentQuantity > i.MinimumThreshold) * 100.0 / totalItems);
+                                        : (int)(Model.Count(i => i.Quantity > i.ReorderLevel) * 100.0 / totalItems);
                                     }
                                     <span>@healthy% OK</span>
                                 </div>
-                                <div class="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                                     <div class="h-full w-0 rounded-full bg-gradient-to-r from-emerald-400 via-cyan-300 to-pink-400 animate-[shimmer_1.8s_infinite] origin-left"
                                          style="width:@healthy%;"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> <!-- /stats -->
             </div>
         </div>
     </section>
@@ -205,38 +193,35 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
 
         <!-- Control Bar -->
-        <section class="rounded-3xl bg-slate-950/80 border border-white/10 shadow-[0_20px_60px_rgba(15,23,42,0.9)] p-4 sm:p-6 lg:p-7 space-y-4">
+        <section class="rounded-3xl bg-white/95 border border-slate-200 shadow-[0_20px_60px_rgba(15,23,42,0.12)] p-4 sm:p-6 lg:p-7 space-y-4">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <!-- Search -->
                 <div class="w-full lg:max-w-md">
-                    <label class="block text-[11px] font-medium text-slate-400 mb-1.5 uppercase tracking-[0.2em]">
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1.5 uppercase tracking-[0.2em]">
                         Search Inventory
                     </label>
                     <div class="relative">
-                        <div class="pointer-events-none absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
                             🔍
                         </div>
                         <input type="text"
                                id="searchInput"
                                placeholder="Find items by name across all branches..."
-                               class="w-full pl-11 pr-10 py-2.5 rounded-2xl bg-slate-900/80 border border-white/10 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/60 focus:border-pink-400/60 transition-all duration-200">
-                        <div class="pointer-events-none absolute inset-y-0 right-0 pr-3 flex items-center text-[10px] text-slate-500">
-                            ⌘K
-                        </div>
+                               class="w-full pl-11 pr-10 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500/60 focus:border-pink-400/60 transition-all duration-200">
                     </div>
                 </div>
 
                 <!-- Branch Filter Pills -->
                 <div class="w-full lg:w-auto">
-                    <label class="block text-[11px] font-medium text-slate-400 mb-1.5 uppercase tracking-[0.2em]">
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1.5 uppercase tracking-[0.2em]">
                         Branches
                     </label>
                     <div class="flex flex-wrap gap-2">
                         <a href="@Url.Action("Index")"
                            class="px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-[13px] font-medium border transition-all duration-200
                                   @(selectedBranchId == null
-                                        ? "bg-gradient-to-r from-pink-500 to-violet-500 text-slate-950 border-pink-400 shadow-md shadow-pink-500/40"
-                                        : "bg-slate-900/70 text-slate-200 border-white/10 hover:border-pink-400/60 hover:text-pink-100")">
+                                        ? "bg-gradient-to-r from-pink-500 to-violet-500 text-white border-pink-400 shadow-md shadow-pink-500/30"
+                                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50")">
                             🌐 All
                         </a>
                         @foreach (var branch in branches)
@@ -244,8 +229,8 @@
                             <a href="@Url.Action("Index", new { branchId = branch.Id })"
                                class="px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-[13px] font-medium border transition-all duration-200
                                       @(selectedBranchId == branch.Id
-                                            ? "bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 border-emerald-300 shadow-md shadow-emerald-500/40"
-                                            : "bg-slate-900/70 text-slate-200 border-white/10 hover:border-cyan-400/60 hover:text-cyan-100")">
+                                            ? "bg-gradient-to-r from-cyan-400 to-emerald-400 text-white border-emerald-300 shadow-md shadow-emerald-400/30"
+                                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50")">
                                 🏢 @branch.Name
                             </a>
                         }
@@ -254,20 +239,20 @@
 
                 <!-- Status Filters -->
                 <div class="w-full lg:w-auto">
-                    <label class="block text-[11px] font-medium text-slate-400 mb-1.5 uppercase tracking-[0.2em]">
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1.5 uppercase tracking-[0.2em]">
                         Stock Status
                     </label>
-                    <div class="inline-flex rounded-2xl bg-slate-900/80 border border-white/10 p-1">
+                    <div class="inline-flex rounded-2xl bg-slate-100/80 border border-slate-200 p-1">
                         <button data-filter="all"
-                                class="filter-btn px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-[13px] font-semibold bg-gradient-to-r from-pink-500 to-violet-500 text-slate-950 shadow-sm shadow-pink-500/40">
+                                class="filter-btn px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-[13px] font-semibold bg-gradient-to-r from-pink-500 to-violet-500 text-white shadow-sm shadow-pink-400/40">
                             All
                         </button>
                         <button data-filter="reorder"
-                                class="filter-btn px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-[13px] font-semibold text-amber-200 hover:bg-amber-500/10 hover:text-amber-100 transition">
+                                class="filter-btn px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-[13px] font-semibold text-amber-700 hover:bg-amber-50 transition">
                             ⚠️ Reorder
                         </button>
                         <button data-filter="out"
-                                class="filter-btn px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-[13px] font-semibold text-rose-200 hover:bg-rose-500/10 hover:text-rose-100 transition">
+                                class="filter-btn px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-[13px] font-semibold text-rose-700 hover:bg-rose-50 transition">
                             🚫 Out
                         </button>
                     </div>
@@ -285,45 +270,45 @@
                     {
                         var branch = branchGroup.Key;
                         var items = branchGroup.ToList();
-                        var needReorder = items.Count(i => i.CurrentQuantity <= i.MinimumThreshold);
-                        var outOfStock = items.Count(i => i.CurrentQuantity == 0);
-                        var totalValue = items.Sum(i => i.CurrentQuantity * i.CostPerUnit);
+                        var needReorder = items.Count(i => i.Quantity <= i.ReorderLevel);
+                        var outOfStock = items.Count(i => i.Quantity == 0);
+                        var totalValue = items.Sum(i => i.Quantity * i.UnitPrice);
 
                         <div class="space-y-4 branch-section" data-branch-id="@branch.Id">
-                            <div class="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 shadow-[0_18px_55px_rgba(15,23,42,0.9)]">
-                                <div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.4),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(56,189,248,0.25),_transparent_55%)]"></div>
-                                <div class="absolute right-4 -top-8 text-6xl opacity-20 animate-float">🏢</div>
+                            <div class="relative rounded-3xl overflow-hidden border border-slate-200 bg-gradient-to-r from-white via-slate-50 to-white shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
+                                <div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.25),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(56,189,248,0.20),_transparent_55%)]"></div>
+                                <div class="absolute right-4 -top-8 text-6xl opacity-10 animate-float">🏢</div>
 
                                 <div class="relative p-5 sm:p-6 lg:p-7">
                                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                         <div class="space-y-1.5">
-                                            <div class="inline-flex items-center gap-2 rounded-full bg-slate-900/80 border border-white/15 px-3 py-1 text-[11px] text-slate-300">
-                                                <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-tr from-pink-500 to-violet-500 text-[10px]">
+                                            <div class="inline-flex items-center gap-2 rounded-full bg-white/90 border border-slate-200 px-3 py-1 text-[11px] text-slate-500">
+                                                <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-tr from-pink-500 to-violet-500 text-[10px] text-white">
                                                     🏙
                                                 </span>
                                                 Branch
                                             </div>
-                                            <h3 class="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-slate-50">
+                                            <h3 class="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-slate-900">
                                                 @branch.Name
                                             </h3>
-                                            <p class="text-xs sm:text-sm text-slate-200 flex items-center gap-1.5">
-                                                <span class="text-slate-300">📍</span>
+                                            <p class="text-xs sm:text-sm text-slate-600 flex items-center gap-1.5">
+                                                <span class="text-slate-400">📍</span>
                                                 @branch.Location
                                             </p>
                                         </div>
 
                                         <div class="grid grid-cols-3 gap-3 sm:gap-4 text-center text-xs sm:text-[13px]">
-                                            <div class="rounded-2xl bg-slate-900/80 border border-white/10 px-3 py-2.5">
-                                                <p class="text-[11px] text-slate-300 uppercase tracking-[0.16em] mb-0.5">Items</p>
-                                                <p class="text-xl sm:text-2xl font-bold text-slate-50">@items.Count</p>
+                                            <div class="rounded-2xl bg-white/90 border border-slate-200 px-3 py-2.5">
+                                                <p class="text-[11px] text-slate-500 uppercase tracking-[0.16em] mb-0.5">Items</p>
+                                                <p class="text-xl sm:text-2xl font-bold text-slate-900">@items.Count</p>
                                             </div>
-                                            <div class="rounded-2xl bg-amber-500/10 border border-amber-400/40 px-3 py-2.5">
-                                                <p class="text-[11px] text-amber-100/80 uppercase tracking-[0.16em] mb-0.5">Reorder</p>
-                                                <p class="text-xl sm:text-2xl font-bold text-amber-100">@needReorder</p>
+                                            <div class="rounded-2xl bg-amber-50 border border-amber-100 px-3 py-2.5">
+                                                <p class="text-[11px] text-amber-700 uppercase tracking-[0.16em] mb-0.5">Reorder</p>
+                                                <p class="text-xl sm:text-2xl font-bold text-amber-800">@needReorder</p>
                                             </div>
-                                            <div class="rounded-2xl bg-emerald-500/10 border border-emerald-400/40 px-3 py-2.5">
-                                                <p class="text-[11px] text-emerald-100/80 uppercase tracking-[0.16em] mb-0.5">Value</p>
-                                                <p class="text-sm sm:text-base font-semibold text-emerald-100">
+                                            <div class="rounded-2xl bg-emerald-50 border border-emerald-100 px-3 py-2.5">
+                                                <p class="text-[11px] text-emerald-700 uppercase tracking-[0.16em] mb-0.5">Value</p>
+                                                <p class="text-sm sm:text-base font-semibold text-emerald-800">
                                                     $@totalValue.ToString("N0")
                                                 </p>
                                             </div>
@@ -355,21 +340,21 @@
             {
                 <div class="flex flex-col items-center justify-center text-center py-16 sm:py-20">
                     <div class="relative mb-6">
-                        <div class="absolute -inset-5 rounded-full bg-gradient-to-tr from-pink-500/40 via-violet-500/40 to-cyan-400/40 blur-2xl opacity-60 animate-pulse-slow"></div>
-                        <div class="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-slate-900 border border-dashed border-slate-700 text-5xl">
+                        <div class="absolute -inset-5 rounded-full bg-gradient-to-tr from-pink-400/35 via-violet-400/35 to-cyan-300/35 blur-2xl opacity-70 animate-pulse-slow"></div>
+                        <div class="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-white border border-dashed border-slate-300 text-5xl text-slate-400">
                             📦
                         </div>
                     </div>
-                    <h3 class="text-2xl sm:text-3xl font-black text-slate-50 mb-2">
+                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">
                         No Inventory Items Yet
                     </h3>
-                    <p class="text-sm sm:text-base text-slate-400 max-w-md mb-6">
+                    <p class="text-sm sm:text-base text-slate-500 max-w-md mb-6">
                         Your shelves are empty in the system. Add your first item to start tracking stock across
                         branches in real time.
                     </p>
                     <a href="@Url.Action("Create")"
-                       class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-400 px-6 sm:px-8 py-2.5 text-sm sm:text-base font-semibold text-slate-950 shadow-lg shadow-pink-500/40 hover:-translate-y-0.5 hover:shadow-pink-500/60 transition-all duration-200">
-                        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-950 text-lg">
+                       class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-400 px-6 sm:px-8 py-2.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-pink-400/30 hover:-translate-y-0.5 hover:shadow-pink-500/50 transition-all duration-200">
+                        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-pink-600 text-lg">
                             +
                         </span>
                         <span>Add First Item</span>
@@ -379,53 +364,53 @@
         </section>
     </main>
 
-    <!-- Restock Modal -->
-    <div id="restockModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+    <!-- Restock Modal (kept darker for focus) -->
+    <div id="restockModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
         <div class="relative max-w-md w-full">
             <div class="absolute -inset-0.5 rounded-[2rem] bg-gradient-to-tr from-pink-500 via-violet-500 to-cyan-400 opacity-70 blur-md"></div>
-            <div class="relative bg-slate-950 rounded-[1.8rem] border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.9)] p-7 sm:p-8 animate-slide-up">
+            <div class="relative bg-white rounded-[1.8rem] border border-slate-200 shadow-[0_24px_80px_rgba(15,23,42,0.35)] p-7 sm:p-8 animate-slide-up">
                 <button onclick="closeRestockModal()"
-                        class="absolute top-4 right-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-all duration-150 hover:rotate-90">
+                        class="absolute top-4 right-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-all duration-150 hover:rotate-90">
                     ✕
                 </button>
 
                 <div class="text-center mb-6 space-y-2">
-                    <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-400 text-3xl text-slate-950 shadow-lg shadow-emerald-500/40">
+                    <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-400 text-3xl text-white shadow-lg shadow-emerald-400/40">
                         📦
                     </div>
-                    <h2 class="text-2xl font-black text-slate-50">Restock Item</h2>
-                    <p id="restockItemName" class="text-sm text-slate-300"></p>
+                    <h2 class="text-2xl font-black text-slate-900">Restock Item</h2>
+                    <p id="restockItemName" class="text-sm text-slate-500"></p>
                 </div>
 
                 <form id="restockForm" onsubmit="handleRestock(event)" class="space-y-5">
                     <input type="hidden" id="restockItemId" />
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">
                             Add Quantity
                         </label>
                         <div class="relative">
                             <input type="number"
                                    id="restockQuantity"
-                                   class="w-full px-4 py-3 rounded-2xl bg-slate-900/80 border border-white/10 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-400/70 focus:border-emerald-300/70 transition-all duration-150"
+                                   class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400/80 focus:border-emerald-300/80 transition-all duration-150"
                                    min="1"
                                    step="0.01"
                                    required />
-                            <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[11px] text-slate-500">
+                            <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[11px] text-slate-400">
                                 + Units
                             </span>
                         </div>
-                        <small id="unitDisplay" class="mt-1.5 block text-[11px] text-slate-400"></small>
+                        <small id="unitDisplay" class="mt-1.5 block text-[11px] text-slate-500"></small>
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-3 pt-1">
                         <button type="button"
                                 onclick="closeRestockModal()"
-                                class="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-900/80 border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition">
+                                class="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-100 border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">
                             Cancel
                         </button>
                         <button type="submit"
-                                class="flex-1 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/50 hover:-translate-y-0.5 hover:shadow-emerald-500/70 transition">
+                                class="flex-1 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-400/50 hover:-translate-y-0.5 hover:shadow-emerald-500/70 transition">
                             ✅ Confirm Restock
                         </button>
                     </div>
@@ -434,7 +419,6 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
     <div id="toastContainer" class="fixed inset-0 pointer-events-none z-[60] flex items-start justify-end p-4 sm:p-6"></div>
 
     <script>
@@ -443,11 +427,11 @@
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 document.querySelectorAll('.filter-btn').forEach(b => {
-                    b.classList.remove('bg-gradient-to-r', 'from-pink-500', 'to-violet-500', 'text-slate-950', 'shadow-pink-500/40');
-                    b.classList.add('text-slate-200');
+                    b.classList.remove('bg-gradient-to-r', 'from-pink-500', 'to-violet-500', 'text-white', 'shadow-pink-500/40');
+                    b.classList.add('text-slate-700');
                 });
 
-                this.classList.add('bg-gradient-to-r', 'from-pink-500', 'to-violet-500', 'text-slate-950', 'shadow-pink-500/40');
+                this.classList.add('bg-gradient-to-r', 'from-pink-500', 'to-violet-500', 'text-white', 'shadow-pink-500/40');
                 filterCards();
             });
         });
@@ -518,12 +502,6 @@
                     console.error('Error:', error);
                     showNotification('❌ Failed to update stock', 'error');
                 });
-        }
-
-        function confirmDelete(id, name) {
-            if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
-                window.location.href = `@Url.Action("Delete")?id=${id}`;
-            }
         }
 
         function showNotification(message, type) {

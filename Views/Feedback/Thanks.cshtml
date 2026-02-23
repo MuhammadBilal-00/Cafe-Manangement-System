@@ -1,0 +1,32 @@
+﻿@{
+    ViewData["Title"] = "Thank You";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - Cafe OS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen antialiased">
+    <main class="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+        <section class="rounded-3xl bg-white border border-slate-200 shadow-[0_16px_40px_rgba(15,23,42,0.12)] p-6 sm:p-8 text-center space-y-4">
+            <div class="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-emerald-50 text-2xl">
+                ✅
+            </div>
+            <h1 class="text-lg font-semibold text-slate-900">
+                Thank you for your feedback
+            </h1>
+            <p class="text-xs text-slate-500">
+                We’ve received your feedback and will use it to improve our service.
+            </p>
+            <a href="@Url.Action("Index", "Home")"
+               class="inline-flex items-center justify-center mt-3 rounded-full bg-slate-900 text-slate-50 text-xs sm:text-[13px] font-medium px-4 py-2 shadow-sm hover:bg-slate-800 transition">
+                Back to home
+            </a>
+        </section>
+    </main>
+</body>
+</html>

@@ -36,7 +36,8 @@ namespace Cafe.Controllers
                 ViewBag.CurrentBranch = "All Branches";
             }
 
-            return View(await items.OrderBy(i => i.CurrentQuantity).ToListAsync());
+            // Order by Quantity (DB field), NOT CurrentQuantity
+            return View(await items.OrderBy(i => i.Quantity).ToListAsync());
         }
 
         // GET: InventoryItem/Details/5
@@ -69,11 +70,6 @@ namespace Cafe.Controllers
             if (ModelState.IsValid)
             {
                 inventoryItem.LastUpdated = DateTime.Now;
-                // Set default Category if not bound
-                if (string.IsNullOrEmpty(inventoryItem.Category))
-                {
-                    inventoryItem.Category = "General";
-                }
                 _context.Add(inventoryItem);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Inventory item created successfully!";
@@ -108,12 +104,6 @@ namespace Cafe.Controllers
                 try
                 {
                     inventoryItem.LastUpdated = DateTime.Now;
-                    // Preserve Category from existing item if not bound
-                    var existingItem = await _context.InventoryItems.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
-                    if (existingItem != null && string.IsNullOrEmpty(inventoryItem.Category))
-                    {
-                        inventoryItem.Category = existingItem.Category;
-                    }
                     _context.Update(inventoryItem);
                     await _context.SaveChangesAsync();
                     TempData["Success"] = "Inventory item updated successfully!";
@@ -167,7 +157,10 @@ namespace Cafe.Controllers
             var inventoryItem = await _context.InventoryItems.FindAsync(id);
             if (inventoryItem != null)
             {
-                inventoryItem.Quantity += quantity;
+                // Convert decimal input to int (round as you prefer; here we round)
+                int add = (int)Math.Round(quantity, MidpointRounding.AwayFromZero);
+                inventoryItem.Quantity += add;
+
                 inventoryItem.LastUpdated = DateTime.Now;
                 await _context.SaveChangesAsync();
                 return Json(new { success = true });
@@ -205,7 +198,9 @@ namespace Cafe.Controllers
             var inventoryItem = await _context.InventoryItems.FindAsync(id);
             if (inventoryItem != null)
             {
-                inventoryItem.Quantity = newQuantity;
+                int qty = (int)Math.Round(newQuantity, MidpointRounding.AwayFromZero);
+                inventoryItem.Quantity = qty;
+
                 inventoryItem.LastUpdated = DateTime.Now;
                 await _context.SaveChangesAsync();
                 return Json(new { success = true });

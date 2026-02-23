@@ -12,43 +12,68 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .dashboard-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .dashboard-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
+            .dashboard-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            }
 
         .notification-dot {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        width: 18px;
-        height: 18px;
-        background-color: #f44336;
-        border-radius: 50%;
-        color: white;
-        font-size: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 18px;
+            height: 18px;
+            background-color: #f44336;
+            border-radius: 50%;
+            color: white;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
         }
     </style>
 </head>
+<header class="rounded-3xl border border-slate-200 bg-white/90 backdrop-blur-lg shadow-[0_18px_60px_rgba(15,23,42,0.08)] px-4 sm:px-6 py-4 sm:py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="flex items-center gap-3">
+        <div class="relative w-11 h-11">
+            <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-300 via-rose-300 to-sky-300 blur-sm opacity-80">
+            </div>
+            <div class="relative w-full h-full rounded-2xl bg-white flex items-center justify-center text-xl shadow-sm border border-slate-100">
+                <i class="fas fa-mug-hot text-amber-600"></i>
+            </div>
+        </div>
+        <div>
+            <p class="pill-badge border-slate-200 bg-slate-50 text-slate-500">
+                Cafe OS
+            </p>
+            <h1 class="mt-1 text-lg sm:text-xl font-semibold tracking-tight text-slate-900">
+                Dashboard Overview
+            </h1>
+            <p class="text-xs text-slate-500">
+                Quick view of branches, staff, orders and menu performance.
+            </p>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-2 sm:gap-3">
+        <a href="@Url.Action("Index", "Reports")"
+           class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-slate-50 text-xs sm:text-[13px] font-semibold px-3.5 py-1.5 shadow-sm hover:bg-slate-800 transition">
+            <i class="fas fa-chart-line text-[11px]"></i>
+            <span>Go to Reports</span>
+        </a>
+    </div>
+</header>
 <body class="bg-gray-50 min-h-screen">
     <!-- Main content area -->
     <div class="main-content flex-1 ml-0 ">
         <!-- Header -->
         <header class="bg-white border-b border-gray-200">
             <div class="flex items-center justify-between p-4">
-                <div class="flex items-center">
-                    <button id="mobileMenuButton" class="md:hidden mr-3 text-gray-600">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
-                    <h2 class="text-2xl font-semibold text-gray-800">Dashboard Overview</h2>
-                </div>
+               
 
                 <div class="flex items-center space-x-4">
                     <!-- Notifications -->

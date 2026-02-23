@@ -32,18 +32,24 @@ namespace Cafe.Services
                 if (item == null || quantity <= 0)
                     return false;
 
-                var quantityBefore = item.Quantity;
-                item.Quantity += quantity;
+                // Quantity is int in the model; keep a decimal copy for the transaction log
+                var quantityBefore = (decimal)item.Quantity;
+
+                // Add decimal quantity to int quantity with rounding
+                int add = (int)Math.Round(quantity, MidpointRounding.AwayFromZero);
+                item.Quantity += add;
                 item.LastUpdated = DateTime.Now;
+
+                var quantityAfter = (decimal)item.Quantity;
 
                 // Create transaction record
                 var inventoryTransaction = new InventoryTransaction
                 {
                     InventoryItemId = inventoryItemId,
                     TransactionType = "Stock In",
-                    Quantity = quantity,
+                    Quantity = quantity,            // decimal field on transaction
                     QuantityBefore = quantityBefore,
-                    QuantityAfter = item.Quantity,
+                    QuantityAfter = quantityAfter,
                     Notes = notes,
                     BranchId = item.BranchId,
                     PerformedBy = performedBy,
@@ -70,21 +76,30 @@ namespace Cafe.Services
             try
             {
                 var item = await _context.InventoryItems.FindAsync(inventoryItemId);
-                if (item == null || quantity <= 0 || item.Quantity < quantity)
+                if (item == null || quantity <= 0)
                     return false;
 
-                var quantityBefore = item.Quantity;
-                item.Quantity -= quantity;
+                // Convert decimal quantity to int for comparison and updating
+                int qtyToRemove = (int)Math.Round(quantity, MidpointRounding.AwayFromZero);
+
+                if (item.Quantity < qtyToRemove)
+                    return false;
+
+                var quantityBefore = (decimal)item.Quantity;
+
+                item.Quantity -= qtyToRemove;
                 item.LastUpdated = DateTime.Now;
+
+                var quantityAfter = (decimal)item.Quantity;
 
                 // Create transaction record
                 var inventoryTransaction = new InventoryTransaction
                 {
                     InventoryItemId = inventoryItemId,
                     TransactionType = transactionType,
-                    Quantity = quantity,
+                    Quantity = quantity,              // decimal on transaction
                     QuantityBefore = quantityBefore,
-                    QuantityAfter = item.Quantity,
+                    QuantityAfter = quantityAfter,
                     Notes = notes,
                     BranchId = item.BranchId,
                     PerformedBy = performedBy,
@@ -120,16 +135,18 @@ namespace Cafe.Services
 
                 foreach (var orderItem in order.OrderItems)
                 {
-                    // Get recipe mappings for this menu item
                     var recipeMappings = await _context.InventoryRecipeMappings
                         .Include(rm => rm.InventoryItem)
-                        .Where(rm => rm.MenuItemId == orderItem.MenuItemId 
+                        .Where(rm => rm.MenuItemId == orderItem.MenuItemId
                                   && rm.InventoryItem.BranchId == branchId)
                         .ToListAsync();
 
                     foreach (var mapping in recipeMappings)
                     {
-                        var requiredQuantity = mapping.QuantityRequired * orderItem.Quantity;
+                        // QuantityRequired is probably decimal; multiply by int quantity
+                        var requiredQuantityDecimal = mapping.QuantityRequired * orderItem.Quantity;
+                        int requiredQuantity = (int)Math.Round(requiredQuantityDecimal, MidpointRounding.AwayFromZero);
+
                         var item = mapping.InventoryItem;
 
                         if (item.Quantity < requiredQuantity)
@@ -138,18 +155,21 @@ namespace Cafe.Services
                             return false;
                         }
 
-                        var quantityBefore = item.Quantity;
+                        var quantityBefore = (decimal)item.Quantity;
+
                         item.Quantity -= requiredQuantity;
                         item.LastUpdated = DateTime.Now;
+
+                        var quantityAfter = (decimal)item.Quantity;
 
                         // Create transaction record
                         var inventoryTransaction = new InventoryTransaction
                         {
                             InventoryItemId = item.Id,
                             TransactionType = "Order Usage",
-                            Quantity = requiredQuantity,
+                            Quantity = requiredQuantityDecimal, // decimal on transaction
                             QuantityBefore = quantityBefore,
-                            QuantityAfter = item.Quantity,
+                            QuantityAfter = quantityAfter,
                             Notes = $"Used for Order #{order.OrderNumber}",
                             BranchId = branchId,
                             OrderId = orderId,
@@ -182,7 +202,10 @@ namespace Cafe.Services
 
             foreach (var mapping in recipeMappings)
             {
-                var requiredQuantity = mapping.QuantityRequired * quantity;
+                // mapping.QuantityRequired likely decimal; multiply by int quantity
+                var requiredQuantityDecimal = mapping.QuantityRequired * quantity;
+                int requiredQuantity = (int)Math.Round(requiredQuantityDecimal, MidpointRounding.AwayFromZero);
+
                 if (mapping.InventoryItem.Quantity < requiredQuantity)
                 {
                     return false;
@@ -198,7 +221,8 @@ namespace Cafe.Services
             if (item == null)
                 return;
 
-           
+            // Currently no Status field on InventoryItem – nothing to update here now.
+            // Left as a hook in case you add a Status column/property later.
         }
 
         public async Task<string> GetInventoryStatus(decimal currentQuantity, decimal minimumThreshold)

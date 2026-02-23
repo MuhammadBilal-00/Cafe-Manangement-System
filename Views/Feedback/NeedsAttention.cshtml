@@ -1,0 +1,53 @@
+﻿@model List<Cafe.Models.Feedback>
+
+@{
+    ViewData["Title"] = "Feedback - Needs Attention";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
+</head>
+<body>
+
+    <h1>Feedback - Needs Attention</h1>
+
+    <p>
+        Showing low-rated (1-2 stars), unresolved feedback from the last 7 days.
+    </p>
+
+    @if (Model != null && Model.Any())
+    {
+        <ul>
+            @foreach (var f in Model)
+            {
+                var fullStars = new string('*', f.Rating);
+                var emptyStars = new string('-', 5 - f.Rating);
+                var ratingStars = fullStars + emptyStars;
+
+                <li>
+                    <strong>@ratingStars</strong>
+                    @f.Date.ToString("yyyy-MM-dd HH:mm")
+                    @(" | Branch: " + (f.Branch != null ? f.Branch.Name : ""))
+                    <br />
+                    @("Comments: " + (f.Comments ?? ""))
+                    <br />
+                    @("Customer: " + (f.Customer != null ? f.Customer.Name : "Anonymous"))
+                    <br />
+                    <a href="@Url.Action("Details", "Feedback", new { id = f.Id })">
+                        View and resolve
+                    </a>
+                    <hr />
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>No urgent feedback right now.</p>
+    }
+
+</body>
+</html>
