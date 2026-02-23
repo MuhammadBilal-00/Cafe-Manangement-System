@@ -185,7 +185,7 @@
                                         var totalItems = Model.Count();
                                         var healthy = totalItems == 0
                                         ? 0
-                                        : (int)(Model.Count(i => i.CurrentQuantity > i.MinimumThreshold) * 100.0 / totalItems);
+                                        : (int)(Model.Count(i => i.Quantity > i.ReorderLevel) * 100.0 / totalItems);
                                     }
                                     <span>@healthy% OK</span>
                                 </div>
@@ -285,9 +285,9 @@
                     {
                         var branch = branchGroup.Key;
                         var items = branchGroup.ToList();
-                        var needReorder = items.Count(i => i.CurrentQuantity <= i.MinimumThreshold);
-                        var outOfStock = items.Count(i => i.CurrentQuantity == 0);
-                        var totalValue = items.Sum(i => i.CurrentQuantity * i.CostPerUnit);
+                        var needReorder = items.Count(i => i.Quantity <= i.ReorderLevel);
+                        var outOfStock = items.Count(i => i.Quantity == 0);
+                        var totalValue = items.Sum(i => i.Quantity * i.UnitPrice);
 
                         <div class="space-y-4 branch-section" data-branch-id="@branch.Id">
                             <div class="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 shadow-[0_18px_55px_rgba(15,23,42,0.9)]">
