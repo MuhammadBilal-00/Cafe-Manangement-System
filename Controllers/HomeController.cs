@@ -34,6 +34,34 @@ namespace Cafe.Controllers
                 .Where(o => o.Status == "Completed")
                 .AverageAsync(o => (double?)o.TotalAmount) ?? 0;
 
+            // Monthly revenue data for chart (last 12 months)
+            var twelveMonthsAgo = DateTime.Today.AddMonths(-11).Date;
+            twelveMonthsAgo = new DateTime(twelveMonthsAgo.Year, twelveMonthsAgo.Month, 1);
+            var monthlyRevenue = await _context.Orders
+                .Where(o => o.Status == "Completed" && o.OrderDate >= twelveMonthsAgo)
+                .GroupBy(o => new { o.OrderDate.Year, o.OrderDate.Month })
+                .Select(g => new { g.Key.Year, g.Key.Month, Revenue = g.Sum(o => (decimal?)o.TotalAmount) ?? 0m })
+                .OrderBy(g => g.Year).ThenBy(g => g.Month)
+                .ToListAsync();
+
+            var chartLabels = new List<string>();
+            var chartData = new List<decimal>();
+            for (int i = 0; i < 12; i++)
+            {
+                var date = twelveMonthsAgo.AddMonths(i);
+                chartLabels.Add(date.ToString("MMM yyyy"));
+                var match = monthlyRevenue.FirstOrDefault(m => m.Year == date.Year && m.Month == date.Month);
+                chartData.Add(match?.Revenue ?? 0m);
+            }
+
+            // Low stock alerts
+            var lowStockItems = await _context.InventoryItems
+                .Include(i => i.Branch)
+                .Where(i => i.Quantity <= i.ReorderLevel)
+                .OrderBy(i => i.Quantity)
+                .Take(5)
+                .ToListAsync();
+
             // Get recent orders - Alternative approach if navigation properties aren't working
             var recentOrders = await _context.Orders
                 .OrderByDescending(o => o.OrderDate)
@@ -75,6 +103,9 @@ namespace Cafe.Controllers
             ViewBag.TotalMenuItems = totalMenuItems;
             ViewBag.AverageOrderValue = averageOrderValue.ToString("0.00");
             ViewBag.RecentOrders = recentOrders;
+            ViewBag.ChartLabels = chartLabels;
+            ViewBag.ChartData = chartData;
+            ViewBag.LowStockItems = lowStockItems;
 
             return View();
         }

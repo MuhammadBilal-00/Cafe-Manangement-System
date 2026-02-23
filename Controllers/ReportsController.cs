@@ -211,6 +211,39 @@ namespace Cafe.Controllers
 
             return await branchesQuery.Where(b => b.IsActive).ToListAsync();
         }
+
+        // CSV Export: /Reports/ExportSalesCsv
+        public async Task<IActionResult> ExportSalesCsv(DateTime? from, DateTime? to, int? branchId)
+        {
+            var (start, end) = GetDateRangeOrDefault(from, to);
+
+            IQueryable<Order> baseQuery = _context.Orders;
+            baseQuery = ApplyRoleBasedBranchFilter(baseQuery, branchId, out _);
+
+            var orders = await baseQuery
+                .Include(o => o.Branch)
+                .Include(o => o.Customer)
+                .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("OrderNumber,Date,Customer,Branch,Status,Amount");
+            foreach (var o in orders)
+            {
+                csv.AppendLine($"{o.OrderNumber},{o.OrderDate:yyyy-MM-dd},{EscapeCsv(o.Customer?.Name ?? "")},{EscapeCsv(o.Branch?.Name ?? "")},{EscapeCsv(o.Status)},{o.TotalAmount:F2}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", $"sales-report-{start:yyyyMMdd}-{end:yyyyMMdd}.csv");
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return "\"" + value.Replace("\"", "\"\"") + "\"";
+            return value;
+        }
         // BRANCH PERFORMANCE: /Reports/BranchPerformance
         // BRANCH PERFORMANCE: /Reports/BranchPerformance
         public async Task<IActionResult> BranchPerformance(DateTime? from, DateTime? to)

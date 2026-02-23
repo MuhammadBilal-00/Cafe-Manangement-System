@@ -15,6 +15,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add authentication services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddHttpContextAccessor();
 
 // Add session support
@@ -33,6 +34,9 @@ builder.Services.AddLogging();
 
 var app = builder.Build();
 
+// Seed demo data
+await Cafe.Data.SeedData.InitializeAsync(app.Services);
+
 // Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
@@ -49,6 +53,7 @@ app.UseRouting();
 app.UseSession();
 
 // Add custom authentication middleware
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<AuthenticationMiddleware>();
 
 app.UseAuthorization();

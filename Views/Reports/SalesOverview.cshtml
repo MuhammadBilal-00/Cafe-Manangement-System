@@ -138,6 +138,10 @@
                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs sm:text-sm font-medium border border-slate-200 hover:bg-slate-200 transition">
                             Reset
                         </a>
+                        <a href="@Url.Action("ExportSalesCsv", "Reports", new { from = from.ToString("yyyy-MM-dd"), to = to.ToString("yyyy-MM-dd"), branchId = selectedBranchId })"
+                           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs sm:text-sm font-medium border border-emerald-200 hover:bg-emerald-100 transition">
+                            📥 Export CSV
+                        </a>
                     </div>
                 </form>
             </div>

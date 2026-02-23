@@ -1,0 +1,152 @@
+@model List<Cafe.Models.AuditLog>
+@{
+    ViewData["Title"] = "Audit Logs";
+}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Audit Logs</h1>
+    <p class="text-sm text-gray-500 mt-1">Track system activity and user actions across the application.</p>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-md p-6 mb-6">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Entity Type</label>
+            <select name="entityType" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <option value="">All Types</option>
+                @if (ViewBag.EntityTypes != null)
+                {
+                    foreach (var et in ViewBag.EntityTypes)
+                    {
+                        <option value="@et" selected="@(ViewBag.SelectedEntityType == et)">@et</option>
+                    }
+                }
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Action</label>
+            <select name="action" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <option value="">All Actions</option>
+                @if (ViewBag.Actions != null)
+                {
+                    foreach (var a in ViewBag.Actions)
+                    {
+                        <option value="@a" selected="@(ViewBag.SelectedAction == a)">@a</option>
+                    }
+                }
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+            <input type="date" name="from" value="@(ViewBag.FromDate != null ? ((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd") : "")"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+            <input type="date" name="to" value="@(ViewBag.ToDate != null ? ((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd") : "")"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+        </div>
+        <div>
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+                <i class="fas fa-filter mr-1"></i> Filter
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Results -->
+<div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <span class="text-sm text-gray-600">Showing @Model.Count of @ViewBag.TotalItems total entries</span>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="p-12 text-center">
+            <i class="fas fa-clipboard-list text-4xl text-gray-300 mb-3"></i>
+            <p class="text-gray-500">No audit log entries found.</p>
+            <p class="text-gray-400 text-sm mt-1">Activity will appear here as users interact with the system.</p>
+        </div>
+    }
+    else
+    {
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timestamp</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entity</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach (var log in Model)
+                    {
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                                @log.Timestamp.ToLocalTime().ToString("MMM dd, yyyy HH:mm:ss")
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <div class="font-medium text-gray-800">@(log.UserName ?? "System")</div>
+                                <div class="text-xs text-gray-500">@(log.UserRole ?? "")</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                @{
+                                    var badgeColor = log.Action switch
+                                    {
+                                        "Create" => "bg-green-100 text-green-800",
+                                        "Update" => "bg-blue-100 text-blue-800",
+                                        "Delete" => "bg-red-100 text-red-800",
+                                        "Login" => "bg-indigo-100 text-indigo-800",
+                                        "Logout" => "bg-gray-100 text-gray-800",
+                                        _ => "bg-yellow-100 text-yellow-800"
+                                    };
+                                }
+                                <span class="px-2 py-1 text-xs rounded-full font-medium @badgeColor">@log.Action</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="text-gray-800">@log.EntityType</span>
+                                @if (log.EntityId.HasValue)
+                                {
+                                    <span class="text-gray-400 text-xs ml-1">#@log.EntityId</span>
+                                }
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                                @(log.Details ?? "—")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if ((int)ViewBag.TotalPages > 1)
+        {
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+                <span class="text-sm text-gray-600">
+                    Page @ViewBag.CurrentPage of @ViewBag.TotalPages
+                </span>
+                <div class="flex gap-2">
+                    @if ((int)ViewBag.CurrentPage > 1)
+                    {
+                        <a href="@Url.Action("Index", new { entityType = ViewBag.SelectedEntityType, action = ViewBag.SelectedAction, from = ViewBag.FromDate, to = ViewBag.ToDate, page = (int)ViewBag.CurrentPage - 1 })"
+                           class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-chevron-left mr-1"></i> Previous
+                        </a>
+                    }
+                    @if ((int)ViewBag.CurrentPage < (int)ViewBag.TotalPages)
+                    {
+                        <a href="@Url.Action("Index", new { entityType = ViewBag.SelectedEntityType, action = ViewBag.SelectedAction, from = ViewBag.FromDate, to = ViewBag.ToDate, page = (int)ViewBag.CurrentPage + 1 })"
+                           class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            Next <i class="fas fa-chevron-right ml-1"></i>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>

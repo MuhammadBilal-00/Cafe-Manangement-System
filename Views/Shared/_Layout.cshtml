@@ -105,6 +105,17 @@
                             Feedback
                         </a>
                     </div>
+
+                    @if (Context.Session.GetString("UserRole") == "Owner")
+                    {
+                        <!-- Audit Logs -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="AuditLog" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-clipboard-list mr-3"></i>
+                                Audit Logs
+                            </a>
+                        </div>
+                    }
                 </div>
 
                 <!-- Account Section -->
@@ -243,6 +254,17 @@
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script>
+        // Confirmation dialog for destructive actions
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[data-confirm]').forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    if (!confirm(form.getAttribute('data-confirm'))) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+
         // Mobile menu functionality
         document.getElementById('mobileMenuButton')?.addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('open');
