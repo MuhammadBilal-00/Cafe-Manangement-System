@@ -21,7 +21,7 @@ namespace Cafe.Services
         public async Task LogAsync(string action, string entityType, int? entityId, string? details)
         {
             var session = _httpContextAccessor.HttpContext?.Session;
-            var userIdStr = session?.GetString("UserId");
+            var userId = session?.GetInt32("UserId");
 
             var log = new AuditLog
             {
@@ -29,7 +29,7 @@ namespace Cafe.Services
                 EntityType = entityType,
                 EntityId = entityId,
                 Details = details?.Length > MaxDetailsLength ? details.Substring(0, MaxDetailsLength) : details,
-                UserId = int.TryParse(userIdStr, out var uid) ? uid : null,
+                UserId = userId,
                 UserName = session?.GetString("UserName"),
                 UserRole = session?.GetString("UserRole"),
                 IpAddress = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString(),

@@ -170,6 +170,24 @@ namespace Cafe.Controllers
             return _context.Users.Any(e => e.Id == id);
         }
 
+        public async Task<IActionResult> Profile()
+        {
+            var userIdStr = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                var userIdInt = HttpContext.Session.GetInt32("UserId");
+                if (!userIdInt.HasValue)
+                    return RedirectToAction("Login", "Auth");
+                userId = userIdInt.Value;
+            }
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return RedirectToAction("Login", "Auth");
+
+            return View(user);
+        }
+
         public async Task<IActionResult> Settings()
         {
             var userIdStr = HttpContext.Session.GetString("UserId");
