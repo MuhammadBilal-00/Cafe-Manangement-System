@@ -37,10 +37,10 @@ namespace Cafe.Models
 
         // Navigation Properties
         [ForeignKey("StaffId")]
-        public Staff Staff { get; set; }
+        public Staff Staff { get; set; } = null!;
 
         [ForeignKey("CreatedBy")]
-        public User CreatedByUser { get; set; }
+        public User CreatedByUser { get; set; } = null!;
     }
 
 }

@@ -9,7 +9,7 @@ namespace Cafe.Models
 
         [Required]
         [StringLength(100)]
-        public string SupplierName { get; set; }
+        public string SupplierName { get; set; } = string.Empty;
 
         [Required]
         public int ItemId { get; set; }
@@ -25,10 +25,10 @@ namespace Cafe.Models
         public decimal TotalCost { get; set; }
 
         [StringLength(500)]
-        public string Notes { get; set; }
+        public string? Notes { get; set; }
 
         // Navigation Properties
         [ForeignKey("ItemId")]
-        public InventoryItem Item { get; set; }
+        public InventoryItem Item { get; set; } = null!;
     }
 }

@@ -12,7 +12,7 @@ namespace Cafe.Models
 
         [Required]
         [StringLength(20)]
-        public string TransactionType { get; set; } // Stock In, Stock Out, Wastage, Expiry, Order Usage
+        public string TransactionType { get; set; } = string.Empty; // Stock In, Stock Out, Wastage, Expiry, Order Usage
 
         [Required]
         [Range(0.01, double.MaxValue)]
@@ -41,10 +41,10 @@ namespace Cafe.Models
 
         // Navigation Properties
         [ForeignKey("InventoryItemId")]
-        public InventoryItem InventoryItem { get; set; }
+        public InventoryItem InventoryItem { get; set; } = null!;
 
         [ForeignKey("BranchId")]
-        public Branch Branch { get; set; }
+        public Branch Branch { get; set; } = null!;
 
         [ForeignKey("OrderId")]
         public Order? Order { get; set; }

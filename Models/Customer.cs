@@ -22,6 +22,6 @@ namespace Cafe.Models
 
         // Navigation Properties
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = null!;
     }
 }

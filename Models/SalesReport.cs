@@ -25,10 +25,10 @@ namespace Cafe.Models
         public decimal AverageOrderValue { get; set; }
 
         [StringLength(1000)]
-        public string Summary { get; set; }
+        public string? Summary { get; set; }
 
         // Navigation Properties
         [ForeignKey("BranchId")]
-        public Branch Branch { get; set; }
+        public Branch Branch { get; set; } = null!;
     }
 }

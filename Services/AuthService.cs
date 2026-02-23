@@ -46,7 +46,7 @@ namespace Cafe.Services
         public User? Authenticate(string email, string password)
         {
             var user = _context.Users.FirstOrDefault(u => u.Email == email);
-            if (user == null || !VerifyPassword(password, user.PasswordHash))
+            if (user == null || !VerifyPassword(password, user.PasswordHash ?? string.Empty))
                 return null;
 
             return user;

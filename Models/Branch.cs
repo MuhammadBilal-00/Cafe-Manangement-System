@@ -9,15 +9,15 @@ namespace Cafe.Models
 
             [Required]
             [StringLength(100)]
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
             [Required]
             [StringLength(200)]
-            public string Location { get; set; }
+            public string Location { get; set; } = string.Empty;
 
             [Required]
             [StringLength(20)]
-            public string ContactInfo { get; set; }
+            public string ContactInfo { get; set; } = string.Empty;
 
             [StringLength(100)]
             public string? OpeningHours { get; set; }

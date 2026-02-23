@@ -26,10 +26,10 @@ namespace Cafe.Models
 
         // Navigation Properties
         [ForeignKey("MenuItemId")]
-        public MenuItem MenuItem { get; set; }
+        public MenuItem MenuItem { get; set; } = null!;
 
         [ForeignKey("IngredientId")]
-        public Ingredient Ingredient { get; set; }
+        public Ingredient Ingredient { get; set; } = null!;
     }
 
 }

@@ -48,8 +48,8 @@ namespace Cafe.Controllers
             {
                 menuItemsQuery = menuItemsQuery.Where(m =>
                     m.Name.Contains(search) ||
-                    m.Description.Contains(search) ||
-                    m.Tags.Contains(search));
+                    (m.Description != null && m.Description.Contains(search)) ||
+                    (m.Tags != null && m.Tags.Contains(search)));
             }
 
             if (!string.IsNullOrEmpty(dietaryFilter))

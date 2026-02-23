@@ -45,6 +45,6 @@ namespace Cafe.Models
         public User? Customer { get; set; }
 
         [ForeignKey("BranchId")]
-        public Branch Branch { get; set; }
+        public Branch Branch { get; set; } = null!;
     }
 }

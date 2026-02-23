@@ -10,7 +10,7 @@ namespace Cafe.Models
 
         [Required]
         [StringLength(100)]
-        public string RoleName { get; set; }
+        public string RoleName { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? Description { get; set; }

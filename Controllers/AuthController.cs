@@ -1,10 +1,10 @@
-﻿// Controllers/AuthController.cs
+// Controllers/AuthController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Cafe.Data;
 using Cafe.Models;
 using Cafe.Models.ViewModels;
-using Cafe.Services; // Add this using directive
+using Cafe.Services;
 
 namespace Cafe.Controllers
 {
@@ -18,37 +18,8 @@ namespace Cafe.Controllers
             _context = context;
             _authService = authService;
         }
-        // Test this first - add this temporary action to your AuthController to generate the correct hashes
 
-    //    public IActionResult GenerateCorrectHashes()
-    //    {
-    //        var passwords = new Dictionary<string, string>
-    //{
-    //    {"password123", ""},
-    //    {"manager123", ""},
-    //    {"staff123", ""},
-    //    {"customer123", ""}
-    //};
-
-    //        // Generate hashes using your current AuthService
-    //        foreach (var pwd in passwords.Keys.ToList())
-    //        {
-    //            passwords[pwd] = _authService.HashPassword(pwd);
-    //        }
-
-    //        ViewBag.Hashes = passwords;
-    //        return Content($@"
-    //    UPDATE Users SET PasswordHash = CASE 
-    //        WHEN Email = 'owner@restaurant.com' THEN '{passwords["password123"]}'
-    //        WHEN Email = 'manager@restaurant.com' THEN '{passwords["manager123"]}'
-    //        WHEN Email = 'staff@restaurant.com' THEN '{passwords["staff123"]}'
-    //        WHEN Email = 'customer@email.com' THEN '{passwords["customer123"]}'
-    //        ELSE PasswordHash
-    //    END;
-    //");
-    //    }
         // GET: /Auth/Login
-
         public IActionResult Login()
         {
             if (HttpContext.Session.GetInt32("UserId").HasValue)
@@ -67,22 +38,30 @@ namespace Cafe.Controllers
             {
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
 
-                // Debug info that will show on the page
-                ViewBag.DebugInfo = $"Email: {model.Email} | User Found: {user != null}";
-
-                if (user != null)
-                {
-                    ViewBag.DebugInfo += $" | Role: {user.Role} | Stored Hash: {user.PasswordHash?.Substring(0, 10)}...";
-                    ViewBag.DebugInfo += $" | Generated Hash: {_authService.HashPassword(model.Password).Substring(0, 10)}...";
-                    ViewBag.DebugInfo += $" | Match: {_authService.VerifyPassword(model.Password, user.PasswordHash)}";
-                }
-
-                if (user != null && _authService.VerifyPassword(model.Password, user.PasswordHash))
+                if (user != null && _authService.VerifyPassword(model.Password, user.PasswordHash ?? string.Empty))
                 {
                     // Set session values
                     HttpContext.Session.SetInt32("UserId", user.Id);
                     HttpContext.Session.SetString("UserName", user.Name);
                     HttpContext.Session.SetString("UserRole", user.Role);
+
+                    // Set branch info if applicable
+                    if (user.Role == "BranchManager")
+                    {
+                        var branch = await _context.Branches.FirstOrDefaultAsync(b => b.ManagerId == user.Id);
+                        if (branch != null)
+                        {
+                            HttpContext.Session.SetInt32("ManagedBranchId", branch.Id);
+                        }
+                    }
+                    else if (user.Role == "Staff")
+                    {
+                        var staff = await _context.Staff.FirstOrDefaultAsync(s => s.UserId == user.Id);
+                        if (staff != null)
+                        {
+                            HttpContext.Session.SetInt32("StaffBranchId", staff.BranchId);
+                        }
+                    }
 
                     TempData["Success"] = $"Welcome back, {user.Name}!";
                     return RedirectToAction("Index", "Home");
@@ -93,48 +72,6 @@ namespace Cafe.Controllers
 
             return View(model);
         }
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Login(LoginViewModel model)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
-
-        //        if (user != null && _authService.VerifyPassword(model.Password, user.PasswordHash))
-        //        {
-        //            // Set session values
-        //            HttpContext.Session.SetInt32("UserId", user.Id);
-        //            HttpContext.Session.SetString("UserName", user.Name);
-        //            HttpContext.Session.SetString("UserRole", user.Role);
-
-        //            // Set branch info if applicable
-        //            if (user.Role == "BranchManager")
-        //            {
-        //                var branch = await _context.Branches.FirstOrDefaultAsync(b => b.ManagerId == user.Id);
-        //                if (branch != null)
-        //                {
-        //                    HttpContext.Session.SetInt32("ManagedBranchId", branch.Id);
-        //                }
-        //            }
-        //            else if (user.Role == "Staff")
-        //            {
-        //                var staff = await _context.Staff.FirstOrDefaultAsync(s => s.UserId == user.Id);
-        //                if (staff != null)
-        //                {
-        //                    HttpContext.Session.SetInt32("StaffBranchId", staff.BranchId);
-        //                }
-        //            }
-
-        //            TempData["Success"] = $"Welcome back, {user.Name}!";
-        //            return RedirectToAction("Index", "Home");
-        //        }
-
-        //        ModelState.AddModelError("", "Invalid email or password");
-        //    }
-
-        //    return View(model);
-        //}
 
         // GET: /Auth/Register
         public IActionResult Register()

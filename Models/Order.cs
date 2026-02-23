@@ -9,7 +9,7 @@ namespace Cafe.Models
 
         [Required]
         [StringLength(20)]
-        public string OrderNumber { get; set; }
+        public string OrderNumber { get; set; } = string.Empty;
 
         [Required]
         public int CustomerId { get; set; }
@@ -32,10 +32,10 @@ namespace Cafe.Models
 
         // Navigation Properties
         [ForeignKey("CustomerId")]
-        public User Customer { get; set; }
+        public User Customer { get; set; } = null!;
 
         [ForeignKey("BranchId")]
-        public Branch Branch { get; set; }
+        public Branch Branch { get; set; } = null!;
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
