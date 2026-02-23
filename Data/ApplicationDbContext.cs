@@ -42,6 +42,9 @@ namespace Cafe.Data
         public DbSet<Feedback> Feedbacks { get; set; }
         public DbSet<SalesReport> SalesReports { get; set; }
 
+        // Audit
+        public DbSet<AuditLog> AuditLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -550,6 +553,17 @@ namespace Cafe.Data
             modelBuilder.Entity<DailySpecial>()
                 .ToTable(t => t.HasCheckConstraint("CK_DailySpecial_SpecialPrice",
                     "[SpecialPrice] >= 0"));
+
+            // Audit Log defaults
+            modelBuilder.Entity<AuditLog>()
+                .Property(a => a.Timestamp)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<AuditLog>()
+                .HasIndex(a => a.Timestamp);
+
+            modelBuilder.Entity<AuditLog>()
+                .HasIndex(a => a.EntityType);
         }
     }
 }

@@ -1,5 +1,6 @@
 using Cafe.Data;
 using Cafe.Models;
+using Cafe.Models.ViewModels;
 using Cafe.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -167,6 +168,56 @@ namespace Cafe.Controllers
         private bool UserExists(int id)
         {
             return _context.Users.Any(e => e.Id == id);
+        }
+
+        public async Task<IActionResult> Settings()
+        {
+            var userIdStr = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                var userIdInt = HttpContext.Session.GetInt32("UserId");
+                if (!userIdInt.HasValue)
+                    return RedirectToAction("Login", "Auth");
+                userId = userIdInt.Value;
+            }
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return RedirectToAction("Login", "Auth");
+
+            return View(user);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            var userIdInt = HttpContext.Session.GetInt32("UserId");
+            if (!userIdInt.HasValue)
+                return RedirectToAction("Login", "Auth");
+
+            if (!ModelState.IsValid)
+            {
+                var user = await _context.Users.FindAsync(userIdInt.Value);
+                TempData["Error"] = "Please fix the validation errors.";
+                return View("Settings", user);
+            }
+
+            var currentUser = await _context.Users.FindAsync(userIdInt.Value);
+            if (currentUser == null)
+                return RedirectToAction("Login", "Auth");
+
+            if (!_authService.VerifyPassword(model.CurrentPassword, currentUser.PasswordHash ?? string.Empty))
+            {
+                TempData["Error"] = "Current password is incorrect.";
+                return View("Settings", currentUser);
+            }
+
+            currentUser.PasswordHash = _authService.HashPassword(model.NewPassword);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Password changed successfully.";
+            return RedirectToAction("Settings");
         }
     }
 }

@@ -258,9 +258,46 @@
             </div>
 
             <!-- Recent orders and popular items -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Recent Orders -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Low Stock Alerts -->
                 <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>Low Stock
+                        </h3>
+                        <a asp-controller="InventoryItem" asp-action="Index" class="text-sm text-blue-600 hover:underline">View all</a>
+                    </div>
+                    @if (ViewBag.LowStockItems != null && ViewBag.LowStockItems.Count > 0)
+                    {
+                        <div class="space-y-3">
+                            @foreach (var item in ViewBag.LowStockItems)
+                            {
+                                <div class="flex items-center justify-between p-3 rounded-lg bg-amber-50 border border-amber-200">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">@item.Name</p>
+                                        <p class="text-xs text-gray-500">@item.Branch?.Name</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm font-bold @(item.Quantity == 0 ? "text-red-600" : "text-amber-600")">
+                                            @item.Quantity @item.Unit
+                                        </span>
+                                        <p class="text-xs text-gray-400">Min: @item.ReorderLevel</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-6">
+                            <i class="fas fa-check-circle text-3xl text-green-400 mb-2"></i>
+                            <p class="text-sm text-gray-500">All stock levels are healthy</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-lg font-semibold text-gray-800">Recent Orders</h3>
                         <a asp-controller="Order" asp-action="Index" class="text-sm text-blue-600 hover:underline">View all</a>
@@ -346,16 +383,19 @@
     </div>
 
     <script>
-        // Revenue chart
+        // Revenue chart with real data
         document.addEventListener('DOMContentLoaded', function() {
+            var chartLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.ChartLabels));
+            var chartData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.ChartData));
+
             const revenueCtx = document.getElementById('revenueChart').getContext('2d');
             const revenueChart = new Chart(revenueCtx, {
                 type: 'line',
                 data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    labels: chartLabels,
                     datasets: [{
                         label: 'Monthly Revenue ($)',
-                        data: [4200, 4800, 5200, 5800, 6200, 6800, 7200, 7800, 8200, 8800, 9200, 9800],
+                        data: chartData,
                         borderColor: '#4f46e5',
                         backgroundColor: 'rgba(79, 70, 229, 0.1)',
                         tension: 0.4,
