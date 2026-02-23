@@ -11,7 +11,7 @@ namespace Cafe.Models
         [Required]
         public int BranchId { get; set; }
 
-        public string Notes { get; set; }
+        public string? Notes { get; set; }
 
         public List<OrderItemDto> OrderItems { get; set; } = new List<OrderItemDto>();
     }

@@ -45,13 +45,13 @@ namespace Cafe.Models
 
         // Navigation Properties
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = null!;
 
         [ForeignKey("StaffRoleId")]
-        public StaffRole StaffRole { get; set; }
+        public StaffRole StaffRole { get; set; } = null!;
 
         [ForeignKey("BranchId")]
-        public Branch Branch { get; set; }
+        public Branch Branch { get; set; } = null!;
 
         // Collections
         public ICollection<StaffSalary> SalaryHistory { get; set; } = new List<StaffSalary>();

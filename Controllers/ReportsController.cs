@@ -7,7 +7,6 @@ using Cafe.Models.ViewModels;
 using Cafe.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Cafe.Models.ViewModels;
 
 namespace Cafe.Controllers
 {

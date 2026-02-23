@@ -13,20 +13,20 @@ namespace Cafe.Models
 
         [Required]
         [StringLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [Required]
         [EmailAddress]
         [StringLength(150)]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Required]
         [StringLength(20)]
-        public string Phone { get; set; }
+        public string Phone { get; set; } = string.Empty;
 
         [Required]
         [StringLength(50)]
-        public string Role { get; set; } // Owner, BranchManager, Staff, Customer
+        public string Role { get; set; } = string.Empty; // Owner, BranchManager, Staff, Customer
 
         [StringLength(255)]
         public string? PasswordHash { get; set; }

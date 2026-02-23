@@ -10,7 +10,7 @@ namespace Cafe.Models
 
         [Required]
         [StringLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? Description { get; set; }
@@ -102,10 +102,10 @@ namespace Cafe.Models
 
         // Navigation Properties
         [ForeignKey("CategoryId")]
-        public Category Category { get; set; }
+        public Category Category { get; set; } = null!;
 
         [ForeignKey("BranchId")]
-        public Branch Branch { get; set; }
+        public Branch Branch { get; set; } = null!;
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public ICollection<MenuItemIngredient> Ingredients { get; set; } = new List<MenuItemIngredient>();

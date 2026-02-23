@@ -25,9 +25,9 @@ namespace Cafe.Models
 
         // Navigation Properties
         [ForeignKey("MenuItemId")]
-        public MenuItem MenuItem { get; set; }
+        public MenuItem MenuItem { get; set; } = null!;
 
         [ForeignKey("BranchId")]
-        public Branch Branch { get; set; }
+        public Branch Branch { get; set; } = null!;
     }
 }

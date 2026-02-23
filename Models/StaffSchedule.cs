@@ -30,7 +30,7 @@ public class StaffSchedule
 
     // Navigation Properties
     [ForeignKey("StaffId")]
-    public Staff Staff { get; set; }
+    public Staff Staff { get; set; } = null!;
 
     [ForeignKey("ApprovedBy")]
     public User? ApprovedByUser { get; set; }

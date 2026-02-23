@@ -20,8 +20,8 @@ namespace Cafe.Controllers
             {
                 ingredientsQuery = ingredientsQuery.Where(i =>
                     i.Name.Contains(search) ||
-                    i.Description.Contains(search) ||
-                    i.Supplier.Contains(search));
+                    (i.Description != null && i.Description.Contains(search)) ||
+                    (i.Supplier != null && i.Supplier.Contains(search)));
             }
 
             if (showAllergens)

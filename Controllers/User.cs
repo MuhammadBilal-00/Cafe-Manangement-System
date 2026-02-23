@@ -1,18 +1,20 @@
-﻿using Cafe.Data;
+using Cafe.Data;
 using Cafe.Models;
+using Cafe.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Cafe.Models;
 
-namespace RestaurantManagement.Controllers
+namespace Cafe.Controllers
 {
     public class UserController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IAuthService _authService;
 
-        public UserController(ApplicationDbContext context)
+        public UserController(ApplicationDbContext context, IAuthService authService)
         {
             _context = context;
+            _authService = authService;
         }
 
         public async Task<IActionResult> Index(string role)
@@ -68,8 +70,7 @@ namespace RestaurantManagement.Controllers
                     return View(user);
                 }
 
-                // In a real application, you would hash the password properly
-                user.PasswordHash = "hashed_" + user.PasswordHash;
+                user.PasswordHash = _authService.HashPassword(user.PasswordHash ?? "changeme");
 
                 _context.Add(user);
                 await _context.SaveChangesAsync();
@@ -166,45 +167,6 @@ namespace RestaurantManagement.Controllers
         private bool UserExists(int id)
         {
             return _context.Users.Any(e => e.Id == id);
-        }
-
-        // Simple login functionality (for demonstration)
-        public IActionResult Login()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string email, string password)
-        {
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
-            {
-                ModelState.AddModelError("", "Email and password are required");
-                return View();
-            }
-
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == email);
-
-            if (user != null && user.PasswordHash == "hashed_" + password)
-            {
-                // In a real application, use proper authentication
-                HttpContext.Session.SetString("UserId", user.Id.ToString());
-                HttpContext.Session.SetString("UserName", user.Name);
-                HttpContext.Session.SetString("UserRole", user.Role);
-
-                return RedirectToAction("Index", "Home");
-            }
-
-            ModelState.AddModelError("", "Invalid email or password");
-            return View();
-        }
-
-        public IActionResult Logout()
-        {
-            HttpContext.Session.Clear();
-            return RedirectToAction("Login");
         }
     }
 }

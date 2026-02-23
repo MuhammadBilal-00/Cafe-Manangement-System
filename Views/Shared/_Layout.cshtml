@@ -176,9 +176,12 @@
                         <!-- User info -->
                         <div class="flex items-center space-x-3">
                             <div class="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
-                                @if (Context.Session.GetString("UserName") != null)
+                                @{
+                                    var userName = Context.Session.GetString("UserName");
+                                }
+                                @if (!string.IsNullOrEmpty(userName))
                                 {
-                                    @Context.Session.GetString("UserName").Substring(0, 1).ToUpper()
+                                    @userName.Substring(0, 1).ToUpper()
                                 }
                                 else
                                 {
