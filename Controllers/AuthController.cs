@@ -12,11 +12,13 @@ namespace Cafe.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IAuthService _authService;
+        private readonly IAuditLogService _auditLogService;
 
-        public AuthController(ApplicationDbContext context, IAuthService authService)
+        public AuthController(ApplicationDbContext context, IAuthService authService, IAuditLogService auditLogService)
         {
             _context = context;
             _authService = authService;
+            _auditLogService = auditLogService;
         }
 
         // GET: /Auth/Login
@@ -64,6 +66,7 @@ namespace Cafe.Controllers
                     }
 
                     TempData["Success"] = $"Welcome back, {user.Name}!";
+                    await _auditLogService.LogAsync("Login", "User", user.Id, $"User {user.Name} logged in");
                     return RedirectToAction("Index", "Home");
                 }
 
@@ -121,6 +124,7 @@ namespace Cafe.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+                await _auditLogService.LogAsync("Create", "User", user.Id, $"New user registered: {user.Name} ({user.Role})");
 
                 TempData["Success"] = "Registration successful! Please login.";
                 return RedirectToAction("Login");
@@ -132,8 +136,9 @@ namespace Cafe.Controllers
         // POST: /Auth/Logout
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
+            await _auditLogService.LogAsync("Logout", "User", null, "User logged out");
             HttpContext.Session.Clear();
             TempData["Success"] = "You have been logged out successfully.";
             return RedirectToAction("Login");

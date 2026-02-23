@@ -34,6 +34,9 @@ builder.Services.AddLogging();
 
 var app = builder.Build();
 
+// Seed demo data
+await Cafe.Data.SeedData.InitializeAsync(app.Services);
+
 // Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
