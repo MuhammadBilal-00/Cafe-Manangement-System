@@ -8,6 +8,7 @@ namespace Cafe.Services
 {
     public class AuditLogService : IAuditLogService
     {
+        private const int MaxDetailsLength = 500;
         private readonly ApplicationDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -27,7 +28,7 @@ namespace Cafe.Services
                 Action = action,
                 EntityType = entityType,
                 EntityId = entityId,
-                Details = details?.Length > 500 ? details.Substring(0, 500) : details,
+                Details = details?.Length > MaxDetailsLength ? details.Substring(0, MaxDetailsLength) : details,
                 UserId = int.TryParse(userIdStr, out var uid) ? uid : null,
                 UserName = session?.GetString("UserName"),
                 UserRole = session?.GetString("UserRole"),

@@ -231,7 +231,7 @@ namespace Cafe.Controllers
             csv.AppendLine("OrderNumber,Date,Customer,Branch,Status,Amount");
             foreach (var o in orders)
             {
-                csv.AppendLine($"{o.OrderNumber},{o.OrderDate:yyyy-MM-dd},{EscapeCsv(o.Customer?.Name ?? "")},{EscapeCsv(o.Branch?.Name ?? "")},{o.Status},{o.TotalAmount:F2}");
+                csv.AppendLine($"{o.OrderNumber},{o.OrderDate:yyyy-MM-dd},{EscapeCsv(o.Customer?.Name ?? "")},{EscapeCsv(o.Branch?.Name ?? "")},{EscapeCsv(o.Status)},{o.TotalAmount:F2}");
             }
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
