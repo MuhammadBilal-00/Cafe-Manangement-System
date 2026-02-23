@@ -36,7 +36,6 @@ namespace Cafe.Controllers
                 ViewBag.CurrentBranch = "All Branches";
             }
 
-            // Order by Quantity (DB field), NOT CurrentQuantity
             return View(await items.OrderBy(i => i.Quantity).ToListAsync());
         }
 
