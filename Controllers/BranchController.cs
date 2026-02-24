@@ -296,5 +296,36 @@ namespace Cafe.Controllers
         {
             return _context.Branches.Any(e => e.Id == id);
         }
+
+        public async Task<IActionResult> ExportCsv()
+        {
+            IQueryable<Branch> query = _context.Branches.Include(b => b.Manager);
+
+            if (HttpContext.Session.IsBranchManager())
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (managedBranchId.HasValue)
+                    query = query.Where(b => b.Id == managedBranchId.Value);
+            }
+
+            var branches = await query.OrderBy(b => b.Name).ToListAsync();
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("Name,Location,ContactInfo,OpeningHours,Manager,CreatedDate,IsActive");
+            foreach (var b in branches)
+            {
+                csv.AppendLine($"{EscapeCsv(b.Name)},{EscapeCsv(b.Location)},{EscapeCsv(b.ContactInfo)},{EscapeCsv(b.OpeningHours ?? "")},{EscapeCsv(b.Manager?.Name ?? "")},{b.CreatedDate:yyyy-MM-dd},{b.IsActive}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", $"branches-{DateTime.Now:yyyyMMdd}.csv");
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return $"\"{value.Replace("\"", "\"\"\"")}\""; 
+            return value;
+        }
     }
 }

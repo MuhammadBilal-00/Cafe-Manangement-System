@@ -516,5 +516,50 @@ namespace Cafe.Controllers
             ViewBag.IsBranchManager = HttpContext.Session.IsBranchManager();
             ViewBag.IsStaff = HttpContext.Session.IsStaff();
         }
+
+        public async Task<IActionResult> ExportCsv(int? branchId, string? status, DateTime? from, DateTime? to)
+        {
+            var query = _context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.Branch)
+                .AsQueryable();
+
+            if (!HttpContext.Session.IsOwner())
+            {
+                var accessibleBranches = await GetAccessibleBranches();
+                var ids = accessibleBranches.Select(b => b.Id).ToList();
+                query = query.Where(o => ids.Contains(o.BranchId));
+            }
+            else if (branchId.HasValue)
+            {
+                query = query.Where(o => o.BranchId == branchId.Value);
+            }
+
+            if (!string.IsNullOrEmpty(status))
+                query = query.Where(o => o.Status == status);
+            if (from.HasValue)
+                query = query.Where(o => o.OrderDate >= from.Value);
+            if (to.HasValue)
+                query = query.Where(o => o.OrderDate <= to.Value.AddDays(1));
+
+            var orders = await query.OrderByDescending(o => o.OrderDate).ToListAsync();
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("OrderNumber,Date,Customer,Branch,Status,Amount");
+            foreach (var o in orders)
+            {
+                csv.AppendLine($"{o.OrderNumber},{o.OrderDate:yyyy-MM-dd},{EscapeCsv(o.Customer?.Name ?? "")},{EscapeCsv(o.Branch?.Name ?? "")},{EscapeCsv(o.Status)},{o.TotalAmount:F2}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", $"orders-{DateTime.Now:yyyyMMdd}.csv");
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return $"\"{value.Replace("\"", "\"\"\"")}\""; 
+            return value;
+        }
     }
 }

@@ -276,5 +276,32 @@ namespace Cafe.Controllers
                 })
                 .ToList();
         }
+
+        public async Task<IActionResult> ExportCsv()
+        {
+            var staff = await _context.Staff
+                .Include(s => s.User)
+                .Include(s => s.StaffRole)
+                .Include(s => s.Branch)
+                .OrderBy(s => s.User.Name)
+                .ToListAsync();
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("EmployeeId,Name,Email,Role,Branch,Department,EmploymentType,EmploymentStatus,HireDate,TerminationDate,PerformanceRating,IsActive");
+            foreach (var s in staff)
+            {
+                csv.AppendLine($"{EscapeCsv(s.EmployeeId ?? "")},{EscapeCsv(s.User?.Name ?? "")},{EscapeCsv(s.User?.Email ?? "")},{EscapeCsv(s.StaffRole?.RoleName ?? "")},{EscapeCsv(s.Branch?.Name ?? "")},{EscapeCsv(s.Department ?? "")},{EscapeCsv(s.EmploymentType)},{EscapeCsv(s.EmploymentStatus)},{s.HireDate:yyyy-MM-dd},{s.TerminationDate?.ToString("yyyy-MM-dd") ?? ""},{s.PerformanceRating?.ToString() ?? ""},{s.IsActive}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", $"staff-{DateTime.Now:yyyyMMdd}.csv");
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return $"\"{value.Replace("\"", "\"\"\"")}\""; 
+            return value;
+        }
     }
 }

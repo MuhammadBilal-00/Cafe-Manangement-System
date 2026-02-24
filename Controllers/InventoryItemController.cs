@@ -231,5 +231,32 @@ namespace Cafe.Controllers
         {
             return _context.InventoryItems.Any(e => e.Id == id);
         }
+
+        public async Task<IActionResult> ExportCsv(int? branchId)
+        {
+            IQueryable<InventoryItem> query = _context.InventoryItems.Include(i => i.Branch);
+
+            if (branchId.HasValue)
+                query = query.Where(i => i.BranchId == branchId.Value);
+
+            var items = await query.OrderBy(i => i.Name).ToListAsync();
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("Name,Quantity,Unit,Branch,ReorderLevel,UnitPrice,LastUpdated");
+            foreach (var i in items)
+            {
+                csv.AppendLine($"{EscapeCsv(i.Name)},{i.Quantity},{EscapeCsv(i.Unit)},{EscapeCsv(i.Branch?.Name ?? "")},{i.ReorderLevel},{i.UnitPrice:F2},{i.LastUpdated:yyyy-MM-dd}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", $"inventory-{DateTime.Now:yyyyMMdd}.csv");
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return $"\"{value.Replace("\"", "\"\"\"")}\""; 
+            return value;
+        }
     }
 }

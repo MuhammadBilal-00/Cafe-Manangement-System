@@ -482,5 +482,41 @@ namespace Cafe.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        public async Task<IActionResult> ExportCsv()
+        {
+            var query = _context.MenuItems
+                .Include(m => m.Category)
+                .Include(m => m.Branch)
+                .AsQueryable();
+
+            if (!HttpContext.Session.IsOwner())
+            {
+                var userBranchId = HttpContext.Session.IsBranchManager()
+                    ? HttpContext.Session.GetManagedBranchId()
+                    : HttpContext.Session.GetStaffBranchId();
+                if (userBranchId.HasValue)
+                    query = query.Where(m => m.BranchId == userBranchId.Value);
+            }
+
+            var items = await query.OrderBy(m => m.Name).ToListAsync();
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("Name,Description,Price,CostPrice,Category,Branch,Availability,Calories,PreparationTime(min),AverageRating,Tags,CreatedDate");
+            foreach (var m in items)
+            {
+                csv.AppendLine($"{EscapeCsv(m.Name)},{EscapeCsv(m.Description ?? "")},{m.Price:F2},{m.CostPrice:F2},{EscapeCsv(m.Category?.Name ?? "")},{EscapeCsv(m.Branch?.Name ?? "")},{m.Availability},{m.Calories?.ToString() ?? ""},{m.PreparationTime},{m.AverageRating?.ToString("F1") ?? ""},{EscapeCsv(m.Tags ?? "")},{m.CreatedDate:yyyy-MM-dd}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", $"menu-items-{DateTime.Now:yyyyMMdd}.csv");
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return $"\"{value.Replace("\"", "\"\"\"")}\""; 
+            return value;
+        }
     }
 }

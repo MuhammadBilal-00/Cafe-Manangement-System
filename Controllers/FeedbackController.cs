@@ -281,5 +281,43 @@ namespace Cafe.Controllers
 
             return View(list);
         }
+
+        public async Task<IActionResult> ExportCsv()
+        {
+            var query = _context.Feedbacks
+                .Include(f => f.Customer)
+                .Include(f => f.Branch)
+                .AsQueryable();
+
+            var userRole = GetCurrentUserRole();
+            if (userRole != "Owner")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                var staffBranchId = HttpContext.Session.GetStaffBranchId();
+                if (managedBranchId.HasValue)
+                    query = query.Where(f => f.BranchId == managedBranchId.Value);
+                else if (staffBranchId.HasValue)
+                    query = query.Where(f => f.BranchId == staffBranchId.Value);
+            }
+
+            var feedbacks = await query.OrderByDescending(f => f.Date).ToListAsync();
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("Id,Branch,Customer,Rating,Category,Source,Status,Date,Comments,StaffNote,ResolvedAt");
+            foreach (var f in feedbacks)
+            {
+                csv.AppendLine($"{f.Id},{EscapeCsv(f.Branch?.Name ?? "")},{EscapeCsv(f.Customer?.Name ?? "Guest")},{f.Rating},{EscapeCsv(f.Category ?? "")},{EscapeCsv(f.Source ?? "")},{EscapeCsv(f.Status.ToString())},{f.Date:yyyy-MM-dd},{EscapeCsv(f.Comments ?? "")},{EscapeCsv(f.StaffNote ?? "")},{f.ResolvedAt?.ToString("yyyy-MM-dd") ?? ""}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", $"feedback-{DateTime.Now:yyyyMMdd}.csv");
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return $"\"{value.Replace("\"", "\"\"\"")}\""; 
+            return value;
+        }
     }
 }
