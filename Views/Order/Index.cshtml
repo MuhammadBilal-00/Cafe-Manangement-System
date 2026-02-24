@@ -96,6 +96,25 @@
     </div>
 </div>
 
+<!-- Quick Actions -->
+@if (Context.Session.GetString("UserRole") == "Owner")
+{
+    <div class="mt-8 bg-blue-50 rounded-lg p-6">
+        <h3 class="text-lg font-medium text-blue-800 mb-4">Quick Actions</h3>
+        <div class="flex flex-wrap gap-4">
+            <button onclick="openModal('createOrderModal')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
+                <i class="fas fa-plus mr-2"></i> New Order
+            </button>
+            <a asp-controller="Reports" asp-action="ExportSalesCsv" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
+                <i class="fas fa-download mr-2"></i> Export Data
+            </a>
+            <a asp-controller="Reports" asp-action="SalesOverview" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
+                <i class="fas fa-chart-bar mr-2"></i> View Reports
+            </a>
+        </div>
+    </div>
+}
+
 @section Scripts {
     <script>
         let currentStatus = "all-orders";
