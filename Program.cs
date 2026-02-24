@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Cafe.Data;
 using Cafe.Services;
 using Cafe.Middleware;
@@ -57,20 +58,35 @@ using (var scope = app.Services.CreateScope())
                 CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
             )");
 
-        // Mark all pending migrations as applied since the schema already exists
+        // Apply each pending migration individually: migrations that create objects
+        // already in the database are marked as applied, while genuinely new migrations
+        // (e.g. AddAuditLogsTable) are executed normally.
         var efVersion = System.Reflection.CustomAttributeExtensions
             .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(typeof(DbContext).Assembly)
             ?.InformationalVersion?.Split('+')[0] ?? "9.0.0";
         var pending = db.Database.GetPendingMigrations().ToList();
+        var migrator = db.GetInfrastructure()
+            .GetRequiredService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>();
+        var reconciled = 0;
+
         foreach (var migration in pending)
         {
-            db.Database.ExecuteSqlRaw(
-                "IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = {0}) " +
-                "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ({0}, {1})",
-                migration, efVersion);
+            try
+            {
+                migrator.Migrate(migration);
+            }
+            catch (Microsoft.Data.SqlClient.SqlException mex) when (mex.Number == 2714)
+            {
+                // This migration creates objects that already exist, mark as applied
+                db.Database.ExecuteSqlRaw(
+                    "IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = {0}) " +
+                    "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ({0}, {1})",
+                    migration, efVersion);
+                reconciled++;
+            }
         }
 
-        logger.LogInformation("Reconciled {Count} migrations with existing database schema.", pending.Count);
+        logger.LogInformation("Reconciled {Count} migrations with existing database schema.", reconciled);
     }
 }
 
