@@ -1,0 +1,126 @@
+@model Cafe.Models.Expense
+@{
+    ViewData["Title"] = "Edit Expense";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var categories = new[] { "Utilities", "Maintenance", "Supplies", "Rent", "Bills", "Marketing", "General" };
+    var paymentMethods = new[] { "Cash", "Card", "BankTransfer", "Cheque" };
+}
+
+<div class="max-w-2xl mx-auto">
+    <div class="flex items-center mb-6">
+        <a asp-action="Expenses" class="text-gray-500 hover:text-gray-700 mr-4">
+            <i class="fas fa-arrow-left text-xl"></i>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-800"><i class="fas fa-edit mr-2"></i> Edit Expense</h1>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form asp-action="EditExpense" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CreatedById" />
+            <input type="hidden" asp-for="CreatedAt" />
+            <input type="hidden" asp-for="ApprovedById" />
+            <input type="hidden" asp-for="ApprovedAt" />
+            <div asp-validation-summary="ModelOnly" class="bg-red-100 text-red-700 p-3 rounded mb-4" style="display:none"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                    <label asp-for="Title" class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                    <input asp-for="Title" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border" />
+                    <span asp-validation-for="Title" class="text-red-500 text-xs"></span>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label asp-for="Description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea asp-for="Description" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border"></textarea>
+                </div>
+
+                <div>
+                    <label asp-for="BranchId" class="block text-sm font-medium text-gray-700 mb-1">Branch *</label>
+                    <select asp-for="BranchId" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border">
+                        <option value="">Select Branch</option>
+                        @foreach (var b in branches)
+                        {
+                            <option value="@b.Id" selected="@(Model.BranchId == b.Id)">@b.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label asp-for="Category" class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                    <select asp-for="Category" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border">
+                        @foreach (var c in categories)
+                        {
+                            <option value="@c" selected="@(Model.Category == c)">@c</option>
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label asp-for="Amount" class="block text-sm font-medium text-gray-700 mb-1">Amount (Rs.) *</label>
+                    <input asp-for="Amount" type="number" step="0.01" min="0.01"
+                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border" />
+                    <span asp-validation-for="Amount" class="text-red-500 text-xs"></span>
+                </div>
+
+                <div>
+                    <label asp-for="ExpenseDate" class="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                    <input asp-for="ExpenseDate" type="date" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border" />
+                </div>
+
+                <div>
+                    <label asp-for="PaymentMethod" class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                    <select asp-for="PaymentMethod" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border">
+                        @foreach (var pm in paymentMethods)
+                        {
+                            <option value="@pm" selected="@(Model.PaymentMethod == pm)">@pm</option>
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label asp-for="ReferenceNumber" class="block text-sm font-medium text-gray-700 mb-1">Reference Number</label>
+                    <input asp-for="ReferenceNumber" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border" />
+                </div>
+
+                <div>
+                    <label asp-for="ApprovalStatus" class="block text-sm font-medium text-gray-700 mb-1">Approval Status</label>
+                    <select asp-for="ApprovalStatus" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border">
+                        <option value="Approved" selected="@(Model.ApprovalStatus == "Approved")">Approved</option>
+                        <option value="Pending" selected="@(Model.ApprovalStatus == "Pending")">Pending</option>
+                        <option value="Rejected" selected="@(Model.ApprovalStatus == "Rejected")">Rejected</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center pt-6">
+                    <input asp-for="IsRecurring" type="checkbox" class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 h-4 w-4" id="isRecurring" />
+                    <label for="isRecurring" class="ml-2 text-sm text-gray-700">Recurring Expense</label>
+                </div>
+
+                <div id="recurringSection" class="md:col-span-2" style="@(Model.IsRecurring ? "" : "display:none")">
+                    <label asp-for="RecurringFrequency" class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                    <select asp-for="RecurringFrequency" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border">
+                        <option value="">Select Frequency</option>
+                        <option value="Monthly" selected="@(Model.RecurringFrequency == "Monthly")">Monthly</option>
+                        <option value="Quarterly" selected="@(Model.RecurringFrequency == "Quarterly")">Quarterly</option>
+                        <option value="Yearly" selected="@(Model.RecurringFrequency == "Yearly")">Yearly</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
+                <a asp-action="Expenses" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</a>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+                    <i class="fas fa-save mr-2"></i> Update Expense
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('isRecurring')?.addEventListener('change', function () {
+        document.getElementById('recurringSection').style.display = this.checked ? 'block' : 'none';
+    });
+</script>

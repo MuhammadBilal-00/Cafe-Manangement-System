@@ -90,6 +90,33 @@
                         </a>
                     </div>
 
+                    <!-- Attendance -->
+                    <div class="rounded-lg py-2 px-3">
+                        <a asp-controller="Attendance" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-calendar-check mr-3"></i>
+                            Attendance
+                        </a>
+                    </div>
+
+                    @if (Context.Session.GetString("UserRole") == "Owner" || Context.Session.GetString("UserRole") == "BranchManager")
+                    {
+                        <!-- Salary Management -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="Salary" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-money-check-alt mr-3"></i>
+                                Salary
+                            </a>
+                        </div>
+
+                        <!-- Financial Management -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="Financial" asp-action="Dashboard" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-coins mr-3"></i>
+                                Financials
+                            </a>
+                        </div>
+                    }
+
                     <!-- Reports -->
                     <div class="rounded-lg py-2 px-3">
                         <a asp-controller="Reports" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">

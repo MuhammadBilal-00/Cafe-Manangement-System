@@ -1,0 +1,182 @@
+@model Cafe.Models.ViewModels.PayslipViewModel
+@{
+    ViewData["Title"] = "Payslip";
+    var r = Model.Record;
+    var monthName = new DateTime(r.Year, r.Month, 1).ToString("MMMM yyyy");
+}
+
+<div class="max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center">
+            <a asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-800">Payslip - @monthName</h1>
+        </div>
+        <button onclick="window.print()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+            <i class="fas fa-print mr-2"></i> Print
+        </button>
+    </div>
+
+    <!-- Payslip Card -->
+    <div class="bg-white rounded-lg shadow-md p-8" id="payslip">
+        <!-- Header -->
+        <div class="border-b pb-6 mb-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-utensils mr-2"></i> Cafe Management</h2>
+                    <p class="text-gray-500">Salary Slip - @monthName</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-500">Generated: @r.GeneratedAt.ToString("dd MMM yyyy")</p>
+                    <span class="px-3 py-1 text-sm font-medium rounded-full @(r.PaymentStatus == "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800")">
+                        @r.PaymentStatus
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Info -->
+        <div class="grid grid-cols-2 gap-6 mb-8">
+            <div>
+                <p class="text-sm text-gray-500">Employee Name</p>
+                <p class="font-medium text-gray-800">@r.Staff?.User?.Name</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Role</p>
+                <p class="font-medium text-gray-800">@r.Staff?.StaffRole?.RoleName</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Branch</p>
+                <p class="font-medium text-gray-800">@r.Branch?.Name</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Period</p>
+                <p class="font-medium text-gray-800">@monthName</p>
+            </div>
+        </div>
+
+        <!-- Attendance Summary -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 class="font-medium text-gray-700 mb-3">Attendance Summary</h3>
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-3 text-center">
+                <div>
+                    <p class="text-xs text-gray-500">Working Days</p>
+                    <p class="font-bold text-lg">@r.TotalWorkingDays</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500">Present</p>
+                    <p class="font-bold text-lg text-green-600">@r.DaysPresent</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500">Absent</p>
+                    <p class="font-bold text-lg text-red-600">@r.DaysAbsent</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500">Late</p>
+                    <p class="font-bold text-lg text-yellow-600">@r.DaysLate</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500">Half-Day</p>
+                    <p class="font-bold text-lg text-orange-600">@r.DaysHalfDay</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500">Attendance %</p>
+                    <p class="font-bold text-lg text-blue-600">@r.AttendancePercentage%</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Salary Breakdown -->
+        <div class="mb-6">
+            <h3 class="font-medium text-gray-700 mb-3">Salary Breakdown</h3>
+            <table class="w-full">
+                <tbody class="divide-y divide-gray-200">
+                    <tr>
+                        <td class="py-3 text-gray-600">Base Salary</td>
+                        <td class="py-3 text-right font-medium">Rs. @r.BaseSalary.ToString("N2")</td>
+                    </tr>
+                    @if (r.BonusAmount > 0)
+                    {
+                        <tr>
+                            <td class="py-3 text-green-600">
+                                Bonus
+                                @if (!string.IsNullOrEmpty(r.BonusReason))
+                                {
+                                    <span class="text-xs text-gray-400 block">@r.BonusReason</span>
+                                }
+                            </td>
+                            <td class="py-3 text-right font-medium text-green-600">+ Rs. @r.BonusAmount.ToString("N2")</td>
+                        </tr>
+                    }
+                    @if (r.DeductionAmount > 0)
+                    {
+                        <tr>
+                            <td class="py-3 text-red-600">
+                                Deductions
+                                @if (!string.IsNullOrEmpty(r.DeductionReason))
+                                {
+                                    <span class="text-xs text-gray-400 block">@r.DeductionReason</span>
+                                }
+                            </td>
+                            <td class="py-3 text-right font-medium text-red-600">- Rs. @r.DeductionAmount.ToString("N2")</td>
+                        </tr>
+                    }
+                    <tr class="border-t-2 border-gray-300">
+                        <td class="py-3 font-bold text-gray-800 text-lg">Net Payable</td>
+                        <td class="py-3 text-right font-bold text-gray-800 text-lg">Rs. @r.FinalSalary.ToString("N2")</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        @if (r.PaidDate.HasValue)
+        {
+            <div class="bg-green-50 rounded-lg p-4">
+                <p class="text-sm text-green-800">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    Paid on @r.PaidDate.Value.ToString("dd MMM yyyy")
+                </p>
+            </div>
+        }
+    </div>
+
+    <!-- Attendance Details -->
+    @if (Model.AttendanceDetails.Any())
+    {
+        <div class="bg-white rounded-lg shadow-md mt-6 overflow-hidden">
+            <div class="p-4 border-b bg-gray-50">
+                <h3 class="font-medium text-gray-700">Daily Attendance Details</h3>
+            </div>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check In</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check Out</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach (var a in Model.AttendanceDetails)
+                    {
+                        var sBadge = a.Status switch
+                        {
+                            "Present" => "bg-green-100 text-green-800",
+                            "Absent" => "bg-red-100 text-red-800",
+                            "Late" => "bg-yellow-100 text-yellow-800",
+                            "Half-Day" => "bg-orange-100 text-orange-800",
+                            _ => "bg-gray-100 text-gray-800"
+                        };
+                        <tr>
+                            <td class="px-4 py-2 text-sm">@a.Date.ToString("dd MMM (ddd)")</td>
+                            <td class="px-4 py-2"><span class="px-2 py-0.5 text-xs rounded-full @sBadge">@a.Status</span></td>
+                            <td class="px-4 py-2 text-sm text-gray-600">@(a.CheckInTime?.ToString(@"hh\:mm") ?? "-")</td>
+                            <td class="px-4 py-2 text-sm text-gray-600">@(a.CheckOutTime?.ToString(@"hh\:mm") ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

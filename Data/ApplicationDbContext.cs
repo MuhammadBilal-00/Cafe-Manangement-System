@@ -45,6 +45,11 @@ namespace Cafe.Data
         // Audit
         public DbSet<AuditLog> AuditLogs { get; set; }
 
+        // Attendance, Salary & Financial
+        public DbSet<Attendance> Attendances { get; set; }
+        public DbSet<SalaryRecord> SalaryRecords { get; set; }
+        public DbSet<Expense> Expenses { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -153,6 +158,32 @@ namespace Cafe.Data
             modelBuilder.Entity<DailySpecial>()
                 .Property(ds => ds.SpecialPrice)
                 .HasPrecision(10, 2);
+
+            // SalaryRecord decimal precision
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.BaseSalary)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.BonusAmount)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.DeductionAmount)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.FinalSalary)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.AttendancePercentage)
+                .HasPrecision(5, 2);
+
+            // Expense decimal precision
+            modelBuilder.Entity<Expense>()
+                .Property(e => e.Amount)
+                .HasPrecision(10, 2);
         }
 
         private void ConfigureUniqueConstraints(ModelBuilder modelBuilder)
@@ -176,6 +207,16 @@ namespace Cafe.Data
 
             modelBuilder.Entity<Ingredient>()
                 .HasIndex(i => i.Name)
+                .IsUnique();
+
+            // Attendance: one record per staff per date
+            modelBuilder.Entity<Attendance>()
+                .HasIndex(a => new { a.StaffId, a.Date })
+                .IsUnique();
+
+            // SalaryRecord: one record per staff per month
+            modelBuilder.Entity<SalaryRecord>()
+                .HasIndex(sr => new { sr.StaffId, sr.Year, sr.Month })
                 .IsUnique();
         }
 
@@ -323,6 +364,63 @@ namespace Cafe.Data
                 .WithMany()
                 .HasForeignKey(ds => ds.BranchId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Attendance relationships
+            modelBuilder.Entity<Attendance>()
+                .HasOne(a => a.Staff)
+                .WithMany()
+                .HasForeignKey(a => a.StaffId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Attendance>()
+                .HasOne(a => a.Branch)
+                .WithMany()
+                .HasForeignKey(a => a.BranchId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Attendance>()
+                .HasOne(a => a.MarkedBy)
+                .WithMany()
+                .HasForeignKey(a => a.MarkedById)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // SalaryRecord relationships
+            modelBuilder.Entity<SalaryRecord>()
+                .HasOne(sr => sr.Staff)
+                .WithMany()
+                .HasForeignKey(sr => sr.StaffId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .HasOne(sr => sr.Branch)
+                .WithMany()
+                .HasForeignKey(sr => sr.BranchId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .HasOne(sr => sr.GeneratedBy)
+                .WithMany()
+                .HasForeignKey(sr => sr.GeneratedById)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Expense relationships
+            modelBuilder.Entity<Expense>()
+                .HasOne(e => e.Branch)
+                .WithMany()
+                .HasForeignKey(e => e.BranchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Expense>()
+                .HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Expense>()
+                .HasOne(e => e.CreatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.NoAction);
         }
 
         private void ConfigureDefaultValues(ModelBuilder modelBuilder)
@@ -492,6 +590,37 @@ namespace Cafe.Data
             modelBuilder.Entity<MenuItemIngredient>()
                 .Property(mii => mii.IsOptional)
                 .HasDefaultValue(false);
+
+            // Attendance defaults
+            modelBuilder.Entity<Attendance>()
+                .Property(a => a.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<Attendance>()
+                .Property(a => a.Status)
+                .HasDefaultValue("Present");
+
+            // SalaryRecord defaults
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.GeneratedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.PaymentStatus)
+                .HasDefaultValue("Pending");
+
+            // Expense defaults
+            modelBuilder.Entity<Expense>()
+                .Property(e => e.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<Expense>()
+                .Property(e => e.ApprovalStatus)
+                .HasDefaultValue("Approved");
+
+            modelBuilder.Entity<Expense>()
+                .Property(e => e.IsRecurring)
+                .HasDefaultValue(false);
         }
 
         private void ConfigureCheckConstraints(ModelBuilder modelBuilder)
@@ -564,6 +693,29 @@ namespace Cafe.Data
 
             modelBuilder.Entity<AuditLog>()
                 .HasIndex(a => a.EntityType);
+
+            // Attendance check constraint
+            modelBuilder.Entity<Attendance>()
+                .ToTable(t => t.HasCheckConstraint("CK_Attendance_Status",
+                    "[Status] IN ('Present','Absent','Late','Half-Day')"));
+
+            // SalaryRecord check constraints
+            modelBuilder.Entity<SalaryRecord>()
+                .ToTable(t => t.HasCheckConstraint("CK_SalaryRecord_PaymentStatus",
+                    "[PaymentStatus] IN ('Pending','Paid','Cancelled')"));
+
+            modelBuilder.Entity<SalaryRecord>()
+                .ToTable(t => t.HasCheckConstraint("CK_SalaryRecord_Month",
+                    "[Month] >= 1 AND [Month] <= 12"));
+
+            // Expense check constraints
+            modelBuilder.Entity<Expense>()
+                .ToTable(t => t.HasCheckConstraint("CK_Expense_Amount",
+                    "[Amount] > 0"));
+
+            modelBuilder.Entity<Expense>()
+                .ToTable(t => t.HasCheckConstraint("CK_Expense_ApprovalStatus",
+                    "[ApprovalStatus] IN ('Pending','Approved','Rejected')"));
         }
     }
 }

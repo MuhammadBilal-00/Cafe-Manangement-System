@@ -1,0 +1,208 @@
+@model Cafe.Models.ViewModels.ExpenseIndexViewModel
+@{
+    ViewData["Title"] = "Expenses";
+    var categories = new[] { "Utilities", "Maintenance", "Supplies", "Rent", "Bills", "Marketing", "General" };
+}
+
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800"><i class="fas fa-receipt mr-2"></i> Expenses</h1>
+    <div class="flex gap-2">
+        <a asp-action="ExportExpensesCsv" asp-route-branchId="@Model.BranchId"
+           asp-route-from="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-to="@Model.ToDate?.ToString("yyyy-MM-dd")"
+           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+            <i class="fas fa-file-csv mr-2"></i> Export CSV
+        </a>
+        <a asp-action="CreateExpense" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+            <i class="fas fa-plus mr-2"></i> Add Expense
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-lg shadow-md p-4 mb-6">
+    <form method="get" class="flex flex-wrap items-end gap-4">
+        <div class="flex-1 min-w-[140px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+            <select name="branchId" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border">
+                <option value="">All Branches</option>
+                @foreach (var b in Model.Branches)
+                {
+                    <option value="@b.Id" selected="@(Model.BranchId == b.Id)">@b.Name</option>
+                }
+            </select>
+        </div>
+        <div class="flex-1 min-w-[140px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select name="category" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border">
+                <option value="">All Categories</option>
+                @foreach (var c in categories)
+                {
+                    <option value="@c" selected="@(Model.Category == c)">@c</option>
+                }
+            </select>
+        </div>
+        <div class="w-40">
+            <label class="block text-sm font-medium text-gray-700 mb-1">From</label>
+            <input type="date" name="from" value="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border" />
+        </div>
+        <div class="w-40">
+            <label class="block text-sm font-medium text-gray-700 mb-1">To</label>
+            <input type="date" name="to" value="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border" />
+        </div>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+            <i class="fas fa-filter mr-1"></i> Filter
+        </button>
+        <a asp-action="Expenses" class="text-gray-600 hover:text-gray-800 px-3 py-2"><i class="fas fa-times"></i></a>
+    </form>
+</div>
+
+<!-- Summary -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow-md p-4 flex items-center">
+        <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mr-3">
+            <i class="fas fa-money-bill text-orange-500"></i>
+        </div>
+        <div>
+            <p class="text-sm text-gray-500">Total Amount</p>
+            <p class="text-xl font-bold text-orange-600">Rs. @Model.TotalAmount.ToString("N2")</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-4 flex items-center">
+        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+            <i class="fas fa-list text-blue-500"></i>
+        </div>
+        <div>
+            <p class="text-sm text-gray-500">Total Records</p>
+            <p class="text-xl font-bold text-blue-600">@Model.TotalItems</p>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                @if (!Model.Expenses.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fas fa-receipt text-4xl mb-2 block"></i>
+                            No expenses found matching filters.
+                        </td>
+                    </tr>
+                }
+                @foreach (var e in Model.Expenses)
+                {
+                    var catBadge = e.Category switch
+                    {
+                        "Utilities" => "bg-yellow-100 text-yellow-800",
+                        "Maintenance" => "bg-blue-100 text-blue-800",
+                        "Supplies" => "bg-green-100 text-green-800",
+                        "Rent" => "bg-purple-100 text-purple-800",
+                        "Bills" => "bg-red-100 text-red-800",
+                        "Marketing" => "bg-pink-100 text-pink-800",
+                        _ => "bg-gray-100 text-gray-800"
+                    };
+                    var statusBadge = e.ApprovalStatus switch
+                    {
+                        "Approved" => "bg-green-100 text-green-800",
+                        "Pending" => "bg-yellow-100 text-yellow-800",
+                        "Rejected" => "bg-red-100 text-red-800",
+                        _ => "bg-gray-100 text-gray-800"
+                    };
+                    <tr>
+                        <td class="px-4 py-3">
+                            <div class="text-sm font-medium text-gray-800">@e.Title</div>
+                            @if (!string.IsNullOrEmpty(e.Description))
+                            {
+                                <div class="text-xs text-gray-400">@(e.Description.Length > 50 ? e.Description[..50] + "..." : e.Description)</div>
+                            }
+                            @if (e.IsRecurring)
+                            {
+                                <span class="text-xs text-purple-500"><i class="fas fa-sync-alt mr-1"></i>@e.RecurringFrequency</span>
+                            }
+                        </td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded-full @catBadge">@e.Category</span></td>
+                        <td class="px-4 py-3 text-sm text-gray-600">@e.Branch?.Name</td>
+                        <td class="px-4 py-3 text-sm text-right font-medium">Rs. @e.Amount.ToString("N2")</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">@e.ExpenseDate.ToString("dd MMM yyyy")</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded-full @statusBadge">@e.ApprovalStatus</span></td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <a asp-action="EditExpense" asp-route-id="@e.Id"
+                                   class="text-blue-500 hover:text-blue-700" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                @if (ViewBag.UserRole == "Owner" || Context.Session.GetString("UserRole") == "Owner")
+                                {
+                                    <form asp-action="DeleteExpense" asp-route-id="@e.Id" method="post" class="inline"
+                                          onsubmit="return confirm('Delete this expense?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="text-red-500 hover:text-red-700" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t">
+            <p class="text-sm text-gray-500">
+                Showing @(((Model.CurrentPage - 1) * Model.PageSize) + 1) -
+                @Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalItems) of @Model.TotalItems
+            </p>
+            <div class="flex gap-1">
+                @if (Model.CurrentPage > 1)
+                {
+                    <a asp-action="Expenses" asp-route-page="@(Model.CurrentPage - 1)" asp-route-branchId="@Model.BranchId"
+                       asp-route-category="@Model.Category" asp-route-from="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-to="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                       class="px-3 py-1 rounded bg-white border text-gray-700 hover:bg-gray-50">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                }
+                @for (int p = Math.Max(1, Model.CurrentPage - 2); p <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); p++)
+                {
+                    <a asp-action="Expenses" asp-route-page="@p" asp-route-branchId="@Model.BranchId"
+                       asp-route-category="@Model.Category" asp-route-from="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-to="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                       class="px-3 py-1 rounded @(p == Model.CurrentPage ? "bg-blue-600 text-white" : "bg-white border text-gray-700 hover:bg-gray-50")">
+                        @p
+                    </a>
+                }
+                @if (Model.CurrentPage < Model.TotalPages)
+                {
+                    <a asp-action="Expenses" asp-route-page="@(Model.CurrentPage + 1)" asp-route-branchId="@Model.BranchId"
+                       asp-route-category="@Model.Category" asp-route-from="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-to="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                       class="px-3 py-1 rounded bg-white border text-gray-700 hover:bg-gray-50">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<div class="mt-4">
+    <a asp-action="Dashboard" class="text-blue-600 hover:underline"><i class="fas fa-arrow-left mr-1"></i> Back to Dashboard</a>
+</div>
