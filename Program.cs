@@ -38,7 +38,40 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        db.Database.Migrate();
+    }
+    catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 2714) // 2714 = "There is already an object named '...' in the database"
+    {
+        // This occurs when the database was created before EF Core migrations were introduced.
+        logger.LogWarning(ex, "Database objects already exist. Reconciling migration history...");
+
+        // Ensure __EFMigrationsHistory table exists
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '__EFMigrationsHistory')
+            CREATE TABLE [__EFMigrationsHistory] (
+                [MigrationId] nvarchar(150) NOT NULL,
+                [ProductVersion] nvarchar(32) NOT NULL,
+                CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+            )");
+
+        // Mark all pending migrations as applied since the schema already exists
+        var efVersion = System.Reflection.CustomAttributeExtensions
+            .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(typeof(DbContext).Assembly)
+            ?.InformationalVersion?.Split('+')[0] ?? "9.0.0";
+        var pending = db.Database.GetPendingMigrations().ToList();
+        foreach (var migration in pending)
+        {
+            db.Database.ExecuteSqlRaw(
+                "IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = {0}) " +
+                "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ({0}, {1})",
+                migration, efVersion);
+        }
+
+        logger.LogInformation("Reconciled {Count} migrations with existing database schema.", pending.Count);
+    }
 }
 
 // Seed demo data
