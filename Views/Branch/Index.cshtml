@@ -166,10 +166,10 @@
             <a asp-action="Create" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
                 <i class="fas fa-plus mr-2"></i> Add New Branch
             </a>
-            <a href="#" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
+            <a asp-controller="Reports" asp-action="ExportSalesCsv" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
                 <i class="fas fa-download mr-2"></i> Export Data
             </a>
-            <a href="#" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
+            <a asp-controller="Reports" asp-action="BranchPerformance" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
                 <i class="fas fa-chart-bar mr-2"></i> View Reports
             </a>
         </div>
