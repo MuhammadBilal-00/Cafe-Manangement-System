@@ -5,6 +5,7 @@ using Cafe.Attributes;
 using Cafe.Data;
 using Cafe.Helpers;
 using Cafe.Models;
+using Cafe.Models.Requests;
 using Cafe.Models.ViewModels;
 using Cafe.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -242,6 +243,131 @@ namespace Cafe.Controllers
 
             SetSuccessMessage($"{pending.Count} salary records marked as paid!");
             return RedirectToAction(nameof(Index), new { year, month, branchId });
+        }
+
+        // GET: Salary/GetSalaryDetail/5 (JSON API for dynamic summary)
+        [HttpGet]
+        public async Task<IActionResult> GetSalaryDetail(int id)
+        {
+            var record = await _context.SalaryRecords
+                .Include(sr => sr.Staff).ThenInclude(s => s.User)
+                .Include(sr => sr.Staff).ThenInclude(s => s.StaffRole)
+                .Include(sr => sr.Branch)
+                .FirstOrDefaultAsync(sr => sr.Id == id);
+
+            if (record == null) return Json(new { success = false, message = "Record not found" });
+
+            // Branch isolation
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (managedBranchId.HasValue && record.BranchId != managedBranchId.Value)
+                    return Json(new { success = false, message = "Access denied" });
+            }
+
+            // Salary history for this employee
+            var history = await _context.SalaryRecords
+                .Where(sr => sr.StaffId == record.StaffId)
+                .OrderByDescending(sr => sr.Year).ThenByDescending(sr => sr.Month)
+                .Take(6)
+                .Select(sr => new
+                {
+                    sr.Year,
+                    sr.Month,
+                    sr.BaseSalary,
+                    sr.BonusAmount,
+                    sr.DeductionAmount,
+                    sr.FinalSalary,
+                    sr.AttendancePercentage,
+                    sr.PaymentStatus
+                })
+                .ToListAsync();
+
+            return Json(new
+            {
+                success = true,
+                staffName = record.Staff?.User?.Name ?? "Unknown",
+                role = record.Staff?.StaffRole?.RoleName ?? "N/A",
+                branch = record.Branch?.Name ?? "N/A",
+                baseSalary = record.BaseSalary,
+                bonusAmount = record.BonusAmount,
+                bonusReason = record.BonusReason ?? "",
+                deductionAmount = record.DeductionAmount,
+                deductionReason = record.DeductionReason ?? "",
+                finalSalary = record.FinalSalary,
+                daysPresent = record.DaysPresent,
+                totalWorkingDays = record.TotalWorkingDays,
+                daysAbsent = record.DaysAbsent,
+                daysLate = record.DaysLate,
+                daysHalfDay = record.DaysHalfDay,
+                attendancePercentage = record.AttendancePercentage,
+                paymentStatus = record.PaymentStatus,
+                notes = record.Notes ?? "",
+                history
+            });
+        }
+
+        // POST: Salary/AdjustSalary (manual adjustment)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdjustSalary([FromBody] SalaryAdjustRequest request)
+        {
+            if (request == null)
+                return Json(new { success = false, message = "Invalid request" });
+
+            var record = await _context.SalaryRecords.FindAsync(request.RecordId);
+            if (record == null)
+                return Json(new { success = false, message = "Salary record not found" });
+
+            // Branch isolation
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (!managedBranchId.HasValue || record.BranchId != managedBranchId.Value)
+                    return Json(new { success = false, message = "Access denied" });
+            }
+
+            if (record.PaymentStatus == "Paid")
+                return Json(new { success = false, message = "Cannot adjust a paid salary record" });
+
+            // Apply adjustments
+            if (request.BaseSalary.HasValue && request.BaseSalary.Value >= 0)
+                record.BaseSalary = request.BaseSalary.Value;
+
+            if (request.BonusAmount.HasValue && request.BonusAmount.Value >= 0)
+                record.BonusAmount = request.BonusAmount.Value;
+
+            if (!string.IsNullOrEmpty(request.BonusReason))
+                record.BonusReason = request.BonusReason;
+
+            if (request.DeductionAmount.HasValue && request.DeductionAmount.Value >= 0)
+                record.DeductionAmount = request.DeductionAmount.Value;
+
+            if (!string.IsNullOrEmpty(request.DeductionReason))
+                record.DeductionReason = request.DeductionReason;
+
+            // Recalculate final salary based on attendance
+            decimal effectiveBase = record.BaseSalary;
+            if (record.TotalWorkingDays > 0)
+            {
+                decimal perDayRate = record.BaseSalary / record.TotalWorkingDays;
+                decimal effectiveDays = record.DaysPresent + (record.DaysHalfDay * 0.5m);
+                effectiveBase = perDayRate * effectiveDays;
+            }
+            record.FinalSalary = effectiveBase + record.BonusAmount - record.DeductionAmount;
+
+            if (!string.IsNullOrEmpty(request.Notes))
+                record.Notes = request.Notes;
+
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync("AdjustSalary", "SalaryRecord", record.Id,
+                $"Adjusted salary for staff #{record.StaffId}: Base={record.BaseSalary:N0}, Bonus={record.BonusAmount:N0}, Deduction={record.DeductionAmount:N0}, Final={record.FinalSalary:N0}",
+                record.BranchId);
+
+            return Json(new { success = true, finalSalary = record.FinalSalary });
         }
 
         // CSV Export

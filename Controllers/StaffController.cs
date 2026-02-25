@@ -66,19 +66,37 @@ namespace Cafe.Controllers
         }
 
         // GET: Staff/Create
-        [RequireOwner]
         public IActionResult Create()
         {
             PopulateDropdowns();
+
+            // Auto-default branch for Manager
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (managedBranchId.HasValue)
+                    ViewBag.LockedBranchId = managedBranchId.Value;
+            }
+
             return View();
         }
 
         // POST: Staff/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequireOwner]
         public async Task<IActionResult> Create(StaffCreateViewModel model)
         {
+            // Enforce branch for Manager
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (!managedBranchId.HasValue)
+                    return AccessDenied();
+                model.BranchId = managedBranchId.Value;
+            }
+
             if (ModelState.IsValid)
             {
                 // Check if email already exists
@@ -86,6 +104,8 @@ namespace Cafe.Controllers
                 {
                     ModelState.AddModelError("Email", "Email already exists");
                     PopulateDropdowns();
+                    if (userRole == "BranchManager")
+                        ViewBag.LockedBranchId = model.BranchId;
                     return View(model);
                 }
 
@@ -128,6 +148,11 @@ namespace Cafe.Controllers
             }
 
             PopulateDropdowns();
+            if (GetCurrentUserRole() == "BranchManager")
+            {
+                var lockedBranch = HttpContext.Session.GetManagedBranchId();
+                if (lockedBranch.HasValue) ViewBag.LockedBranchId = lockedBranch.Value;
+            }
             return View(model);
         }
 
@@ -162,6 +187,16 @@ namespace Cafe.Controllers
             };
 
             PopulateDropdowns();
+
+            // Lock branch for Manager
+            var editRole = GetCurrentUserRole();
+            if (editRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (managedBranchId.HasValue)
+                    ViewBag.LockedBranchId = managedBranchId.Value;
+            }
+
             return View(model);
         }
 
@@ -173,6 +208,16 @@ namespace Cafe.Controllers
             if (id != model.Id)
             {
                 return NotFound();
+            }
+
+            // Enforce branch for Manager
+            var editUserRole = GetCurrentUserRole();
+            if (editUserRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (!managedBranchId.HasValue)
+                    return AccessDenied();
+                model.BranchId = managedBranchId.Value;
             }
 
             if (ModelState.IsValid)
@@ -226,6 +271,11 @@ namespace Cafe.Controllers
             }
 
             PopulateDropdowns();
+            if (GetCurrentUserRole() == "BranchManager")
+            {
+                var lockedBranch = HttpContext.Session.GetManagedBranchId();
+                if (lockedBranch.HasValue) ViewBag.LockedBranchId = lockedBranch.Value;
+            }
             return View(model);
         }
 
@@ -293,8 +343,18 @@ namespace Cafe.Controllers
                 })
                 .ToList();
 
-            ViewBag.Branches = _context.Branches
-                .Where(b => b.IsActive)
+            var branchQuery = _context.Branches.Where(b => b.IsActive);
+
+            // Managers only see their own branch
+            var role = GetCurrentUserRole();
+            if (role == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (managedBranchId.HasValue)
+                    branchQuery = branchQuery.Where(b => b.Id == managedBranchId.Value);
+            }
+
+            ViewBag.Branches = branchQuery
                 .Select(b => new SelectListItem
                 {
                     Value = b.Id.ToString(),

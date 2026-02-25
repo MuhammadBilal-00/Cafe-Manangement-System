@@ -6,7 +6,7 @@
 
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Salary Management - @monthName</h1>
-    @if (Context.Session.GetString("UserRole") == "Owner")
+    @if (Context.Session.GetString("UserRole") == "Owner" || Context.Session.GetString("UserRole") == "BranchManager")
     {
         <a asp-action="Generate" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
             <i class="fas fa-calculator mr-2"></i> Generate Salaries
@@ -154,10 +154,19 @@
                         <span class="px-2 py-1 text-xs font-medium rounded-full @statusClass">@r.PaymentStatus</span>
                     </td>
                     <td class="px-4 py-4 text-center text-sm">
-                        <a asp-action="Payslip" asp-route-id="@r.Id" class="text-blue-600 hover:text-blue-800 mr-2" title="View Payslip">
+                        <button onclick="viewSalaryDetail(@r.Id)" class="text-blue-600 hover:text-blue-800 mr-2" title="View Details & Adjust">
                             <i class="fas fa-file-alt"></i>
+                        </button>
+                        <a asp-action="Payslip" asp-route-id="@r.Id" class="text-purple-600 hover:text-purple-800 mr-2" title="View Payslip">
+                            <i class="fas fa-receipt"></i>
                         </a>
-                        @if (r.PaymentStatus == "Pending" && Context.Session.GetString("UserRole") == "Owner")
+                        @if (r.PaymentStatus == "Pending")
+                        {
+                            <button onclick="openAdjustModal(@r.Id)" class="text-orange-600 hover:text-orange-800 mr-2" title="Adjust Salary">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        }
+                        @if (r.PaymentStatus == "Pending" && (Context.Session.GetString("UserRole") == "Owner" || Context.Session.GetString("UserRole") == "BranchManager"))
                         {
                             <form asp-action="MarkPaid" asp-route-id="@r.Id" method="post" class="inline">
                                 @Html.AntiForgeryToken()
@@ -212,3 +221,214 @@
         </a>
     </div>
 </div>
+
+<!-- Salary Detail Modal -->
+<div id="salaryDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold"><i class="fas fa-user-circle mr-2 text-blue-600"></i> Employee Salary Summary</h3>
+            <button onclick="closeSalaryModal()" class="text-gray-500 hover:text-black text-xl">&times;</button>
+        </div>
+        <div id="salaryDetailContent" class="space-y-4"></div>
+        <div class="text-right mt-4">
+            <button class="bg-gray-300 px-3 py-1 rounded" onclick="closeSalaryModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Adjust Salary Modal -->
+<div id="adjustSalaryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-full max-w-lg">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold"><i class="fas fa-edit mr-2 text-orange-600"></i> Adjust Salary</h3>
+            <button onclick="closeAdjustModal()" class="text-gray-500 hover:text-black text-xl">&times;</button>
+        </div>
+        <input type="hidden" id="adjustRecordId">
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Base Salary (Rs.)</label>
+                <input id="adjBaseSalary" type="number" min="0" step="100" class="border rounded px-3 py-2 w-full">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bonus (Rs.)</label>
+                    <input id="adjBonusAmount" type="number" min="0" step="100" class="border rounded px-3 py-2 w-full">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bonus Reason</label>
+                    <input id="adjBonusReason" type="text" class="border rounded px-3 py-2 w-full" placeholder="e.g., Performance bonus">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Deduction (Rs.)</label>
+                    <input id="adjDeductionAmount" type="number" min="0" step="100" class="border rounded px-3 py-2 w-full">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Deduction Reason</label>
+                    <input id="adjDeductionReason" type="text" class="border rounded px-3 py-2 w-full" placeholder="e.g., Late penalty">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea id="adjNotes" class="border rounded px-3 py-2 w-full" rows="2" placeholder="Adjustment notes..."></textarea>
+            </div>
+        </div>
+        <div class="mt-4 flex justify-end space-x-2 border-t pt-4">
+            <button class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400" onclick="closeAdjustModal()">Cancel</button>
+            <button id="saveAdjustBtn" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700" onclick="saveAdjustment()">
+                <i class="fas fa-save mr-1"></i> Save Adjustment
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function getToken() {
+            return document.querySelector('[name="__RequestVerificationToken"]').value;
+        }
+
+        function viewSalaryDetail(id) {
+            fetch(`/Salary/GetSalaryDetail/${id}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) { alert(data.message); return; }
+                    const content = document.getElementById('salaryDetailContent');
+                    let historyRows = '';
+                    if (data.history && data.history.length > 0) {
+                        data.history.forEach(h => {
+                            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                            const statusCls = h.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+                            historyRows += `<tr class="border-t text-sm">
+                                <td class="px-3 py-1">${monthNames[h.month-1]} ${h.year}</td>
+                                <td class="px-3 py-1 text-right">Rs. ${h.baseSalary.toLocaleString()}</td>
+                                <td class="px-3 py-1 text-right text-green-600">${h.bonusAmount > 0 ? '+' + h.bonusAmount.toLocaleString() : '-'}</td>
+                                <td class="px-3 py-1 text-right text-red-600">${h.deductionAmount > 0 ? '-' + h.deductionAmount.toLocaleString() : '-'}</td>
+                                <td class="px-3 py-1 text-right font-medium">Rs. ${h.finalSalary.toLocaleString()}</td>
+                                <td class="px-3 py-1 text-center"><span class="px-2 py-0.5 text-xs rounded-full ${statusCls}">${h.paymentStatus}</span></td>
+                            </tr>`;
+                        });
+                    }
+
+                    const pctClass = data.attendancePercentage >= 90 ? 'text-green-600' :
+                                     data.attendancePercentage >= 70 ? 'text-yellow-600' : 'text-red-600';
+
+                    content.innerHTML = `
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <p><b>Employee:</b> ${data.staffName}</p>
+                            <p><b>Role:</b> ${data.role}</p>
+                            <p><b>Branch:</b> ${data.branch}</p>
+                            <p><b>Status:</b> <span class="px-2 py-0.5 text-xs rounded-full ${data.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${data.paymentStatus}</span></p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3 mt-4">
+                            <div class="bg-blue-50 p-3 rounded text-center">
+                                <p class="text-xs text-gray-500">Base Salary</p>
+                                <p class="font-bold text-blue-700">Rs. ${data.baseSalary.toLocaleString()}</p>
+                            </div>
+                            <div class="bg-green-50 p-3 rounded text-center">
+                                <p class="text-xs text-gray-500">Bonus</p>
+                                <p class="font-bold text-green-700">+ Rs. ${data.bonusAmount.toLocaleString()}</p>
+                                ${data.bonusReason ? `<p class="text-xs text-gray-400">${data.bonusReason}</p>` : ''}
+                            </div>
+                            <div class="bg-red-50 p-3 rounded text-center">
+                                <p class="text-xs text-gray-500">Deduction</p>
+                                <p class="font-bold text-red-700">- Rs. ${data.deductionAmount.toLocaleString()}</p>
+                                ${data.deductionReason ? `<p class="text-xs text-gray-400">${data.deductionReason}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="bg-purple-50 p-3 rounded text-center mt-2">
+                            <p class="text-xs text-gray-500">Final Salary</p>
+                            <p class="text-xl font-bold text-purple-700">Rs. ${data.finalSalary.toLocaleString()}</p>
+                        </div>
+                        <div class="mt-4">
+                            <h4 class="font-medium text-sm text-gray-700 mb-1">Attendance Summary</h4>
+                            <div class="grid grid-cols-5 gap-2 text-center text-xs">
+                                <div class="bg-gray-50 p-2 rounded"><p class="text-gray-500">Present</p><p class="font-bold">${data.daysPresent}</p></div>
+                                <div class="bg-gray-50 p-2 rounded"><p class="text-gray-500">Absent</p><p class="font-bold text-red-600">${data.daysAbsent}</p></div>
+                                <div class="bg-gray-50 p-2 rounded"><p class="text-gray-500">Late</p><p class="font-bold text-yellow-600">${data.daysLate}</p></div>
+                                <div class="bg-gray-50 p-2 rounded"><p class="text-gray-500">Half Day</p><p class="font-bold">${data.daysHalfDay}</p></div>
+                                <div class="bg-gray-50 p-2 rounded"><p class="text-gray-500">Rate</p><p class="font-bold ${pctClass}">${data.attendancePercentage}%</p></div>
+                            </div>
+                        </div>
+                        ${data.notes ? `<p class="mt-3 text-sm text-gray-600"><b>Notes:</b> ${data.notes}</p>` : ''}
+                        ${historyRows ? `
+                        <div class="mt-4">
+                            <h4 class="font-medium text-sm text-gray-700 mb-2">Salary History (Last 6 months)</h4>
+                            <table class="min-w-full border rounded text-xs">
+                                <thead class="bg-gray-50"><tr>
+                                    <th class="px-3 py-1 text-left">Period</th>
+                                    <th class="px-3 py-1 text-right">Base</th>
+                                    <th class="px-3 py-1 text-right">Bonus</th>
+                                    <th class="px-3 py-1 text-right">Deduct</th>
+                                    <th class="px-3 py-1 text-right">Final</th>
+                                    <th class="px-3 py-1 text-center">Status</th>
+                                </tr></thead>
+                                <tbody>${historyRows}</tbody>
+                            </table>
+                        </div>` : ''}
+                    `;
+                    document.getElementById('salaryDetailModal').classList.remove('hidden');
+                });
+        }
+
+        function closeSalaryModal() {
+            document.getElementById('salaryDetailModal').classList.add('hidden');
+        }
+
+        function openAdjustModal(id) {
+            document.getElementById('adjustRecordId').value = id;
+            // Pre-fill from detail
+            fetch(`/Salary/GetSalaryDetail/${id}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) { alert(data.message); return; }
+                    document.getElementById('adjBaseSalary').value = data.baseSalary;
+                    document.getElementById('adjBonusAmount').value = data.bonusAmount;
+                    document.getElementById('adjBonusReason').value = data.bonusReason;
+                    document.getElementById('adjDeductionAmount').value = data.deductionAmount;
+                    document.getElementById('adjDeductionReason').value = data.deductionReason;
+                    document.getElementById('adjNotes').value = data.notes;
+                    document.getElementById('adjustSalaryModal').classList.remove('hidden');
+                });
+        }
+
+        function closeAdjustModal() {
+            document.getElementById('adjustSalaryModal').classList.add('hidden');
+        }
+
+        function saveAdjustment() {
+            const request = {
+                recordId: parseInt(document.getElementById('adjustRecordId').value),
+                baseSalary: parseFloat(document.getElementById('adjBaseSalary').value) || null,
+                bonusAmount: parseFloat(document.getElementById('adjBonusAmount').value) || null,
+                bonusReason: document.getElementById('adjBonusReason').value || null,
+                deductionAmount: parseFloat(document.getElementById('adjDeductionAmount').value) || null,
+                deductionReason: document.getElementById('adjDeductionReason').value || null,
+                notes: document.getElementById('adjNotes').value || null
+            };
+
+            document.getElementById('saveAdjustBtn').disabled = true;
+            document.getElementById('saveAdjustBtn').textContent = 'Saving...';
+
+            fetch('/Salary/AdjustSalary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify(request)
+            }).then(r => r.json()).then(res => {
+                document.getElementById('saveAdjustBtn').disabled = false;
+                document.getElementById('saveAdjustBtn').innerHTML = '<i class="fas fa-save mr-1"></i> Save Adjustment';
+                if (res.success) {
+                    closeAdjustModal();
+                    alert('Salary adjusted successfully! New final salary: Rs. ' + res.finalSalary.toLocaleString());
+                    location.reload();
+                } else {
+                    alert(res.message);
+                }
+            }).catch(() => {
+                document.getElementById('saveAdjustBtn').disabled = false;
+                document.getElementById('saveAdjustBtn').innerHTML = '<i class="fas fa-save mr-1"></i> Save Adjustment';
+            });
+        }
+    </script>
+}

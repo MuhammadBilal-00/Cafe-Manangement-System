@@ -37,6 +37,7 @@
                     <th class="px-4 py-2">Customer</th>
                     <th class="px-4 py-2">Branch</th>
                     <th class="px-4 py-2">Date</th>
+                    <th class="px-4 py-2">Items</th>
                     <th class="px-4 py-2">Amount</th>
                     <th class="px-4 py-2">Status</th>
                     <th class="px-4 py-2">Actions</th>
@@ -54,11 +55,11 @@
 </div>
 
 <!-- View Order Modal -->
-<div id="viewOrderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div class="bg-white p-6 rounded-lg w-1/2">
+<div id="viewOrderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-bold">Order Details</h3>
-            <button onclick="closeModal('viewOrderModal')" class="text-gray-500 hover:text-black">✕</button>
+            <button onclick="closeModal('viewOrderModal')" class="text-gray-500 hover:text-black text-xl">&times;</button>
         </div>
         <div id="orderDetails" class="space-y-2"></div>
         <div class="text-right mt-4">
@@ -68,30 +69,107 @@
 </div>
 
 <!-- Create Order Modal -->
-<div id="createOrderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div class="bg-white p-6 rounded-lg w-1/2">
+<div id="createOrderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-bold">Create New Order</h3>
-            <button onclick="closeModal('createOrderModal')" class="text-gray-500 hover:text-black">✕</button>
+            <button onclick="closeModal('createOrderModal')" class="text-gray-500 hover:text-black text-xl">&times;</button>
         </div>
 
         <div class="space-y-4">
-            <select id="customerSelect" class="border rounded px-3 py-2 w-full">
-                <option value="">Select Customer</option>
-            </select>
-            <select id="branchSelect" class="border rounded px-3 py-2 w-full">
-                <option value="">Select Branch</option>
-            </select>
-            <select id="menuItemSelect" class="border rounded px-3 py-2 w-full">
-                <option value="">Select Menu Item</option>
-            </select>
-            <input id="quantity" type="number" min="1" value="1" class="border rounded px-3 py-2 w-full">
-            <textarea id="orderNotes" placeholder="Order Notes" class="border rounded px-3 py-2 w-full"></textarea>
+            <!-- Branch Selection -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Branch *</label>
+                <select id="branchSelect" class="border rounded px-3 py-2 w-full">
+                    <option value="">Select Branch</option>
+                </select>
+            </div>
+
+            <!-- Customer Autocomplete -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
+                <div class="relative">
+                    <input id="customerSearch" type="text" placeholder="Start typing customer name, email or phone..."
+                           class="border rounded px-3 py-2 w-full" autocomplete="off">
+                    <input id="customerId" type="hidden" value="">
+                    <div id="customerResults" class="absolute z-10 w-full bg-white border rounded-b shadow-lg hidden max-h-48 overflow-y-auto"></div>
+                </div>
+                <div id="selectedCustomer" class="hidden mt-2 p-2 bg-blue-50 rounded flex justify-between items-center">
+                    <span id="selectedCustomerName" class="text-sm text-blue-800 font-medium"></span>
+                    <button onclick="clearCustomer()" class="text-red-500 hover:text-red-700 text-sm">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+                <button id="quickCreateBtn" onclick="showQuickCreate()" class="hidden mt-1 text-sm text-blue-600 hover:text-blue-800">
+                    <i class="fas fa-plus-circle"></i> Create new customer
+                </button>
+            </div>
+
+            <!-- Quick Create Customer (initially hidden) -->
+            <div id="quickCreateSection" class="hidden bg-green-50 border border-green-200 rounded p-4 space-y-3">
+                <h4 class="text-sm font-bold text-green-800"><i class="fas fa-user-plus mr-1"></i> Quick Create Customer</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input id="newCustName" type="text" placeholder="Full Name *" class="border rounded px-3 py-2 text-sm">
+                    <input id="newCustPhone" type="text" placeholder="Phone *" class="border rounded px-3 py-2 text-sm">
+                    <input id="newCustEmail" type="text" placeholder="Email (optional)" class="border rounded px-3 py-2 text-sm">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="quickCreateCustomer()" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                        <i class="fas fa-check mr-1"></i> Create & Select
+                    </button>
+                    <button onclick="hideQuickCreate()" class="bg-gray-300 px-3 py-1 rounded text-sm hover:bg-gray-400">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Menu Item Selection -->
+            <div class="border-t pt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Order Items *</label>
+                <div class="flex gap-2">
+                    <select id="menuItemSelect" class="border rounded px-3 py-2 flex-1">
+                        <option value="">Select Menu Item</option>
+                    </select>
+                    <input id="itemQuantity" type="number" min="1" value="1" class="border rounded px-3 py-2 w-20" placeholder="Qty">
+                    <button onclick="addOrderItem()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-plus mr-1"></i> Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- Order Items Table -->
+            <div id="orderItemsContainer" class="hidden">
+                <table class="min-w-full divide-y divide-gray-200 text-sm border rounded">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Item</th>
+                            <th class="px-4 py-2 text-center">Qty</th>
+                            <th class="px-4 py-2 text-right">Price</th>
+                            <th class="px-4 py-2 text-right">Subtotal</th>
+                            <th class="px-4 py-2 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderItemsBody" class="divide-y divide-gray-200"></tbody>
+                    <tfoot class="bg-gray-50">
+                        <tr>
+                            <td colspan="3" class="px-4 py-2 text-right font-bold">Total:</td>
+                            <td id="orderTotal" class="px-4 py-2 text-right font-bold text-green-700">$0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Order Notes</label>
+                <textarea id="orderNotes" placeholder="Optional notes..." class="border rounded px-3 py-2 w-full" rows="2"></textarea>
+            </div>
         </div>
 
-        <div class="mt-4 text-right space-x-2">
-            <button class="bg-gray-300 px-3 py-1 rounded" onclick="closeModal('createOrderModal')">Cancel</button>
-            <button id="saveOrderBtn" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Save</button>
+        <div class="mt-4 flex justify-end space-x-2 border-t pt-4">
+            <button class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400" onclick="closeModal('createOrderModal')">Cancel</button>
+            <button id="saveOrderBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" onclick="createOrder()">
+                <i class="fas fa-save mr-1"></i> Create Order
+            </button>
         </div>
     </div>
 </div>
@@ -119,11 +197,13 @@
     <script>
         let currentStatus = "all-orders";
         let currentPage = 1;
+        let orderItems = [];
+        let menuItemsCache = [];
+        let customerSearchTimeout = null;
 
         document.addEventListener("DOMContentLoaded", function () {
             loadBranches();
             loadOrders();
-            loadCustomers();
 
             document.querySelectorAll(".tab-btn").forEach(btn => {
                 btn.addEventListener("click", () => {
@@ -133,117 +213,374 @@
                     loadOrders();
                 });
             });
-                document.getElementById("branchSelect").addEventListener("change", function () {
+
+            document.getElementById("branchSelect").addEventListener("change", function () {
                 const branchId = this.value;
-                if (branchId) {
-                    loadMenuItems(branchId);
-                }});
+                if (branchId) loadMenuItems(branchId);
+                else {
+                    document.getElementById("menuItemSelect").innerHTML = '<option value="">Select Menu Item</option>';
+                    menuItemsCache = [];
+                }
+            });
+
+            // Customer autocomplete
+            const searchInput = document.getElementById("customerSearch");
+            searchInput.addEventListener("input", function () {
+                clearTimeout(customerSearchTimeout);
+                const term = this.value.trim();
+                if (term.length < 2) {
+                    hideCustomerResults();
+                    document.getElementById("quickCreateBtn").classList.add("hidden");
+                    return;
+                }
+                customerSearchTimeout = setTimeout(() => searchCustomers(term), 300);
+            });
+
+            searchInput.addEventListener("blur", () => setTimeout(hideCustomerResults, 200));
+            searchInput.addEventListener("focus", function () {
+                if (this.value.trim().length >= 2) searchCustomers(this.value.trim());
+            });
+
             document.getElementById("search").addEventListener("input", loadOrders);
             document.getElementById("branchFilter").addEventListener("change", loadOrders);
             document.getElementById("dateFilter").addEventListener("change", loadOrders);
-            document.getElementById("createOrderBtn").addEventListener("click", () => openModal('createOrderModal'));
-            document.getElementById("saveOrderBtn").addEventListener("click", createOrder);
+            document.getElementById("createOrderBtn").addEventListener("click", () => {
+                resetCreateForm();
+                openModal('createOrderModal');
+            });
         });
 
-        function loadBranches() {
-            fetch("/Order/GetBranches").then(r => r.json()).then(data => {
-                const branchSelect = document.getElementById("branchFilter");
-                const createBranch = document.getElementById("branchSelect");
-                data.forEach(b => {
-                    branchSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`;
-                    createBranch.innerHTML += `<option value="${b.id}">${b.name}</option>`;
-                });
-            });
-        }
-
-        function loadCustomers() {
-            fetch("/Order/GetCustomers").then(r => r.json()).then(data => {
-                const select = document.getElementById("customerSelect");
-                data.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name}</option>`);
-            });
-        }
-
-               function loadMenuItems(branchId) {
-            fetch(`/Order/GetMenuItems?branchId=${branchId}`)
+        // ===== CUSTOMER AUTOCOMPLETE =====
+        function searchCustomers(term) {
+            fetch(`/Order/SearchCustomers?term=${encodeURIComponent(term)}`)
                 .then(r => r.json())
                 .then(data => {
-                    const select = document.getElementById("menuItemSelect");
-                    select.innerHTML = '<option value="">Select Menu Item</option>';
-                    data.forEach(m => {
-                        select.innerHTML += `<option value="${m.id}">${m.name} - $${m.price}</option>`;
-                    });
-                })
-                .catch(err => console.error("Error loading menu items:", err));
-        }
-
-
-        function loadOrders(page = 1) {
-            currentPage = page;
-            const search = document.getElementById("search").value;
-            const branchId = document.getElementById("branchFilter").value;
-            const date = document.getElementById("dateFilter").value;
-            fetch(`/Order/GetOrders?status=${currentStatus}&search=${search}&branchId=${branchId}&orderDate=${date}&page=${page}`)
-                .then(r => r.json()).then(data => {
-                    const tbody = document.getElementById("ordersTable");
-                    tbody.innerHTML = "";
-                    data.orders.forEach(o => {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td class="px-4 py-2">${o.orderNumber}</td>
-                                <td class="px-4 py-2">${o.customerName}</td>
-                                <td class="px-4 py-2">${o.branchName}</td>
-                                <td class="px-4 py-2">${o.orderDate}</td>
-                                <td class="px-4 py-2">$${o.totalAmount}</td>
-                                <td class="px-4 py-2">${o.status}</td>
-                                <td class="px-4 py-2 space-x-1">
-                                    <button onclick="viewOrder(${o.id})" class="bg-gray-200 px-2 py-1 rounded">View</button>
-                                    <button onclick="updateOrderStatus(${o.id}, 'Completed')" class="bg-green-200 px-2 py-1 rounded">Complete</button>
-                                    <button onclick="cancelOrder(${o.id})" class="bg-red-200 px-2 py-1 rounded">Cancel</button>
-                                </td>
-                            </tr>`;
-                    });
-                    document.getElementById("orderCount").innerText = `Showing ${data.orders.length} of ${data.totalCount} orders`;
+                    const container = document.getElementById("customerResults");
+                    container.innerHTML = "";
+                    if (data.length === 0) {
+                        container.innerHTML = '<div class="p-3 text-sm text-gray-500">No customers found</div>';
+                        document.getElementById("quickCreateBtn").classList.remove("hidden");
+                    } else {
+                        document.getElementById("quickCreateBtn").classList.add("hidden");
+                        data.forEach(c => {
+                            const div = document.createElement("div");
+                            div.className = "p-2 hover:bg-blue-50 cursor-pointer border-b text-sm";
+                            div.innerHTML = `<span class="font-medium">${escapeHtml(c.name)}</span> <span class="text-gray-500">- ${escapeHtml(c.email || '')} / ${escapeHtml(c.phone || '')}</span>`;
+                            div.onclick = () => selectCustomer(c);
+                            container.appendChild(div);
+                        });
+                    }
+                    container.classList.remove("hidden");
                 });
         }
 
-        function viewOrder(id) {
-            fetch(`/Order/GetOrderDetails/${id}`).then(r => r.json()).then(o => {
-                const details = document.getElementById("orderDetails");
-                details.innerHTML = `
-                    <p><b>Order #:</b> ${o.orderNumber}</p>
-                    <p><b>Customer:</b> ${o.customer.name}</p>
-                    <p><b>Branch:</b> ${o.branch}</p>
-                    <p><b>Total:</b> $${o.totalAmount}</p>
-                    <p><b>Status:</b> ${o.status}</p>
-                `;
-                openModal('viewOrderModal');
-            });
+        function selectCustomer(customer) {
+            document.getElementById("customerId").value = customer.id;
+            document.getElementById("customerSearch").value = customer.name;
+            document.getElementById("customerSearch").classList.add("hidden");
+            document.getElementById("selectedCustomer").classList.remove("hidden");
+            document.getElementById("selectedCustomerName").textContent =
+                `${customer.name} (${customer.email || ''} / ${customer.phone || ''})`;
+            hideCustomerResults();
+            document.getElementById("quickCreateBtn").classList.add("hidden");
         }
 
-        function createOrder() {
-            const request = {
-                customerId: document.getElementById("customerSelect").value,
-                branchId: document.getElementById("branchSelect").value,
-                notes: document.getElementById("orderNotes").value,
-                items: [{ menuItemId: document.getElementById("menuItemSelect").value, quantity: document.getElementById("quantity").value }]
-            };
+        function clearCustomer() {
+            document.getElementById("customerId").value = "";
+            document.getElementById("customerSearch").value = "";
+            document.getElementById("customerSearch").classList.remove("hidden");
+            document.getElementById("selectedCustomer").classList.add("hidden");
+            document.getElementById("customerSearch").focus();
+        }
 
-            fetch("/Order/CreateOrder", {
+        function hideCustomerResults() {
+            document.getElementById("customerResults").classList.add("hidden");
+        }
+
+        // ===== QUICK CREATE CUSTOMER =====
+        function showQuickCreate() {
+            const name = document.getElementById("customerSearch").value.trim();
+            document.getElementById("newCustName").value = name;
+            document.getElementById("quickCreateSection").classList.remove("hidden");
+            document.getElementById("quickCreateBtn").classList.add("hidden");
+        }
+
+        function hideQuickCreate() {
+            document.getElementById("quickCreateSection").classList.add("hidden");
+        }
+
+        function quickCreateCustomer() {
+            const name = document.getElementById("newCustName").value.trim();
+            const phone = document.getElementById("newCustPhone").value.trim();
+            const email = document.getElementById("newCustEmail").value.trim();
+
+            if (!name || !phone) { alert("Name and Phone are required."); return; }
+
+            fetch("/Order/QuickCreateCustomer", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                body: JSON.stringify(request)
+                body: JSON.stringify({ name, phone, email: email || null })
             }).then(r => r.json()).then(res => {
                 if (res.success) {
-                    closeModal('createOrderModal');
-                    loadOrders();
-                    alert("Order created successfully");
+                    selectCustomer({ id: res.id, name: res.name, email: email, phone: phone });
+                    hideQuickCreate();
                 } else {
                     alert(res.message);
                 }
             });
         }
 
+        // ===== ORDER ITEMS MANAGEMENT =====
+        function addOrderItem() {
+            const select = document.getElementById("menuItemSelect");
+            const menuItemId = parseInt(select.value);
+            const quantity = parseInt(document.getElementById("itemQuantity").value);
+
+            if (!menuItemId) { alert("Please select a menu item."); return; }
+            if (!quantity || quantity < 1) { alert("Quantity must be at least 1."); return; }
+
+            const menuItem = menuItemsCache.find(m => m.id === menuItemId);
+            if (!menuItem) return;
+
+            // Check if item already added - increment quantity
+            const existingIdx = orderItems.findIndex(i => i.menuItemId === menuItemId);
+            if (existingIdx >= 0) {
+                orderItems[existingIdx].quantity += quantity;
+            } else {
+                orderItems.push({
+                    menuItemId: menuItem.id,
+                    name: menuItem.name,
+                    price: menuItem.price,
+                    quantity: quantity
+                });
+            }
+
+            renderOrderItems();
+            select.value = "";
+            document.getElementById("itemQuantity").value = 1;
+        }
+
+        function removeOrderItem(index) {
+            orderItems.splice(index, 1);
+            renderOrderItems();
+        }
+
+        function updateItemQuantity(index, newQty) {
+            if (newQty < 1) { removeOrderItem(index); return; }
+            orderItems[index].quantity = newQty;
+            renderOrderItems();
+        }
+
+        function renderOrderItems() {
+            const container = document.getElementById("orderItemsContainer");
+            const tbody = document.getElementById("orderItemsBody");
+            tbody.innerHTML = "";
+
+            if (orderItems.length === 0) {
+                container.classList.add("hidden");
+                return;
+            }
+
+            container.classList.remove("hidden");
+            let total = 0;
+
+            orderItems.forEach((item, idx) => {
+                const subtotal = item.price * item.quantity;
+                total += subtotal;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="px-4 py-2">${escapeHtml(item.name)}</td>
+                        <td class="px-4 py-2 text-center">
+                            <input type="number" value="${item.quantity}" min="1"
+                                   class="border rounded w-16 px-2 py-1 text-center text-sm"
+                                   onchange="updateItemQuantity(${idx}, parseInt(this.value))">
+                        </td>
+                        <td class="px-4 py-2 text-right">$${item.price.toFixed(2)}</td>
+                        <td class="px-4 py-2 text-right font-medium">$${subtotal.toFixed(2)}</td>
+                        <td class="px-4 py-2 text-center">
+                            <button onclick="removeOrderItem(${idx})" class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+
+            document.getElementById("orderTotal").textContent = `$${total.toFixed(2)}`;
+        }
+
+        function resetCreateForm() {
+            orderItems = [];
+            renderOrderItems();
+            clearCustomer();
+            document.getElementById("branchSelect").value = "";
+            document.getElementById("menuItemSelect").innerHTML = '<option value="">Select Menu Item</option>';
+            document.getElementById("orderNotes").value = "";
+            document.getElementById("itemQuantity").value = 1;
+            hideQuickCreate();
+            menuItemsCache = [];
+        }
+
+        // ===== API CALLS =====
+        function loadBranches() {
+            fetch("/Order/GetBranches").then(r => r.json()).then(data => {
+                const branchFilter = document.getElementById("branchFilter");
+                const createBranch = document.getElementById("branchSelect");
+                data.forEach(b => {
+                    branchFilter.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
+                    createBranch.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
+                });
+            });
+        }
+
+        function loadMenuItems(branchId) {
+            fetch(`/Order/GetMenuItems?branchId=${branchId}`)
+                .then(r => r.json())
+                .then(data => {
+                    menuItemsCache = data;
+                    const select = document.getElementById("menuItemSelect");
+                    select.innerHTML = '<option value="">Select Menu Item</option>';
+                    data.forEach(m => {
+                        select.innerHTML += `<option value="${m.id}">${escapeHtml(m.name)} (${escapeHtml(m.category)}) - $${m.price.toFixed(2)}</option>`;
+                    });
+                });
+        }
+
+        function loadOrders(page = 1) {
+            currentPage = page;
+            const search = document.getElementById("search").value;
+            const branchId = document.getElementById("branchFilter").value;
+            const date = document.getElementById("dateFilter").value;
+            fetch(`/Order/GetOrders?status=${currentStatus}&search=${encodeURIComponent(search)}&branchId=${branchId}&orderDate=${date}&page=${page}`)
+                .then(r => r.json()).then(data => {
+                    const tbody = document.getElementById("ordersTable");
+                    tbody.innerHTML = "";
+                    if (data.orders.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">No orders found</td></tr>';
+                    }
+                    data.orders.forEach(o => {
+                        const statusBadge = getStatusBadge(o.status);
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 font-medium">${escapeHtml(o.orderNumber)}</td>
+                                <td class="px-4 py-2">${escapeHtml(o.customerName)}</td>
+                                <td class="px-4 py-2">${escapeHtml(o.branchName)}</td>
+                                <td class="px-4 py-2">${o.orderDate}</td>
+                                <td class="px-4 py-2 text-center">${o.itemCount}</td>
+                                <td class="px-4 py-2 font-medium">$${o.totalAmount.toFixed(2)}</td>
+                                <td class="px-4 py-2">${statusBadge}</td>
+                                <td class="px-4 py-2 space-x-1">
+                                    <button onclick="viewOrder(${o.id})" class="bg-gray-200 px-2 py-1 rounded text-xs hover:bg-gray-300">View</button>
+                                    ${o.status !== 'Completed' && o.status !== 'Cancelled' ? `
+                                        <button onclick="updateOrderStatus(${o.id}, 'Completed')" class="bg-green-200 px-2 py-1 rounded text-xs hover:bg-green-300">Complete</button>
+                                        <button onclick="cancelOrder(${o.id})" class="bg-red-200 px-2 py-1 rounded text-xs hover:bg-red-300">Cancel</button>
+                                    ` : ''}
+                                </td>
+                            </tr>`;
+                    });
+                    document.getElementById("orderCount").innerText = `Showing ${data.orders.length} of ${data.totalCount} orders`;
+
+                    // Pagination
+                    const pag = document.getElementById("pagination");
+                    pag.innerHTML = "";
+                    for (let i = 1; i <= data.totalPages; i++) {
+                        const cls = i === data.currentPage ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300";
+                        pag.innerHTML += `<button onclick="loadOrders(${i})" class="px-3 py-1 rounded ${cls}">${i}</button>`;
+                    }
+                });
+        }
+
+        function getStatusBadge(status) {
+            const colors = {
+                'Pending': 'bg-yellow-100 text-yellow-800',
+                'Preparing': 'bg-blue-100 text-blue-800',
+                'Ready': 'bg-purple-100 text-purple-800',
+                'Completed': 'bg-green-100 text-green-800',
+                'Cancelled': 'bg-red-100 text-red-800'
+            };
+            const cls = colors[status] || 'bg-gray-100 text-gray-800';
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full ${cls}">${status}</span>`;
+        }
+
+        function viewOrder(id) {
+            fetch(`/Order/GetOrderDetails/${id}`).then(r => r.json()).then(o => {
+                const details = document.getElementById("orderDetails");
+                let itemsHtml = '';
+                if (o.items && o.items.length > 0) {
+                    itemsHtml = `<table class="min-w-full text-sm mt-2 border rounded">
+                        <thead class="bg-gray-50"><tr>
+                            <th class="px-3 py-1 text-left">Item</th>
+                            <th class="px-3 py-1 text-center">Qty</th>
+                            <th class="px-3 py-1 text-right">Price</th>
+                            <th class="px-3 py-1 text-right">Subtotal</th>
+                        </tr></thead><tbody>`;
+                    o.items.forEach(i => {
+                        itemsHtml += `<tr class="border-t">
+                            <td class="px-3 py-1">${escapeHtml(i.name)}</td>
+                            <td class="px-3 py-1 text-center">${i.quantity}</td>
+                            <td class="px-3 py-1 text-right">$${i.unitPrice.toFixed(2)}</td>
+                            <td class="px-3 py-1 text-right">$${i.subtotal.toFixed(2)}</td>
+                        </tr>`;
+                    });
+                    itemsHtml += `</tbody></table>`;
+                }
+
+                details.innerHTML = `
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <p><b>Order #:</b> ${escapeHtml(o.orderNumber)}</p>
+                        <p><b>Status:</b> ${getStatusBadge(o.status)}</p>
+                        <p><b>Customer:</b> ${escapeHtml(o.customer.name)}</p>
+                        <p><b>Phone:</b> ${escapeHtml(o.customer.phone || 'N/A')}</p>
+                        <p><b>Branch:</b> ${escapeHtml(o.branch)}</p>
+                        <p><b>Date:</b> ${o.orderDate}</p>
+                    </div>
+                    <div class="mt-4"><b>Items:</b>${itemsHtml}</div>
+                    <div class="mt-3 text-right text-lg font-bold">Total: $${o.totalAmount.toFixed(2)}</div>
+                    ${o.notes ? `<p class="mt-2 text-sm text-gray-600"><b>Notes:</b> ${escapeHtml(o.notes)}</p>` : ''}
+                `;
+                openModal('viewOrderModal');
+            });
+        }
+
+        function createOrder() {
+            const customerId = document.getElementById("customerId").value;
+            const branchId = document.getElementById("branchSelect").value;
+
+            if (!customerId) { alert("Please select a customer."); return; }
+            if (!branchId) { alert("Please select a branch."); return; }
+            if (orderItems.length === 0) { alert("Please add at least one item to the order."); return; }
+
+            const request = {
+                customerId: parseInt(customerId),
+                branchId: parseInt(branchId),
+                notes: document.getElementById("orderNotes").value,
+                items: orderItems.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity }))
+            };
+
+            document.getElementById("saveOrderBtn").disabled = true;
+            document.getElementById("saveOrderBtn").textContent = "Creating...";
+
+            fetch("/Order/CreateOrder", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
+                body: JSON.stringify(request)
+            }).then(r => r.json()).then(res => {
+                document.getElementById("saveOrderBtn").disabled = false;
+                document.getElementById("saveOrderBtn").innerHTML = '<i class="fas fa-save mr-1"></i> Create Order';
+                if (res.success) {
+                    closeModal('createOrderModal');
+                    loadOrders();
+                    alert(`Order ${res.orderNumber} created successfully!`);
+                } else {
+                    alert(res.message);
+                }
+            }).catch(() => {
+                document.getElementById("saveOrderBtn").disabled = false;
+                document.getElementById("saveOrderBtn").innerHTML = '<i class="fas fa-save mr-1"></i> Create Order';
+            });
+        }
+
         function updateOrderStatus(id, status) {
+            if (!confirm(`Update order status to ${status}?`)) return;
             fetch("/Order/UpdateOrderStatus", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
@@ -255,10 +592,12 @@
         }
 
         function cancelOrder(id) {
+            const reason = prompt("Reason for cancellation:");
+            if (reason === null) return;
             fetch("/Order/CancelOrder", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                body: JSON.stringify({ orderId: id, reason: "Cancelled by admin" })
+                body: JSON.stringify({ orderId: id, reason: reason || "Cancelled by staff" })
             }).then(r => r.json()).then(res => {
                 if (res.success) loadOrders();
                 else alert(res.message);
@@ -270,6 +609,13 @@
 
         function getToken() {
             return document.querySelector('[name="__RequestVerificationToken"]').value;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(text));
+            return div.innerHTML;
         }
     </script>
 }

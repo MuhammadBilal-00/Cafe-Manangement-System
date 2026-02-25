@@ -15,10 +15,13 @@ namespace Cafe.Controllers
     public class OrderController : BaseController
     {
         private readonly IInventoryService _inventoryService;
+        private readonly IAuditLogService _auditLogService;
 
-        public OrderController(ApplicationDbContext context, IInventoryService inventoryService) : base(context)
+        public OrderController(ApplicationDbContext context, IInventoryService inventoryService,
+            IAuditLogService auditLogService) : base(context)
         {
             _inventoryService = inventoryService;
+            _auditLogService = auditLogService;
         }
 
         // Main Index Page - Works with your HTML
@@ -260,6 +263,10 @@ namespace Cafe.Controllers
                     await _context.SaveChangesAsync();
                 }
 
+                await _auditLogService.LogAsync("Create", "Order", order.Id,
+                    $"Created order {order.OrderNumber} with {orderItems.Count} items, total: {order.TotalAmount:F2}",
+                    request.BranchId);
+
                 return Json(new { success = true, orderId = order.Id, orderNumber = order.OrderNumber });
             }
             catch (Exception ex)
@@ -289,6 +296,9 @@ namespace Cafe.Controllers
 
                 order.Status = request.NewStatus;
                 await _context.SaveChangesAsync();
+
+                await _auditLogService.LogAsync("Update", "Order", order.Id,
+                    $"Order status changed to {request.NewStatus}", order.BranchId);
 
                 return Json(new { success = true, message = $"Order status updated to {request.NewStatus}" });
             }
@@ -325,13 +335,17 @@ namespace Cafe.Controllers
             return Json(menuItems);
         }
 
-        // Get Customers for dropdown
+        // Search Customers for autocomplete
         [HttpGet]
-        public async Task<IActionResult> GetCustomers()
+        public async Task<IActionResult> SearchCustomers(string term)
         {
+            if (string.IsNullOrWhiteSpace(term))
+                return Json(new List<object>());
+
             var customers = await _context.Customers
                 .Where(c => c.IsActive)
                 .Include(c => c.User)
+                .Where(c => c.User.Name.Contains(term) || c.User.Email.Contains(term) || c.User.Phone.Contains(term))
                 .Select(c => new
                 {
                     id = c.User.Id,
@@ -340,9 +354,57 @@ namespace Cafe.Controllers
                     phone = c.User.Phone
                 })
                 .OrderBy(u => u.name)
+                .Take(10)
                 .ToListAsync();
 
             return Json(customers);
+        }
+
+        // Quick Create Customer
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> QuickCreateCustomer([FromBody] QuickCustomerRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Phone))
+                    return Json(new { success = false, message = "Name and Phone are required." });
+
+                // Check for existing user with same phone
+                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Phone == request.Phone);
+                if (existingUser != null)
+                    return Json(new { success = false, message = "A user with this phone number already exists." });
+
+                var user = new User
+                {
+                    Name = request.Name,
+                    Email = request.Email ?? $"{request.Phone}@customer.local",
+                    Phone = request.Phone,
+                    Role = "Customer",
+                    PasswordHash = "",
+                    CreatedDate = DateTime.Now
+                };
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                var customer = new Customer
+                {
+                    UserId = user.Id,
+                    IsActive = true,
+                    JoinDate = DateTime.Now
+                };
+                _context.Customers.Add(customer);
+                await _context.SaveChangesAsync();
+
+                await _auditLogService.LogAsync("Create", "Customer", user.Id,
+                    $"Quick-created customer: {user.Name} (Phone: {user.Phone})");
+
+                return Json(new { success = true, id = user.Id, name = user.Name });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Error creating customer: " + ex.Message });
+            }
         }
 
         // Get Branches for dropdown
@@ -385,6 +447,9 @@ namespace Cafe.Controllers
                     : $"{order.Notes}\nCancelled: {request.Reason}";
 
                 await _context.SaveChangesAsync();
+
+                await _auditLogService.LogAsync("Cancel", "Order", order.Id,
+                    $"Order cancelled. Reason: {request.Reason}", order.BranchId);
 
                 return Json(new { success = true, message = "Order cancelled successfully" });
             }
