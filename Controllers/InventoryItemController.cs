@@ -38,7 +38,7 @@ namespace Cafe.Controllers
 
             var branchId = HttpContext.Session.GetManagedBranchId();
             if (branchId.HasValue)
-                return await _context.Branches.Where(b => b.Id == branchId.Value).ToListAsync();
+                return await _context.Branches.Where(b => b.Id == branchId.Value && b.IsActive).ToListAsync();
 
             return new System.Collections.Generic.List<Branch>();
         }
@@ -102,6 +102,10 @@ namespace Cafe.Controllers
             if (!CanAccessBranch(inventoryItem.BranchId))
                 return AccessDenied();
 
+            // Remove navigation property validation errors (not bound from form)
+            ModelState.Remove("Branch");
+            ModelState.Remove("Purchases");
+
             if (ModelState.IsValid)
             {
                 inventoryItem.LastUpdated = DateTime.Now;
@@ -135,6 +139,10 @@ namespace Cafe.Controllers
         {
             if (id != inventoryItem.Id) return NotFound();
             if (!CanAccessBranch(inventoryItem.BranchId)) return AccessDenied();
+
+            // Remove navigation property validation errors (not bound from form)
+            ModelState.Remove("Branch");
+            ModelState.Remove("Purchases");
 
             if (ModelState.IsValid)
             {

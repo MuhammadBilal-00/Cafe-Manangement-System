@@ -329,14 +329,15 @@ namespace Cafe.Controllers
         [HttpGet]
         public async Task<IActionResult> GetCustomers()
         {
-            var customers = await _context.Users
-                .Where(u => u.Role == "Customer")
-                .Select(u => new
+            var customers = await _context.Customers
+                .Where(c => c.IsActive)
+                .Include(c => c.User)
+                .Select(c => new
                 {
-                    id = u.Id,
-                    name = u.Name,
-                    email = u.Email,
-                    phone = u.Phone
+                    id = c.User.Id,
+                    name = c.User.Name,
+                    email = c.User.Email,
+                    phone = c.User.Phone
                 })
                 .OrderBy(u => u.name)
                 .ToListAsync();

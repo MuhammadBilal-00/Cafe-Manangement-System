@@ -50,7 +50,7 @@ namespace Cafe.Controllers
                     // Set branch info if applicable
                     if (user.Role == "BranchManager")
                     {
-                        var branch = await _context.Branches.FirstOrDefaultAsync(b => b.ManagerId == user.Id);
+                        var branch = await _context.Branches.FirstOrDefaultAsync(b => b.ManagerId == user.Id && b.IsActive);
                         if (branch != null)
                         {
                             HttpContext.Session.SetInt32("ManagedBranchId", branch.Id);
@@ -58,7 +58,7 @@ namespace Cafe.Controllers
                     }
                     else if (user.Role == "Staff")
                     {
-                        var staff = await _context.Staff.FirstOrDefaultAsync(s => s.UserId == user.Id);
+                        var staff = await _context.Staff.FirstOrDefaultAsync(s => s.UserId == user.Id && s.IsActive);
                         if (staff != null)
                         {
                             HttpContext.Session.SetInt32("StaffBranchId", staff.BranchId);

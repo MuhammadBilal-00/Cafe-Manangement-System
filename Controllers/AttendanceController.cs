@@ -435,14 +435,14 @@ namespace Cafe.Controllers
             {
                 var branchId = HttpContext.Session.GetManagedBranchId();
                 if (branchId.HasValue)
-                    return await _context.Branches.Where(b => b.Id == branchId.Value).ToListAsync();
+                    return await _context.Branches.Where(b => b.Id == branchId.Value && b.IsActive).ToListAsync();
             }
 
             if (role == "Staff")
             {
                 var branchId = HttpContext.Session.GetStaffBranchId();
                 if (branchId.HasValue)
-                    return await _context.Branches.Where(b => b.Id == branchId.Value).ToListAsync();
+                    return await _context.Branches.Where(b => b.Id == branchId.Value && b.IsActive).ToListAsync();
             }
 
             return new List<Branch>();

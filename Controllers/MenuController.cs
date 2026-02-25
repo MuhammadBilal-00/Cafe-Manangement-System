@@ -159,6 +159,13 @@ namespace Cafe.Controllers
                 await PopulateDropdowns();
                 return View(menuItem);
             }
+
+            // Remove navigation property validation errors (they are not bound from form)
+            ModelState.Remove("Category");
+            ModelState.Remove("Branch");
+            ModelState.Remove("OrderItems");
+            ModelState.Remove("Ingredients");
+            ModelState.Remove("Reviews");
             
             // Validate
             if (!ModelState.IsValid)
@@ -224,6 +231,13 @@ namespace Cafe.Controllers
             {
                 return AccessDenied();
             }
+
+            // Remove navigation property validation errors
+            ModelState.Remove("Category");
+            ModelState.Remove("Branch");
+            ModelState.Remove("OrderItems");
+            ModelState.Remove("Ingredients");
+            ModelState.Remove("Reviews");
 
             if (ModelState.IsValid)
             {

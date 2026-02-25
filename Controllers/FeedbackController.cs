@@ -178,7 +178,10 @@ namespace Cafe.Controllers
                 .FirstOrDefaultAsync(f => f.Id == id);
 
             if (feedback == null || !CanAccessBranch(feedback.BranchId))
-                return Json(new { success = false, message = "Feedback not found or access denied." });
+            {
+                TempData["Error"] = "Feedback not found or access denied.";
+                return RedirectToAction("Index");
+            }
 
             feedback.Status = status;
             if (!string.IsNullOrWhiteSpace(staffNote))
