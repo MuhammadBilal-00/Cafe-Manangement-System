@@ -5,18 +5,14 @@ using Cafe.Data;
 using Cafe.Models;
 using Cafe.Attributes;
 using Cafe.Helpers;
-using Cafe.Services;
 
 namespace Cafe.Controllers
 {
     [RequireStaffOrAbove]
     public class MenuItemController : BaseController
     {
-        private readonly IAuditLogService _auditLogService;
-
-        public MenuItemController(ApplicationDbContext context, IAuditLogService auditLogService) : base(context)
+        public MenuItemController(ApplicationDbContext context) : base(context)
         {
-            _auditLogService = auditLogService;
         }
 
         public async Task<IActionResult> Index(int? branchId, int? categoryId, string search, string dietaryFilter, bool showInactive = false)
@@ -199,10 +195,6 @@ namespace Cafe.Controllers
                 _context.Add(menuItem);
                 await _context.SaveChangesAsync();
 
-                await _auditLogService.LogAsync("Create", "MenuItem", menuItem.Id,
-                    $"Created menu item: {menuItem.Name} (Price: {menuItem.Price:C}, Category: {menuItem.CategoryId}, Branch: {menuItem.BranchId})",
-                    menuItem.BranchId);
-                
                 TempData["Success"] = "Menu item created successfully!";
                 return RedirectToAction(nameof(Index));
             }
@@ -256,10 +248,6 @@ namespace Cafe.Controllers
                     menuItem.LastUpdated = DateTime.Now;
                     _context.Update(menuItem);
                     await _context.SaveChangesAsync();
-
-                    await _auditLogService.LogAsync("Update", "MenuItem", menuItem.Id,
-                        $"Updated menu item: {menuItem.Name} (Price: {menuItem.Price:C}, Available: {menuItem.Availability})",
-                        menuItem.BranchId);
 
                     TempData["Success"] = "Menu item updated successfully!";
                 }
@@ -399,29 +387,6 @@ namespace Cafe.Controllers
         new SelectListItem { Value = "5", Text = "Extremely Hot" }
     };
         }
-        private async Task<List<Branch>> GetAccessibleBranches()
-        {
-            var branchesQuery = _context.Branches.AsQueryable();
-
-            if (HttpContext.Session.IsBranchManager())
-            {
-                var managedBranchId = HttpContext.Session.GetManagedBranchId();
-                if (managedBranchId.HasValue)
-                {
-                    branchesQuery = branchesQuery.Where(b => b.Id == managedBranchId.Value);
-                }
-            }
-            else if (HttpContext.Session.IsStaff())
-            {
-                var staffBranchId = HttpContext.Session.GetStaffBranchId();
-                if (staffBranchId.HasValue)
-                {
-                    branchesQuery = branchesQuery.Where(b => b.Id == staffBranchId.Value);
-                }
-            }
-
-            return await branchesQuery.Where(b => b.IsActive).ToListAsync();
-        }
 
         private bool MenuItemExists(int id)
         {
@@ -498,23 +463,13 @@ namespace Cafe.Controllers
                 _context.Update(menuItem);
                 await _context.SaveChangesAsync();
 
-                await _auditLogService.LogAsync("Delete", "MenuItem", menuItem.Id,
-                    $"Soft-deleted menu item: {menuItem.Name} (marked unavailable, has order history)",
-                    menuItem.BranchId);
-
                 TempData["Success"] = "Menu item marked as unavailable (has order history).";
             }
             else
             {
                 // Hard delete
-                var itemName = menuItem.Name;
-                var itemBranchId = menuItem.BranchId;
                 _context.MenuItems.Remove(menuItem);
                 await _context.SaveChangesAsync();
-
-                await _auditLogService.LogAsync("Delete", "MenuItem", id,
-                    $"Hard-deleted menu item: {itemName}",
-                    itemBranchId);
 
                 TempData["Success"] = "Menu item deleted successfully!";
             }

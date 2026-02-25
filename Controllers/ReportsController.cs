@@ -194,26 +194,6 @@ namespace Cafe.Controllers
             return query;
         }
 
-        private async Task<System.Collections.Generic.List<Branch>> GetAccessibleBranches()
-        {
-            var branchesQuery = _context.Branches.AsQueryable();
-
-            if (HttpContext.Session.IsBranchManager())
-            {
-                var managedBranchId = HttpContext.Session.GetManagedBranchId();
-                if (managedBranchId.HasValue)
-                    branchesQuery = branchesQuery.Where(b => b.Id == managedBranchId.Value);
-            }
-            else if (HttpContext.Session.IsStaff())
-            {
-                var staffBranchId = HttpContext.Session.GetStaffBranchId();
-                if (staffBranchId.HasValue)
-                    branchesQuery = branchesQuery.Where(b => b.Id == staffBranchId.Value);
-            }
-
-            return await branchesQuery.Where(b => b.IsActive).ToListAsync();
-        }
-
         // CSV Export: /Reports/ExportSalesCsv
         public async Task<IActionResult> ExportSalesCsv(DateTime? from, DateTime? to, int? branchId)
         {

@@ -4,11 +4,11 @@
  * Provides professional centered modals with blur backdrop
  */
 (function () {
-    'use strict';
+  "use strict";
 
-    // ── Inject Styles ──
-    const style = document.createElement('style');
-    style.textContent = `
+  // ── Inject Styles ──
+  const style = document.createElement("style");
+  style.textContent = `
         .ac-overlay {
             position: fixed; inset: 0; z-index: 9999;
             display: flex; align-items: center; justify-content: center;
@@ -87,170 +87,200 @@
         .ac-progress.info    { background: #2563eb; }
         @keyframes ac-shrink { from { width: 100%; } to { width: 0%; } }
     `;
-    document.head.appendChild(style);
+  document.head.appendChild(style);
 
-    // ── Icon Map ──
-    const iconMap = {
-        success: '<i class="fas fa-check"></i>',
-        error:   '<i class="fas fa-times"></i>',
-        warning: '<i class="fas fa-exclamation-triangle"></i>',
-        info:    '<i class="fas fa-info"></i>',
-        confirm: '<i class="fas fa-question"></i>',
-        prompt:  '<i class="fas fa-pencil-alt"></i>'
-    };
+  // ── Icon Map ──
+  const iconMap = {
+    success: '<i class="fas fa-check"></i>',
+    error: '<i class="fas fa-times"></i>',
+    warning: '<i class="fas fa-exclamation-triangle"></i>',
+    info: '<i class="fas fa-info"></i>',
+    confirm: '<i class="fas fa-question"></i>',
+    prompt: '<i class="fas fa-pencil-alt"></i>',
+  };
 
-    // ── Core Builder ──
-    function buildCard(opts) {
-        const overlay = document.createElement('div');
-        overlay.className = 'ac-overlay';
+  // ── Core Builder ──
+  function buildCard(opts) {
+    const overlay = document.createElement("div");
+    overlay.className = "ac-overlay";
 
-        const type = opts.type || 'info';
-        let html = `<div class="ac-card">
+    const type = opts.type || "info";
+    let html = `<div class="ac-card">
             <div class="ac-icon ${type}">${iconMap[type] || iconMap.info}</div>
-            <div class="ac-title">${opts.title || ''}</div>
-            <div class="ac-desc">${opts.description || ''}</div>`;
+            <div class="ac-title">${opts.title || ""}</div>
+            <div class="ac-desc">${opts.description || ""}</div>`;
 
-        if (opts.input) {
-            html += `<input class="ac-input" type="text" placeholder="${opts.placeholder || ''}" value="${opts.defaultValue || ''}" id="ac-prompt-input">`;
-        }
-
-        html += `<div class="ac-actions">`;
-        if (opts.showCancel) {
-            html += `<button class="ac-btn secondary" id="ac-cancel">${opts.cancelText || 'Cancel'}</button>`;
-        }
-        html += `<button class="ac-btn primary-${type}" id="ac-ok">${opts.okText || 'OK'}</button>`;
-        html += `</div>`;
-
-        if (opts.autoDismiss) {
-            html += `<div class="ac-progress ${type}" style="animation-duration:${opts.autoDismiss}ms"></div>`;
-        }
-
-        html += `</div>`;
-        overlay.innerHTML = html;
-        return overlay;
+    if (opts.input) {
+      html += `<input class="ac-input" type="text" placeholder="${opts.placeholder || ""}" value="${opts.defaultValue || ""}" id="ac-prompt-input">`;
     }
 
-    function show(opts) {
-        return new Promise(resolve => {
-            const overlay = buildCard(opts);
-            document.body.appendChild(overlay);
+    html += `<div class="ac-actions">`;
+    if (opts.showCancel) {
+      html += `<button class="ac-btn secondary" id="ac-cancel">${opts.cancelText || "Cancel"}</button>`;
+    }
+    html += `<button class="ac-btn primary-${type}" id="ac-ok">${opts.okText || "OK"}</button>`;
+    html += `</div>`;
 
-            const okBtn = overlay.querySelector('#ac-ok');
-            const cancelBtn = overlay.querySelector('#ac-cancel');
-            const input = overlay.querySelector('#ac-prompt-input');
-            let timer;
-
-            function dismiss(value) {
-                clearTimeout(timer);
-                overlay.style.animation = 'none';
-                overlay.style.opacity = '0';
-                overlay.style.transition = 'opacity .15s';
-                setTimeout(() => { overlay.remove(); resolve(value); }, 150);
-            }
-
-            okBtn.addEventListener('click', () => {
-                if (opts.input) dismiss(input.value);
-                else dismiss(true);
-            });
-
-            if (cancelBtn) {
-                cancelBtn.addEventListener('click', () => dismiss(opts.input ? null : false));
-            }
-
-            // Close on overlay click (not card body)
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay && !opts.input && !opts.showCancel) dismiss(true);
-            });
-
-            // Keyboard
-            overlay.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') { okBtn.click(); }
-                if (e.key === 'Escape' && (opts.showCancel || !opts.input)) {
-                    dismiss(opts.input ? null : (opts.showCancel ? false : true));
-                }
-            });
-
-            if (input) input.focus();
-            else okBtn.focus();
-
-            if (opts.autoDismiss) {
-                timer = setTimeout(() => dismiss(true), opts.autoDismiss);
-            }
-        });
+    if (opts.autoDismiss) {
+      html += `<div class="ac-progress ${type}" style="animation-duration:${opts.autoDismiss}ms"></div>`;
     }
 
-    // ── Public API ──
-    window.ActionCard = {
-        /**
-         * Show a success card
-         * @param {string} title
-         * @param {string} description
-         * @param {object} [opts] - { okText, autoDismiss }
-         */
-        success(title, description, opts = {}) {
-            return show({ type: 'success', title, description, ...opts });
-        },
+    html += `</div>`;
+    overlay.innerHTML = html;
+    return overlay;
+  }
 
-        /**
-         * Show an error card
-         */
-        error(title, description, opts = {}) {
-            return show({ type: 'error', title, description, ...opts });
-        },
+  function show(opts) {
+    return new Promise((resolve) => {
+      const overlay = buildCard(opts);
+      document.body.appendChild(overlay);
 
-        /**
-         * Show a warning card
-         */
-        warning(title, description, opts = {}) {
-            return show({ type: 'warning', title, description, ...opts });
-        },
+      const okBtn = overlay.querySelector("#ac-ok");
+      const cancelBtn = overlay.querySelector("#ac-cancel");
+      const input = overlay.querySelector("#ac-prompt-input");
+      let timer;
 
-        /**
-         * Show an info card
-         */
-        info(title, description, opts = {}) {
-            return show({ type: 'info', title, description, ...opts });
-        },
+      function dismiss(value) {
+        clearTimeout(timer);
+        overlay.style.animation = "none";
+        overlay.style.opacity = "0";
+        overlay.style.transition = "opacity .15s";
+        setTimeout(() => {
+          overlay.remove();
+          resolve(value);
+        }, 150);
+      }
 
-        /**
-         * Show a confirm dialog with OK/Cancel
-         * Returns Promise<boolean>
-         */
-        confirm(title, description, opts = {}) {
-            return show({ type: 'confirm', title, description, showCancel: true,
-                okText: opts.okText || 'Confirm', cancelText: opts.cancelText || 'Cancel', ...opts });
-        },
+      okBtn.addEventListener("click", () => {
+        if (opts.input) dismiss(input.value);
+        else dismiss(true);
+      });
 
-        /**
-         * Show a prompt dialog with input + OK/Cancel
-         * Returns Promise<string|null>
-         */
-        prompt(title, description, opts = {}) {
-            return show({ type: 'prompt', title, description, showCancel: true, input: true,
-                okText: opts.okText || 'Submit', cancelText: opts.cancelText || 'Cancel', ...opts });
+      if (cancelBtn) {
+        cancelBtn.addEventListener("click", () =>
+          dismiss(opts.input ? null : false),
+        );
+      }
+
+      // Close on overlay click (not card body)
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay && !opts.input && !opts.showCancel)
+          dismiss(true);
+      });
+
+      // Keyboard
+      overlay.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          okBtn.click();
         }
-    };
-
-    // ── Auto-show TempData cards ──
-    document.addEventListener('DOMContentLoaded', function () {
-        const successEl = document.getElementById('ac-tempdata-success');
-        const errorEl = document.getElementById('ac-tempdata-error');
-        if (successEl && successEl.dataset.message) {
-            ActionCard.success('Success', successEl.dataset.message, { autoDismiss: 3000 });
+        if (e.key === "Escape" && (opts.showCancel || !opts.input)) {
+          dismiss(opts.input ? null : opts.showCancel ? false : true);
         }
-        if (errorEl && errorEl.dataset.message) {
-            ActionCard.error('Error', errorEl.dataset.message);
-        }
+      });
 
-        // Replace data-confirm forms
-        document.querySelectorAll('form[data-confirm]').forEach(function (form) {
-            // Remove old inline handlers
-            form.removeAttribute('onsubmit');
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                ActionCard.confirm('Confirm Action', form.getAttribute('data-confirm'), { okText: 'Yes', cancelText: 'No' })
-                    .then(ok => { if (ok) form.submit(); });
-            });
-        });
+      if (input) input.focus();
+      else okBtn.focus();
+
+      if (opts.autoDismiss) {
+        timer = setTimeout(() => dismiss(true), opts.autoDismiss);
+      }
     });
+  }
+
+  // ── Public API ──
+  window.ActionCard = {
+    /**
+     * Show a success card
+     * @param {string} title
+     * @param {string} description
+     * @param {object} [opts] - { okText, autoDismiss }
+     */
+    success(title, description, opts = {}) {
+      return show({ type: "success", title, description, ...opts });
+    },
+
+    /**
+     * Show an error card
+     */
+    error(title, description, opts = {}) {
+      return show({ type: "error", title, description, ...opts });
+    },
+
+    /**
+     * Show a warning card
+     */
+    warning(title, description, opts = {}) {
+      return show({ type: "warning", title, description, ...opts });
+    },
+
+    /**
+     * Show an info card
+     */
+    info(title, description, opts = {}) {
+      return show({ type: "info", title, description, ...opts });
+    },
+
+    /**
+     * Show a confirm dialog with OK/Cancel
+     * Returns Promise<boolean>
+     */
+    confirm(title, description, opts = {}) {
+      return show({
+        type: "confirm",
+        title,
+        description,
+        showCancel: true,
+        okText: opts.okText || "Confirm",
+        cancelText: opts.cancelText || "Cancel",
+        ...opts,
+      });
+    },
+
+    /**
+     * Show a prompt dialog with input + OK/Cancel
+     * Returns Promise<string|null>
+     */
+    prompt(title, description, opts = {}) {
+      return show({
+        type: "prompt",
+        title,
+        description,
+        showCancel: true,
+        input: true,
+        okText: opts.okText || "Submit",
+        cancelText: opts.cancelText || "Cancel",
+        ...opts,
+      });
+    },
+  };
+
+  // ── Auto-show TempData cards ──
+  document.addEventListener("DOMContentLoaded", function () {
+    const successEl = document.getElementById("ac-tempdata-success");
+    const errorEl = document.getElementById("ac-tempdata-error");
+    if (successEl && successEl.dataset.message) {
+      ActionCard.success("Success", successEl.dataset.message, {
+        autoDismiss: 3000,
+      });
+    }
+    if (errorEl && errorEl.dataset.message) {
+      ActionCard.error("Error", errorEl.dataset.message);
+    }
+
+    // Replace data-confirm forms
+    document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+      // Remove old inline handlers
+      form.removeAttribute("onsubmit");
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        ActionCard.confirm(
+          "Confirm Action",
+          form.getAttribute("data-confirm"),
+          { okText: "Yes", cancelText: "No" },
+        ).then((ok) => {
+          if (ok) form.submit();
+        });
+      });
+    });
+  });
 })();

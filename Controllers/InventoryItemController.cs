@@ -4,18 +4,14 @@ using Cafe.Models;
 using Cafe.Data;
 using Cafe.Attributes;
 using Cafe.Helpers;
-using Cafe.Services;
 
 namespace Cafe.Controllers
 {
     [RequireManagerOrOwner]
     public class InventoryItemController : BaseController
     {
-        private readonly IAuditLogService _auditLogService;
-
-        public InventoryItemController(ApplicationDbContext context, IAuditLogService auditLogService) : base(context)
+        public InventoryItemController(ApplicationDbContext context) : base(context)
         {
-            _auditLogService = auditLogService;
         }
 
         // Helper: get the branch this user is scoped to (null = all branches for Owner)
@@ -31,20 +27,6 @@ namespace Cafe.Controllers
         private bool CanAccessItem(InventoryItem item)
         {
             return CanAccessBranch(item.BranchId);
-        }
-
-        // Helper: get branches the user can see
-        private async Task<System.Collections.Generic.List<Branch>> GetAccessibleBranches()
-        {
-            var role = GetCurrentUserRole();
-            if (role == "Owner")
-                return await _context.Branches.Where(b => b.IsActive).ToListAsync();
-
-            var branchId = HttpContext.Session.GetManagedBranchId();
-            if (branchId.HasValue)
-                return await _context.Branches.Where(b => b.Id == branchId.Value && b.IsActive).ToListAsync();
-
-            return new System.Collections.Generic.List<Branch>();
         }
 
         // GET: InventoryItem
@@ -116,10 +98,6 @@ namespace Cafe.Controllers
                 _context.Add(inventoryItem);
                 await _context.SaveChangesAsync();
 
-                await _auditLogService.LogAsync("Create", "InventoryItem", inventoryItem.Id,
-                    $"Created inventory item: {inventoryItem.Name} (Qty: {inventoryItem.Quantity}, Branch: {inventoryItem.BranchId})",
-                    inventoryItem.BranchId);
-
                 TempData["Success"] = "Inventory item created successfully!";
                 return RedirectToAction(nameof(Index));
             }
@@ -161,10 +139,6 @@ namespace Cafe.Controllers
                     _context.Update(inventoryItem);
                     await _context.SaveChangesAsync();
 
-                    await _auditLogService.LogAsync("Update", "InventoryItem", inventoryItem.Id,
-                        $"Updated inventory item: {inventoryItem.Name} (Qty: {inventoryItem.Quantity}, Branch: {inventoryItem.BranchId})",
-                        inventoryItem.BranchId);
-
                     TempData["Success"] = "Inventory item updated successfully!";
                 }
                 catch (DbUpdateConcurrencyException)
@@ -204,14 +178,8 @@ namespace Cafe.Controllers
             var inventoryItem = await _context.InventoryItems.FindAsync(id);
             if (inventoryItem != null)
             {
-                var itemName = inventoryItem.Name;
-                var itemBranchId = inventoryItem.BranchId;
                 _context.InventoryItems.Remove(inventoryItem);
                 await _context.SaveChangesAsync();
-
-                await _auditLogService.LogAsync("Delete", "InventoryItem", id,
-                    $"Deleted inventory item: {itemName}",
-                    itemBranchId);
 
                 TempData["Success"] = "Inventory item deleted successfully!";
             }
@@ -233,10 +201,6 @@ namespace Cafe.Controllers
             inventoryItem.Quantity += add;
             inventoryItem.LastUpdated = DateTime.Now;
             await _context.SaveChangesAsync();
-
-            await _auditLogService.LogAsync("Restock", "InventoryItem", inventoryItem.Id,
-                $"Restocked inventory item: {inventoryItem.Name} (+{add}, New Qty: {inventoryItem.Quantity})",
-                inventoryItem.BranchId);
 
             return Json(new { success = true });
         }

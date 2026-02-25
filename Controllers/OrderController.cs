@@ -15,13 +15,10 @@ namespace Cafe.Controllers
     public class OrderController : BaseController
     {
         private readonly IInventoryService _inventoryService;
-        private readonly IAuditLogService _auditLogService;
 
-        public OrderController(ApplicationDbContext context, IInventoryService inventoryService,
-            IAuditLogService auditLogService) : base(context)
+        public OrderController(ApplicationDbContext context, IInventoryService inventoryService) : base(context)
         {
             _inventoryService = inventoryService;
-            _auditLogService = auditLogService;
         }
 
         // Main Index Page - Works with your HTML
@@ -263,10 +260,6 @@ namespace Cafe.Controllers
                     await _context.SaveChangesAsync();
                 }
 
-                await _auditLogService.LogAsync("Create", "Order", order.Id,
-                    $"Created order {order.OrderNumber} with {orderItems.Count} items, total: {order.TotalAmount:F2}",
-                    request.BranchId);
-
                 return Json(new { success = true, orderId = order.Id, orderNumber = order.OrderNumber });
             }
             catch (Exception ex)
@@ -296,9 +289,6 @@ namespace Cafe.Controllers
 
                 order.Status = request.NewStatus;
                 await _context.SaveChangesAsync();
-
-                await _auditLogService.LogAsync("Update", "Order", order.Id,
-                    $"Order status changed to {request.NewStatus}", order.BranchId);
 
                 return Json(new { success = true, message = $"Order status updated to {request.NewStatus}" });
             }
@@ -396,9 +386,6 @@ namespace Cafe.Controllers
                 _context.Customers.Add(customer);
                 await _context.SaveChangesAsync();
 
-                await _auditLogService.LogAsync("Create", "Customer", user.Id,
-                    $"Quick-created customer: {user.Name} (Phone: {user.Phone})");
-
                 return Json(new { success = true, id = user.Id, name = user.Name });
             }
             catch (Exception ex)
@@ -447,9 +434,6 @@ namespace Cafe.Controllers
                     : $"{order.Notes}\nCancelled: {request.Reason}";
 
                 await _context.SaveChangesAsync();
-
-                await _auditLogService.LogAsync("Cancel", "Order", order.Id,
-                    $"Order cancelled. Reason: {request.Reason}", order.BranchId);
 
                 return Json(new { success = true, message = "Order cancelled successfully" });
             }
@@ -547,30 +531,6 @@ namespace Cafe.Controllers
             }
 
             return $"{branchCode}{today}{sequence:D3}";
-        }
-
-        private async Task<List<Branch>> GetAccessibleBranches()
-        {
-            var branchesQuery = _context.Branches.AsQueryable();
-
-            if (HttpContext.Session.IsBranchManager())
-            {
-                var managedBranchId = HttpContext.Session.GetManagedBranchId();
-                if (managedBranchId.HasValue)
-                {
-                    branchesQuery = branchesQuery.Where(b => b.Id == managedBranchId.Value);
-                }
-            }
-            else if (HttpContext.Session.IsStaff())
-            {
-                var staffBranchId = HttpContext.Session.GetStaffBranchId();
-                if (staffBranchId.HasValue)
-                {
-                    branchesQuery = branchesQuery.Where(b => b.Id == staffBranchId.Value);
-                }
-            }
-
-            return await branchesQuery.Where(b => b.IsActive).ToListAsync();
         }
 
         private async Task PopulateViewBagData(int? branchId)

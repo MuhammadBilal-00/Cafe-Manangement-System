@@ -3,15 +3,22 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Cafe.Data;
 using Cafe.Services;
 using Cafe.Middleware;
+using Cafe.Interceptors;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
-// Add Entity Framework
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Register audit interceptor as scoped (needs IHttpContextAccessor per-request)
+builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+
+// Add Entity Framework with audit interceptor
+builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.AddInterceptors(serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>());
+});
 
 // Add authentication services
 builder.Services.AddScoped<IAuthService, AuthService>();

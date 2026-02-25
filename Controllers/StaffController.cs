@@ -14,13 +14,10 @@ namespace Cafe.Controllers
     public class StaffController : BaseController
     {
         private readonly IAuthService _authService;
-        private readonly IAuditLogService _auditLogService;
 
-        public StaffController(ApplicationDbContext context, IAuthService authService,
-            IAuditLogService auditLogService) : base(context)
+        public StaffController(ApplicationDbContext context, IAuthService authService) : base(context)
         {
             _authService = authService;
-            _auditLogService = auditLogService;
         }
 
         // GET: Staff
@@ -66,9 +63,9 @@ namespace Cafe.Controllers
         }
 
         // GET: Staff/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            PopulateDropdowns();
+            await PopulateDropdowns();
 
             // Auto-default branch for Manager
             var userRole = GetCurrentUserRole();
@@ -103,7 +100,7 @@ namespace Cafe.Controllers
                 if (await _context.Users.AnyAsync(u => u.Email == model.Email))
                 {
                     ModelState.AddModelError("Email", "Email already exists");
-                    PopulateDropdowns();
+                    await PopulateDropdowns();
                     if (userRole == "BranchManager")
                         ViewBag.LockedBranchId = model.BranchId;
                     return View(model);
@@ -139,15 +136,11 @@ namespace Cafe.Controllers
                 _context.Staff.Add(staff);
                 await _context.SaveChangesAsync();
 
-                await _auditLogService.LogAsync("Create", "Staff", staff.Id,
-                    $"Created staff member: {model.Name} (Email: {model.Email}, EmployeeId: {model.EmployeeId})",
-                    model.BranchId);
-
                 TempData["Success"] = "Staff member created successfully!";
                 return RedirectToAction(nameof(Index));
             }
 
-            PopulateDropdowns();
+            await PopulateDropdowns();
             if (GetCurrentUserRole() == "BranchManager")
             {
                 var lockedBranch = HttpContext.Session.GetManagedBranchId();
@@ -186,7 +179,7 @@ namespace Cafe.Controllers
                 Phone = staff.User.Phone
             };
 
-            PopulateDropdowns();
+            await PopulateDropdowns();
 
             // Lock branch for Manager
             var editRole = GetCurrentUserRole();
@@ -250,10 +243,6 @@ namespace Cafe.Controllers
                     _context.Update(staff);
                     await _context.SaveChangesAsync();
 
-                    await _auditLogService.LogAsync("Update", "Staff", staff.Id,
-                        $"Updated staff member: {model.Name} (Branch: {model.BranchId}, Role: {model.StaffRoleId}, Active: {model.IsActive})",
-                        staff.BranchId);
-
                     TempData["Success"] = "Staff member updated successfully!";
                 }
                 catch (DbUpdateConcurrencyException)
@@ -270,7 +259,7 @@ namespace Cafe.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            PopulateDropdowns();
+            await PopulateDropdowns();
             if (GetCurrentUserRole() == "BranchManager")
             {
                 var lockedBranch = HttpContext.Session.GetManagedBranchId();
@@ -317,10 +306,6 @@ namespace Cafe.Controllers
                 _context.Staff.Update(staff);
                 await _context.SaveChangesAsync();
 
-                await _auditLogService.LogAsync("Delete", "Staff", id,
-                    $"Soft-deleted staff member: {staff.User?.Name ?? "Unknown"} (EmployeeId: {staff.EmployeeId})",
-                    staff.BranchId);
-
                 TempData["Success"] = "Staff member deleted successfully!";
             }
 
@@ -332,35 +317,18 @@ namespace Cafe.Controllers
             return _context.Staff.Any(e => e.Id == id);
         }
 
-        private void PopulateDropdowns()
+        private async Task PopulateDropdowns()
         {
-            ViewBag.StaffRoles = _context.StaffRoles
+            ViewBag.StaffRoles = await _context.StaffRoles
                 .Where(r => r.IsActive)
                 .Select(r => new SelectListItem
                 {
                     Value = r.Id.ToString(),
                     Text = r.RoleName
                 })
-                .ToList();
+                .ToListAsync();
 
-            var branchQuery = _context.Branches.Where(b => b.IsActive);
-
-            // Managers only see their own branch
-            var role = GetCurrentUserRole();
-            if (role == "BranchManager")
-            {
-                var managedBranchId = HttpContext.Session.GetManagedBranchId();
-                if (managedBranchId.HasValue)
-                    branchQuery = branchQuery.Where(b => b.Id == managedBranchId.Value);
-            }
-
-            ViewBag.Branches = branchQuery
-                .Select(b => new SelectListItem
-                {
-                    Value = b.Id.ToString(),
-                    Text = b.Name
-                })
-                .ToList();
+            ViewBag.Branches = await GetBranchSelectList();
         }
 
         public async Task<IActionResult> ExportCsv()

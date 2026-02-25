@@ -17,13 +17,10 @@ namespace Cafe.Controllers
     public class SalaryController : BaseController
     {
         private readonly ISalaryService _salaryService;
-        private readonly IAuditLogService _auditLogService;
 
-        public SalaryController(ApplicationDbContext context, ISalaryService salaryService,
-            IAuditLogService auditLogService) : base(context)
+        public SalaryController(ApplicationDbContext context, ISalaryService salaryService) : base(context)
         {
             _salaryService = salaryService;
-            _auditLogService = auditLogService;
         }
 
         // GET: Salary
@@ -128,11 +125,6 @@ namespace Cafe.Controllers
 
                 int newCount = results.Count(r => r.GeneratedAt.Date == DateTime.Today);
 
-                await _auditLogService.LogAsync("Generate", "SalaryRecord", null,
-                    $"Generated {newCount} salary records for {model.Year}-{model.Month:D2}" +
-                    (model.BranchId.HasValue ? $" (Branch {model.BranchId})" : " (All branches)"),
-                    model.BranchId);
-
                 SetSuccessMessage($"Salary records generated successfully! {results.Count} total ({newCount} new).");
             }
             catch (Exception ex)
@@ -195,8 +187,6 @@ namespace Cafe.Controllers
             var success = await _salaryService.MarkAsPaidAsync(id);
             if (success)
             {
-                await _auditLogService.LogAsync("Update", "SalaryRecord", id,
-                    $"Marked salary as paid for staff #{record.StaffId}", record.BranchId);
                 SetSuccessMessage("Salary marked as paid!");
             }
             else
@@ -236,10 +226,6 @@ namespace Cafe.Controllers
             }
 
             await _context.SaveChangesAsync();
-            await _auditLogService.LogAsync("BulkUpdate", "SalaryRecord", null,
-                $"Marked {pending.Count} salaries as paid for {year}-{month:D2}" +
-                (branchId.HasValue ? $" (Branch {branchId})" : ""),
-                branchId);
 
             SetSuccessMessage($"{pending.Count} salary records marked as paid!");
             return RedirectToAction(nameof(Index), new { year, month, branchId });
@@ -363,10 +349,6 @@ namespace Cafe.Controllers
 
             await _context.SaveChangesAsync();
 
-            await _auditLogService.LogAsync("AdjustSalary", "SalaryRecord", record.Id,
-                $"Adjusted salary for staff #{record.StaffId}: Base={record.BaseSalary:N0}, Bonus={record.BonusAmount:N0}, Deduction={record.DeductionAmount:N0}, Final={record.FinalSalary:N0}",
-                record.BranchId);
-
             return Json(new { success = true, finalSalary = record.FinalSalary });
         }
 
@@ -403,23 +385,6 @@ namespace Cafe.Controllers
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
             return File(bytes, "text/csv", $"salary-{targetYear}{targetMonth:D2}.csv");
-        }
-
-        // Helpers
-        private async Task<System.Collections.Generic.List<Branch>> GetAccessibleBranches()
-        {
-            var role = GetCurrentUserRole();
-            if (role == "Owner")
-                return await _context.Branches.Where(b => b.IsActive).ToListAsync();
-
-            if (role == "BranchManager")
-            {
-                var branchId = HttpContext.Session.GetManagedBranchId();
-                if (branchId.HasValue)
-                    return await _context.Branches.Where(b => b.Id == branchId.Value && b.IsActive).ToListAsync();
-            }
-
-            return new System.Collections.Generic.List<Branch>();
         }
 
         private static string EscapeCsv(string value)

@@ -16,13 +16,11 @@ namespace Cafe.Controllers
     public class FinancialController : BaseController
     {
         private readonly IFinancialService _financialService;
-        private readonly IAuditLogService _auditLogService;
 
-        public FinancialController(ApplicationDbContext context, IFinancialService financialService,
-            IAuditLogService auditLogService) : base(context)
+        public FinancialController(ApplicationDbContext context, IFinancialService financialService)
+            : base(context)
         {
             _financialService = financialService;
-            _auditLogService = auditLogService;
         }
 
         // GET: Financial/Dashboard
@@ -129,9 +127,6 @@ namespace Cafe.Controllers
                 _context.Expenses.Add(expense);
                 await _context.SaveChangesAsync();
 
-                await _auditLogService.LogAsync("Create", "Expense", expense.Id,
-                    $"Added expense: {expense.Title} - {expense.Amount:C}", expense.BranchId);
-
                 SetSuccessMessage("Expense added successfully!");
                 return RedirectToAction(nameof(Expenses));
             }
@@ -183,8 +178,6 @@ namespace Cafe.Controllers
                     existing.RecurringFrequency = expense.RecurringFrequency;
 
                     await _context.SaveChangesAsync();
-                    await _auditLogService.LogAsync("Update", "Expense", id,
-                        $"Updated expense: {expense.Title}", existing.BranchId);
 
                     SetSuccessMessage("Expense updated successfully!");
                 }
@@ -213,8 +206,6 @@ namespace Cafe.Controllers
             {
                 _context.Expenses.Remove(expense);
                 await _context.SaveChangesAsync();
-                await _auditLogService.LogAsync("Delete", "Expense", id,
-                    $"Deleted expense: {expense.Title}", expense.BranchId);
                 SetSuccessMessage("Expense deleted successfully!");
             }
 
@@ -249,23 +240,6 @@ namespace Cafe.Controllers
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
             return File(bytes, "text/csv", $"expenses-{DateTime.Now:yyyyMMdd}.csv");
-        }
-
-        // Helpers
-        private async Task<System.Collections.Generic.List<Branch>> GetAccessibleBranches()
-        {
-            var role = GetCurrentUserRole();
-            if (role == "Owner")
-                return await _context.Branches.Where(b => b.IsActive).ToListAsync();
-
-            if (role == "BranchManager")
-            {
-                var branchId = HttpContext.Session.GetManagedBranchId();
-                if (branchId.HasValue)
-                    return await _context.Branches.Where(b => b.Id == branchId.Value && b.IsActive).ToListAsync();
-            }
-
-            return new System.Collections.Generic.List<Branch>();
         }
 
         private static string EscapeCsv(string value)

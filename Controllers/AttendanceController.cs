@@ -16,13 +16,10 @@ namespace Cafe.Controllers
     public class AttendanceController : BaseController
     {
         private readonly IAttendanceService _attendanceService;
-        private readonly IAuditLogService _auditLogService;
 
-        public AttendanceController(ApplicationDbContext context, IAttendanceService attendanceService,
-            IAuditLogService auditLogService) : base(context)
+        public AttendanceController(ApplicationDbContext context, IAttendanceService attendanceService) : base(context)
         {
             _attendanceService = attendanceService;
-            _auditLogService = auditLogService;
         }
 
         // GET: Attendance
@@ -139,10 +136,6 @@ namespace Cafe.Controllers
                 return View(model);
             }
 
-            await _auditLogService.LogAsync("Create", "Attendance", null,
-                $"Marked attendance for staff #{model.StaffId} on {model.Date:yyyy-MM-dd} as {model.Status}",
-                staff.BranchId);
-
             SetSuccessMessage("Attendance marked successfully!");
             return RedirectToAction(nameof(Index));
         }
@@ -204,9 +197,6 @@ namespace Cafe.Controllers
                 SetErrorMessage("You have already marked your attendance for today.");
                 return RedirectToAction(nameof(Index));
             }
-
-            await _auditLogService.LogAsync("Create", "Attendance", null,
-                $"Self-marked attendance as {model.Status}", staff.BranchId);
 
             SetSuccessMessage("Attendance marked successfully!");
             return RedirectToAction(nameof(Index));
@@ -275,10 +265,6 @@ namespace Cafe.Controllers
                 if (success) marked++;
             }
 
-            await _auditLogService.LogAsync("BulkCreate", "Attendance", null,
-                $"Bulk marked attendance for {marked} staff on {model.Date:yyyy-MM-dd}",
-                model.BranchId);
-
             SetSuccessMessage($"Attendance marked for {marked} staff member(s)!");
             return RedirectToAction(nameof(Index));
         }
@@ -321,9 +307,6 @@ namespace Cafe.Controllers
                 SetErrorMessage("Failed to update attendance record.");
                 return RedirectToAction(nameof(Index));
             }
-
-            await _auditLogService.LogAsync("Update", "Attendance", id,
-                $"Updated attendance to {model.Status}");
 
             SetSuccessMessage("Attendance updated successfully!");
             return RedirectToAction(nameof(Index));
@@ -406,11 +389,8 @@ namespace Cafe.Controllers
             var record = await _context.Attendances.FindAsync(id);
             if (record != null)
             {
-                var branchId = record.BranchId;
                 _context.Attendances.Remove(record);
                 await _context.SaveChangesAsync();
-                await _auditLogService.LogAsync("Delete", "Attendance", id,
-                    "Deleted attendance record", branchId);
                 SetSuccessMessage("Attendance record deleted.");
             }
             return RedirectToAction(nameof(Index));
@@ -423,50 +403,6 @@ namespace Cafe.Controllers
             if (!userId.HasValue) return null;
             var staff = await _context.Staff.FirstOrDefaultAsync(s => s.UserId == userId.Value && s.IsActive);
             return staff?.Id;
-        }
-
-        private async Task<List<Branch>> GetAccessibleBranches()
-        {
-            var role = GetCurrentUserRole();
-            if (role == "Owner")
-                return await _context.Branches.Where(b => b.IsActive).ToListAsync();
-
-            if (role == "BranchManager")
-            {
-                var branchId = HttpContext.Session.GetManagedBranchId();
-                if (branchId.HasValue)
-                    return await _context.Branches.Where(b => b.Id == branchId.Value && b.IsActive).ToListAsync();
-            }
-
-            if (role == "Staff")
-            {
-                var branchId = HttpContext.Session.GetStaffBranchId();
-                if (branchId.HasValue)
-                    return await _context.Branches.Where(b => b.Id == branchId.Value && b.IsActive).ToListAsync();
-            }
-
-            return new List<Branch>();
-        }
-
-        private async Task<List<Staff>> GetAccessibleStaff()
-        {
-            var role = GetCurrentUserRole();
-            var query = _context.Staff.Include(s => s.User).Where(s => s.IsActive);
-
-            if (role == "BranchManager")
-            {
-                var branchId = HttpContext.Session.GetManagedBranchId();
-                if (branchId.HasValue)
-                    query = query.Where(s => s.BranchId == branchId.Value);
-            }
-            else if (role == "Staff")
-            {
-                var userId = GetCurrentUserId();
-                if (userId.HasValue)
-                    query = query.Where(s => s.UserId == userId.Value);
-            }
-
-            return await query.OrderBy(s => s.User.Name).ToListAsync();
         }
 
         private static string EscapeCsv(string value)
