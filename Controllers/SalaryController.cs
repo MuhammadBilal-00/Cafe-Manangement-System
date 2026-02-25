@@ -86,31 +86,51 @@ namespace Cafe.Controllers
         }
 
         // GET: Salary/Generate
-        [RequireOwner]
         public async Task<IActionResult> Generate()
         {
             var vm = new SalaryGenerateViewModel
             {
-                Branches = await _context.Branches.Where(b => b.IsActive).ToListAsync()
+                Branches = await GetAccessibleBranches()
             };
+
+            // Force branch for Manager
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (managedBranchId.HasValue)
+                    vm.BranchId = managedBranchId.Value;
+            }
+
             return View(vm);
         }
 
         // POST: Salary/Generate
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequireOwner]
         public async Task<IActionResult> Generate(SalaryGenerateViewModel model)
         {
             try
             {
+                // Enforce branch for Manager
+                var userRole = GetCurrentUserRole();
+                if (userRole == "BranchManager")
+                {
+                    var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                    if (!managedBranchId.HasValue)
+                        return AccessDenied();
+                    model.BranchId = managedBranchId.Value;
+                }
+
                 var results = await _salaryService.GenerateMonthlySalariesAsync(
                     model.Year, model.Month, model.BranchId, GetCurrentUserId());
 
                 int newCount = results.Count(r => r.GeneratedAt.Date == DateTime.Today);
 
                 await _auditLogService.LogAsync("Generate", "SalaryRecord", null,
-                    $"Generated {newCount} salary records for {model.Year}-{model.Month:D2}");
+                    $"Generated {newCount} salary records for {model.Year}-{model.Month:D2}" +
+                    (model.BranchId.HasValue ? $" (Branch {model.BranchId})" : " (All branches)"),
+                    model.BranchId);
 
                 SetSuccessMessage($"Salary records generated successfully! {results.Count} total ({newCount} new).");
             }
@@ -157,13 +177,25 @@ namespace Cafe.Controllers
         // POST: Salary/MarkPaid/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequireOwner]
         public async Task<IActionResult> MarkPaid(int id)
         {
+            // Branch isolation check
+            var record = await _salaryService.GetSalaryRecordAsync(id);
+            if (record == null) return NotFound();
+
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (!managedBranchId.HasValue || record.BranchId != managedBranchId.Value)
+                    return AccessDenied();
+            }
+
             var success = await _salaryService.MarkAsPaidAsync(id);
             if (success)
             {
-                await _auditLogService.LogAsync("Update", "SalaryRecord", id, "Marked salary as paid");
+                await _auditLogService.LogAsync("Update", "SalaryRecord", id,
+                    $"Marked salary as paid for staff #{record.StaffId}", record.BranchId);
                 SetSuccessMessage("Salary marked as paid!");
             }
             else
@@ -177,9 +209,18 @@ namespace Cafe.Controllers
         // POST: Salary/MarkAllPaid
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequireOwner]
         public async Task<IActionResult> MarkAllPaid(int year, int month, int? branchId)
         {
+            // Enforce branch for Manager
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (!managedBranchId.HasValue)
+                    return AccessDenied();
+                branchId = managedBranchId.Value;
+            }
+
             var query = _context.SalaryRecords
                 .Where(sr => sr.Year == year && sr.Month == month && sr.PaymentStatus == "Pending");
 
@@ -195,7 +236,9 @@ namespace Cafe.Controllers
 
             await _context.SaveChangesAsync();
             await _auditLogService.LogAsync("BulkUpdate", "SalaryRecord", null,
-                $"Marked {pending.Count} salaries as paid for {year}-{month:D2}");
+                $"Marked {pending.Count} salaries as paid for {year}-{month:D2}" +
+                (branchId.HasValue ? $" (Branch {branchId})" : ""),
+                branchId);
 
             SetSuccessMessage($"{pending.Count} salary records marked as paid!");
             return RedirectToAction(nameof(Index), new { year, month, branchId });

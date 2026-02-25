@@ -103,6 +103,20 @@ namespace Cafe.Controllers
         {
             if (ModelState.IsValid)
             {
+                // Enforce branch for Manager
+                var userRole = GetCurrentUserRole();
+                if (userRole == "BranchManager")
+                {
+                    var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                    if (!managedBranchId.HasValue || expense.BranchId != managedBranchId.Value)
+                    {
+                        if (managedBranchId.HasValue)
+                            expense.BranchId = managedBranchId.Value;
+                        else
+                            return AccessDenied();
+                    }
+                }
+
                 expense.CreatedById = GetCurrentUserId();
                 expense.CreatedAt = DateTime.Now;
 
@@ -116,7 +130,7 @@ namespace Cafe.Controllers
                 await _context.SaveChangesAsync();
 
                 await _auditLogService.LogAsync("Create", "Expense", expense.Id,
-                    $"Added expense: {expense.Title} - {expense.Amount:C}");
+                    $"Added expense: {expense.Title} - {expense.Amount:C}", expense.BranchId);
 
                 SetSuccessMessage("Expense added successfully!");
                 return RedirectToAction(nameof(Expenses));
@@ -131,6 +145,10 @@ namespace Cafe.Controllers
         {
             var expense = await _context.Expenses.FindAsync(id);
             if (expense == null) return NotFound();
+
+            // Branch isolation for Manager
+            if (!CanAccessBranch(expense.BranchId))
+                return AccessDenied();
 
             ViewBag.Branches = await GetAccessibleBranches();
             return View(expense);
@@ -150,6 +168,10 @@ namespace Cafe.Controllers
                     var existing = await _context.Expenses.FindAsync(id);
                     if (existing == null) return NotFound();
 
+                    // Branch isolation for Manager
+                    if (!CanAccessBranch(existing.BranchId))
+                        return AccessDenied();
+
                     existing.Title = expense.Title;
                     existing.Description = expense.Description;
                     existing.Category = expense.Category;
@@ -162,7 +184,7 @@ namespace Cafe.Controllers
 
                     await _context.SaveChangesAsync();
                     await _auditLogService.LogAsync("Update", "Expense", id,
-                        $"Updated expense: {expense.Title}");
+                        $"Updated expense: {expense.Title}", existing.BranchId);
 
                     SetSuccessMessage("Expense updated successfully!");
                 }
@@ -191,7 +213,8 @@ namespace Cafe.Controllers
             {
                 _context.Expenses.Remove(expense);
                 await _context.SaveChangesAsync();
-                await _auditLogService.LogAsync("Delete", "Expense", id, $"Deleted expense: {expense.Title}");
+                await _auditLogService.LogAsync("Delete", "Expense", id,
+                    $"Deleted expense: {expense.Title}", expense.BranchId);
                 SetSuccessMessage("Expense deleted successfully!");
             }
 

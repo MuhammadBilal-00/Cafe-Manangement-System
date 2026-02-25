@@ -14,10 +14,13 @@ namespace Cafe.Controllers
     public class StaffController : BaseController
     {
         private readonly IAuthService _authService;
+        private readonly IAuditLogService _auditLogService;
 
-        public StaffController(ApplicationDbContext context, IAuthService authService) : base(context)
+        public StaffController(ApplicationDbContext context, IAuthService authService,
+            IAuditLogService auditLogService) : base(context)
         {
             _authService = authService;
+            _auditLogService = auditLogService;
         }
 
         // GET: Staff
@@ -116,6 +119,10 @@ namespace Cafe.Controllers
                 _context.Staff.Add(staff);
                 await _context.SaveChangesAsync();
 
+                await _auditLogService.LogAsync("Create", "Staff", staff.Id,
+                    $"Created staff member: {model.Name} (Email: {model.Email}, EmployeeId: {model.EmployeeId})",
+                    model.BranchId);
+
                 TempData["Success"] = "Staff member created successfully!";
                 return RedirectToAction(nameof(Index));
             }
@@ -198,6 +205,10 @@ namespace Cafe.Controllers
                     _context.Update(staff);
                     await _context.SaveChangesAsync();
 
+                    await _auditLogService.LogAsync("Update", "Staff", staff.Id,
+                        $"Updated staff member: {model.Name} (Branch: {model.BranchId}, Role: {model.StaffRoleId}, Active: {model.IsActive})",
+                        staff.BranchId);
+
                     TempData["Success"] = "Staff member updated successfully!";
                 }
                 catch (DbUpdateConcurrencyException)
@@ -244,7 +255,9 @@ namespace Cafe.Controllers
         [RequireOwner]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var staff = await _context.Staff.FindAsync(id);
+            var staff = await _context.Staff
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.Id == id);
             if (staff != null)
             {
                 // Soft delete (set IsActive to false)
@@ -253,6 +266,10 @@ namespace Cafe.Controllers
 
                 _context.Staff.Update(staff);
                 await _context.SaveChangesAsync();
+
+                await _auditLogService.LogAsync("Delete", "Staff", id,
+                    $"Soft-deleted staff member: {staff.User?.Name ?? "Unknown"} (EmployeeId: {staff.EmployeeId})",
+                    staff.BranchId);
 
                 TempData["Success"] = "Staff member deleted successfully!";
             }

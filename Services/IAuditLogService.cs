@@ -4,6 +4,6 @@ namespace Cafe.Services
 {
     public interface IAuditLogService
     {
-        Task LogAsync(string action, string entityType, int? entityId, string? details);
+        Task LogAsync(string action, string entityType, int? entityId, string? details, int? branchId = null);
     }
 }

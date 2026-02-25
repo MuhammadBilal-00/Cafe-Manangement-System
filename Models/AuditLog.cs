@@ -29,6 +29,8 @@ namespace Cafe.Models
         [StringLength(50)]
         public string? UserRole { get; set; }
 
+        public int? BranchId { get; set; }
+
         [StringLength(45)]
         public string? IpAddress { get; set; }
 
@@ -36,5 +38,8 @@ namespace Cafe.Models
 
         [ForeignKey("UserId")]
         public User? User { get; set; }
+
+        [ForeignKey("BranchId")]
+        public Branch? Branch { get; set; }
     }
 }

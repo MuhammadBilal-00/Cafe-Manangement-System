@@ -35,6 +35,7 @@ namespace Cafe.Controllers
             page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
 
             var logs = await query
+                .Include(a => a.Branch)
                 .OrderByDescending(a => a.Timestamp)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -67,13 +68,13 @@ namespace Cafe.Controllers
             if (to.HasValue)
                 query = query.Where(a => a.Timestamp < to.Value.AddDays(1));
 
-            var logs = await query.OrderByDescending(a => a.Timestamp).ToListAsync();
+            var logs = await query.Include(a => a.Branch).OrderByDescending(a => a.Timestamp).ToListAsync();
 
             var csv = new System.Text.StringBuilder();
-            csv.AppendLine("Id,Action,EntityType,EntityId,UserName,UserRole,IpAddress,Timestamp,Details");
+            csv.AppendLine("Id,Action,EntityType,EntityId,UserName,UserRole,BranchId,BranchName,IpAddress,Timestamp,Details");
             foreach (var l in logs)
             {
-                csv.AppendLine($"{l.Id},{EscapeCsv(l.Action)},{EscapeCsv(l.EntityType)},{l.EntityId?.ToString() ?? ""},{EscapeCsv(l.UserName ?? "")},{EscapeCsv(l.UserRole ?? "")},{EscapeCsv(l.IpAddress ?? "")},{l.Timestamp:yyyy-MM-dd HH:mm:ss},{EscapeCsv(l.Details ?? "")}");
+                csv.AppendLine($"{l.Id},{EscapeCsv(l.Action)},{EscapeCsv(l.EntityType)},{l.EntityId?.ToString() ?? ""},{EscapeCsv(l.UserName ?? "")},{EscapeCsv(l.UserRole ?? "")},{l.BranchId?.ToString() ?? ""},{EscapeCsv(l.Branch?.Name ?? "")},{EscapeCsv(l.IpAddress ?? "")},{l.Timestamp:yyyy-MM-dd HH:mm:ss},{EscapeCsv(l.Details ?? "")}");
             }
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());

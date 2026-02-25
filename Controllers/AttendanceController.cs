@@ -140,7 +140,8 @@ namespace Cafe.Controllers
             }
 
             await _auditLogService.LogAsync("Create", "Attendance", null,
-                $"Marked attendance for staff #{model.StaffId} on {model.Date:yyyy-MM-dd} as {model.Status}");
+                $"Marked attendance for staff #{model.StaffId} on {model.Date:yyyy-MM-dd} as {model.Status}",
+                staff.BranchId);
 
             SetSuccessMessage("Attendance marked successfully!");
             return RedirectToAction(nameof(Index));
@@ -205,7 +206,7 @@ namespace Cafe.Controllers
             }
 
             await _auditLogService.LogAsync("Create", "Attendance", null,
-                $"Self-marked attendance as {model.Status}");
+                $"Self-marked attendance as {model.Status}", staff.BranchId);
 
             SetSuccessMessage("Attendance marked successfully!");
             return RedirectToAction(nameof(Index));
@@ -275,7 +276,8 @@ namespace Cafe.Controllers
             }
 
             await _auditLogService.LogAsync("BulkCreate", "Attendance", null,
-                $"Bulk marked attendance for {marked} staff on {model.Date:yyyy-MM-dd}");
+                $"Bulk marked attendance for {marked} staff on {model.Date:yyyy-MM-dd}",
+                model.BranchId);
 
             SetSuccessMessage($"Attendance marked for {marked} staff member(s)!");
             return RedirectToAction(nameof(Index));
@@ -404,9 +406,11 @@ namespace Cafe.Controllers
             var record = await _context.Attendances.FindAsync(id);
             if (record != null)
             {
+                var branchId = record.BranchId;
                 _context.Attendances.Remove(record);
                 await _context.SaveChangesAsync();
-                await _auditLogService.LogAsync("Delete", "Attendance", id, "Deleted attendance record");
+                await _auditLogService.LogAsync("Delete", "Attendance", id,
+                    "Deleted attendance record", branchId);
                 SetSuccessMessage("Attendance record deleted.");
             }
             return RedirectToAction(nameof(Index));
