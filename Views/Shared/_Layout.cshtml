@@ -261,25 +261,14 @@
 
             <!-- Main content -->
             <main class="p-6">
-                <!-- Notifications -->
+                <!-- ActionCard TempData triggers (hidden) -->
                 @if (TempData["Success"] != null)
                 {
-                    <div class="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg">
-                        <div class="flex items-center">
-                            <i class="fas fa-check-circle mr-3"></i>
-                            <span>@TempData["Success"]</span>
-                        </div>
-                    </div>
+                    <div id="ac-tempdata-success" data-message="@TempData["Success"]" class="hidden"></div>
                 }
-
                 @if (TempData["Error"] != null)
                 {
-                    <div class="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-lg">
-                        <div class="flex items-center">
-                            <i class="fas fa-exclamation-circle mr-3"></i>
-                            <span>@TempData["Error"]</span>
-                        </div>
-                    </div>
+                    <div id="ac-tempdata-error" data-message="@TempData["Error"]" class="hidden"></div>
                 }
 
                 <!-- Page content -->
@@ -299,18 +288,8 @@
 
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/actioncard.js"></script>
     <script>
-        // Confirmation dialog for destructive actions
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[data-confirm]').forEach(function(form) {
-                form.addEventListener('submit', function(e) {
-                    if (!confirm(form.getAttribute('data-confirm'))) {
-                        e.preventDefault();
-                    }
-                });
-            });
-        });
-
         // Mobile menu functionality
         document.getElementById('mobileMenuButton')?.addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('open');

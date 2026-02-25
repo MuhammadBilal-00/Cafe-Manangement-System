@@ -168,10 +168,9 @@
                         }
                         @if (r.PaymentStatus == "Pending" && (Context.Session.GetString("UserRole") == "Owner" || Context.Session.GetString("UserRole") == "BranchManager"))
                         {
-                            <form asp-action="MarkPaid" asp-route-id="@r.Id" method="post" class="inline">
+                            <form asp-action="MarkPaid" asp-route-id="@r.Id" method="post" class="inline" data-confirm="Mark this salary as paid?">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="text-green-600 hover:text-green-800" title="Mark Paid"
-                                        onclick="return confirm('Mark this salary as paid?')">
+                                <button type="submit" class="text-green-600 hover:text-green-800" title="Mark Paid">
                                     <i class="fas fa-check-circle"></i>
                                 </button>
                             </form>
@@ -204,13 +203,12 @@
     <div class="flex flex-wrap gap-4">
         @if (Context.Session.GetString("UserRole") == "Owner" && Model.PendingCount > 0)
         {
-            <form asp-action="MarkAllPaid" method="post" class="inline">
+            <form asp-action="MarkAllPaid" method="post" class="inline" data-confirm="Mark all pending salaries as paid?">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="year" value="@Model.Year" />
                 <input type="hidden" name="month" value="@Model.Month" />
                 <input type="hidden" name="branchId" value="@Model.BranchId" />
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
-                        onclick="return confirm('Mark all pending salaries as paid?')">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center">
                     <i class="fas fa-check-double mr-2"></i> Mark All Paid (@Model.PendingCount)
                 </button>
             </form>
@@ -293,7 +291,7 @@
             fetch(`/Salary/GetSalaryDetail/${id}`)
                 .then(r => r.json())
                 .then(data => {
-                    if (!data.success) { alert(data.message); return; }
+                    if (!data.success) { ActionCard.error('Error', data.message); return; }
                     const content = document.getElementById('salaryDetailContent');
                     let historyRows = '';
                     if (data.history && data.history.length > 0) {
@@ -382,7 +380,7 @@
             fetch(`/Salary/GetSalaryDetail/${id}`)
                 .then(r => r.json())
                 .then(data => {
-                    if (!data.success) { alert(data.message); return; }
+                    if (!data.success) { ActionCard.error('Error', data.message); return; }
                     document.getElementById('adjBaseSalary').value = data.baseSalary;
                     document.getElementById('adjBonusAmount').value = data.bonusAmount;
                     document.getElementById('adjBonusReason').value = data.bonusReason;
@@ -420,10 +418,10 @@
                 document.getElementById('saveAdjustBtn').innerHTML = '<i class="fas fa-save mr-1"></i> Save Adjustment';
                 if (res.success) {
                     closeAdjustModal();
-                    alert('Salary adjusted successfully! New final salary: Rs. ' + res.finalSalary.toLocaleString());
-                    location.reload();
+                    ActionCard.success('Salary Adjusted', 'New final salary: Rs. ' + res.finalSalary.toLocaleString(), { autoDismiss: 3000 });
+                    setTimeout(() => location.reload(), 2000);
                 } else {
-                    alert(res.message);
+                    ActionCard.error('Error', res.message);
                 }
             }).catch(() => {
                 document.getElementById('saveAdjustBtn').disabled = false;

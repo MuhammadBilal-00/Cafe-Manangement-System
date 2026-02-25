@@ -314,7 +314,7 @@
             const phone = document.getElementById("newCustPhone").value.trim();
             const email = document.getElementById("newCustEmail").value.trim();
 
-            if (!name || !phone) { alert("Name and Phone are required."); return; }
+            if (!name || !phone) { ActionCard.warning('Missing Information', 'Name and Phone are required.'); return; }
 
             fetch("/Order/QuickCreateCustomer", {
                 method: "POST",
@@ -325,7 +325,7 @@
                     selectCustomer({ id: res.id, name: res.name, email: email, phone: phone });
                     hideQuickCreate();
                 } else {
-                    alert(res.message);
+                    ActionCard.error('Error', res.message);
                 }
             });
         }
@@ -336,8 +336,8 @@
             const menuItemId = parseInt(select.value);
             const quantity = parseInt(document.getElementById("itemQuantity").value);
 
-            if (!menuItemId) { alert("Please select a menu item."); return; }
-            if (!quantity || quantity < 1) { alert("Quantity must be at least 1."); return; }
+            if (!menuItemId) { ActionCard.warning('Missing Item', 'Please select a menu item.'); return; }
+            if (!quantity || quantity < 1) { ActionCard.warning('Invalid Quantity', 'Quantity must be at least 1.'); return; }
 
             const menuItem = menuItemsCache.find(m => m.id === menuItemId);
             if (!menuItem) return;
@@ -545,9 +545,9 @@
             const customerId = document.getElementById("customerId").value;
             const branchId = document.getElementById("branchSelect").value;
 
-            if (!customerId) { alert("Please select a customer."); return; }
-            if (!branchId) { alert("Please select a branch."); return; }
-            if (orderItems.length === 0) { alert("Please add at least one item to the order."); return; }
+            if (!customerId) { ActionCard.warning('Missing Customer', 'Please select a customer.'); return; }
+            if (!branchId) { ActionCard.warning('Missing Branch', 'Please select a branch.'); return; }
+            if (orderItems.length === 0) { ActionCard.warning('No Items', 'Please add at least one item to the order.'); return; }
 
             const request = {
                 customerId: parseInt(customerId),
@@ -569,9 +569,9 @@
                 if (res.success) {
                     closeModal('createOrderModal');
                     loadOrders();
-                    alert(`Order ${res.orderNumber} created successfully!`);
+                    ActionCard.success('Order Created', `Order ${res.orderNumber} has been created successfully.`, { autoDismiss: 3000 });
                 } else {
-                    alert(res.message);
+                    ActionCard.error('Order Failed', res.message);
                 }
             }).catch(() => {
                 document.getElementById("saveOrderBtn").disabled = false;
@@ -579,28 +579,35 @@
             });
         }
 
-        function updateOrderStatus(id, status) {
-            if (!confirm(`Update order status to ${status}?`)) return;
+        async function updateOrderStatus(id, status) {
+            const ok = await ActionCard.confirm('Update Status', `Are you sure you want to mark this order as ${status}?`, { okText: 'Yes, Update' });
+            if (!ok) return;
             fetch("/Order/UpdateOrderStatus", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
                 body: JSON.stringify({ orderId: id, newStatus: status })
             }).then(r => r.json()).then(res => {
-                if (res.success) loadOrders();
-                else alert(res.message);
+                if (res.success) {
+                    loadOrders();
+                    ActionCard.success('Status Updated', `Order status changed to ${status}.`, { autoDismiss: 2500 });
+                }
+                else ActionCard.error('Error', res.message);
             });
         }
 
-        function cancelOrder(id) {
-            const reason = prompt("Reason for cancellation:");
+        async function cancelOrder(id) {
+            const reason = await ActionCard.prompt('Cancel Order', 'Please provide a reason for cancellation:', { placeholder: 'Reason...', okText: 'Cancel Order' });
             if (reason === null) return;
             fetch("/Order/CancelOrder", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
                 body: JSON.stringify({ orderId: id, reason: reason || "Cancelled by staff" })
             }).then(r => r.json()).then(res => {
-                if (res.success) loadOrders();
-                else alert(res.message);
+                if (res.success) {
+                    loadOrders();
+                    ActionCard.success('Order Cancelled', 'The order has been cancelled.', { autoDismiss: 2500 });
+                }
+                else ActionCard.error('Error', res.message);
             });
         }
 

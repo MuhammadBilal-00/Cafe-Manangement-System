@@ -150,7 +150,7 @@
                                 @if (ViewBag.UserRole == "Owner" || Context.Session.GetString("UserRole") == "Owner")
                                 {
                                     <form asp-action="DeleteExpense" asp-route-id="@e.Id" method="post" class="inline"
-                                          onsubmit="return confirm('Delete this expense?');">
+                                          data-confirm="Delete this expense?">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="text-red-500 hover:text-red-700" title="Delete">
                                             <i class="fas fa-trash"></i>
