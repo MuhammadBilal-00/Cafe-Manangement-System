@@ -3,11 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using Cafe.Data;
 using Cafe.Models;
 using Cafe.Models.ViewModels;
+using Cafe.Attributes;
+using Cafe.Helpers;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Cafe.Services;
 
 namespace Cafe.Controllers
 {
+    [RequireManagerOrOwner]
     public class StaffController : BaseController
     {
         private readonly IAuthService _authService;
@@ -20,23 +23,29 @@ namespace Cafe.Controllers
         // GET: Staff
         public async Task<IActionResult> Index()
         {
-            var staff = await _context.Staff
+            var query = _context.Staff
                 .Include(s => s.User)
                 .Include(s => s.StaffRole)
                 .Include(s => s.Branch)
-                //.Where(s => s.IsActive)
-                .ToListAsync();
+                .AsQueryable();
 
+            // Branch isolation for Manager
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (managedBranchId.HasValue)
+                    query = query.Where(s => s.BranchId == managedBranchId.Value);
+            }
+
+            var staff = await query.ToListAsync();
             return View(staff);
         }
 
         // GET: Staff/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var staff = await _context.Staff
                 .Include(s => s.User)
@@ -44,15 +53,17 @@ namespace Cafe.Controllers
                 .Include(s => s.Branch)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (staff == null)
-            {
-                return NotFound();
-            }
+            if (staff == null) return NotFound();
+
+            // Branch isolation check
+            if (!CanAccessBranch(staff.BranchId))
+                return AccessDenied();
 
             return View(staff);
         }
 
         // GET: Staff/Create
+        [RequireOwner]
         public IActionResult Create()
         {
             PopulateDropdowns();
@@ -62,6 +73,7 @@ namespace Cafe.Controllers
         // POST: Staff/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RequireOwner]
         public async Task<IActionResult> Create(StaffCreateViewModel model)
         {
             if (ModelState.IsValid)
@@ -115,19 +127,17 @@ namespace Cafe.Controllers
         // GET: Staff/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var staff = await _context.Staff
                 .Include(s => s.User)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
-            if (staff == null)
-            {
-                return NotFound();
-            }
+            if (staff == null) return NotFound();
+
+            // Branch isolation check
+            if (!CanAccessBranch(staff.BranchId))
+                return AccessDenied();
 
             var model = new StaffEditViewModel
             {
@@ -209,12 +219,10 @@ namespace Cafe.Controllers
         }
 
         // GET: Staff/Delete/5
+        [RequireOwner]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var staff = await _context.Staff
                 .Include(s => s.User)
@@ -233,6 +241,7 @@ namespace Cafe.Controllers
         // POST: Staff/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [RequireOwner]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var staff = await _context.Staff.FindAsync(id);
@@ -279,12 +288,22 @@ namespace Cafe.Controllers
 
         public async Task<IActionResult> ExportCsv()
         {
-            var staff = await _context.Staff
+            var query = _context.Staff
                 .Include(s => s.User)
                 .Include(s => s.StaffRole)
                 .Include(s => s.Branch)
-                .OrderBy(s => s.User.Name)
-                .ToListAsync();
+                .AsQueryable();
+
+            // Branch isolation for Manager
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (managedBranchId.HasValue)
+                    query = query.Where(s => s.BranchId == managedBranchId.Value);
+            }
+
+            var staff = await query.OrderBy(s => s.User.Name).ToListAsync();
 
             var csv = new System.Text.StringBuilder();
             csv.AppendLine("EmployeeId,Name,Email,Role,Branch,Department,EmploymentType,EmploymentStatus,HireDate,TerminationDate,PerformanceRating,IsActive");

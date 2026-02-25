@@ -2,33 +2,64 @@
 using Microsoft.EntityFrameworkCore;
 using Cafe.Models;
 using Cafe.Data;
+using Cafe.Attributes;
+using Cafe.Helpers;
 
 namespace Cafe.Controllers
 {
-    public class InventoryItemController : Controller
+    [RequireManagerOrOwner]
+    public class InventoryItemController : BaseController
     {
-        private readonly ApplicationDbContext _context;
-
-        public InventoryItemController(ApplicationDbContext context)
+        public InventoryItemController(ApplicationDbContext context) : base(context)
         {
-            _context = context;
+        }
+
+        // Helper: get the branch this user is scoped to (null = all branches for Owner)
+        private int? GetEffectiveBranchId(int? requestedBranchId)
+        {
+            var role = GetCurrentUserRole();
+            if (role == "BranchManager")
+                return HttpContext.Session.GetManagedBranchId();
+            return requestedBranchId; // Owner can pick any
+        }
+
+        // Helper: verify the item belongs to an accessible branch
+        private bool CanAccessItem(InventoryItem item)
+        {
+            return CanAccessBranch(item.BranchId);
+        }
+
+        // Helper: get branches the user can see
+        private async Task<System.Collections.Generic.List<Branch>> GetAccessibleBranches()
+        {
+            var role = GetCurrentUserRole();
+            if (role == "Owner")
+                return await _context.Branches.Where(b => b.IsActive).ToListAsync();
+
+            var branchId = HttpContext.Session.GetManagedBranchId();
+            if (branchId.HasValue)
+                return await _context.Branches.Where(b => b.Id == branchId.Value).ToListAsync();
+
+            return new System.Collections.Generic.List<Branch>();
         }
 
         // GET: InventoryItem
         public async Task<IActionResult> Index(int? branchId)
         {
-            var branches = await _context.Branches.ToListAsync();
+            var branches = await GetAccessibleBranches();
             ViewBag.Branches = branches;
-            ViewBag.SelectedBranchId = branchId;
+
+            var effectiveBranchId = GetEffectiveBranchId(branchId);
+            ViewBag.SelectedBranchId = effectiveBranchId;
 
             IQueryable<InventoryItem> items = _context.InventoryItems
                 .Include(i => i.Branch)
                 .Include(i => i.Purchases);
 
-            if (branchId.HasValue)
+            if (effectiveBranchId.HasValue)
             {
-                items = items.Where(i => i.BranchId == branchId.Value);
-                var selectedBranch = await _context.Branches.FindAsync(branchId.Value);
+                items = items.Where(i => i.BranchId == effectiveBranchId.Value);
+                var selectedBranch = await _context.Branches.FindAsync(effectiveBranchId.Value);
                 ViewBag.CurrentBranch = selectedBranch?.Name ?? "All Branches";
             }
             else
@@ -50,6 +81,7 @@ namespace Cafe.Controllers
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (inventoryItem == null) return NotFound();
+            if (!CanAccessItem(inventoryItem)) return AccessDenied();
 
             return View(inventoryItem);
         }
@@ -57,7 +89,7 @@ namespace Cafe.Controllers
         // GET: InventoryItem/Create
         public async Task<IActionResult> Create()
         {
-            ViewBag.Branches = await _context.Branches.ToListAsync();
+            ViewBag.Branches = await GetAccessibleBranches();
             return View();
         }
 
@@ -66,6 +98,10 @@ namespace Cafe.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(InventoryItem inventoryItem)
         {
+            // Manager can only create items in their own branch
+            if (!CanAccessBranch(inventoryItem.BranchId))
+                return AccessDenied();
+
             if (ModelState.IsValid)
             {
                 inventoryItem.LastUpdated = DateTime.Now;
@@ -75,7 +111,7 @@ namespace Cafe.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Branches = await _context.Branches.ToListAsync();
+            ViewBag.Branches = await GetAccessibleBranches();
             return View(inventoryItem);
         }
 
@@ -86,8 +122,9 @@ namespace Cafe.Controllers
 
             var inventoryItem = await _context.InventoryItems.FindAsync(id);
             if (inventoryItem == null) return NotFound();
+            if (!CanAccessItem(inventoryItem)) return AccessDenied();
 
-            ViewBag.Branches = await _context.Branches.ToListAsync();
+            ViewBag.Branches = await GetAccessibleBranches();
             return View(inventoryItem);
         }
 
@@ -97,6 +134,7 @@ namespace Cafe.Controllers
         public async Task<IActionResult> Edit(int id, InventoryItem inventoryItem)
         {
             if (id != inventoryItem.Id) return NotFound();
+            if (!CanAccessBranch(inventoryItem.BranchId)) return AccessDenied();
 
             if (ModelState.IsValid)
             {
@@ -116,11 +154,12 @@ namespace Cafe.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Branches = await _context.Branches.ToListAsync();
+            ViewBag.Branches = await GetAccessibleBranches();
             return View(inventoryItem);
         }
 
         // GET: InventoryItem/Delete/5
+        [RequireOwner]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -137,6 +176,7 @@ namespace Cafe.Controllers
         // POST: InventoryItem/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [RequireOwner]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var inventoryItem = await _context.InventoryItems.FindAsync(id);
@@ -151,68 +191,84 @@ namespace Cafe.Controllers
 
         // POST: InventoryItem/Restock
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Restock(int id, decimal quantity)
         {
             var inventoryItem = await _context.InventoryItems.FindAsync(id);
-            if (inventoryItem != null)
-            {
-                // Convert decimal input to int (round as you prefer; here we round)
-                int add = (int)Math.Round(quantity, MidpointRounding.AwayFromZero);
-                inventoryItem.Quantity += add;
+            if (inventoryItem == null)
+                return Json(new { success = false });
+            if (!CanAccessItem(inventoryItem))
+                return Json(new { success = false, message = "Access denied" });
 
-                inventoryItem.LastUpdated = DateTime.Now;
-                await _context.SaveChangesAsync();
-                return Json(new { success = true });
-            }
-            return Json(new { success = false });
+            int add = (int)Math.Round(quantity, MidpointRounding.AwayFromZero);
+            inventoryItem.Quantity += add;
+            inventoryItem.LastUpdated = DateTime.Now;
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
         }
 
         // GET: InventoryItem/LowStock
         public async Task<IActionResult> LowStock()
         {
-            var lowStockItems = await _context.InventoryItems
+            var query = _context.InventoryItems
                 .Include(i => i.Branch)
                 .Where(i => i.Quantity <= i.ReorderLevel)
-                .OrderBy(i => i.Quantity)
-                .ToListAsync();
+                .AsQueryable();
 
+            var effectiveBranchId = GetEffectiveBranchId(null);
+            if (effectiveBranchId.HasValue)
+                query = query.Where(i => i.BranchId == effectiveBranchId.Value);
+
+            var lowStockItems = await query.OrderBy(i => i.Quantity).ToListAsync();
             return View(lowStockItems);
         }
 
         // GET: InventoryItem/OutOfStock
         public async Task<IActionResult> OutOfStock()
         {
-            var outOfStockItems = await _context.InventoryItems
+            var query = _context.InventoryItems
                 .Include(i => i.Branch)
                 .Where(i => i.Quantity == 0)
-                .ToListAsync();
+                .AsQueryable();
 
+            var effectiveBranchId = GetEffectiveBranchId(null);
+            if (effectiveBranchId.HasValue)
+                query = query.Where(i => i.BranchId == effectiveBranchId.Value);
+
+            var outOfStockItems = await query.ToListAsync();
             return View(outOfStockItems);
         }
 
         // POST: InventoryItem/AdjustStock
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AdjustStock(int id, decimal newQuantity, string reason)
         {
             var inventoryItem = await _context.InventoryItems.FindAsync(id);
-            if (inventoryItem != null)
-            {
-                int qty = (int)Math.Round(newQuantity, MidpointRounding.AwayFromZero);
-                inventoryItem.Quantity = qty;
+            if (inventoryItem == null)
+                return Json(new { success = false });
+            if (!CanAccessItem(inventoryItem))
+                return Json(new { success = false, message = "Access denied" });
 
-                inventoryItem.LastUpdated = DateTime.Now;
-                await _context.SaveChangesAsync();
-                return Json(new { success = true });
-            }
-            return Json(new { success = false });
+            int qty = (int)Math.Round(newQuantity, MidpointRounding.AwayFromZero);
+            inventoryItem.Quantity = qty;
+            inventoryItem.LastUpdated = DateTime.Now;
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
         }
 
         // GET: Get inventory value report
         public async Task<IActionResult> ValueReport()
         {
-            var items = await _context.InventoryItems
+            var query = _context.InventoryItems
                 .Include(i => i.Branch)
-                .ToListAsync();
+                .AsQueryable();
+
+            var effectiveBranchId = GetEffectiveBranchId(null);
+            if (effectiveBranchId.HasValue)
+                query = query.Where(i => i.BranchId == effectiveBranchId.Value);
+
+            var items = await query.ToListAsync();
 
             var report = items.GroupBy(i => i.Branch)
                 .Select(g => new
@@ -234,10 +290,12 @@ namespace Cafe.Controllers
 
         public async Task<IActionResult> ExportCsv(int? branchId)
         {
+            var effectiveBranchId = GetEffectiveBranchId(branchId);
+
             IQueryable<InventoryItem> query = _context.InventoryItems.Include(i => i.Branch);
 
-            if (branchId.HasValue)
-                query = query.Where(i => i.BranchId == branchId.Value);
+            if (effectiveBranchId.HasValue)
+                query = query.Where(i => i.BranchId == effectiveBranchId.Value);
 
             var items = await query.OrderBy(i => i.Name).ToListAsync();
 

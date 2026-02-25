@@ -2,10 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Cafe.Data;
 using Cafe.Models;
+using Cafe.Attributes;
+using Cafe.Helpers;
 using System.Diagnostics;
 
 namespace Cafe.Controllers
 {
+    [RequireStaffOrAbove]
     public class HomeController : BaseController
     {
         private readonly ILogger<HomeController> _logger;
@@ -17,28 +20,59 @@ namespace Cafe.Controllers
 
         public async Task<IActionResult> Index()
         {
-            // Get accurate statistics from database
-            var totalBranches = await _context.Branches.CountAsync(b => b.IsActive);
-            var totalStaff = await _context.Staff.CountAsync(s => s.IsActive);
-            var activeStaff = await _context.Staff.CountAsync(s => s.IsActive && s.EmploymentStatus == "Active");
-            var totalCustomers = await _context.Customers.CountAsync(c => c.IsActive);
-            var activeCustomers = await _context.Customers.CountAsync(c => c.IsActive);
-            var totalOrders = await _context.Orders.CountAsync();
-            var todayOrders = await _context.Orders.CountAsync(o => o.OrderDate.Date == DateTime.Today);
-            var pendingOrders = await _context.Orders.CountAsync(o => o.Status == "Pending");
-            var completedOrders = await _context.Orders.CountAsync(o => o.Status == "Completed");
-            var totalMenuItems = await _context.MenuItems.CountAsync(m => m.Availability);
+            // Determine branch scope
+            var userRole = GetCurrentUserRole();
+            int? scopedBranchId = null;
 
-            // Calculate average order value
-            var averageOrderValue = await _context.Orders
-                .Where(o => o.Status == "Completed")
+            if (userRole == "BranchManager")
+                scopedBranchId = HttpContext.Session.GetManagedBranchId();
+            else if (userRole == "Staff")
+                scopedBranchId = HttpContext.Session.GetStaffBranchId();
+
+            // Branch-scoped queries
+            var branchQuery = _context.Branches.Where(b => b.IsActive);
+            if (scopedBranchId.HasValue)
+                branchQuery = branchQuery.Where(b => b.Id == scopedBranchId.Value);
+
+            var staffQuery = _context.Staff.Where(s => s.IsActive);
+            if (scopedBranchId.HasValue)
+                staffQuery = staffQuery.Where(s => s.BranchId == scopedBranchId.Value);
+
+            var orderQuery = _context.Orders.AsQueryable();
+            if (scopedBranchId.HasValue)
+                orderQuery = orderQuery.Where(o => o.BranchId == scopedBranchId.Value);
+
+            var inventoryQuery = _context.InventoryItems.AsQueryable();
+            if (scopedBranchId.HasValue)
+                inventoryQuery = inventoryQuery.Where(i => i.BranchId == scopedBranchId.Value);
+
+            var totalBranches = await branchQuery.CountAsync();
+            var totalStaff = await staffQuery.CountAsync();
+            var activeStaff = await staffQuery.CountAsync(s => s.EmploymentStatus == "Active");
+
+            // Customers are global only for Owner
+            var totalCustomers = userRole == "Owner" ? await _context.Customers.CountAsync(c => c.IsActive) : 0;
+            var activeCustomers = totalCustomers;
+
+            var totalOrders = await orderQuery.CountAsync();
+            var todayOrders = await orderQuery.CountAsync(o => o.OrderDate.Date == DateTime.Today);
+            var pendingOrders = await orderQuery.CountAsync(o => o.Status == "Pending");
+            var completedOrders = await orderQuery.CountAsync(o => o.Status == "Completed");
+
+            var menuItemQuery = _context.MenuItems.Where(m => m.Availability);
+            if (scopedBranchId.HasValue)
+                menuItemQuery = menuItemQuery.Where(m => m.BranchId == scopedBranchId.Value);
+            var totalMenuItems = await menuItemQuery.CountAsync();
+
+            var completedOrderQuery = orderQuery.Where(o => o.Status == "Completed");
+            var averageOrderValue = await completedOrderQuery
                 .AverageAsync(o => (double?)o.TotalAmount) ?? 0;
 
-            // Monthly revenue data for chart (last 12 months)
+            // Monthly revenue (last 12 months) scoped
             var twelveMonthsAgo = DateTime.Today.AddMonths(-11).Date;
             twelveMonthsAgo = new DateTime(twelveMonthsAgo.Year, twelveMonthsAgo.Month, 1);
-            var monthlyRevenue = await _context.Orders
-                .Where(o => o.Status == "Completed" && o.OrderDate >= twelveMonthsAgo)
+            var monthlyRevenue = await completedOrderQuery
+                .Where(o => o.OrderDate >= twelveMonthsAgo)
                 .GroupBy(o => new { o.OrderDate.Year, o.OrderDate.Month })
                 .Select(g => new { g.Key.Year, g.Key.Month, Revenue = g.Sum(o => (decimal?)o.TotalAmount) ?? 0m })
                 .OrderBy(g => g.Year).ThenBy(g => g.Month)
@@ -54,16 +88,16 @@ namespace Cafe.Controllers
                 chartData.Add(match?.Revenue ?? 0m);
             }
 
-            // Low stock alerts
-            var lowStockItems = await _context.InventoryItems
+            // Low stock alerts scoped
+            var lowStockItems = await inventoryQuery
                 .Include(i => i.Branch)
                 .Where(i => i.Quantity <= i.ReorderLevel)
                 .OrderBy(i => i.Quantity)
                 .Take(5)
                 .ToListAsync();
 
-            // Get recent orders - Alternative approach if navigation properties aren't working
-            var recentOrders = await _context.Orders
+            // Recent orders scoped
+            var recentOrders = await orderQuery
                 .OrderByDescending(o => o.OrderDate)
                 .Take(5)
                 .Join(_context.Users,
@@ -81,14 +115,11 @@ namespace Cafe.Controllers
             var dashboardData = new
             {
                 TotalBranches = totalBranches,
-                PopularItems = await _context.MenuItems
+                PopularItems = await menuItemQuery
                     .Include(m => m.Category)
-                    .Where(m => m.Availability)
                     .Take(6)
                     .ToListAsync(),
-                Branches = await _context.Branches
-                    .Where(b => b.IsActive)
-                    .ToListAsync()
+                Branches = await branchQuery.ToListAsync()
             };
 
             ViewBag.DashboardData = dashboardData;

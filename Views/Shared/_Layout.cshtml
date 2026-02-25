@@ -43,7 +43,7 @@
 
             <nav class="flex-1 overflow-y-auto py-4">
                 <div class="px-4 space-y-2">
-                    <!-- Dashboard -->
+                    <!-- Dashboard (all authenticated users) -->
                     <div class="rounded-lg py-2 px-3">
                         <a asp-controller="Home" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
                             <i class="fas fa-chart-pie mr-3"></i>
@@ -51,56 +51,69 @@
                         </a>
                     </div>
 
-                    <!-- Branches -->
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="Branch" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-store mr-3"></i>
-                            Branches
-                        </a>
-                    </div>
+                    @if (Context.Session.GetString("UserRole") == "Owner" || Context.Session.GetString("UserRole") == "BranchManager")
+                    {
+                        <!-- Branches (Owner + Manager) -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="Branch" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-store mr-3"></i>
+                                Branches
+                            </a>
+                        </div>
 
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="Staff" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-users mr-3"></i>
-                            Staff
-                        </a>
-                    </div>
+                        <!-- Staff (Owner + Manager) -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="Staff" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-users mr-3"></i>
+                                Staff
+                            </a>
+                        </div>
+                    }
 
-                    <!-- Menu -->
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="MenuItem" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-book-open mr-3"></i>
-                            Menu
-                        </a>
-                    </div>
+                    @if (Context.Session.GetString("UserRole") != "Customer")
+                    {
+                        <!-- Menu (Owner + Manager + Staff) -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="MenuItem" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-book-open mr-3"></i>
+                                Menu
+                            </a>
+                        </div>
 
-                    <!-- Orders -->
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="Order" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-shopping-cart mr-3"></i>
-                            Orders
-                        </a>
-                    </div>
-
-                    <!-- Inventory -->
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="InventoryItem" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-boxes mr-3"></i>
-                            Inventory
-                        </a>
-                    </div>
-
-                    <!-- Attendance -->
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="Attendance" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-calendar-check mr-3"></i>
-                            Attendance
-                        </a>
-                    </div>
+                        <!-- Orders (Owner + Manager + Staff) -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="Order" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-shopping-cart mr-3"></i>
+                                Orders
+                            </a>
+                        </div>
+                    }
 
                     @if (Context.Session.GetString("UserRole") == "Owner" || Context.Session.GetString("UserRole") == "BranchManager")
                     {
-                        <!-- Salary Management -->
+                        <!-- Inventory (Owner + Manager) -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="InventoryItem" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-boxes mr-3"></i>
+                                Inventory
+                            </a>
+                        </div>
+                    }
+
+                    @if (Context.Session.GetString("UserRole") != "Customer")
+                    {
+                        <!-- Attendance (Owner + Manager + Staff can view own) -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="Attendance" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-calendar-check mr-3"></i>
+                                Attendance
+                            </a>
+                        </div>
+                    }
+
+                    @if (Context.Session.GetString("UserRole") == "Owner" || Context.Session.GetString("UserRole") == "BranchManager")
+                    {
+                        <!-- Salary Management (Owner + Manager) -->
                         <div class="rounded-lg py-2 px-3">
                             <a asp-controller="Salary" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
                                 <i class="fas fa-money-check-alt mr-3"></i>
@@ -108,30 +121,30 @@
                             </a>
                         </div>
 
-                        <!-- Financial Management -->
+                        <!-- Financial Management (Owner + Manager) -->
                         <div class="rounded-lg py-2 px-3">
                             <a asp-controller="Financial" asp-action="Dashboard" class="flex items-center text-gray-300 hover:text-white transition-colors">
                                 <i class="fas fa-coins mr-3"></i>
                                 Financials
                             </a>
                         </div>
+
+                        <!-- Reports (Owner + Manager) -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="Reports" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-chart-line mr-3"></i>
+                                Reports
+                            </a>
+                        </div>
+
+                        <!-- Feedback (Owner + Manager) -->
+                        <div class="rounded-lg py-2 px-3">
+                            <a asp-controller="Feedback" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fas fa-star mr-3"></i>
+                                Feedback
+                            </a>
+                        </div>
                     }
-
-                    <!-- Reports -->
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="Reports" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-chart-line mr-3"></i>
-                            Reports
-                        </a>
-                    </div>
-
-                    <!-- Feedback -->
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="Feedback" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-star mr-3"></i>
-                            Feedback
-                        </a>
-                    </div>
 
                     @if (Context.Session.GetString("UserRole") == "Owner")
                     {

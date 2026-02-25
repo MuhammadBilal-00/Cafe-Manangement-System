@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Cafe.Attributes;
 using Cafe.Data;
 using Cafe.Models;
 using Cafe.Models.ViewModels;
@@ -10,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cafe.Controllers
 {
+    [RequireManagerOrOwner]
     public class ReportsController : BaseController
     {
         public ReportsController(ApplicationDbContext context) : base(context) { }

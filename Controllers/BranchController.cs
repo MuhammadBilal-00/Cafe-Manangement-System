@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Cafe.Controllers
 {
+    [RequireManagerOrOwner]
     public class BranchController : BaseController
     {
         public BranchController(ApplicationDbContext context) : base(context) { }
@@ -253,7 +254,7 @@ namespace Cafe.Controllers
         //    return View(branch);
         //}
 
-        //[RequireOwner]
+        [RequireOwner]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)

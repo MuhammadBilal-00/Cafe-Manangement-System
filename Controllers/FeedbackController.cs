@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Cafe.Attributes;
 using Cafe.Data;
 using Cafe.Helpers;
 using Cafe.Models;
@@ -9,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cafe.Controllers
 {
+    [RequireManagerOrOwner]
     public class FeedbackController : BaseController
     {
         public FeedbackController(ApplicationDbContext context) : base(context)

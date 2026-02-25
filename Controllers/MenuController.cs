@@ -399,6 +399,7 @@ namespace Cafe.Controllers
         {
             return _context.MenuItems.Any(e => e.Id == id);
         }
+        [RequireManagerOrOwner]
         public async Task<IActionResult> RemoveIngredient(int menuItemId, int ingredientId)
         {
             var menuItemIngredient = await _context.MenuItemIngredients
