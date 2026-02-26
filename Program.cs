@@ -18,6 +18,7 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
     options.AddInterceptors(serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>());
+    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 });
 
 // Add authentication services
