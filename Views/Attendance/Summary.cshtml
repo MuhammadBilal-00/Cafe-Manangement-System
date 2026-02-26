@@ -61,6 +61,7 @@
                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Absent</th>
                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Late</th>
                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Half-Day</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Overtime</th>
                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Attendance %</th>
             </tr>
         </thead>
@@ -68,7 +69,7 @@
             @if (!Model.Summaries.Any())
             {
                 <tr>
-                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                    <td colspan="10" class="px-6 py-12 text-center text-gray-500">
                         <i class="fas fa-chart-bar text-4xl mb-3 block"></i>
                         No summary data available for this period.
                     </td>
@@ -87,6 +88,7 @@
                     <td class="px-6 py-4 text-sm text-center text-red-600 font-medium">@s.DaysAbsent</td>
                     <td class="px-6 py-4 text-sm text-center text-yellow-600 font-medium">@s.DaysLate</td>
                     <td class="px-6 py-4 text-sm text-center text-orange-600 font-medium">@s.DaysHalfDay</td>
+                    <td class="px-6 py-4 text-sm text-center @(s.TotalOvertimeHours > 0 ? "text-blue-600 font-medium" : "text-gray-400")">@(s.TotalOvertimeHours > 0 ? $"{s.TotalOvertimeHours:F1}h" : "-")</td>
                     <td class="px-6 py-4 text-sm text-center font-bold @pctClass">@s.AttendancePercentage%</td>
                 </tr>
             }

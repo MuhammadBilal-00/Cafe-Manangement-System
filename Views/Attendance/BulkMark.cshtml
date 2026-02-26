@@ -10,6 +10,15 @@
     <h1 class="text-2xl font-bold text-gray-800">Bulk Mark Attendance</h1>
 </div>
 
+<!-- Info Banner -->
+<div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+    <p class="text-sm text-blue-800">
+        <i class="fas fa-info-circle mr-1"></i>
+        Status is <strong>auto-calculated</strong> from check-in/check-out times.
+        Leave both times empty to mark as Absent.
+    </p>
+</div>
+
 <!-- Branch/Date Selection -->
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
     <form method="get" class="flex gap-4 items-end">
@@ -43,10 +52,8 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check In</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check Out</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Late (min)</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">State</th>
                 </tr>
@@ -63,29 +70,20 @@
                             <input type="hidden" name="Entries[@i].AlreadyMarked" value="@entry.AlreadyMarked" />
                         </td>
                         <td class="px-6 py-3">
-                            <select name="Entries[@i].Status" class="border rounded px-2 py-1 text-sm" @(entry.AlreadyMarked ? "disabled" : "")>
-                                <option value="Present" selected="@(entry.Status == "Present")">Present</option>
-                                <option value="Absent" selected="@(entry.Status == "Absent")">Absent</option>
-                                <option value="Late" selected="@(entry.Status == "Late")">Late</option>
-                                <option value="Half-Day" selected="@(entry.Status == "Half-Day")">Half-Day</option>
-                            </select>
+                            <input type="time" name="Entries[@i].CheckInTime" value="@entry.CheckInTime?.ToString(@"hh\:mm")" class="border rounded px-2 py-1 text-sm w-28" @(entry.AlreadyMarked ? "disabled" : "") />
                         </td>
                         <td class="px-6 py-3">
-                            <input type="time" name="Entries[@i].CheckInTime" value="@entry.CheckInTime?.ToString(@"hh\:mm")" class="border rounded px-2 py-1 text-sm w-24" @(entry.AlreadyMarked ? "disabled" : "") />
+                            <input type="time" name="Entries[@i].CheckOutTime" value="@entry.CheckOutTime?.ToString(@"hh\:mm")" class="border rounded px-2 py-1 text-sm w-28" @(entry.AlreadyMarked ? "disabled" : "") />
                         </td>
                         <td class="px-6 py-3">
-                            <input type="time" name="Entries[@i].CheckOutTime" value="@entry.CheckOutTime?.ToString(@"hh\:mm")" class="border rounded px-2 py-1 text-sm w-24" @(entry.AlreadyMarked ? "disabled" : "") />
-                        </td>
-                        <td class="px-6 py-3">
-                            <input type="number" name="Entries[@i].LateMinutes" value="@entry.LateMinutes" min="0" class="border rounded px-2 py-1 text-sm w-20" @(entry.AlreadyMarked ? "disabled" : "") />
-                        </td>
-                        <td class="px-6 py-3">
-                            <input type="text" name="Entries[@i].Notes" value="@entry.Notes" class="border rounded px-2 py-1 text-sm w-32" placeholder="Notes..." @(entry.AlreadyMarked ? "disabled" : "") />
+                            <input type="text" name="Entries[@i].Notes" value="@entry.Notes" class="border rounded px-2 py-1 text-sm w-40" placeholder="Notes..." @(entry.AlreadyMarked ? "disabled" : "") />
                         </td>
                         <td class="px-6 py-3">
                             @if (entry.AlreadyMarked)
                             {
-                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Done</span>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                    @entry.Status
+                                </span>
                             }
                             else
                             {

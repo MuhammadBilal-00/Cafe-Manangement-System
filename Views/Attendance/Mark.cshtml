@@ -12,6 +12,17 @@
     </div>
 
     <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p class="text-sm text-blue-800">
+                <i class="fas fa-info-circle mr-1"></i>
+                Status is <strong>automatically calculated</strong> from check-in/check-out times:
+                <span class="font-medium">Present</span> (8+h),
+                <span class="font-medium">Half-Day</span> (4-8h),
+                <span class="font-medium">Absent</span> (&lt;4h or no times).
+                Late if check-in &gt; shift start + 15 min.
+            </p>
+        </div>
+
         <form asp-action="Mark" method="post">
             @Html.AntiForgeryToken()
 
@@ -31,19 +42,6 @@
                     <input type="date" name="Date" value="@Model.Date.ToString("yyyy-MM-dd")" class="w-full border rounded-lg px-3 py-2" required />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
-                    <select name="Status" id="statusSelect" class="w-full border rounded-lg px-3 py-2" required onchange="toggleLateMinutes()">
-                        <option value="Present" selected="@(Model.Status == "Present")">Present</option>
-                        <option value="Absent" selected="@(Model.Status == "Absent")">Absent</option>
-                        <option value="Late" selected="@(Model.Status == "Late")">Late</option>
-                        <option value="Half-Day" selected="@(Model.Status == "Half-Day")">Half-Day</option>
-                    </select>
-                </div>
-                <div id="lateMinutesDiv" style="display:none;">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Late Minutes</label>
-                    <input type="number" name="LateMinutes" value="@Model.LateMinutes" min="0" max="1440" class="w-full border rounded-lg px-3 py-2" />
-                </div>
-                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Check In Time</label>
                     <input type="time" name="CheckInTime" value="@Model.CheckInTime?.ToString(@"hh\:mm")" class="w-full border rounded-lg px-3 py-2" />
                 </div>
@@ -58,6 +56,10 @@
                 <textarea name="Notes" rows="3" class="w-full border rounded-lg px-3 py-2" placeholder="Optional notes...">@Model.Notes</textarea>
             </div>
 
+            <div class="mt-2 text-xs text-gray-500">
+                <p><i class="fas fa-lightbulb mr-1"></i> Leave both times empty to mark as Absent. Provide only Check In for a clock-in record (status finalized on clock-out).</p>
+            </div>
+
             <div class="mt-6 flex justify-end gap-3">
                 <a asp-action="Index" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</a>
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
@@ -67,13 +69,3 @@
         </form>
     </div>
 </div>
-
-@section Scripts {
-<script>
-    function toggleLateMinutes() {
-        var status = document.getElementById('statusSelect').value;
-        document.getElementById('lateMinutesDiv').style.display = status === 'Late' ? 'block' : 'none';
-    }
-    toggleLateMinutes();
-</script>
-}

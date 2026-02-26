@@ -60,6 +60,7 @@ namespace Cafe.Models.ViewModels
         public int DaysAbsent { get; set; }
         public int DaysLate { get; set; }
         public int DaysHalfDay { get; set; }
+        public decimal TotalOvertimeHours { get; set; }
         public decimal AttendancePercentage { get; set; }
     }
 

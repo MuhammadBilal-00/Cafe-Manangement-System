@@ -103,7 +103,7 @@ namespace Cafe.Controllers
             return View(new AttendanceMarkViewModel());
         }
 
-        // POST: Attendance/Mark
+        // POST: Attendance/Mark (auto-calculates status from ClockIn/ClockOut)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireManagerOrOwner]
@@ -123,24 +123,26 @@ namespace Cafe.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var success = await _attendanceService.MarkAttendanceAsync(
-                model.StaffId, staff.BranchId, model.Date, model.Status,
-                model.CheckInTime, model.CheckOutTime, model.LateMinutes,
-                model.Notes, GetCurrentUserId());
-
-            if (!success)
+            try
             {
-                SetErrorMessage("Attendance already marked for this staff member on this date.");
+                await _attendanceService.MarkAttendanceAsync(
+                    model.StaffId, staff.BranchId, model.Date,
+                    model.CheckInTime, model.CheckOutTime,
+                    model.Notes, GetCurrentUserId());
+
+                SetSuccessMessage("Attendance marked successfully! Status auto-calculated.");
+                return RedirectToAction(nameof(Index));
+            }
+            catch (InvalidOperationException ex)
+            {
+                SetErrorMessage(ex.Message);
                 ViewBag.Branches = await GetAccessibleBranches();
                 ViewBag.StaffList = await GetAccessibleStaff();
                 return View(model);
             }
-
-            SetSuccessMessage("Attendance marked successfully!");
-            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Attendance/MarkSelf
+        // GET: Attendance/MarkSelf (Clock In)
         public async Task<IActionResult> MarkSelf()
         {
             var currentStaffId = await GetCurrentStaffId();
@@ -150,11 +152,17 @@ namespace Cafe.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var already = await _attendanceService.HasAttendanceAsync(currentStaffId.Value, DateTime.Today);
-            if (already)
+            // Check if already clocked in today
+            var todayRecord = await _attendanceService.GetTodayAttendanceAsync(currentStaffId.Value);
+            if (todayRecord != null)
             {
-                SetErrorMessage("You have already marked your attendance for today.");
-                return RedirectToAction(nameof(Index));
+                if (todayRecord.CheckOutTime.HasValue)
+                {
+                    SetErrorMessage("You have already completed your attendance for today.");
+                    return RedirectToAction(nameof(Index));
+                }
+                // Already clocked in but not out - redirect to clock out
+                return RedirectToAction(nameof(ClockOut));
             }
 
             return View(new AttendanceMarkViewModel
@@ -165,7 +173,7 @@ namespace Cafe.Controllers
             });
         }
 
-        // POST: Attendance/MarkSelf
+        // POST: Attendance/MarkSelf (Clock In - status auto-calculated)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkSelf(AttendanceMarkViewModel model)
@@ -187,18 +195,74 @@ namespace Cafe.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var success = await _attendanceService.MarkAttendanceAsync(
-                model.StaffId, staff.BranchId, model.Date, model.Status,
-                model.CheckInTime, model.CheckOutTime, model.LateMinutes,
-                model.Notes, GetCurrentUserId());
-
-            if (!success)
+            try
             {
-                SetErrorMessage("You have already marked your attendance for today.");
+                await _attendanceService.MarkAttendanceAsync(
+                    model.StaffId, staff.BranchId, model.Date,
+                    model.CheckInTime, null, // Only clock-in, no clock-out yet
+                    model.Notes, GetCurrentUserId());
+
+                SetSuccessMessage("Clock-in recorded! Status will be finalized when you clock out.");
+                return RedirectToAction(nameof(Index));
+            }
+            catch (InvalidOperationException ex)
+            {
+                SetErrorMessage(ex.Message);
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: Attendance/ClockOut
+        public async Task<IActionResult> ClockOut()
+        {
+            var currentStaffId = await GetCurrentStaffId();
+            if (!currentStaffId.HasValue)
+            {
+                SetErrorMessage("You are not registered as a staff member.");
                 return RedirectToAction(nameof(Index));
             }
 
-            SetSuccessMessage("Attendance marked successfully!");
+            var todayRecord = await _attendanceService.GetTodayAttendanceAsync(currentStaffId.Value);
+            if (todayRecord == null)
+            {
+                SetErrorMessage("You have not clocked in today. Please mark your attendance first.");
+                return RedirectToAction(nameof(MarkSelf));
+            }
+
+            if (todayRecord.CheckOutTime.HasValue)
+            {
+                SetErrorMessage("You have already clocked out today.");
+                return RedirectToAction(nameof(Index));
+            }
+
+            ViewBag.ClockInTime = todayRecord.CheckInTime;
+            ViewBag.StaffName = todayRecord.Staff?.User?.Name ?? "Staff";
+            return View();
+        }
+
+        // POST: Attendance/ClockOut
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClockOut(TimeSpan? checkOutTime)
+        {
+            var currentStaffId = await GetCurrentStaffId();
+            if (!currentStaffId.HasValue)
+            {
+                SetErrorMessage("You are not registered as a staff member.");
+                return RedirectToAction(nameof(Index));
+            }
+
+            var clockOut = checkOutTime ?? DateTime.Now.TimeOfDay;
+            var result = await _attendanceService.ClockOutAsync(currentStaffId.Value, DateTime.Today, clockOut);
+
+            if (result == null)
+            {
+                SetErrorMessage("No clock-in record found for today.");
+                return RedirectToAction(nameof(Index));
+            }
+
+            SetSuccessMessage($"Clock-out recorded! Status: {result.Status}, Hours: {result.TotalHours:F1}h" +
+                (result.OvertimeHours > 0 ? $", Overtime: {result.OvertimeHours:F1}h" : ""));
             return RedirectToAction(nameof(Index));
         }
 
@@ -246,7 +310,7 @@ namespace Cafe.Controllers
             });
         }
 
-        // POST: Attendance/BulkMark
+        // POST: Attendance/BulkMark (auto-calculates status from times)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireManagerOrOwner]
@@ -257,15 +321,21 @@ namespace Cafe.Controllers
             {
                 if (entry.AlreadyMarked) continue;
 
-                var success = await _attendanceService.MarkAttendanceAsync(
-                    entry.StaffId, model.BranchId, model.Date, entry.Status,
-                    entry.CheckInTime, entry.CheckOutTime, entry.LateMinutes,
-                    entry.Notes, GetCurrentUserId());
-
-                if (success) marked++;
+                try
+                {
+                    await _attendanceService.MarkAttendanceAsync(
+                        entry.StaffId, model.BranchId, model.Date,
+                        entry.CheckInTime, entry.CheckOutTime,
+                        entry.Notes, GetCurrentUserId());
+                    marked++;
+                }
+                catch (InvalidOperationException)
+                {
+                    // Skip duplicates silently in bulk mode
+                }
             }
 
-            SetSuccessMessage($"Attendance marked for {marked} staff member(s)!");
+            SetSuccessMessage($"Attendance marked for {marked} staff member(s)! Status auto-calculated.");
             return RedirectToAction(nameof(Index));
         }
 
@@ -289,26 +359,27 @@ namespace Cafe.Controllers
 
             ViewBag.AttendanceId = id;
             ViewBag.StaffName = record.Staff?.User?.Name ?? "Unknown";
+            ViewBag.TotalHours = record.TotalHours;
+            ViewBag.OvertimeHours = record.OvertimeHours;
             return View(model);
         }
 
-        // POST: Attendance/Edit/5
+        // POST: Attendance/Edit/5 (auto-recalculates status)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireManagerOrOwner]
         public async Task<IActionResult> Edit(int id, AttendanceMarkViewModel model)
         {
-            var success = await _attendanceService.UpdateAttendanceAsync(
-                id, model.Status, model.CheckInTime, model.CheckOutTime,
-                model.LateMinutes, model.Notes);
+            var result = await _attendanceService.UpdateAttendanceAsync(
+                id, model.CheckInTime, model.CheckOutTime, model.Notes);
 
-            if (!success)
+            if (result == null)
             {
                 SetErrorMessage("Failed to update attendance record.");
                 return RedirectToAction(nameof(Index));
             }
 
-            SetSuccessMessage("Attendance updated successfully!");
+            SetSuccessMessage($"Attendance updated! Status: {result.Status}, Hours: {result.TotalHours:F1}h");
             return RedirectToAction(nameof(Index));
         }
 
@@ -370,10 +441,10 @@ namespace Cafe.Controllers
             var records = await query.OrderByDescending(a => a.Date).ToListAsync();
 
             var csv = new System.Text.StringBuilder();
-            csv.AppendLine("Date,Staff,Branch,Status,CheckIn,CheckOut,LateMinutes,Notes");
+            csv.AppendLine("Date,Staff,Branch,Status,CheckIn,CheckOut,TotalHours,OvertimeHours,LateMinutes,Notes");
             foreach (var r in records)
             {
-                csv.AppendLine($"{r.Date:yyyy-MM-dd},{EscapeCsv(r.Staff?.User?.Name ?? "")},{EscapeCsv(r.Branch?.Name ?? "")},{r.Status},{r.CheckInTime?.ToString(@"hh\:mm") ?? ""},{r.CheckOutTime?.ToString(@"hh\:mm") ?? ""},{r.LateMinutes},{EscapeCsv(r.Notes ?? "")}");
+                csv.AppendLine($"{r.Date:yyyy-MM-dd},{EscapeCsv(r.Staff?.User?.Name ?? "")},{EscapeCsv(r.Branch?.Name ?? "")},{r.Status},{r.CheckInTime?.ToString(@"hh\:mm") ?? ""},{r.CheckOutTime?.ToString(@"hh\:mm") ?? ""},{r.TotalHours:F2},{r.OvertimeHours:F2},{r.LateMinutes},{EscapeCsv(r.Notes ?? "")}");
             }
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());

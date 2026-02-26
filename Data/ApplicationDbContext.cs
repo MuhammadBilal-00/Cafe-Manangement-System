@@ -48,6 +48,7 @@ namespace Cafe.Data
         // Attendance, Salary & Financial
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<SalaryRecord> SalaryRecords { get; set; }
+        public DbSet<SalaryAdjustment> SalaryAdjustments { get; set; }
         public DbSet<Expense> Expenses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -179,6 +180,52 @@ namespace Cafe.Data
             modelBuilder.Entity<SalaryRecord>()
                 .Property(sr => sr.AttendancePercentage)
                 .HasPrecision(5, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.OvertimeHours)
+                .HasPrecision(5, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.OvertimePay)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.AttendanceBonus)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.AbsenceDeduction)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.HalfDayDeduction)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.LatePenaltyDeduction)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.GrossSalary)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.TotalDeductions)
+                .HasPrecision(10, 2);
+
+            // Attendance decimal precision
+            modelBuilder.Entity<Attendance>()
+                .Property(a => a.TotalHours)
+                .HasPrecision(5, 2);
+
+            modelBuilder.Entity<Attendance>()
+                .Property(a => a.OvertimeHours)
+                .HasPrecision(5, 2);
+
+            // SalaryAdjustment decimal precision
+            modelBuilder.Entity<SalaryAdjustment>()
+                .Property(sa => sa.Amount)
+                .HasPrecision(10, 2);
 
             // Expense decimal precision
             modelBuilder.Entity<Expense>()
@@ -403,6 +450,31 @@ namespace Cafe.Data
                 .HasForeignKey(sr => sr.GeneratedById)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<SalaryRecord>()
+                .HasOne(sr => sr.FinalizedBy)
+                .WithMany()
+                .HasForeignKey(sr => sr.FinalizedById)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .HasOne(sr => sr.UnlockedBy)
+                .WithMany()
+                .HasForeignKey(sr => sr.UnlockedById)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // SalaryAdjustment relationships
+            modelBuilder.Entity<SalaryAdjustment>()
+                .HasOne(sa => sa.SalaryRecord)
+                .WithMany(sr => sr.Adjustments)
+                .HasForeignKey(sa => sa.SalaryRecordId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SalaryAdjustment>()
+                .HasOne(sa => sa.CreatedBy)
+                .WithMany()
+                .HasForeignKey(sa => sa.CreatedById)
+                .OnDelete(DeleteBehavior.NoAction);
+
             // Expense relationships
             modelBuilder.Entity<Expense>()
                 .HasOne(e => e.Branch)
@@ -609,6 +681,15 @@ namespace Cafe.Data
                 .Property(sr => sr.PaymentStatus)
                 .HasDefaultValue("Pending");
 
+            modelBuilder.Entity<SalaryRecord>()
+                .Property(sr => sr.Status)
+                .HasDefaultValue("Draft");
+
+            // SalaryAdjustment defaults
+            modelBuilder.Entity<SalaryAdjustment>()
+                .Property(sa => sa.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
             // Expense defaults
             modelBuilder.Entity<Expense>()
                 .Property(e => e.CreatedAt)
@@ -707,6 +788,19 @@ namespace Cafe.Data
             modelBuilder.Entity<SalaryRecord>()
                 .ToTable(t => t.HasCheckConstraint("CK_SalaryRecord_Month",
                     "[Month] >= 1 AND [Month] <= 12"));
+
+            modelBuilder.Entity<SalaryRecord>()
+                .ToTable(t => t.HasCheckConstraint("CK_SalaryRecord_Status",
+                    "[Status] IN ('Draft','Finalized')"));
+
+            // SalaryAdjustment check constraints
+            modelBuilder.Entity<SalaryAdjustment>()
+                .ToTable(t => t.HasCheckConstraint("CK_SalaryAdjustment_Type",
+                    "[Type] IN ('Bonus','Deduction')"));
+
+            modelBuilder.Entity<SalaryAdjustment>()
+                .ToTable(t => t.HasCheckConstraint("CK_SalaryAdjustment_Amount",
+                    "[Amount] > 0"));
 
             // Expense check constraints
             modelBuilder.Entity<Expense>()

@@ -31,6 +31,12 @@ namespace Cafe.Models
         [Range(0, 1440)]
         public int LateMinutes { get; set; } = 0;
 
+        [Column(TypeName = "decimal(5,2)")]
+        public decimal TotalHours { get; set; } = 0;
+
+        [Column(TypeName = "decimal(5,2)")]
+        public decimal OvertimeHours { get; set; } = 0;
+
         [StringLength(500)]
         public string? Notes { get; set; }
 

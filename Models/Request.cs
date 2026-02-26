@@ -40,11 +40,8 @@ namespace Cafe.Models.Requests
     public class SalaryAdjustRequest
     {
         public int RecordId { get; set; }
-        public decimal? BaseSalary { get; set; }
-        public decimal? BonusAmount { get; set; }
-        public string? BonusReason { get; set; }
-        public decimal? DeductionAmount { get; set; }
-        public string? DeductionReason { get; set; }
-        public string? Notes { get; set; }
+        public string Type { get; set; } = "Bonus"; // Bonus or Deduction
+        public decimal Amount { get; set; }
+        public string? Reason { get; set; }
     }
 }

@@ -13,6 +13,7 @@ namespace Cafe.Models.ViewModels
         public int Year { get; set; } = DateTime.Now.Year;
         public int Month { get; set; } = DateTime.Now.Month;
         public string? PaymentStatus { get; set; }
+        public string? WorkflowStatus { get; set; }
 
         // Pagination
         public int CurrentPage { get; set; } = 1;
@@ -25,8 +26,12 @@ namespace Cafe.Models.ViewModels
         public decimal TotalBonuses { get; set; }
         public decimal TotalDeductions { get; set; }
         public decimal TotalFinalSalary { get; set; }
+        public decimal TotalOvertimePay { get; set; }
+        public decimal TotalAttendanceBonus { get; set; }
         public int PendingCount { get; set; }
         public int PaidCount { get; set; }
+        public int DraftCount { get; set; }
+        public int FinalizedCount { get; set; }
     }
 
     public class SalaryGenerateViewModel
@@ -41,5 +46,6 @@ namespace Cafe.Models.ViewModels
     {
         public SalaryRecord Record { get; set; } = null!;
         public List<Attendance> AttendanceDetails { get; set; } = new();
+        public List<SalaryAdjustment> Adjustments { get; set; } = new();
     }
 }

@@ -1,0 +1,59 @@
+@{
+    ViewData["Title"] = "Clock Out";
+    var clockInTime = (TimeSpan?)ViewBag.ClockInTime;
+    var staffName = (string)ViewBag.StaffName;
+}
+
+<div class="max-w-lg mx-auto">
+    <div class="flex items-center mb-6">
+        <a asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
+            <i class="fas fa-arrow-left text-xl"></i>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-800">Clock Out</h1>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="text-center mb-6">
+            <div class="text-4xl text-orange-600 mb-2">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <p class="text-gray-600">Today: @DateTime.Today.ToString("dddd, dd MMMM yyyy")</p>
+            <p class="text-sm text-gray-500 mt-1">@staffName</p>
+        </div>
+
+        <div class="mb-6 p-4 bg-blue-50 rounded-lg text-center">
+            <p class="text-sm text-blue-800"><strong>Clocked In At:</strong> @(clockInTime?.ToString(@"hh\:mm") ?? "N/A")</p>
+            @if (clockInTime.HasValue)
+            {
+                var elapsed = DateTime.Now.TimeOfDay - clockInTime.Value;
+                <p class="text-sm text-blue-600 mt-1">Time elapsed: @($"{(int)elapsed.TotalHours}h {elapsed.Minutes}m")</p>
+            }
+        </div>
+
+        <form asp-action="ClockOut" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Check Out Time</label>
+                    <input type="time" name="checkOutTime" value="@DateTime.Now.ToString("HH:mm")" class="w-full border rounded-lg px-3 py-2" />
+                </div>
+            </div>
+
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+                <p><i class="fas fa-info-circle mr-1"></i> Your status will be automatically calculated based on total hours worked:</p>
+                <ul class="mt-2 ml-4 list-disc">
+                    <li><span class="font-medium text-green-700">Present</span> — 8+ hours</li>
+                    <li><span class="font-medium text-orange-700">Half-Day</span> — 4-8 hours</li>
+                    <li><span class="font-medium text-red-700">Absent</span> — Less than 4 hours</li>
+                </ul>
+            </div>
+
+            <div class="mt-6">
+                <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg text-lg font-medium">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Confirm Clock Out
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

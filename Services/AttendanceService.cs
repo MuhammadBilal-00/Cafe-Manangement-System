@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,22 +18,40 @@ namespace Cafe.Services
             _context = context;
         }
 
-        public async Task<bool> MarkAttendanceAsync(int staffId, int branchId, DateTime date, string status,
-            TimeSpan? checkIn, TimeSpan? checkOut, int lateMinutes, string? notes, int? markedById)
+        // 
+        //  CORE OPERATIONS
+        // 
+
+        public async Task<Attendance> MarkAttendanceAsync(int staffId, int branchId, DateTime date,
+            TimeSpan? clockIn, TimeSpan? clockOut, string? notes, int? markedById)
         {
-            // Prevent duplicates
             if (await HasAttendanceAsync(staffId, date))
-                return false;
+                throw new InvalidOperationException("Attendance already marked for this staff member on this date.");
+
+            var shiftStart = await GetShiftStartForStaff(staffId, date);
+            var (status, totalHours, overtimeHours, lateMinutes) =
+                CalculateAttendanceFields(clockIn, clockOut, shiftStart);
+
+            // If no times provided at all  Absent
+            if (!clockIn.HasValue && !clockOut.HasValue)
+            {
+                status = "Absent";
+                totalHours = 0;
+                overtimeHours = 0;
+                lateMinutes = 0;
+            }
 
             var attendance = new Attendance
             {
                 StaffId = staffId,
                 BranchId = branchId,
                 Date = date.Date,
+                CheckInTime = clockIn,
+                CheckOutTime = clockOut,
                 Status = status,
-                CheckInTime = checkIn,
-                CheckOutTime = checkOut,
-                LateMinutes = status == "Late" ? lateMinutes : 0,
+                TotalHours = totalHours,
+                OvertimeHours = overtimeHours,
+                LateMinutes = lateMinutes,
                 Notes = notes,
                 MarkedById = markedById,
                 CreatedAt = DateTime.Now
@@ -41,24 +59,63 @@ namespace Cafe.Services
 
             _context.Attendances.Add(attendance);
             await _context.SaveChangesAsync();
-            return true;
+            return attendance;
         }
 
-        public async Task<bool> UpdateAttendanceAsync(int id, string status, TimeSpan? checkIn, TimeSpan? checkOut,
-            int lateMinutes, string? notes)
+        public async Task<Attendance?> ClockOutAsync(int staffId, DateTime date, TimeSpan clockOut)
         {
-            var record = await _context.Attendances.FindAsync(id);
-            if (record == null) return false;
+            var record = await _context.Attendances
+                .FirstOrDefaultAsync(a => a.StaffId == staffId && a.Date == date.Date);
+
+            if (record == null) return null;
+
+            record.CheckOutTime = clockOut;
+            record.UpdatedAt = DateTime.Now;
+
+            var shiftStart = await GetShiftStartForStaff(staffId, date);
+            var (status, totalHours, overtimeHours, lateMinutes) =
+                CalculateAttendanceFields(record.CheckInTime, clockOut, shiftStart);
 
             record.Status = status;
-            record.CheckInTime = checkIn;
-            record.CheckOutTime = checkOut;
-            record.LateMinutes = status == "Late" ? lateMinutes : 0;
+            record.TotalHours = totalHours;
+            record.OvertimeHours = overtimeHours;
+            record.LateMinutes = lateMinutes;
+
+            await _context.SaveChangesAsync();
+            return record;
+        }
+
+        public async Task<Attendance?> UpdateAttendanceAsync(int id, TimeSpan? clockIn, TimeSpan? clockOut, string? notes)
+        {
+            var record = await _context.Attendances.FindAsync(id);
+            if (record == null) return null;
+
+            record.CheckInTime = clockIn;
+            record.CheckOutTime = clockOut;
             record.Notes = notes;
             record.UpdatedAt = DateTime.Now;
 
+            if (!clockIn.HasValue && !clockOut.HasValue)
+            {
+                record.Status = "Absent";
+                record.TotalHours = 0;
+                record.OvertimeHours = 0;
+                record.LateMinutes = 0;
+            }
+            else
+            {
+                var shiftStart = await GetShiftStartForStaff(record.StaffId, record.Date);
+                var (status, totalHours, overtimeHours, lateMinutes) =
+                    CalculateAttendanceFields(clockIn, clockOut, shiftStart);
+
+                record.Status = status;
+                record.TotalHours = totalHours;
+                record.OvertimeHours = overtimeHours;
+                record.LateMinutes = lateMinutes;
+            }
+
             await _context.SaveChangesAsync();
-            return true;
+            return record;
         }
 
         public async Task<bool> HasAttendanceAsync(int staffId, DateTime date)
@@ -76,6 +133,16 @@ namespace Cafe.Services
                 .Include(a => a.MarkedBy)
                 .FirstOrDefaultAsync(a => a.Id == id);
         }
+
+        public async Task<Attendance?> GetTodayAttendanceAsync(int staffId)
+        {
+            return await _context.Attendances
+                .FirstOrDefaultAsync(a => a.StaffId == staffId && a.Date == DateTime.Today);
+        }
+
+        // 
+        //  REPORTING
+        // 
 
         public async Task<List<StaffAttendanceSummary>> GetMonthlySummaryAsync(int year, int month, int? branchId)
         {
@@ -100,42 +167,31 @@ namespace Cafe.Services
                     StaffName = staff.User?.Name ?? "Unknown",
                     BranchName = staff.Branch?.Name ?? "Unknown",
                     Role = staff.StaffRole?.RoleName ?? "Unknown",
-                    TotalWorkingDays = stats.totalWorkingDays,
-                    DaysPresent = stats.daysPresent,
-                    DaysAbsent = stats.daysAbsent,
-                    DaysLate = stats.daysLate,
-                    DaysHalfDay = stats.daysHalfDay,
-                    AttendancePercentage = stats.percentage
+                    TotalWorkingDays = stats.TotalWorkingDays,
+                    DaysPresent = stats.DaysPresent,
+                    DaysAbsent = stats.DaysAbsent,
+                    DaysLate = stats.DaysLate,
+                    DaysHalfDay = stats.DaysHalfDay,
+                    TotalOvertimeHours = stats.TotalOvertimeHours,
+                    AttendancePercentage = stats.AttendancePercentage
                 });
             }
 
             return summaries;
         }
 
-        public async Task<(int totalWorkingDays, int daysPresent, int daysAbsent, int daysLate, int daysHalfDay, decimal percentage)>
-            GetStaffMonthlyStatsAsync(int staffId, int year, int month)
+        public async Task<AttendanceStats> GetStaffMonthlyStatsAsync(int staffId, int year, int month)
         {
             var startDate = new DateTime(year, month, 1);
             var endDate = startDate.AddMonths(1);
 
-            // Calculate working days (Mon-Sat)
+            // Working days (Mon-Sat), capped to today for current/future months
             int totalWorkingDays = 0;
-            for (var d = startDate; d < endDate; d = d.AddDays(1))
+            var capDate = endDate > DateTime.Today.AddDays(1) ? DateTime.Today : endDate.AddDays(-1);
+            for (var d = startDate; d <= capDate; d = d.AddDays(1))
             {
                 if (d.DayOfWeek != DayOfWeek.Sunday)
                     totalWorkingDays++;
-            }
-
-            // If future month, cap working days to today
-            if (endDate > DateTime.Today.AddDays(1))
-            {
-                totalWorkingDays = 0;
-                var cap = DateTime.Today < endDate ? DateTime.Today : endDate.AddDays(-1);
-                for (var d = startDate; d <= cap; d = d.AddDays(1))
-                {
-                    if (d.DayOfWeek != DayOfWeek.Sunday)
-                        totalWorkingDays++;
-                }
             }
 
             var records = await _context.Attendances
@@ -147,19 +203,84 @@ namespace Cafe.Services
             int daysHalfDay = records.Count(r => r.Status == "Half-Day");
             int daysAbsent = records.Count(r => r.Status == "Absent");
 
-            // Days not marked at all count as absent (past working days only)
-            int markedDays = records.Count;
-            int unmarkedWorkingDays = totalWorkingDays - markedDays;
+            int unmarkedWorkingDays = totalWorkingDays - records.Count;
             if (unmarkedWorkingDays > 0)
                 daysAbsent += unmarkedWorkingDays;
 
-            // Present + Late + Half(0.5) count toward attendance
+            decimal totalOvertimeHours = records.Sum(r => r.OvertimeHours);
+
             decimal effectiveDays = daysPresent + daysLate + (daysHalfDay * 0.5m);
             decimal percentage = totalWorkingDays > 0
                 ? Math.Round((effectiveDays / totalWorkingDays) * 100, 2)
                 : 0;
 
-            return (totalWorkingDays, daysPresent, daysAbsent, daysLate, daysHalfDay, percentage);
+            return new AttendanceStats
+            {
+                TotalWorkingDays = totalWorkingDays,
+                DaysPresent = daysPresent,
+                DaysAbsent = daysAbsent,
+                DaysLate = daysLate,
+                DaysHalfDay = daysHalfDay,
+                TotalOvertimeHours = totalOvertimeHours,
+                AttendancePercentage = percentage
+            };
+        }
+
+        // 
+        //  AUTO-CALCULATION ENGINE
+        // 
+
+        public (string status, decimal totalHours, decimal overtimeHours, int lateMinutes) CalculateAttendanceFields(
+            TimeSpan? clockIn, TimeSpan? clockOut, TimeSpan shiftStart)
+        {
+            // Only clock-in (no clock-out yet)  tentatively present or late
+            if (clockIn.HasValue && !clockOut.HasValue)
+            {
+                int late = 0;
+                string s = "Present";
+                if (clockIn.Value > shiftStart.Add(TimeSpan.FromMinutes(IAttendanceService.LateThresholdMinutes)))
+                {
+                    late = (int)(clockIn.Value - shiftStart).TotalMinutes;
+                    s = "Late";
+                }
+                return (s, 0m, 0m, late);
+            }
+
+            if (!clockIn.HasValue || !clockOut.HasValue)
+                return ("Absent", 0m, 0m, 0);
+
+            decimal totalHours = Math.Max(0, Math.Round((decimal)(clockOut.Value - clockIn.Value).TotalHours, 2));
+
+            decimal overtimeHours = totalHours > IAttendanceService.StandardDailyHours
+                ? Math.Round(totalHours - IAttendanceService.StandardDailyHours, 2)
+                : 0m;
+
+            int lateMinutes = 0;
+            bool isLate = false;
+            if (clockIn.Value > shiftStart.Add(TimeSpan.FromMinutes(IAttendanceService.LateThresholdMinutes)))
+            {
+                lateMinutes = (int)(clockIn.Value - shiftStart).TotalMinutes;
+                isLate = true;
+            }
+
+            string status;
+            if (totalHours >= IAttendanceService.StandardDailyHours)
+                status = isLate ? "Late" : "Present";
+            else if (totalHours >= 4m)
+                status = "Half-Day";
+            else
+                status = "Absent";
+
+            return (status, totalHours, overtimeHours, lateMinutes);
+        }
+
+        public async Task<TimeSpan> GetShiftStartForStaff(int staffId, DateTime date)
+        {
+            var schedule = await _context.StaffSchedules
+                .Where(ss => ss.StaffId == staffId && ss.ShiftDate.Date == date.Date)
+                .FirstOrDefaultAsync();
+
+            return schedule?.ShiftStartTime ?? IAttendanceService.DefaultShiftStart;
         }
     }
 }

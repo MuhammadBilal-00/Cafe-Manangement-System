@@ -9,7 +9,10 @@
         @if (Context.Session.GetString("UserRole") == "Staff")
         {
             <a asp-action="MarkSelf" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
-                <i class="fas fa-check mr-2"></i> Mark My Attendance
+                <i class="fas fa-sign-in-alt mr-2"></i> Clock In
+            </a>
+            <a asp-action="ClockOut" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
+                <i class="fas fa-sign-out-alt mr-2"></i> Clock Out
             </a>
         }
         @if (Context.Session.GetString("UserRole") != "Staff")
@@ -132,6 +135,8 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check In</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check Out</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hours</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Overtime</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Late (min)</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
@@ -140,7 +145,7 @@
             @if (!Model.Records.Any())
             {
                 <tr>
-                    <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                    <td colspan="10" class="px-6 py-12 text-center text-gray-500">
                         <i class="fas fa-calendar-times text-4xl mb-3 block"></i>
                         No attendance records found.
                     </td>
@@ -167,6 +172,8 @@
                         }
                         <span class="px-2 py-1 text-xs font-medium rounded-full @badgeClass">@r.Status</span>
                     </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">@(r.TotalHours > 0 ? $"{r.TotalHours:F1}h" : "-")</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm @(r.OvertimeHours > 0 ? "text-blue-600 font-medium" : "text-gray-600")">@(r.OvertimeHours > 0 ? $"{r.OvertimeHours:F1}h" : "-")</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">@(r.LateMinutes > 0 ? r.LateMinutes.ToString() : "-")</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         @if (Context.Session.GetString("UserRole") != "Staff")

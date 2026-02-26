@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Cafe.Attributes;
@@ -25,7 +26,7 @@ namespace Cafe.Controllers
 
         // GET: Salary
         public async Task<IActionResult> Index(int? branchId, int? year, int? month,
-            string? paymentStatus, int page = 1, int pageSize = 25)
+            string? paymentStatus, string? workflowStatus, int page = 1, int pageSize = 25)
         {
             var targetYear = year ?? DateTime.Now.Year;
             var targetMonth = month ?? DateTime.Now.Month;
@@ -49,6 +50,8 @@ namespace Cafe.Controllers
                 query = query.Where(sr => sr.BranchId == branchId.Value);
             if (!string.IsNullOrEmpty(paymentStatus))
                 query = query.Where(sr => sr.PaymentStatus == paymentStatus);
+            if (!string.IsNullOrEmpty(workflowStatus))
+                query = query.Where(sr => sr.Status == workflowStatus);
 
             var totalItems = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
@@ -68,16 +71,21 @@ namespace Cafe.Controllers
                 Year = targetYear,
                 Month = targetMonth,
                 PaymentStatus = paymentStatus,
+                WorkflowStatus = workflowStatus,
                 CurrentPage = page,
                 TotalPages = totalPages,
                 TotalItems = totalItems,
                 PageSize = pageSize,
                 TotalBaseSalary = allRecords.Sum(r => r.BaseSalary),
                 TotalBonuses = allRecords.Sum(r => r.BonusAmount),
-                TotalDeductions = allRecords.Sum(r => r.DeductionAmount),
+                TotalDeductions = allRecords.Sum(r => r.TotalDeductions),
                 TotalFinalSalary = allRecords.Sum(r => r.FinalSalary),
+                TotalOvertimePay = allRecords.Sum(r => r.OvertimePay),
+                TotalAttendanceBonus = allRecords.Sum(r => r.AttendanceBonus),
                 PendingCount = allRecords.Count(r => r.PaymentStatus == "Pending"),
-                PaidCount = allRecords.Count(r => r.PaymentStatus == "Paid")
+                PaidCount = allRecords.Count(r => r.PaymentStatus == "Paid"),
+                DraftCount = allRecords.Count(r => r.Status == "Draft"),
+                FinalizedCount = allRecords.Count(r => r.Status == "Finalized")
             };
 
             return View(vm);
@@ -91,7 +99,6 @@ namespace Cafe.Controllers
                 Branches = await GetAccessibleBranches()
             };
 
-            // Force branch for Manager
             var userRole = GetCurrentUserRole();
             if (userRole == "BranchManager")
             {
@@ -110,13 +117,11 @@ namespace Cafe.Controllers
         {
             try
             {
-                // Enforce branch for Manager
                 var userRole = GetCurrentUserRole();
                 if (userRole == "BranchManager")
                 {
                     var managedBranchId = HttpContext.Session.GetManagedBranchId();
-                    if (!managedBranchId.HasValue)
-                        return AccessDenied();
+                    if (!managedBranchId.HasValue) return AccessDenied();
                     model.BranchId = managedBranchId.Value;
                 }
 
@@ -124,8 +129,7 @@ namespace Cafe.Controllers
                     model.Year, model.Month, model.BranchId, GetCurrentUserId());
 
                 int newCount = results.Count(r => r.GeneratedAt.Date == DateTime.Today);
-
-                SetSuccessMessage($"Salary records generated successfully! {results.Count} total ({newCount} new).");
+                SetSuccessMessage($"Salary records generated successfully! {results.Count} total ({newCount} new). All records start as Draft.");
             }
             catch (Exception ex)
             {
@@ -141,7 +145,6 @@ namespace Cafe.Controllers
             var record = await _salaryService.GetSalaryRecordAsync(id);
             if (record == null) return NotFound();
 
-            // Ensure branch access
             var userRole = GetCurrentUserRole();
             if (userRole == "BranchManager")
             {
@@ -158,21 +161,99 @@ namespace Cafe.Controllers
                 .OrderBy(a => a.Date)
                 .ToListAsync();
 
+            var adjustments = await _context.SalaryAdjustments
+                .Include(a => a.CreatedBy)
+                .Where(a => a.SalaryRecordId == record.Id)
+                .OrderBy(a => a.CreatedAt)
+                .ToListAsync();
+
             var vm = new PayslipViewModel
             {
                 Record = record,
-                AttendanceDetails = attendanceDetails
+                AttendanceDetails = attendanceDetails,
+                Adjustments = adjustments
             };
 
             return View(vm);
         }
 
-        // POST: Salary/MarkPaid/5
+        // 
+        //  WORKFLOW: Finalize & Unlock
+        // 
+
+        // POST: Salary/Finalize/5 (Owner only)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireOwner]
+        public async Task<IActionResult> Finalize(int id)
+        {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue) return AccessDenied();
+
+            var success = await _salaryService.FinalizeSalaryAsync(id, userId.Value);
+            if (success)
+                SetSuccessMessage("Salary finalized! It can now be marked as paid.");
+            else
+                SetErrorMessage("Failed to finalize salary. It may already be finalized.");
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Salary/FinalizeAll (Owner only - finalize all Draft records for period)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireOwner]
+        public async Task<IActionResult> FinalizeAll(int year, int month, int? branchId)
+        {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue) return AccessDenied();
+
+            var query = _context.SalaryRecords
+                .Where(sr => sr.Year == year && sr.Month == month && sr.Status == "Draft");
+
+            if (branchId.HasValue)
+                query = query.Where(sr => sr.BranchId == branchId.Value);
+
+            var drafts = await query.ToListAsync();
+            int finalized = 0;
+
+            foreach (var record in drafts)
+            {
+                var success = await _salaryService.FinalizeSalaryAsync(record.Id, userId.Value);
+                if (success) finalized++;
+            }
+
+            SetSuccessMessage($"{finalized} salary record(s) finalized!");
+            return RedirectToAction(nameof(Index), new { year, month, branchId });
+        }
+
+        // POST: Salary/Unlock/5 (Owner only)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireOwner]
+        public async Task<IActionResult> Unlock(int id)
+        {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue) return AccessDenied();
+
+            var success = await _salaryService.UnlockSalaryAsync(id, userId.Value);
+            if (success)
+                SetSuccessMessage("Salary unlocked for editing.");
+            else
+                SetErrorMessage("Failed to unlock salary.");
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // 
+        //  PAYMENT
+        // 
+
+        // POST: Salary/MarkPaid/5 (requires Finalized)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkPaid(int id)
         {
-            // Branch isolation check
             var record = await _salaryService.GetSalaryRecordAsync(id);
             if (record == null) return NotFound();
 
@@ -186,52 +267,120 @@ namespace Cafe.Controllers
 
             var success = await _salaryService.MarkAsPaidAsync(id);
             if (success)
-            {
                 SetSuccessMessage("Salary marked as paid!");
-            }
             else
-            {
-                SetErrorMessage("Failed to mark salary as paid.");
-            }
+                SetErrorMessage("Failed to mark salary as paid. Salary must be finalized first.");
 
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: Salary/MarkAllPaid
+        // POST: Salary/MarkAllPaid (only Finalized + Pending)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAllPaid(int year, int month, int? branchId)
         {
-            // Enforce branch for Manager
             var userRole = GetCurrentUserRole();
             if (userRole == "BranchManager")
             {
                 var managedBranchId = HttpContext.Session.GetManagedBranchId();
-                if (!managedBranchId.HasValue)
-                    return AccessDenied();
+                if (!managedBranchId.HasValue) return AccessDenied();
                 branchId = managedBranchId.Value;
             }
 
             var query = _context.SalaryRecords
-                .Where(sr => sr.Year == year && sr.Month == month && sr.PaymentStatus == "Pending");
+                .Where(sr => sr.Year == year && sr.Month == month
+                    && sr.PaymentStatus == "Pending"
+                    && sr.Status == "Finalized"); // Must be finalized
 
             if (branchId.HasValue)
                 query = query.Where(sr => sr.BranchId == branchId.Value);
 
             var pending = await query.ToListAsync();
+            int paid = 0;
             foreach (var r in pending)
             {
-                r.PaymentStatus = "Paid";
-                r.PaidDate = DateTime.Now;
+                var success = await _salaryService.MarkAsPaidAsync(r.Id);
+                if (success) paid++;
             }
 
-            await _context.SaveChangesAsync();
-
-            SetSuccessMessage($"{pending.Count} salary records marked as paid!");
+            SetSuccessMessage($"{paid} salary records marked as paid!");
             return RedirectToAction(nameof(Index), new { year, month, branchId });
         }
 
-        // GET: Salary/GetSalaryDetail/5 (JSON API for dynamic summary)
+        // 
+        //  ADJUSTMENTS (SalaryAdjustment table)
+        // 
+
+        // POST: Salary/AddAdjustment (JSON API)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddAdjustment([FromBody] SalaryAdjustRequest request)
+        {
+            if (request == null || request.Amount <= 0)
+                return Json(new { success = false, message = "Invalid request. Amount must be greater than 0." });
+
+            // Branch isolation check
+            var record = await _salaryService.GetSalaryRecordAsync(request.RecordId);
+            if (record == null)
+                return Json(new { success = false, message = "Salary record not found." });
+
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (!managedBranchId.HasValue || record.BranchId != managedBranchId.Value)
+                    return Json(new { success = false, message = "Access denied." });
+            }
+
+            try
+            {
+                var adjustment = await _salaryService.AddAdjustmentAsync(
+                    request.RecordId, request.Type, request.Amount,
+                    request.Reason, GetCurrentUserId());
+
+                return Json(new
+                {
+                    success = true,
+                    adjustmentId = adjustment.Id,
+                    finalSalary = record.FinalSalary,
+                    message = $"{request.Type} of Rs. {request.Amount:N0} added successfully."
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // POST: Salary/RemoveAdjustment/5 (JSON API)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveAdjustment(int id)
+        {
+            var adjustment = await _context.SalaryAdjustments
+                .Include(a => a.SalaryRecord)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (adjustment == null)
+                return Json(new { success = false, message = "Adjustment not found." });
+
+            // Branch isolation
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (!managedBranchId.HasValue || adjustment.SalaryRecord.BranchId != managedBranchId.Value)
+                    return Json(new { success = false, message = "Access denied." });
+            }
+
+            var success = await _salaryService.RemoveAdjustmentAsync(id);
+            return Json(new { success, message = success ? "Adjustment removed." : "Cannot remove from a finalized record." });
+        }
+
+        // 
+        //  JSON API: Salary Detail
+        // 
+
         [HttpGet]
         public async Task<IActionResult> GetSalaryDetail(int id)
         {
@@ -239,11 +388,12 @@ namespace Cafe.Controllers
                 .Include(sr => sr.Staff).ThenInclude(s => s.User)
                 .Include(sr => sr.Staff).ThenInclude(s => s.StaffRole)
                 .Include(sr => sr.Branch)
+                .Include(sr => sr.FinalizedBy)
+                .Include(sr => sr.Adjustments).ThenInclude(a => a.CreatedBy)
                 .FirstOrDefaultAsync(sr => sr.Id == id);
 
             if (record == null) return Json(new { success = false, message = "Record not found" });
 
-            // Branch isolation
             var userRole = GetCurrentUserRole();
             if (userRole == "BranchManager")
             {
@@ -252,7 +402,6 @@ namespace Cafe.Controllers
                     return Json(new { success = false, message = "Access denied" });
             }
 
-            // Salary history for this employee
             var history = await _context.SalaryRecords
                 .Where(sr => sr.StaffId == record.StaffId)
                 .OrderByDescending(sr => sr.Year).ThenByDescending(sr => sr.Month)
@@ -266,9 +415,20 @@ namespace Cafe.Controllers
                     sr.DeductionAmount,
                     sr.FinalSalary,
                     sr.AttendancePercentage,
-                    sr.PaymentStatus
+                    sr.PaymentStatus,
+                    sr.Status
                 })
                 .ToListAsync();
+
+            var adjustments = record.Adjustments?.Select(a => new
+            {
+                a.Id,
+                a.Type,
+                a.Amount,
+                reason = a.Reason ?? "",
+                createdBy = a.CreatedBy?.Name ?? "System",
+                createdAt = a.CreatedAt.ToString("dd MMM yyyy HH:mm")
+            }).ToList();
 
             return Json(new
             {
@@ -277,6 +437,14 @@ namespace Cafe.Controllers
                 role = record.Staff?.StaffRole?.RoleName ?? "N/A",
                 branch = record.Branch?.Name ?? "N/A",
                 baseSalary = record.BaseSalary,
+                overtimeHours = record.OvertimeHours,
+                overtimePay = record.OvertimePay,
+                attendanceBonus = record.AttendanceBonus,
+                absenceDeduction = record.AbsenceDeduction,
+                halfDayDeduction = record.HalfDayDeduction,
+                latePenaltyDeduction = record.LatePenaltyDeduction,
+                grossSalary = record.GrossSalary,
+                totalDeductions = record.TotalDeductions,
                 bonusAmount = record.BonusAmount,
                 bonusReason = record.BonusReason ?? "",
                 deductionAmount = record.DeductionAmount,
@@ -288,68 +456,14 @@ namespace Cafe.Controllers
                 daysLate = record.DaysLate,
                 daysHalfDay = record.DaysHalfDay,
                 attendancePercentage = record.AttendancePercentage,
+                status = record.Status,
                 paymentStatus = record.PaymentStatus,
+                finalizedBy = record.FinalizedBy?.Name,
+                finalizedAt = record.FinalizedAt?.ToString("dd MMM yyyy HH:mm"),
                 notes = record.Notes ?? "",
+                adjustments,
                 history
             });
-        }
-
-        // POST: Salary/AdjustSalary (manual adjustment)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AdjustSalary([FromBody] SalaryAdjustRequest request)
-        {
-            if (request == null)
-                return Json(new { success = false, message = "Invalid request" });
-
-            var record = await _context.SalaryRecords.FindAsync(request.RecordId);
-            if (record == null)
-                return Json(new { success = false, message = "Salary record not found" });
-
-            // Branch isolation
-            var userRole = GetCurrentUserRole();
-            if (userRole == "BranchManager")
-            {
-                var managedBranchId = HttpContext.Session.GetManagedBranchId();
-                if (!managedBranchId.HasValue || record.BranchId != managedBranchId.Value)
-                    return Json(new { success = false, message = "Access denied" });
-            }
-
-            if (record.PaymentStatus == "Paid")
-                return Json(new { success = false, message = "Cannot adjust a paid salary record" });
-
-            // Apply adjustments
-            if (request.BaseSalary.HasValue && request.BaseSalary.Value >= 0)
-                record.BaseSalary = request.BaseSalary.Value;
-
-            if (request.BonusAmount.HasValue && request.BonusAmount.Value >= 0)
-                record.BonusAmount = request.BonusAmount.Value;
-
-            if (!string.IsNullOrEmpty(request.BonusReason))
-                record.BonusReason = request.BonusReason;
-
-            if (request.DeductionAmount.HasValue && request.DeductionAmount.Value >= 0)
-                record.DeductionAmount = request.DeductionAmount.Value;
-
-            if (!string.IsNullOrEmpty(request.DeductionReason))
-                record.DeductionReason = request.DeductionReason;
-
-            // Recalculate final salary based on attendance
-            decimal effectiveBase = record.BaseSalary;
-            if (record.TotalWorkingDays > 0)
-            {
-                decimal perDayRate = record.BaseSalary / record.TotalWorkingDays;
-                decimal effectiveDays = record.DaysPresent + (record.DaysHalfDay * 0.5m);
-                effectiveBase = perDayRate * effectiveDays;
-            }
-            record.FinalSalary = effectiveBase + record.BonusAmount - record.DeductionAmount;
-
-            if (!string.IsNullOrEmpty(request.Notes))
-                record.Notes = request.Notes;
-
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, finalSalary = record.FinalSalary });
         }
 
         // CSV Export
@@ -377,10 +491,10 @@ namespace Cafe.Controllers
             var records = await query.OrderBy(sr => sr.Staff.User.Name).ToListAsync();
 
             var csv = new System.Text.StringBuilder();
-            csv.AppendLine("Staff,Branch,BaseSalary,WorkingDays,Present,Absent,Late,HalfDay,Attendance%,Bonus,Deduction,FinalSalary,PaymentStatus,PaidDate");
+            csv.AppendLine("Staff,Branch,BaseSalary,WorkingDays,Present,Absent,Late,HalfDay,Attendance%,OvertimeHours,OvertimePay,AttendanceBonus,AbsenceDeduction,HalfDayDeduction,LatePenalty,GrossSalary,TotalDeductions,NetSalary,Status,PaymentStatus,PaidDate");
             foreach (var r in records)
             {
-                csv.AppendLine($"{EscapeCsv(r.Staff?.User?.Name ?? "")},{EscapeCsv(r.Branch?.Name ?? "")},{r.BaseSalary:F2},{r.TotalWorkingDays},{r.DaysPresent},{r.DaysAbsent},{r.DaysLate},{r.DaysHalfDay},{r.AttendancePercentage:F2},{r.BonusAmount:F2},{r.DeductionAmount:F2},{r.FinalSalary:F2},{r.PaymentStatus},{r.PaidDate?.ToString("yyyy-MM-dd") ?? ""}");
+                csv.AppendLine($"{EscapeCsv(r.Staff?.User?.Name ?? "")},{EscapeCsv(r.Branch?.Name ?? "")},{r.BaseSalary:F2},{r.TotalWorkingDays},{r.DaysPresent},{r.DaysAbsent},{r.DaysLate},{r.DaysHalfDay},{r.AttendancePercentage:F2},{r.OvertimeHours:F2},{r.OvertimePay:F2},{r.AttendanceBonus:F2},{r.AbsenceDeduction:F2},{r.HalfDayDeduction:F2},{r.LatePenaltyDeduction:F2},{r.GrossSalary:F2},{r.TotalDeductions:F2},{r.FinalSalary:F2},{r.Status},{r.PaymentStatus},{r.PaidDate?.ToString("yyyy-MM-dd") ?? ""}");
             }
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
