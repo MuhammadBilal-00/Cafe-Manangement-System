@@ -11,32 +11,23 @@ namespace Cafe.Services
     public class SalaryService : ISalaryService
     {
         private readonly ApplicationDbContext _context;
-        private readonly IAttendanceService _attendanceService;
+        private readonly ISalaryCalculationService _calcService;
 
-        public SalaryService(ApplicationDbContext context, IAttendanceService attendanceService)
+        public SalaryService(ApplicationDbContext context, ISalaryCalculationService calcService)
         {
             _context = context;
-            _attendanceService = attendanceService;
+            _calcService = calcService;
         }
 
-        // 
-        //  SALARY GENERATION (Formula-Based)
-        // 
+        // ================================================================
+        //  PREVIEW (read-only, no DB writes)
+        // ================================================================
 
-        public async Task<List<SalaryRecord>> GenerateMonthlySalariesAsync(
+        public async Task<List<SalaryRecord>> PreviewMonthlySalariesAsync(
             int year, int month, int? branchId, int? generatedById)
         {
-            var staffQuery = _context.Staff
-                .Include(s => s.User)
-                .Include(s => s.StaffRole)
-                .Include(s => s.Branch)
-                .Where(s => s.IsActive);
-
-            if (branchId.HasValue)
-                staffQuery = staffQuery.Where(s => s.BranchId == branchId.Value);
-
-            var staffList = await staffQuery.ToListAsync();
-            var results = new List<SalaryRecord>();
+            var staffList = await GetActiveStaffAsync(branchId);
+            var previews = new List<SalaryRecord>();
 
             foreach (var staff in staffList)
             {
@@ -45,110 +36,61 @@ namespace Cafe.Services
                     .FirstOrDefaultAsync(sr => sr.StaffId == staff.Id && sr.Year == year && sr.Month == month);
                 if (existing != null)
                 {
-                    results.Add(existing);
+                    previews.Add(existing);
                     continue;
                 }
 
-                var stats = await _attendanceService.GetStaffMonthlyStatsAsync(staff.Id, year, month);
-                var baseSalary = await CalculateBaseSalaryForStaff(staff.Id);
-
-                var record = BuildSalaryRecord(staff, baseSalary, stats, year, month, generatedById);
-
-                _context.SalaryRecords.Add(record);
-                results.Add(record);
+                var preview = await _calcService.CalculateSalaryAsync(staff, year, month, generatedById);
+                previews.Add(preview);
             }
 
-            await _context.SaveChangesAsync();
+            return previews;
+        }
+
+        // ================================================================
+        //  GENERATE (writes to DB inside transaction)
+        // ================================================================
+
+        public async Task<List<SalaryRecord>> GenerateMonthlySalariesAsync(
+            int year, int month, int? branchId, int? generatedById)
+        {
+            var staffList = await GetActiveStaffAsync(branchId);
+            var results = new List<SalaryRecord>();
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var staff in staffList)
+                {
+                    // Skip if already generated (prevent duplicate)
+                    var existing = await _context.SalaryRecords
+                        .FirstOrDefaultAsync(sr => sr.StaffId == staff.Id && sr.Year == year && sr.Month == month);
+                    if (existing != null)
+                    {
+                        results.Add(existing);
+                        continue;
+                    }
+
+                    var record = await _calcService.CalculateSalaryAsync(staff, year, month, generatedById);
+                    _context.SalaryRecords.Add(record);
+                    results.Add(record);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+
             return results;
         }
 
-        /// <summary>
-        /// Core formula engine. Builds a SalaryRecord from attendance stats.
-        /// </summary>
-        private SalaryRecord BuildSalaryRecord(Staff staff, decimal baseSalary,
-            AttendanceStats stats, int year, int month, int? generatedById)
-        {
-            int workingDays = stats.TotalWorkingDays;
-            if (workingDays <= 0) workingDays = 1; // safety
-
-            //  Daily & Hourly Rates 
-            decimal dailyRate = baseSalary / workingDays;
-            decimal hourlyRate = dailyRate / IAttendanceService.StandardDailyHours;
-
-            //  Deductions 
-            decimal absenceDeduction = stats.DaysAbsent * dailyRate;
-            decimal halfDayDeduction = stats.DaysHalfDay * (dailyRate / 2m);
-
-            // Late penalty: every 3 late = 1 half-day deduction
-            int latePenaltyDays = stats.DaysLate / 3;
-            decimal latePenaltyDeduction = latePenaltyDays * (dailyRate / 2m);
-
-            decimal totalDeductions = absenceDeduction + halfDayDeduction + latePenaltyDeduction;
-
-            //  Overtime 
-            decimal overtimePay = stats.TotalOvertimeHours * hourlyRate * ISalaryService.OvertimeMultiplier;
-
-            //  Attendance Bonus 
-            decimal attendanceBonus = 0;
-            if (stats.DaysAbsent == 0 && stats.DaysLate <= ISalaryService.MaxLateForBonus)
-            {
-                attendanceBonus = baseSalary * (ISalaryService.AttendanceBonusPercentage / 100m);
-            }
-
-            //  Gross & Net 
-            decimal grossSalary = baseSalary + overtimePay + attendanceBonus;
-            decimal finalSalary = grossSalary - totalDeductions;
-            if (finalSalary < 0) finalSalary = 0;
-
-            //  Build Descriptions 
-            var bonusReasons = new List<string>();
-            if (attendanceBonus > 0)
-                bonusReasons.Add($"Attendance bonus ({ISalaryService.AttendanceBonusPercentage}%)");
-
-            var deductionReasons = new List<string>();
-            if (stats.DaysAbsent > 0)
-                deductionReasons.Add($"{stats.DaysAbsent} absent day(s)");
-            if (stats.DaysHalfDay > 0)
-                deductionReasons.Add($"{stats.DaysHalfDay} half-day(s)");
-            if (latePenaltyDays > 0)
-                deductionReasons.Add($"{stats.DaysLate} late(s) = {latePenaltyDays} half-day penalty");
-
-            return new SalaryRecord
-            {
-                StaffId = staff.Id,
-                BranchId = staff.BranchId,
-                Year = year,
-                Month = month,
-                BaseSalary = baseSalary,
-                TotalWorkingDays = stats.TotalWorkingDays,
-                DaysPresent = stats.DaysPresent,
-                DaysAbsent = stats.DaysAbsent,
-                DaysLate = stats.DaysLate,
-                DaysHalfDay = stats.DaysHalfDay,
-                AttendancePercentage = stats.AttendancePercentage,
-                OvertimeHours = stats.TotalOvertimeHours,
-                OvertimePay = Math.Round(overtimePay, 2),
-                AttendanceBonus = Math.Round(attendanceBonus, 2),
-                AbsenceDeduction = Math.Round(absenceDeduction, 2),
-                HalfDayDeduction = Math.Round(halfDayDeduction, 2),
-                LatePenaltyDeduction = Math.Round(latePenaltyDeduction, 2),
-                GrossSalary = Math.Round(grossSalary, 2),
-                TotalDeductions = Math.Round(totalDeductions, 2),
-                BonusAmount = Math.Round(attendanceBonus + overtimePay, 2),
-                DeductionAmount = Math.Round(totalDeductions, 2),
-                BonusReason = bonusReasons.Any() ? string.Join("; ", bonusReasons) : null,
-                DeductionReason = deductionReasons.Any() ? string.Join("; ", deductionReasons) : null,
-                FinalSalary = Math.Round(finalSalary, 2),
-                Status = "Draft",
-                PaymentStatus = "Pending",
-                GeneratedById = generatedById,
-                GeneratedAt = DateTime.Now
-            };
-        }
-
-        // 
-        //  RECALCULATION (after adjustments)
-        // 
+        // ================================================================
+        //  RECALCULATION (after adjustments, Draft only)
+        // ================================================================
 
         public async Task RecalculateSalaryAsync(int salaryRecordId)
         {
@@ -156,27 +98,27 @@ namespace Cafe.Services
                 .Include(sr => sr.Adjustments)
                 .FirstOrDefaultAsync(sr => sr.Id == salaryRecordId);
 
-            if (record == null || record.Status == "Finalized") return;
+            if (record == null || record.Status != "Draft") return;
 
-            // Sum manual adjustments from SalaryAdjustment table
+            // Sum manual adjustments
             decimal manualBonus = record.Adjustments
                 .Where(a => a.Type == "Bonus").Sum(a => a.Amount);
             decimal manualDeduction = record.Adjustments
                 .Where(a => a.Type == "Deduction").Sum(a => a.Amount);
 
-            // GrossSalary = BaseSalary + OvertimePay + AttendanceBonus + ManualBonus
+            // GrossSalary = BaseSalary + OvertimePay + AttendanceBonus + ManualBonuses
             record.GrossSalary = record.BaseSalary + record.OvertimePay +
                                  record.AttendanceBonus + manualBonus;
 
-            // TotalDeductions = AbsenceDeduction + HalfDayDeduction + LatePenaltyDeduction + ManualDeduction
+            // TotalDeductions = formula deductions + manual deductions
             record.TotalDeductions = record.AbsenceDeduction + record.HalfDayDeduction +
                                      record.LatePenaltyDeduction + manualDeduction;
 
-            // Aggregate columns (for backward compat)
+            // Legacy aggregate columns
             record.BonusAmount = record.AttendanceBonus + record.OvertimePay + manualBonus;
             record.DeductionAmount = record.TotalDeductions;
 
-            // Build reasons
+            // Build reason strings
             var bonusReasons = new List<string>();
             if (record.AttendanceBonus > 0) bonusReasons.Add("Attendance bonus");
             if (record.OvertimePay > 0) bonusReasons.Add($"Overtime ({record.OvertimeHours}h)");
@@ -197,9 +139,9 @@ namespace Cafe.Services
             await _context.SaveChangesAsync();
         }
 
-        // 
+        // ================================================================
         //  LOOKUPS
-        // 
+        // ================================================================
 
         public async Task<SalaryRecord?> GetSalaryRecordAsync(int id)
         {
@@ -209,6 +151,7 @@ namespace Cafe.Services
                 .Include(sr => sr.Branch)
                 .Include(sr => sr.GeneratedBy)
                 .Include(sr => sr.FinalizedBy)
+                .Include(sr => sr.PolicyUsed)
                 .Include(sr => sr.Adjustments).ThenInclude(a => a.CreatedBy)
                 .FirstOrDefaultAsync(sr => sr.Id == id);
         }
@@ -221,34 +164,14 @@ namespace Cafe.Services
             return await query.AnyAsync();
         }
 
-        public async Task<decimal> CalculateBaseSalaryForStaff(int staffId)
-        {
-            var activeSalary = await _context.StaffSalaries
-                .Where(ss => ss.StaffId == staffId && ss.IsActive)
-                .OrderByDescending(ss => ss.EffectiveFromDate)
-                .FirstOrDefaultAsync();
-
-            if (activeSalary != null && activeSalary.BaseSalary > 0)
-                return activeSalary.BaseSalary;
-
-            var staff = await _context.Staff
-                .Include(s => s.StaffRole)
-                .FirstOrDefaultAsync(s => s.Id == staffId);
-
-            if (staff?.StaffRole != null && staff.StaffRole.DefaultMonthlySalary > 0)
-                return staff.StaffRole.DefaultMonthlySalary;
-
-            return 30000m; // fallback
-        }
-
-        // 
+        // ================================================================
         //  WORKFLOW
-        // 
+        // ================================================================
 
         public async Task<bool> FinalizeSalaryAsync(int id, int userId)
         {
             var record = await _context.SalaryRecords.FindAsync(id);
-            if (record == null || record.Status == "Finalized") return false;
+            if (record == null || record.Status != "Draft") return false;
 
             record.Status = "Finalized";
             record.FinalizedById = userId;
@@ -262,11 +185,12 @@ namespace Cafe.Services
         {
             var record = await _context.SalaryRecords.FindAsync(id);
             if (record == null || record.Status != "Finalized") return false;
+            // Cannot unlock Paid
+            if (record.PaymentStatus == "Paid") return false;
 
             record.Status = "Draft";
             record.UnlockedById = userId;
             record.UnlockedAt = DateTime.Now;
-            // Reset finalization
             record.FinalizedById = null;
             record.FinalizedAt = null;
 
@@ -274,27 +198,26 @@ namespace Cafe.Services
             return true;
         }
 
-        // 
+        // ================================================================
         //  PAYMENT
-        // 
+        // ================================================================
 
         public async Task<bool> MarkAsPaidAsync(int id)
         {
             var record = await _context.SalaryRecords.FindAsync(id);
             if (record == null || record.PaymentStatus == "Paid") return false;
-
-            // Must be finalized before payment
             if (record.Status != "Finalized") return false;
 
+            record.Status = "Paid";
             record.PaymentStatus = "Paid";
             record.PaidDate = DateTime.Now;
             await _context.SaveChangesAsync();
             return true;
         }
 
-        // 
-        //  ADJUSTMENTS (SalaryAdjustment table)
-        // 
+        // ================================================================
+        //  ADJUSTMENTS
+        // ================================================================
 
         public async Task<SalaryAdjustment> AddAdjustmentAsync(
             int salaryRecordId, string type, decimal amount, string? reason, int? createdById)
@@ -302,8 +225,8 @@ namespace Cafe.Services
             var record = await _context.SalaryRecords.FindAsync(salaryRecordId);
             if (record == null)
                 throw new InvalidOperationException("Salary record not found.");
-            if (record.Status == "Finalized")
-                throw new InvalidOperationException("Cannot adjust a finalized salary record.");
+            if (record.Status != "Draft")
+                throw new InvalidOperationException("Adjustments are only allowed on Draft salary records.");
 
             var adjustment = new SalaryAdjustment
             {
@@ -318,9 +241,7 @@ namespace Cafe.Services
             _context.SalaryAdjustments.Add(adjustment);
             await _context.SaveChangesAsync();
 
-            // Recalculate after adding adjustment
             await RecalculateSalaryAsync(salaryRecordId);
-
             return adjustment;
         }
 
@@ -330,7 +251,7 @@ namespace Cafe.Services
             if (adj == null) return false;
 
             var record = await _context.SalaryRecords.FindAsync(adj.SalaryRecordId);
-            if (record != null && record.Status == "Finalized") return false;
+            if (record != null && record.Status != "Draft") return false;
 
             int salaryRecordId = adj.SalaryRecordId;
             _context.SalaryAdjustments.Remove(adj);
@@ -338,6 +259,70 @@ namespace Cafe.Services
 
             await RecalculateSalaryAsync(salaryRecordId);
             return true;
+        }
+
+        // ================================================================
+        //  STAFF BASE SALARY MANAGEMENT (History-aware)
+        // ================================================================
+
+        public async Task UpdateBaseSalaryAsync(int staffId, decimal newBaseSalary, int changedById, string? reason)
+        {
+            // Close current active salary record
+            var current = await _context.StaffSalaries
+                .Where(ss => ss.StaffId == staffId && ss.IsActive)
+                .OrderByDescending(ss => ss.EffectiveFromDate)
+                .FirstOrDefaultAsync();
+
+            if (current != null)
+            {
+                current.IsActive = false;
+                current.EffectiveToDate = DateTime.Now.Date.AddDays(-1);
+            }
+
+            // Insert new record
+            var newRecord = new StaffSalary
+            {
+                StaffId = staffId,
+                BaseSalary = newBaseSalary,
+                HourlyRate = newBaseSalary / (26m * 8m), // ~26 working days, 8h each
+                PaymentType = current?.PaymentType ?? "Monthly",
+                EffectiveFromDate = DateTime.Now.Date,
+                EffectiveToDate = null,
+                IsActive = true,
+                CreatedBy = changedById,
+                ChangeReason = reason,
+                CreatedDate = DateTime.Now
+            };
+
+            _context.StaffSalaries.Add(newRecord);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<StaffSalary>> GetBaseSalaryHistoryAsync(int staffId)
+        {
+            return await _context.StaffSalaries
+                .Include(ss => ss.CreatedByUser)
+                .Where(ss => ss.StaffId == staffId)
+                .OrderByDescending(ss => ss.EffectiveFromDate)
+                .ToListAsync();
+        }
+
+        // ================================================================
+        //  HELPERS
+        // ================================================================
+
+        private async Task<List<Staff>> GetActiveStaffAsync(int? branchId)
+        {
+            var query = _context.Staff
+                .Include(s => s.User)
+                .Include(s => s.StaffRole)
+                .Include(s => s.Branch)
+                .Where(s => s.IsActive);
+
+            if (branchId.HasValue)
+                query = query.Where(s => s.BranchId == branchId.Value);
+
+            return await query.ToListAsync();
         }
     }
 }

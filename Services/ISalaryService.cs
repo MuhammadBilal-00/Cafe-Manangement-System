@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cafe.Models;
 
@@ -7,29 +6,30 @@ namespace Cafe.Services
 {
     public interface ISalaryService
     {
-        //  Constants 
-        const decimal OvertimeMultiplier = 1.5m;
-        const decimal AttendanceBonusPercentage = 5m;   // 5% of BaseSalary
-        const int MaxLateForBonus = 2;                   // <= 2 late days still qualifies
+        // -- Preview (no DB insert) --
+        Task<List<SalaryRecord>> PreviewMonthlySalariesAsync(int year, int month, int? branchId, int? generatedById);
 
-        //  Salary Generation 
+        // -- Generation (writes to DB) --
         Task<List<SalaryRecord>> GenerateMonthlySalariesAsync(int year, int month, int? branchId, int? generatedById);
 
-        //  Lookups 
+        // -- Lookups --
         Task<SalaryRecord?> GetSalaryRecordAsync(int id);
         Task<bool> HasSalariesGeneratedAsync(int year, int month, int? branchId);
-        Task<decimal> CalculateBaseSalaryForStaff(int staffId);
 
-        //  Workflow 
+        // -- Workflow --
         Task<bool> FinalizeSalaryAsync(int id, int userId);
         Task<bool> UnlockSalaryAsync(int id, int userId);
 
-        //  Payment 
+        // -- Payment --
         Task<bool> MarkAsPaidAsync(int id);
 
-        //  Adjustments 
+        // -- Adjustments --
         Task<SalaryAdjustment> AddAdjustmentAsync(int salaryRecordId, string type, decimal amount, string? reason, int? createdById);
         Task<bool> RemoveAdjustmentAsync(int adjustmentId);
         Task RecalculateSalaryAsync(int salaryRecordId);
+
+        // -- Staff Base Salary Management --
+        Task UpdateBaseSalaryAsync(int staffId, decimal newBaseSalary, int changedById, string? reason);
+        Task<List<StaffSalary>> GetBaseSalaryHistoryAsync(int staffId);
     }
 }

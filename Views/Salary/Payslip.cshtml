@@ -29,7 +29,8 @@
                 <div class="text-right space-y-1">
                     <p class="text-sm text-gray-500">Generated: @r.GeneratedAt.ToString("dd MMM yyyy")</p>
                     @{
-                        var wfClass = r.Status == "Finalized" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
+                        var wfClass = r.Status == "Paid" ? "bg-purple-100 text-purple-800" :
+                                      r.Status == "Finalized" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
                         var pyClass = r.PaymentStatus == "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
                     }
                     <span class="px-3 py-1 text-sm font-medium rounded-full @wfClass">@r.Status</span>
@@ -56,6 +57,13 @@
                 <p class="text-sm text-gray-500">Period</p>
                 <p class="font-medium text-gray-800">@monthName</p>
             </div>
+            @if (Model.PolicyUsed != null)
+            {
+                <div>
+                    <p class="text-sm text-gray-500">Salary Policy</p>
+                    <p class="font-medium text-indigo-700">@Model.PolicyUsed.Name</p>
+                </div>
+            }
         </div>
 
         <!-- Attendance Summary -->

@@ -31,6 +31,9 @@ namespace Cafe.Models
         [StringLength(500)]
         public string? Notes { get; set; }
 
+        [StringLength(200)]
+        public string? ChangeReason { get; set; }
+
         public bool IsActive { get; set; } = true;
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public int CreatedBy { get; set; }

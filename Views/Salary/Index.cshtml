@@ -15,6 +15,41 @@
     }
 </div>
 
+<!-- Active Policy Info -->
+@if (Model.ActivePolicy != null)
+{
+    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6 flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="p-2 rounded-lg bg-indigo-100 text-indigo-600 mr-3">
+                <i class="fas fa-file-contract text-lg"></i>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-indigo-800">Active Salary Policy: <strong>@Model.ActivePolicy.Name</strong></p>
+                <p class="text-xs text-indigo-600">
+                    Effective from @Model.ActivePolicy.EffectiveFrom.ToString("dd MMM yyyy")
+                    @(Model.ActivePolicy.EffectiveTo.HasValue ? $"to {Model.ActivePolicy.EffectiveTo.Value:dd MMM yyyy}" : "(ongoing)")
+                    &bull; OT: @(Model.ActivePolicy.OvertimeMultiplier)x &bull; Absence: @(Model.ActivePolicy.AbsenceDeductionFactor)x &bull; Attendance Bonus: @(Model.ActivePolicy.AttendanceBonusPercentage)%
+                </p>
+            </div>
+        </div>
+        @if (isOwner)
+        {
+            <a asp-controller="SalaryPolicy" asp-action="Index" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                <i class="fas fa-cog mr-1"></i> Manage Policies
+            </a>
+        }
+    </div>
+}
+else if (isOwner)
+{
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+        <p class="text-sm text-amber-800">
+            <i class="fas fa-exclamation-triangle mr-1"></i>
+            No active salary policy found. <a asp-controller="SalaryPolicy" asp-action="Create" class="underline font-medium">Create one</a> before generating salaries.
+        </p>
+    </div>
+}
+
 <!-- Stats Cards -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
@@ -59,7 +94,7 @@
             <div>
                 <p class="text-sm text-gray-600">Net Payable</p>
                 <p class="text-xl font-bold text-gray-800">Rs. @Model.TotalFinalSalary.ToString("N0")</p>
-                <p class="text-xs text-gray-400">Draft: @Model.DraftCount | Finalized: @Model.FinalizedCount</p>
+                <p class="text-xs text-gray-400">Draft: @Model.DraftCount | Finalized: @Model.FinalizedCount | Paid: @Model.Records.Count(r => r.Status == "Paid")</p>
             </div>
         </div>
     </div>
@@ -102,6 +137,7 @@
                 <option value="">All</option>
                 <option value="Draft" selected="@(Model.WorkflowStatus == "Draft")">Draft</option>
                 <option value="Finalized" selected="@(Model.WorkflowStatus == "Finalized")">Finalized</option>
+                <option value="Paid" selected="@(Model.WorkflowStatus == "Paid")">Paid</option>
             </select>
         </div>
         <div>
@@ -150,7 +186,8 @@
             {
                 var pctClass = r.AttendancePercentage >= 90 ? "text-green-600" :
                                r.AttendancePercentage >= 70 ? "text-yellow-600" : "text-red-600";
-                var wfClass = r.Status == "Finalized" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
+                var wfClass = r.Status == "Paid" ? "bg-purple-100 text-purple-800" :
+                               r.Status == "Finalized" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
                 var pyClass = r.PaymentStatus == "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-4 text-sm font-medium text-gray-800">@r.Staff?.User?.Name</td>
@@ -329,7 +366,8 @@
                     const pctClass = data.attendancePercentage >= 90 ? 'text-green-600' :
                                      data.attendancePercentage >= 70 ? 'text-yellow-600' : 'text-red-600';
 
-                    const wfClass = data.status === 'Finalized' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+                    const wfClass = data.status === 'Paid' ? 'bg-purple-100 text-purple-800' :
+                                     data.status === 'Finalized' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
                     const pyClass = data.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
 
                     let adjustmentRows = '';
@@ -351,7 +389,8 @@
                         data.history.forEach(h => {
                             const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                             const sC = h.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
-                            const wC = h.status === 'Finalized' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+                            const wC = h.status === 'Paid' ? 'bg-purple-100 text-purple-800' :
+                                       h.status === 'Finalized' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
                             historyRows += `<tr class="border-t text-sm">
                                 <td class="px-3 py-1">${monthNames[h.month-1]} ${h.year}</td>
                                 <td class="px-3 py-1 text-right">Rs. ${h.baseSalary.toLocaleString()}</td>
@@ -367,6 +406,7 @@
                             <p><b>Employee:</b> ${data.staffName}</p>
                             <p><b>Role:</b> ${data.role}</p>
                             <p><b>Branch:</b> ${data.branch}</p>
+                            <p><b>Policy:</b> ${data.policyName || 'Default'}</p>
                             <p><b>Workflow:</b> <span class="px-2 py-0.5 text-xs rounded-full ${wfClass}">${data.status}</span>
                                <span class="px-2 py-0.5 text-xs rounded-full ${pyClass} ml-1">${data.paymentStatus}</span></p>
                         </div>

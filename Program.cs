@@ -26,6 +26,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+builder.Services.AddScoped<ISalaryCalculationService, SalaryCalculationService>();
+builder.Services.AddScoped<ISalaryPolicyService, SalaryPolicyService>();
 builder.Services.AddScoped<ISalaryService, SalaryService>();
 builder.Services.AddScoped<IFinancialService, FinancialService>();
 builder.Services.AddHttpContextAccessor();

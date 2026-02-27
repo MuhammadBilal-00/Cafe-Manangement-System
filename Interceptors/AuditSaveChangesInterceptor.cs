@@ -45,6 +45,7 @@ namespace Cafe.Interceptors
             typeof(StaffSalary),
             typeof(StaffSchedule),
             typeof(SalaryAdjustment),
+            typeof(SalaryPolicy),
         };
 
         // Track entries before SaveChanges so we can capture original values

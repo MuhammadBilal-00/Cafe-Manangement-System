@@ -18,13 +18,24 @@ namespace Cafe.Controllers
     public class SalaryController : BaseController
     {
         private readonly ISalaryService _salaryService;
+        private readonly ISalaryPolicyService _policyService;
+        private readonly ISalaryCalculationService _calcService;
 
-        public SalaryController(ApplicationDbContext context, ISalaryService salaryService) : base(context)
+        public SalaryController(
+            ApplicationDbContext context,
+            ISalaryService salaryService,
+            ISalaryPolicyService policyService,
+            ISalaryCalculationService calcService) : base(context)
         {
             _salaryService = salaryService;
+            _policyService = policyService;
+            _calcService = calcService;
         }
 
-        // GET: Salary
+        // ================================================================
+        //  INDEX
+        // ================================================================
+
         public async Task<IActionResult> Index(int? branchId, int? year, int? month,
             string? paymentStatus, string? workflowStatus, int page = 1, int pageSize = 25)
         {
@@ -37,7 +48,6 @@ namespace Cafe.Controllers
                 .Include(sr => sr.Branch)
                 .Where(sr => sr.Year == targetYear && sr.Month == targetMonth);
 
-            // Role-based filtering
             var userRole = GetCurrentUserRole();
             if (userRole == "BranchManager")
             {
@@ -85,18 +95,24 @@ namespace Cafe.Controllers
                 PendingCount = allRecords.Count(r => r.PaymentStatus == "Pending"),
                 PaidCount = allRecords.Count(r => r.PaymentStatus == "Paid"),
                 DraftCount = allRecords.Count(r => r.Status == "Draft"),
-                FinalizedCount = allRecords.Count(r => r.Status == "Finalized")
+                FinalizedCount = allRecords.Count(r => r.Status == "Finalized"),
+                ActivePolicy = await _policyService.GetActivePolicyAsync()
             };
 
             return View(vm);
         }
+
+        // ================================================================
+        //  GENERATE & PREVIEW
+        // ================================================================
 
         // GET: Salary/Generate
         public async Task<IActionResult> Generate()
         {
             var vm = new SalaryGenerateViewModel
             {
-                Branches = await GetAccessibleBranches()
+                Branches = await GetAccessibleBranches(),
+                ActivePolicy = await _policyService.GetActivePolicyAsync()
             };
 
             var userRole = GetCurrentUserRole();
@@ -110,7 +126,39 @@ namespace Cafe.Controllers
             return View(vm);
         }
 
-        // POST: Salary/Generate
+        // POST: Salary/Preview  dry-run preview (no DB write)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Preview(SalaryGenerateViewModel model)
+        {
+            try
+            {
+                var userRole = GetCurrentUserRole();
+                if (userRole == "BranchManager")
+                {
+                    var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                    if (!managedBranchId.HasValue) return AccessDenied();
+                    model.BranchId = managedBranchId.Value;
+                }
+
+                var previewRecords = await _salaryService.PreviewMonthlySalariesAsync(
+                    model.Year, model.Month, model.BranchId, GetCurrentUserId());
+
+                model.PreviewRecords = previewRecords;
+                model.IsPreview = true;
+                model.Branches = await GetAccessibleBranches();
+                model.ActivePolicy = await _policyService.GetActivePolicyAsync();
+
+                return View("Generate", model);
+            }
+            catch (InvalidOperationException ex)
+            {
+                SetErrorMessage(ex.Message);
+                return RedirectToAction(nameof(Generate));
+            }
+        }
+
+        // POST: Salary/Generate  commit preview to DB
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Generate(SalaryGenerateViewModel model)
@@ -139,7 +187,10 @@ namespace Cafe.Controllers
             return RedirectToAction(nameof(Index), new { year = model.Year, month = model.Month, branchId = model.BranchId });
         }
 
-        // GET: Salary/Payslip/5
+        // ================================================================
+        //  PAYSLIP
+        // ================================================================
+
         public async Task<IActionResult> Payslip(int id)
         {
             var record = await _salaryService.GetSalaryRecordAsync(id);
@@ -171,17 +222,17 @@ namespace Cafe.Controllers
             {
                 Record = record,
                 AttendanceDetails = attendanceDetails,
-                Adjustments = adjustments
+                Adjustments = adjustments,
+                PolicyUsed = record.PolicyUsed
             };
 
             return View(vm);
         }
 
-        // 
-        //  WORKFLOW: Finalize & Unlock
-        // 
+        // ================================================================
+        //  WORKFLOW: Finalize, Unlock
+        // ================================================================
 
-        // POST: Salary/Finalize/5 (Owner only)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireOwner]
@@ -194,12 +245,11 @@ namespace Cafe.Controllers
             if (success)
                 SetSuccessMessage("Salary finalized! It can now be marked as paid.");
             else
-                SetErrorMessage("Failed to finalize salary. It may already be finalized.");
+                SetErrorMessage("Failed to finalize salary. It may already be finalized or paid.");
 
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: Salary/FinalizeAll (Owner only - finalize all Draft records for period)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireOwner]
@@ -227,7 +277,6 @@ namespace Cafe.Controllers
             return RedirectToAction(nameof(Index), new { year, month, branchId });
         }
 
-        // POST: Salary/Unlock/5 (Owner only)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireOwner]
@@ -240,16 +289,15 @@ namespace Cafe.Controllers
             if (success)
                 SetSuccessMessage("Salary unlocked for editing.");
             else
-                SetErrorMessage("Failed to unlock salary.");
+                SetErrorMessage("Cannot unlock. Record may be paid or not finalized.");
 
             return RedirectToAction(nameof(Index));
         }
 
-        // 
+        // ================================================================
         //  PAYMENT
-        // 
+        // ================================================================
 
-        // POST: Salary/MarkPaid/5 (requires Finalized)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkPaid(int id)
@@ -274,7 +322,6 @@ namespace Cafe.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: Salary/MarkAllPaid (only Finalized + Pending)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAllPaid(int year, int month, int? branchId)
@@ -290,7 +337,7 @@ namespace Cafe.Controllers
             var query = _context.SalaryRecords
                 .Where(sr => sr.Year == year && sr.Month == month
                     && sr.PaymentStatus == "Pending"
-                    && sr.Status == "Finalized"); // Must be finalized
+                    && sr.Status == "Finalized");
 
             if (branchId.HasValue)
                 query = query.Where(sr => sr.BranchId == branchId.Value);
@@ -307,11 +354,10 @@ namespace Cafe.Controllers
             return RedirectToAction(nameof(Index), new { year, month, branchId });
         }
 
-        // 
-        //  ADJUSTMENTS (SalaryAdjustment table)
-        // 
+        // ================================================================
+        //  ADJUSTMENTS
+        // ================================================================
 
-        // POST: Salary/AddAdjustment (JSON API)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddAdjustment([FromBody] SalaryAdjustRequest request)
@@ -319,7 +365,6 @@ namespace Cafe.Controllers
             if (request == null || request.Amount <= 0)
                 return Json(new { success = false, message = "Invalid request. Amount must be greater than 0." });
 
-            // Branch isolation check
             var record = await _salaryService.GetSalaryRecordAsync(request.RecordId);
             if (record == null)
                 return Json(new { success = false, message = "Salary record not found." });
@@ -352,7 +397,6 @@ namespace Cafe.Controllers
             }
         }
 
-        // POST: Salary/RemoveAdjustment/5 (JSON API)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveAdjustment(int id)
@@ -364,7 +408,6 @@ namespace Cafe.Controllers
             if (adjustment == null)
                 return Json(new { success = false, message = "Adjustment not found." });
 
-            // Branch isolation
             var userRole = GetCurrentUserRole();
             if (userRole == "BranchManager")
             {
@@ -374,12 +417,66 @@ namespace Cafe.Controllers
             }
 
             var success = await _salaryService.RemoveAdjustmentAsync(id);
-            return Json(new { success, message = success ? "Adjustment removed." : "Cannot remove from a finalized record." });
+            return Json(new { success, message = success ? "Adjustment removed." : "Cannot remove from a finalized/paid record." });
         }
 
-        // 
+        // ================================================================
+        //  BASE SALARY MANAGEMENT
+        // ================================================================
+
+        [RequireOwner]
+        public async Task<IActionResult> BaseSalaryHistory(int staffId)
+        {
+            var staff = await _context.Staff
+                .Include(s => s.User)
+                .Include(s => s.StaffRole)
+                .Include(s => s.Branch)
+                .FirstOrDefaultAsync(s => s.Id == staffId);
+
+            if (staff == null) return NotFound();
+
+            var history = await _salaryService.GetBaseSalaryHistoryAsync(staffId);
+            var currentBase = await _calcService.GetEffectiveBaseSalaryAsync(
+                staffId, DateTime.Now.Year, DateTime.Now.Month);
+
+            var vm = new BaseSalaryHistoryViewModel
+            {
+                Staff = staff,
+                History = history,
+                CurrentBaseSalary = currentBase
+            };
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireOwner]
+        public async Task<IActionResult> UpdateBaseSalary([FromBody] BaseSalaryChangeRequest request)
+        {
+            if (request == null || request.NewBaseSalary <= 0)
+                return Json(new { success = false, message = "Invalid base salary amount." });
+
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+                return Json(new { success = false, message = "Not authenticated." });
+
+            try
+            {
+                await _salaryService.UpdateBaseSalaryAsync(
+                    request.StaffId, request.NewBaseSalary, userId.Value, request.Reason);
+
+                return Json(new { success = true, message = $"Base salary updated to Rs. {request.NewBaseSalary:N0}." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // ================================================================
         //  JSON API: Salary Detail
-        // 
+        // ================================================================
 
         [HttpGet]
         public async Task<IActionResult> GetSalaryDetail(int id)
@@ -389,6 +486,7 @@ namespace Cafe.Controllers
                 .Include(sr => sr.Staff).ThenInclude(s => s.StaffRole)
                 .Include(sr => sr.Branch)
                 .Include(sr => sr.FinalizedBy)
+                .Include(sr => sr.PolicyUsed)
                 .Include(sr => sr.Adjustments).ThenInclude(a => a.CreatedBy)
                 .FirstOrDefaultAsync(sr => sr.Id == id);
 
@@ -436,6 +534,7 @@ namespace Cafe.Controllers
                 staffName = record.Staff?.User?.Name ?? "Unknown",
                 role = record.Staff?.StaffRole?.RoleName ?? "N/A",
                 branch = record.Branch?.Name ?? "N/A",
+                policyName = record.PolicyUsed?.Name ?? "Default",
                 baseSalary = record.BaseSalary,
                 overtimeHours = record.OvertimeHours,
                 overtimePay = record.OvertimePay,
@@ -466,7 +565,10 @@ namespace Cafe.Controllers
             });
         }
 
-        // CSV Export
+        // ================================================================
+        //  CSV EXPORT
+        // ================================================================
+
         public async Task<IActionResult> ExportCsv(int? year, int? month, int? branchId)
         {
             var targetYear = year ?? DateTime.Now.Year;
@@ -475,6 +577,7 @@ namespace Cafe.Controllers
             var query = _context.SalaryRecords
                 .Include(sr => sr.Staff).ThenInclude(s => s.User)
                 .Include(sr => sr.Branch)
+                .Include(sr => sr.PolicyUsed)
                 .Where(sr => sr.Year == targetYear && sr.Month == targetMonth);
 
             if (branchId.HasValue)
@@ -491,10 +594,10 @@ namespace Cafe.Controllers
             var records = await query.OrderBy(sr => sr.Staff.User.Name).ToListAsync();
 
             var csv = new System.Text.StringBuilder();
-            csv.AppendLine("Staff,Branch,BaseSalary,WorkingDays,Present,Absent,Late,HalfDay,Attendance%,OvertimeHours,OvertimePay,AttendanceBonus,AbsenceDeduction,HalfDayDeduction,LatePenalty,GrossSalary,TotalDeductions,NetSalary,Status,PaymentStatus,PaidDate");
+            csv.AppendLine("Staff,Branch,Policy,BaseSalary,WorkingDays,Present,Absent,Late,HalfDay,Attendance%,OvertimeHours,OvertimePay,AttendanceBonus,AbsenceDeduction,HalfDayDeduction,LatePenalty,GrossSalary,TotalDeductions,NetSalary,Status,PaymentStatus,PaidDate");
             foreach (var r in records)
             {
-                csv.AppendLine($"{EscapeCsv(r.Staff?.User?.Name ?? "")},{EscapeCsv(r.Branch?.Name ?? "")},{r.BaseSalary:F2},{r.TotalWorkingDays},{r.DaysPresent},{r.DaysAbsent},{r.DaysLate},{r.DaysHalfDay},{r.AttendancePercentage:F2},{r.OvertimeHours:F2},{r.OvertimePay:F2},{r.AttendanceBonus:F2},{r.AbsenceDeduction:F2},{r.HalfDayDeduction:F2},{r.LatePenaltyDeduction:F2},{r.GrossSalary:F2},{r.TotalDeductions:F2},{r.FinalSalary:F2},{r.Status},{r.PaymentStatus},{r.PaidDate?.ToString("yyyy-MM-dd") ?? ""}");
+                csv.AppendLine($"{EscapeCsv(r.Staff?.User?.Name ?? "")},{EscapeCsv(r.Branch?.Name ?? "")},{EscapeCsv(r.PolicyUsed?.Name ?? "Default")},{r.BaseSalary:F2},{r.TotalWorkingDays},{r.DaysPresent},{r.DaysAbsent},{r.DaysLate},{r.DaysHalfDay},{r.AttendancePercentage:F2},{r.OvertimeHours:F2},{r.OvertimePay:F2},{r.AttendanceBonus:F2},{r.AbsenceDeduction:F2},{r.HalfDayDeduction:F2},{r.LatePenaltyDeduction:F2},{r.GrossSalary:F2},{r.TotalDeductions:F2},{r.FinalSalary:F2},{r.Status},{r.PaymentStatus},{r.PaidDate?.ToString("yyyy-MM-dd") ?? ""}");
             }
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());

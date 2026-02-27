@@ -44,4 +44,11 @@ namespace Cafe.Models.Requests
         public decimal Amount { get; set; }
         public string? Reason { get; set; }
     }
+
+    public class BaseSalaryChangeRequest
+    {
+        public int StaffId { get; set; }
+        public decimal NewBaseSalary { get; set; }
+        public string? Reason { get; set; }
+    }
 }

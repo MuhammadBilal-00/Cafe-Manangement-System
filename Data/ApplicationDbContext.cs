@@ -49,6 +49,7 @@ namespace Cafe.Data
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<SalaryRecord> SalaryRecords { get; set; }
         public DbSet<SalaryAdjustment> SalaryAdjustments { get; set; }
+        public DbSet<SalaryPolicy> SalaryPolicies { get; set; }
         public DbSet<Expense> Expenses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -227,6 +228,20 @@ namespace Cafe.Data
                 .Property(sa => sa.Amount)
                 .HasPrecision(10, 2);
 
+            // SalaryPolicy decimal precision
+            modelBuilder.Entity<SalaryPolicy>()
+                .Property(p => p.AbsenceDeductionFactor).HasPrecision(5, 2);
+            modelBuilder.Entity<SalaryPolicy>()
+                .Property(p => p.HalfDayDeductionFactor).HasPrecision(5, 2);
+            modelBuilder.Entity<SalaryPolicy>()
+                .Property(p => p.LatePenaltyFactor).HasPrecision(5, 2);
+            modelBuilder.Entity<SalaryPolicy>()
+                .Property(p => p.OvertimeMultiplier).HasPrecision(5, 2);
+            modelBuilder.Entity<SalaryPolicy>()
+                .Property(p => p.AttendanceBonusPercentage).HasPrecision(5, 2);
+            modelBuilder.Entity<SalaryPolicy>()
+                .Property(p => p.StandardDailyHours).HasPrecision(5, 2);
+
             // Expense decimal precision
             modelBuilder.Entity<Expense>()
                 .Property(e => e.Amount)
@@ -265,6 +280,10 @@ namespace Cafe.Data
             modelBuilder.Entity<SalaryRecord>()
                 .HasIndex(sr => new { sr.StaffId, sr.Year, sr.Month })
                 .IsUnique();
+
+            // SalaryRecord: composite index for dashboard queries
+            modelBuilder.Entity<SalaryRecord>()
+                .HasIndex(sr => new { sr.BranchId, sr.Year, sr.Month });
         }
 
         private void ConfigureRelationships(ModelBuilder modelBuilder)
@@ -449,6 +468,12 @@ namespace Cafe.Data
                 .WithMany()
                 .HasForeignKey(sr => sr.GeneratedById)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SalaryRecord>()
+                .HasOne(sr => sr.PolicyUsed)
+                .WithMany()
+                .HasForeignKey(sr => sr.PolicyIdUsed)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<SalaryRecord>()
                 .HasOne(sr => sr.FinalizedBy)
@@ -791,7 +816,7 @@ namespace Cafe.Data
 
             modelBuilder.Entity<SalaryRecord>()
                 .ToTable(t => t.HasCheckConstraint("CK_SalaryRecord_Status",
-                    "[Status] IN ('Draft','Finalized')"));
+                    "[Status] IN ('Draft','Finalized','Paid')"));
 
             // SalaryAdjustment check constraints
             modelBuilder.Entity<SalaryAdjustment>()
@@ -801,6 +826,27 @@ namespace Cafe.Data
             modelBuilder.Entity<SalaryAdjustment>()
                 .ToTable(t => t.HasCheckConstraint("CK_SalaryAdjustment_Amount",
                     "[Amount] > 0"));
+
+            // SalaryPolicy relationships & defaults
+            modelBuilder.Entity<SalaryPolicy>()
+                .HasOne(p => p.CreatedBy)
+                .WithMany()
+                .HasForeignKey(p => p.CreatedById)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SalaryPolicy>()
+                .HasOne(p => p.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(p => p.UpdatedById)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SalaryPolicy>()
+                .Property(p => p.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<SalaryPolicy>()
+                .Property(p => p.IsActive)
+                .HasDefaultValue(false);
 
             // Expense check constraints
             modelBuilder.Entity<Expense>()

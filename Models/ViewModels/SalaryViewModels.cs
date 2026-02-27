@@ -32,6 +32,9 @@ namespace Cafe.Models.ViewModels
         public int PaidCount { get; set; }
         public int DraftCount { get; set; }
         public int FinalizedCount { get; set; }
+
+        // Active Policy
+        public SalaryPolicy? ActivePolicy { get; set; }
     }
 
     public class SalaryGenerateViewModel
@@ -40,6 +43,11 @@ namespace Cafe.Models.ViewModels
         public int Month { get; set; } = DateTime.Now.Month;
         public int? BranchId { get; set; }
         public List<Branch> Branches { get; set; } = new();
+        public SalaryPolicy? ActivePolicy { get; set; }
+
+        // Preview records (before committing)
+        public List<SalaryRecord>? PreviewRecords { get; set; }
+        public bool IsPreview { get; set; }
     }
 
     public class PayslipViewModel
@@ -47,5 +55,19 @@ namespace Cafe.Models.ViewModels
         public SalaryRecord Record { get; set; } = null!;
         public List<Attendance> AttendanceDetails { get; set; } = new();
         public List<SalaryAdjustment> Adjustments { get; set; } = new();
+        public SalaryPolicy? PolicyUsed { get; set; }
+    }
+
+    public class SalaryPolicyViewModel
+    {
+        public List<SalaryPolicy> Policies { get; set; } = new();
+        public SalaryPolicy? ActivePolicy { get; set; }
+    }
+
+    public class BaseSalaryHistoryViewModel
+    {
+        public Staff Staff { get; set; } = null!;
+        public List<StaffSalary> History { get; set; } = new();
+        public decimal CurrentBaseSalary { get; set; }
     }
 }

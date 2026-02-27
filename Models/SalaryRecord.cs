@@ -23,6 +23,9 @@ namespace Cafe.Models
         [Range(1, 12)]
         public int Month { get; set; }
 
+        // ── Policy Snapshot (frozen at generation time) ──
+        public int? PolicyIdUsed { get; set; }
+
         // ── Attendance Stats ──
         [Required]
         [Column(TypeName = "decimal(10,2)")]
@@ -88,7 +91,7 @@ namespace Cafe.Models
         // ── Workflow ──
         [Required]
         [StringLength(20)]
-        public string Status { get; set; } = "Draft"; // Draft, Finalized
+        public string Status { get; set; } = "Draft"; // Draft, Finalized, Paid
 
         [Required]
         [StringLength(20)]
@@ -116,6 +119,9 @@ namespace Cafe.Models
 
         [ForeignKey("GeneratedById")]
         public User? GeneratedBy { get; set; }
+
+        [ForeignKey("PolicyIdUsed")]
+        public SalaryPolicy? PolicyUsed { get; set; }
 
         [ForeignKey("FinalizedById")]
         public User? FinalizedBy { get; set; }
