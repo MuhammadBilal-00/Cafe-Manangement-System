@@ -13,15 +13,15 @@ namespace Cafe.Controllers
     {
         public AuditLogController(ApplicationDbContext context) : base(context) { }
 
-        public async Task<IActionResult> Index(string? entityType, string? action, DateTime? from, DateTime? to, int page = 1)
+        public async Task<IActionResult> Index(string? entityType, string? logAction, DateTime? from, DateTime? to, int page = 1)
         {
             var query = _context.AuditLogs.AsQueryable();
 
             if (!string.IsNullOrEmpty(entityType))
                 query = query.Where(a => a.EntityType == entityType);
 
-            if (!string.IsNullOrEmpty(action))
-                query = query.Where(a => a.Action == action);
+            if (!string.IsNullOrEmpty(logAction))
+                query = query.Where(a => a.Action == logAction);
 
             if (from.HasValue)
                 query = query.Where(a => a.Timestamp >= from.Value);
@@ -45,7 +45,7 @@ namespace Cafe.Controllers
             ViewBag.EntityTypes = await _context.AuditLogs.Select(a => a.EntityType).Distinct().OrderBy(e => e).ToListAsync();
             ViewBag.Actions = await _context.AuditLogs.Select(a => a.Action).Distinct().OrderBy(a => a).ToListAsync();
             ViewBag.SelectedEntityType = entityType;
-            ViewBag.SelectedAction = action;
+            ViewBag.SelectedAction = logAction;
             ViewBag.FromDate = from;
             ViewBag.ToDate = to;
             ViewBag.CurrentPage = page;
@@ -55,14 +55,14 @@ namespace Cafe.Controllers
             return View(logs);
         }
 
-        public async Task<IActionResult> ExportCsv(string? entityType, string? action, DateTime? from, DateTime? to)
+        public async Task<IActionResult> ExportCsv(string? entityType, string? logAction, DateTime? from, DateTime? to)
         {
             var query = _context.AuditLogs.AsQueryable();
 
             if (!string.IsNullOrEmpty(entityType))
                 query = query.Where(a => a.EntityType == entityType);
-            if (!string.IsNullOrEmpty(action))
-                query = query.Where(a => a.Action == action);
+            if (!string.IsNullOrEmpty(logAction))
+                query = query.Where(a => a.Action == logAction);
             if (from.HasValue)
                 query = query.Where(a => a.Timestamp >= from.Value);
             if (to.HasValue)
@@ -84,7 +84,7 @@ namespace Cafe.Controllers
         private static string EscapeCsv(string value)
         {
             if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
-                return $"\"{value.Replace("\"", "\"\"\"")}\""; 
+                return $"\"{value.Replace("\"", "\"\"")}\""; 
             return value;
         }
     }
