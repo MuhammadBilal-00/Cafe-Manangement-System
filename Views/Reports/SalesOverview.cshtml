@@ -1,4 +1,4 @@
-﻿@model Cafe.Models.ViewModels.SalesReportViewModel
+@model Cafe.Models.ViewModels.SalesReportViewModel
 
 @{
     ViewData["Title"] = "Sales Overview";
@@ -16,459 +16,260 @@
     string FormatCurrency(decimal value) => "$" + value.ToString("N2");
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <title>@ViewData["Title"] - Cafe OS</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Page Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Sales Overview</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Revenue, orders and performance analytics.</p>
+    </div>
+    <a asp-action="Index" asp-controller="Reports" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Reports</a>
+</div>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    animation: {
-                        'float': 'float 6s ease-in-out infinite',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'shimmer': 'shimmer 1.8s linear infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        },
-                        shimmer: {
-                            '0%': { transform: 'translateX(-100%)' },
-                            '100%': { transform: 'translateX(100%)' },
-                        }
-                    }
+<!-- Filters -->
+<form method="get" class="card" style="margin-bottom:1.5rem;">
+    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:end;">
+        <div class="form-group" style="min-width:140px;margin:0;">
+            <label class="form-label">From</label>
+            <input type="date" name="from" value="@from.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="form-group" style="min-width:140px;margin:0;">
+            <label class="form-label">To</label>
+            <input type="date" name="to" value="@to.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="form-group" style="min-width:160px;margin:0;">
+            <label class="form-label">Branch</label>
+            <select name="branchId" class="form-select">
+                <option value="">All branches</option>
+                @foreach (var b in branches)
+                {
+                    <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Apply</button>
+        <a asp-action="SalesOverview" class="btn btn-ghost btn-sm">Reset</a>
+        <a asp-action="ExportSalesCsv" asp-controller="Reports"
+           asp-route-from="@from.ToString("yyyy-MM-dd")" asp-route-to="@to.ToString("yyyy-MM-dd")" asp-route-branchId="@selectedBranchId"
+           class="btn btn-secondary btn-sm"><i class="fas fa-download"></i> CSV</a>
+    </div>
+</form>
+
+<!-- KPI Cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-dollar-sign"></i></div>
+        <div class="kpi-label">Revenue</div>
+        <div class="kpi-value">@FormatCurrency(Model.TotalRevenue)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-receipt"></i></div>
+        <div class="kpi-label">Orders</div>
+        <div class="kpi-value">@Model.TotalOrders</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#e0e7ff;color:#4f46e5;"><i class="fas fa-chart-line"></i></div>
+        <div class="kpi-label">Avg Ticket</div>
+        <div class="kpi-value">@FormatCurrency(Model.AverageOrderValue)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:var(--accent-light);color:var(--accent);"><i class="fas fa-calendar"></i></div>
+        <div class="kpi-label">Period</div>
+        <div class="kpi-value" style="font-size:0.85rem;">@from.ToString("dd MMM") – @to.ToString("dd MMM")</div>
+        <div class="caption">@Model.BranchName</div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+    <!-- Daily Revenue -->
+    <div class="card">
+        <div class="card-header">Revenue by Day</div>
+        <div class="card-body">
+            @if (daily.Any())
+            {
+                decimal maxRev = daily.Max(d => (decimal)d.Revenue);
+                if (maxRev <= 0) { maxRev = 1; }
+                @foreach (var d in daily)
+                {
+                    decimal r = (decimal)d.Revenue;
+                    int pct = (int)Math.Round(r / maxRev * 100m);
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">
+                        <span style="width:60px;font-size:0.72rem;color:var(--text-tertiary);">@(((DateTime)d.Date).ToString("dd MMM"))</span>
+                        <div style="flex:1;height:8px;background:var(--bg-body);border-radius:4px;overflow:hidden;">
+                            <div style="height:100%;width:@(pct)%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:4px;"></div>
+                        </div>
+                        <span style="width:64px;text-align:right;font-size:0.72rem;font-weight:600;">@FormatCurrency(r)</span>
+                    </div>
                 }
             }
-        }
-    </script>
-</head>
-<body class="bg-slate-100 text-slate-900 min-h-screen antialiased">
-
-    <!-- Top bar -->
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="relative w-10 h-10">
-                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-pink-500 via-violet-500 to-cyan-400 blur-sm opacity-80"></div>
-                    <div class="relative w-full h-full rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm">
-                        📊
-                    </div>
-                </div>
-                <div>
-                    <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400">
-                        Cafe OS
-                    </p>
-                    <h1 class="text-sm sm:text-base font-semibold tracking-wide text-slate-900">
-                        Sales Overview
-                    </h1>
-                </div>
-            </div>
-
-            <a href="@Url.Action("Index", "Reports")"
-               class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-slate-50 text-xs sm:text-[13px] font-medium px-3 py-1.5 shadow-sm hover:bg-slate-800 transition">
-                ⬅ Reports
-            </a>
+            else
+            {
+                <p class="caption">No data for this range.</p>
+            }
         </div>
-    </header>
+    </div>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
-
-        <!-- Filters -->
-        <section class="rounded-3xl bg-white/95 border border-slate-200 shadow-[0_16px_40px_rgba(15,23,42,0.12)] p-4 sm:p-6 lg:p-7 space-y-4">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div class="space-y-1">
-                    <p class="text-xs font-semibold tracking-[0.2em] uppercase text-slate-500">
-                        Filters
-                    </p>
-                </div>
-
-                <form method="get" class="w-full lg:w-auto flex flex-col sm:flex-row gap-3 sm:items-end">
-                    <!-- Date range -->
-                    <div class="flex gap-3 w-full sm:w-auto">
-                        <div>
-                            <label class="block text-[11px] font-medium text-slate-500 mb-1 uppercase tracking-[0.16em]">
-                                From
-                            </label>
-                            <input type="date"
-                                   name="from"
-                                   value="@from.ToString("yyyy-MM-dd")"
-                                   class="w-full sm:w-44 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500/60 focus:border-pink-400/60" />
+    <!-- Branch Revenue -->
+    <div class="card">
+        <div class="card-header">Revenue by Branch</div>
+        <div class="card-body">
+            @if (branchRevenue.Any())
+            {
+                decimal maxBR = branchRevenue.Max(b => (decimal)b.Revenue);
+                if (maxBR <= 0) { maxBR = 1; }
+                @foreach (var b in branchRevenue)
+                {
+                    decimal r = (decimal)b.Revenue;
+                    int pct = (int)Math.Round(r / maxBR * 100m);
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">
+                        <span style="width:90px;font-size:0.72rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@(((Cafe.Models.Branch)b.Branch).Name)</span>
+                        <div style="flex:1;height:8px;background:var(--bg-body);border-radius:4px;overflow:hidden;">
+                            <div style="height:100%;width:@(pct)%;background:linear-gradient(90deg,#ec4899,#8b5cf6);border-radius:4px;"></div>
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-medium text-slate-500 mb-1 uppercase tracking-[0.16em]">
-                                To
-                            </label>
-                            <input type="date"
-                                   name="to"
-                                   value="@to.ToString("yyyy-MM-dd")"
-                                   class="w-full sm:w-44 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500/60 focus:border-pink-400/60" />
+                        <span style="width:64px;text-align:right;font-size:0.72rem;font-weight:600;">@FormatCurrency(r)</span>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="caption">No branch data for this range.</p>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Status + Top Items Row -->
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:1.25rem;margin-bottom:1.5rem;">
+    <!-- Status Breakdown -->
+    <div class="card">
+        <div class="card-header">Orders by Status</div>
+        <div class="card-body">
+            @if (statusBreakdown.Any())
+            {
+                int totalSt = statusBreakdown.Sum(s => (int)s.Count);
+                if (totalSt == 0) { totalSt = 1; }
+                @foreach (var s in statusBreakdown)
+                {
+                    int cnt = (int)s.Count;
+                    int share = (int)Math.Round(cnt / (decimal)totalSt * 100m);
+                    string badgeCls = ((string)s.Status) switch
+                    {
+                        "Completed" => "badge-success",
+                        "Pending" => "badge-warning",
+                        "Preparing" => "badge-info",
+                        "Ready" => "badge-accent",
+                        "Cancelled" => "badge-danger",
+                        _ => "badge-neutral"
+                    };
+                    <div style="margin-bottom:0.6rem;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.2rem;">
+                            <span class="badge @badgeCls">@s.Status</span>
+                            <span class="caption">@cnt orders · @share%</span>
+                        </div>
+                        <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
+                            <div style="height:100%;width:@(share)%;background:linear-gradient(90deg,#ec4899,#8b5cf6);border-radius:3px;"></div>
                         </div>
                     </div>
-
-                    <!-- Branch -->
-                    <div class="sm:w-52">
-                        <label class="block text-[11px] font-medium text-slate-500 mb-1 uppercase tracking-[0.16em]">
-                            Branch
-                        </label>
-                        <select name="branchId"
-                                class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500/60 focus:border-pink-400/60">
-                            <option value="">All branches</option>
-                            @foreach (var b in branches)
-                            {
-                                var isSelected = selectedBranchId == b.Id;
-                                <option value="@b.Id" selected="@(isSelected ? "selected" : null)">
-                                    @b.Name
-                                </option>
-                            }
-                        </select>
-                    </div>
-
-                    <div class="flex gap-2 sm:gap-3">
-                        <button type="submit"
-                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-violet-500 text-white text-xs sm:text-sm font-semibold shadow-md shadow-pink-400/40 hover:-translate-y-0.5 hover:shadow-lg transition">
-                            🔍 Apply
-                        </button>
-                        <a href="@Url.Action("SalesOverview", "Reports")"
-                           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs sm:text-sm font-medium border border-slate-200 hover:bg-slate-200 transition">
-                            Reset
-                        </a>
-                        <a href="@Url.Action("ExportSalesCsv", "Reports", new { from = from.ToString("yyyy-MM-dd"), to = to.ToString("yyyy-MM-dd"), branchId = selectedBranchId })"
-                           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs sm:text-sm font-medium border border-emerald-200 hover:bg-emerald-100 transition">
-                            📥 Export CSV
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <!-- Summary cards -->
-        <section class="grid md:grid-cols-4 gap-4 sm:gap-5">
-            <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-[11px] text-slate-500 uppercase tracking-[0.2em]">Revenue</p>
-                    <span class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 text-sm">
-                        💰
-                    </span>
-                </div>
-                <p class="text-2xl sm:text-3xl font-bold text-slate-900 leading-none">
-                    @FormatCurrency(Model.TotalRevenue)
-                </p>
-            </div>
-
-            <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-[11px] text-slate-500 uppercase tracking-[0.2em]">Completed orders</p>
-                    <span class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-blue-50 text-blue-600 text-sm">
-                        🧾
-                    </span>
-                </div>
-                <p class="text-2xl sm:text-3xl font-bold text-slate-900 leading-none">
-                    @Model.TotalOrders
-                </p>
-            </div>
-
-            <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-[11px] text-slate-500 uppercase tracking-[0.2em]">Avg ticket</p>
-                    <span class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-sky-50 text-sky-600 text-sm">
-                        📈
-                    </span>
-                </div>
-                <p class="text-2xl sm:text-3xl font-bold text-slate-900 leading-none">
-                    @FormatCurrency(Model.AverageOrderValue)
-                </p>
-            </div>
-
-            <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-[11px] text-slate-500 uppercase tracking-[0.2em]">Scope</p>
-                    <span class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-violet-50 text-violet-600 text-sm">
-                        📅
-                    </span>
-                </div>
-                <p class="text-sm font-semibold text-slate-900 leading-snug">
-                    @from.ToString("dd MMM yyyy") – @to.ToString("dd MMM yyyy")
-                </p>
-                <p class="mt-1 text-[11px] text-slate-500">
-                    Branch: <span class="font-medium">@Model.BranchName</span>
-                </p>
-            </div>
-        </section>
-
-        <!-- Analytics: daily + branch -->
-        <section class="grid lg:grid-cols-2 gap-6">
-            <!-- Daily revenue -->
-            <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 sm:p-5">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-semibold text-slate-900">
-                        Revenue by day
-                    </h2>
-                </div>
-
-                @if (daily.Any())
-                {
-                    decimal maxRevenue = daily.Max(d => (decimal)d.Revenue);
-                    if (maxRevenue <= 0) maxRevenue = 1;
-
-                    <div class="space-y-2 mt-2">
-                        @foreach (var d in daily)
-                        {
-                            decimal r = (decimal)d.Revenue;
-                            int pct = (int)Math.Round(r / maxRevenue * 100m);
-                            <div class="flex items-center gap-3">
-                                <div class="w-24 text-[11px] text-slate-500">
-                                    @(((DateTime)d.Date).ToString("dd MMM"))
-                                </div>
-                                <div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
-                                         style="width:@pct%;"></div>
-                                </div>
-                                <div class="w-24 text-right text-[11px] text-slate-600">
-                                    @FormatCurrency(r)
-                                </div>
-                            </div>
-                        }
-                    </div>
                 }
-                else
-                {
-                    <p class="text-xs text-slate-500 mt-2">No data for this range.</p>
-                }
-            </div>
+            }
+            else
+            {
+                <p class="caption">No orders for this range.</p>
+            }
+        </div>
+    </div>
 
-            <!-- Revenue by branch -->
-            <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 sm:p-5">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-semibold text-slate-900">
-                        Revenue by branch
-                    </h2>
-                </div>
-
-                @if (branchRevenue.Any())
-                {
-                    decimal maxBranchRev = branchRevenue.Max(b => (decimal)b.Revenue);
-                    if (maxBranchRev <= 0) maxBranchRev = 1;
-
-                    <div class="space-y-2 mt-2">
-                        @foreach (var b in branchRevenue)
-                        {
-                            decimal r = (decimal)b.Revenue;
-                            int pct = (int)Math.Round(r / maxBranchRev * 100m);
-                            <div class="flex items-center gap-3">
-                                <div class="w-32 text-[11px] text-slate-600 truncate">
-                                    @(((Cafe.Models.Branch)b.Branch).Name)
-                                </div>
-                                <div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-pink-400 to-violet-500"
-                                         style="width:@pct%;"></div>
-                                </div>
-                                <div class="w-20 text-right text-[11px] text-slate-600">
-                                    @FormatCurrency(r)
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <p class="text-xs text-slate-500 mt-2">No branch breakdown for this range.</p>
-                }
-            </div>
-        </section>
-
-        <!-- Status + top items -->
-        <section class="grid lg:grid-cols-3 gap-6">
-            <!-- Status chart -->
-            <div class="lg:col-span-1 rounded-3xl bg-white border border-slate-200 shadow-sm p-4 sm:p-5">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-semibold text-slate-900">
-                        Orders by status
-                    </h2>
-                </div>
-
-                @if (statusBreakdown.Any())
-                {
-                    int totalStatus = statusBreakdown.Sum(s => (int)s.Count);
-                    if (totalStatus == 0) totalStatus = 1;
-
-                    <div class="space-y-2 mt-2">
-                        @foreach (var s in statusBreakdown)
-                        {
-                            int count = (int)s.Count;
-                            decimal rev = (decimal)s.Revenue;
-                            int share = (int)Math.Round(count / (decimal)totalStatus * 100m);
-
-                            string chipColor = ((string)s.Status) switch
-                            {
-                                "Completed" => "bg-emerald-50 text-emerald-700 border-emerald-200",
-                                "Pending" => "bg-amber-50 text-amber-700 border-amber-200",
-                                "Preparing" => "bg-sky-50 text-sky-700 border-sky-200",
-                                "Ready" => "bg-indigo-50 text-indigo-700 border-indigo-200",
-                                "Cancelled" => "bg-rose-50 text-rose-700 border-rose-200",
-                                _ => "bg-slate-50 text-slate-700 border-slate-200"
-                            };
-
-                            <div class="space-y-1">
-                                <div class="flex items-center justify-between">
-                                    <span class="inline-flex items-center rounded-full px-2.5 py-1 border text-[11px] font-medium @chipColor">
-                                        @s.Status
-                                    </span>
-                                    <span class="text-[11px] text-slate-500">
-                                        @count orders · @share%
-                                    </span>
-                                </div>
-                                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-pink-400 to-violet-400"
-                                         style="width:@share%;"></div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <p class="text-xs text-slate-500 mt-2">No orders for this range.</p>
-                }
-            </div>
-
-            <!-- Top items -->
-            <div class="lg:col-span-2 rounded-3xl bg-white border border-slate-200 shadow-sm p-4 sm:p-5">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-semibold text-slate-900">
-                        Top items by revenue
-                    </h2>
-                </div>
-
-                @if (topItems.Any())
-                {
-                    decimal maxItemRev = topItems.Max(t => (decimal)t.Rev);
-                    if (maxItemRev <= 0) maxItemRev = 1;
-                    int rank = 1;
-
-                    <div class="grid sm:grid-cols-2 gap-3 mt-1">
-                        @foreach (var item in topItems)
-                        {
-                            decimal r = (decimal)item.Rev;
-                            int pct = (int)Math.Round(r / maxItemRev * 100m);
-                            <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 flex flex-col gap-1">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white text-[11px]">
-                                            @rank
-                                        </span>
-                                        <div>
-                                            <p class="text-xs font-semibold text-slate-900 line-clamp-1">
-                                                @item.ItemName
-                                            </p>
-                                            <p class="text-[11px] text-slate-500">
-                                                @item.Category
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="text-right text-[11px]">
-                                        <p class="font-semibold text-slate-900">@FormatCurrency(r)</p>
-                                        <p class="text-slate-500">@item.Qty sold</p>
+    <!-- Top Items -->
+    <div class="card">
+        <div class="card-header">Top Items by Revenue</div>
+        <div class="card-body">
+            @if (topItems.Any())
+            {
+                decimal maxIR = topItems.Max(t => (decimal)t.Rev);
+                if (maxIR <= 0) { maxIR = 1; }
+                int rank = 1;
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                    @foreach (var item in topItems)
+                    {
+                        decimal r = (decimal)item.Rev;
+                        int pct = (int)Math.Round(r / maxIR * 100m);
+                        <div style="padding:0.75rem;border:1px solid var(--border-light);border-radius:12px;background:var(--bg-body);">
+                            <div style="display:flex;align-items:center;justify-content:space-between;">
+                                <div style="display:flex;align-items:center;gap:0.5rem;">
+                                    <span style="width:24px;height:24px;border-radius:50%;background:var(--sidebar-bg);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;">@rank</span>
+                                    <div>
+                                        <div style="font-size:0.78rem;font-weight:600;">@item.ItemName</div>
+                                        <div style="font-size:0.68rem;color:var(--text-tertiary);">@item.Category</div>
                                     </div>
                                 </div>
-                                <div class="mt-1.5 h-1.5 rounded-full bg-white overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
-                                         style="width:@pct%;"></div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:0.78rem;font-weight:700;">@FormatCurrency(r)</div>
+                                    <div style="font-size:0.68rem;color:var(--text-tertiary);">@item.Qty sold</div>
                                 </div>
                             </div>
-                            rank++;
-                        }
-                    </div>
-                }
-                else
-                {
-                    <p class="text-xs text-slate-500 mt-2">No item breakdown for this range.</p>
-                }
-            </div>
-        </section>
-
-        <!-- Orders table (detail) -->
-        <section class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 sm:p-6 space-y-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-sm font-semibold text-slate-900">
-                        Orders detail
-                    </h2>
-                    <p class="text-xs text-slate-500">
-                        Latest @Model.Orders.Count order(s) in this scope
-                    </p>
+                            <div style="margin-top:0.5rem;height:5px;background:#fff;border-radius:3px;overflow:hidden;">
+                                <div style="height:100%;width:@(pct)%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:3px;"></div>
+                            </div>
+                        </div>
+                        rank++;
+                    }
                 </div>
-            </div>
+            }
+            else
+            {
+                <p class="caption">No items for this range.</p>
+            }
+        </div>
+    </div>
+</div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-xs sm:text-sm">
-                    <thead>
-                        <tr class="text-left text-[11px] uppercase tracking-[0.16em] text-slate-500 border-b border-slate-200">
-                            <th class="py-2 pr-4">Order #</th>
-                            <th class="py-2 pr-4">Date</th>
-                            <th class="py-2 pr-4">Customer</th>
-                            <th class="py-2 pr-4">Branch</th>
-                            <th class="py-2 pr-4 text-right">Total</th>
-                            <th class="py-2 pr-4">Status</th>
+<!-- Orders Detail Table -->
+<div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>Orders Detail</span>
+        <span class="caption">@Model.Orders.Count order(s)</span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Branch</th>
+                    <th style="text-align:right;">Total</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Orders.Any())
+                {
+                    @foreach (var o in Model.Orders)
+                    {
+                        string badgeCls = o.Status switch
+                        {
+                            "Completed" => "badge-success",
+                            "Pending" => "badge-warning",
+                            "Preparing" => "badge-info",
+                            "Ready" => "badge-accent",
+                            "Cancelled" => "badge-danger",
+                            _ => "badge-neutral"
+                        };
+                        <tr>
+                            <td style="font-weight:600;">@o.OrderNumber</td>
+                            <td>@o.OrderDate.ToString("dd MMM yyyy HH:mm")</td>
+                            <td>@o.Customer?.Name</td>
+                            <td>@o.Branch?.Name</td>
+                            <td style="text-align:right;font-weight:600;">@FormatCurrency(o.TotalAmount)</td>
+                            <td><span class="badge @badgeCls">@o.Status</span></td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @if (Model.Orders.Any())
-                        {
-                            @foreach (var o in Model.Orders)
-                            {
-                                string statusColor = o.Status switch
-                                {
-                                    "Completed" => "bg-emerald-50 text-emerald-700 border-emerald-200",
-                                    "Pending" => "bg-amber-50 text-amber-700 border-amber-200",
-                                    "Preparing" => "bg-sky-50 text-sky-700 border-sky-200",
-                                    "Ready" => "bg-indigo-50 text-indigo-700 border-indigo-200",
-                                    "Cancelled" => "bg-rose-50 text-rose-700 border-rose-200",
-                                    _ => "bg-slate-50 text-slate-700 border-slate-200"
-                                };
-
-                                <tr>
-                                    <td class="py-3 pr-4 text-slate-900">
-                                        @o.OrderNumber
-                                    </td>
-                                    <td class="py-3 pr-4 text-slate-600">
-                                        @o.OrderDate.ToString("dd MMM yyyy HH:mm")
-                                    </td>
-                                    <td class="py-3 pr-4 text-slate-700">
-                                        @o.Customer?.Name
-                                    </td>
-                                    <td class="py-3 pr-4 text-slate-700">
-                                        @o.Branch?.Name
-                                    </td>
-                                    <td class="py-3 pr-4 text-right text-slate-900 font-semibold">
-                                        @FormatCurrency(o.TotalAmount)
-                                    </td>
-                                    <td class="py-3 pr-4">
-                                        <span class="inline-flex items-center rounded-full px-2.5 py-1 border text-[11px] font-medium @statusColor">
-                                            @o.Status
-                                        </span>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="6" class="py-5 text-xs text-slate-500">
-                                    No orders found for this date range / branch.
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-    </main>
-</body>
-</html>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-tertiary);">No orders found for this range.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

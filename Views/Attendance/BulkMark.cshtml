@@ -3,42 +3,43 @@
     ViewData["Title"] = "Bulk Mark Attendance";
 }
 
-<div class="flex items-center mb-6">
-    <a asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
-        <i class="fas fa-arrow-left text-xl"></i>
-    </a>
-    <h1 class="text-2xl font-bold text-gray-800">Bulk Mark Attendance</h1>
+<!-- Header -->
+<div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+    <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+    <h1 class="page-title" style="margin:0;">Bulk Mark Attendance</h1>
 </div>
 
 <!-- Info Banner -->
-<div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-    <p class="text-sm text-blue-800">
-        <i class="fas fa-info-circle mr-1"></i>
-        Status is <strong>auto-calculated</strong> from check-in/check-out times.
-        Leave both times empty to mark as Absent.
-    </p>
+<div class="card" style="border-left:4px solid var(--accent); margin-bottom:1.5rem;">
+    <div class="card-body" style="padding:1rem 1.25rem;">
+        <p class="caption" style="margin:0;">
+            <i class="fas fa-info-circle" style="color:var(--accent); margin-right:0.5rem;"></i>
+            Status is <strong>auto-calculated</strong> from check-in/check-out times.
+            Leave both times empty to mark as Absent.
+        </p>
+    </div>
 </div>
 
-<!-- Branch/Date Selection -->
-<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-    <form method="get" class="flex gap-4 items-end">
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
-            <select name="branchId" class="border rounded-lg px-3 py-2">
-                @foreach (var b in (List<Cafe.Models.Branch>)ViewBag.Branches)
-                {
-                    <option value="@b.Id" selected="@(b.Id == Model.BranchId)">@b.Name</option>
-                }
-            </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input type="date" name="date" value="@Model.Date.ToString("yyyy-MM-dd")" class="border rounded-lg px-3 py-2" />
-        </div>
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-            <i class="fas fa-sync mr-1"></i> Load
-        </button>
-    </form>
+<!-- Branch/Date Selector -->
+<div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-body">
+        <form method="get" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Branch</label>
+                <select name="branchId" class="form-select">
+                    @foreach (var b in (List<Cafe.Models.Branch>)ViewBag.Branches)
+                    {
+                        <option value="@b.Id" selected="@(b.Id == Model.BranchId)">@b.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Date</label>
+                <input type="date" name="date" value="@Model.Date.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-secondary"><i class="fas fa-sync" style="margin-right:0.5rem;"></i> Load</button>
+        </form>
+    </div>
 </div>
 
 <!-- Bulk Form -->
@@ -47,59 +48,59 @@
     <input type="hidden" name="BranchId" value="@Model.BranchId" />
     <input type="hidden" name="Date" value="@Model.Date.ToString("yyyy-MM-dd")" />
 
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check In</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check Out</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">State</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @for (int i = 0; i < Model.Entries.Count; i++)
-                {
-                    var entry = Model.Entries[i];
-                    <tr class="@(entry.AlreadyMarked ? "bg-gray-50 opacity-60" : "")">
-                        <td class="px-6 py-3 text-sm font-medium text-gray-800">
-                            @entry.StaffName
-                            <input type="hidden" name="Entries[@i].StaffId" value="@entry.StaffId" />
-                            <input type="hidden" name="Entries[@i].StaffName" value="@entry.StaffName" />
-                            <input type="hidden" name="Entries[@i].AlreadyMarked" value="@entry.AlreadyMarked" />
-                        </td>
-                        <td class="px-6 py-3">
-                            <input type="time" name="Entries[@i].CheckInTime" value="@entry.CheckInTime?.ToString(@"hh\:mm")" class="border rounded px-2 py-1 text-sm w-28" @(entry.AlreadyMarked ? "disabled" : "") />
-                        </td>
-                        <td class="px-6 py-3">
-                            <input type="time" name="Entries[@i].CheckOutTime" value="@entry.CheckOutTime?.ToString(@"hh\:mm")" class="border rounded px-2 py-1 text-sm w-28" @(entry.AlreadyMarked ? "disabled" : "") />
-                        </td>
-                        <td class="px-6 py-3">
-                            <input type="text" name="Entries[@i].Notes" value="@entry.Notes" class="border rounded px-2 py-1 text-sm w-40" placeholder="Notes..." @(entry.AlreadyMarked ? "disabled" : "") />
-                        </td>
-                        <td class="px-6 py-3">
-                            @if (entry.AlreadyMarked)
-                            {
-                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                                    @entry.Status
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <div class="card">
+        <div class="card-body" style="padding:0;">
+            <div style="overflow-x:auto;">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Staff</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Notes</th>
+                            <th>State</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Entries.Count; i++)
+                        {
+                            var entry = Model.Entries[i];
+                            <tr style="@(entry.AlreadyMarked ? "opacity:0.5;" : "")">
+                                <td style="font-weight:500;">
+                                    @entry.StaffName
+                                    <input type="hidden" name="Entries[@i].StaffId" value="@entry.StaffId" />
+                                    <input type="hidden" name="Entries[@i].StaffName" value="@entry.StaffName" />
+                                    <input type="hidden" name="Entries[@i].AlreadyMarked" value="@entry.AlreadyMarked" />
+                                </td>
+                                <td>
+                                    <input type="time" name="Entries[@i].CheckInTime" value="@entry.CheckInTime?.ToString(@"hh\:mm")" class="form-control" style="width:120px;" @(entry.AlreadyMarked ? "disabled" : "") />
+                                </td>
+                                <td>
+                                    <input type="time" name="Entries[@i].CheckOutTime" value="@entry.CheckOutTime?.ToString(@"hh\:mm")" class="form-control" style="width:120px;" @(entry.AlreadyMarked ? "disabled" : "") />
+                                </td>
+                                <td>
+                                    <input type="text" name="Entries[@i].Notes" value="@entry.Notes" class="form-control" style="width:160px;" placeholder="Notes..." @(entry.AlreadyMarked ? "disabled" : "") />
+                                </td>
+                                <td>
+                                    @if (entry.AlreadyMarked)
+                                    {
+                                        <span class="badge badge-success">@entry.Status</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-warning">Pending</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <div class="mt-6 flex justify-end gap-3">
-        <a asp-action="Index" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</a>
-        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
-            <i class="fas fa-save mr-2"></i> Save All Attendance
-        </button>
+    <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.5rem;">
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:0.5rem;"></i> Save All Attendance</button>
     </div>
 </form>

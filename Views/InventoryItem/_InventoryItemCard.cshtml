@@ -1,113 +1,63 @@
 ﻿@model Cafe.Models.InventoryItem
-
 @{
     string stockStatus;
     if (Model.Quantity == 0) stockStatus = "critical";
     else if (Model.Quantity <= Model.ReorderLevel) stockStatus = "low";
     else stockStatus = "normal";
 
-    var statusLabel = stockStatus == "critical"
-        ? "Out of Stock"
-        : stockStatus == "low"
-            ? "Low Stock"
-            : "In Stock";
-
-    var statusBg = stockStatus == "critical"
-        ? "bg-red-50 border-red-200 text-red-700"
-        : stockStatus == "low"
-            ? "bg-amber-50 border-amber-200 text-amber-700"
-            : "bg-emerald-50 border-emerald-200 text-emerald-700";
-
-    var statusDot = stockStatus == "critical"
-        ? "bg-red-500"
-        : stockStatus == "low"
-            ? "bg-amber-500"
-            : "bg-emerald-500";
+    var statusLabel = stockStatus == "critical" ? "Out of Stock" : stockStatus == "low" ? "Low Stock" : "In Stock";
+    var badgeClass = stockStatus == "critical" ? "badge badge-danger" : stockStatus == "low" ? "badge badge-warning" : "badge badge-success";
 }
 
-<div class="inventory-card rounded-2xl shadow-md border border-slate-200 bg-white/90 p-4 flex flex-col h-full relative overflow-hidden"
-     data-name="@Model.Name.ToLower()"
-     data-stock-status="@stockStatus">
-
-    <!-- soft background accent -->
-    <div class="pointer-events-none absolute -right-8 -top-8 w-24 h-24 rounded-full bg-sky-100"></div>
-
-    <div class="relative flex flex-col h-full">
+<div class="inventory-card card" style="height:100%;display:flex;flex-direction:column;"
+     data-name="@Model.Name.ToLower()" data-stock-status="@stockStatus">
+    <div class="card-body" style="flex:1;display:flex;flex-direction:column;padding:1rem;">
         <!-- Header -->
-        <div class="flex items-start justify-between gap-2 mb-2.5">
-            <div>
-                <h4 class="text-sm font-semibold text-slate-900 line-clamp-1">
-                    @Model.Name
-                </h4>
-                <p class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
-                    <span class="text-xs">🏢</span>
-                    @Model.Branch?.Name
-                </p>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-bottom:0.75rem;">
+            <div style="min-width:0;">
+                <h4 style="font-weight:600;font-size:0.9rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@Model.Name</h4>
+                <p class="caption" style="margin-top:0.15rem;"><i class="fas fa-building" style="font-size:0.6rem;margin-right:0.25rem;"></i> @Model.Branch?.Name</p>
             </div>
-
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-medium @statusBg">
-                <span class="w-1.5 h-1.5 rounded-full mr-1.5 @statusDot"></span>
-                @statusLabel
-            </span>
+            <span class="@badgeClass" style="white-space:nowrap;">@statusLabel</span>
         </div>
 
         <!-- Metrics -->
-        <div class="mt-2 mb-3 grid grid-cols-3 gap-2 text-center">
-            <div class="rounded-xl bg-slate-50 border border-slate-200 p-2.5">
-                <p class="text-[10px] text-slate-500 uppercase tracking-wide">Qty</p>
-                <p class="text-sm font-semibold text-slate-900">
-                    @Model.Quantity.ToString("0.##")
-                </p>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.75rem;">
+            <div style="text-align:center;padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
+                <span class="caption" style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;">Qty</span>
+                <p style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">@Model.Quantity.ToString("0.##")</p>
             </div>
-            <div class="rounded-xl bg-slate-50 border border-slate-200 p-2.5">
-                <p class="text-[10px] text-slate-500 uppercase tracking-wide">Unit</p>
-                <p class="text-sm font-semibold text-slate-900">
-                    @Model.Unit
-                </p>
+            <div style="text-align:center;padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
+                <span class="caption" style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;">Unit</span>
+                <p style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">@Model.Unit</p>
             </div>
-            <div class="rounded-xl bg-gradient-to-br from-sky-50 to-emerald-50 border border-sky-200 p-2.5">
-                <p class="text-[10px] text-sky-700 uppercase tracking-wide">Value</p>
-                <p class="text-sm font-semibold text-sky-900">
-                    @("$" + (Model.Quantity * Model.UnitPrice).ToString("N2"))
-                </p>
+            <div style="text-align:center;padding:0.5rem;background:var(--accent-light);border-radius:10px;border:1px solid rgba(212,175,55,0.2);">
+                <span class="caption" style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);">Value</span>
+                <p style="font-weight:600;font-size:0.85rem;color:var(--accent);">$@((Model.Quantity * Model.UnitPrice).ToString("N2"))</p>
             </div>
         </div>
 
         <!-- Reorder / Price -->
-        <div class="flex items-center justify-between text-[11px] mb-3">
-            <span class="text-slate-500">
-                Reorder at
-                <span class="font-semibold text-slate-900">
-                    @Model.ReorderLevel.ToString("0.##")
-                </span>
-            </span>
-            <span class="text-slate-500">
-                Price:
-                <span class="font-semibold text-slate-900">
-                    @("$" + Model.UnitPrice.ToString("N2"))
-                </span>
-            </span>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-tertiary);margin-bottom:0.75rem;">
+            <span>Reorder at <strong style="color:var(--text-primary);">@Model.ReorderLevel.ToString("0.##")</strong></span>
+            <span>Price: <strong style="color:var(--text-primary);">$@Model.UnitPrice.ToString("N2")</strong></span>
         </div>
 
-        <div class="border-t border-slate-200 my-2"></div>
+        <div class="divider" style="margin:0;"></div>
 
         <!-- Actions -->
-        <div class="mt-auto flex items-center justify-between pt-1 gap-2">
+        <div style="margin-top:auto;padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center;">
             <button type="button"
                     onclick="openRestockModal('@Model.Id', '@Model.Name.Replace("'", "\\'")', '@Model.Unit')"
-                    class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors">
-                <span class="mr-1.5">➕</span>
-                Restock
+                    class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;">
+                <i class="fas fa-plus"></i> Restock
             </button>
-
-            <div class="flex items-center gap-2">
-                <a href="@Url.Action("Edit", "InventoryItem", new { id = Model.Id })"
-                   class="inline-flex items-center justify-center w-8 h-8 rounded-xl border border-slate-200 text-slate-500 bg-white hover:bg-slate-50 hover:text-slate-800 text-xs shadow-sm transition-colors">
-                    ✏️
+            <div style="display:flex;gap:0.4rem;">
+                <a href="@Url.Action("Edit", "InventoryItem", new { id = Model.Id })" class="btn btn-ghost btn-sm" title="Edit">
+                    <i class="fas fa-edit"></i>
                 </a>
-                <a href="@Url.Action("Delete", "InventoryItem", new { id = Model.Id })"
-                   class="inline-flex items-center justify-center w-8 h-8 rounded-xl border border-rose-200 text-rose-500 bg-rose-50 hover:bg-rose-100 hover:text-rose-700 text-xs shadow-sm transition-colors">
-                    🗑
+                <a href="@Url.Action("Delete", "InventoryItem", new { id = Model.Id })" class="btn btn-ghost btn-sm" style="color:#dc2626;" title="Delete">
+                    <i class="fas fa-trash"></i>
                 </a>
             </div>
         </div>

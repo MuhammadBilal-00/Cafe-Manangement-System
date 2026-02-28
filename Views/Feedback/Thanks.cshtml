@@ -1,32 +1,30 @@
-﻿@{
+@{
     ViewData["Title"] = "Thank You";
 }
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>@ViewData["Title"] - Cafe OS</title>
+    <title>@ViewData["Title"] - Cafe</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Inter',system-ui,sans-serif;background:#f5f3f0;color:#1a1a2e;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+        .thanks-card{max-width:400px;width:100%;background:#fff;border-radius:20px;padding:2.5rem 2rem;box-shadow:0 20px 60px rgba(0,0,0,0.08);border:1px solid #e8e5e0;text-align:center;}
+        .icon-wrap{width:56px;height:56px;background:#dcfce7;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin:0 auto 1.25rem;}
+        h1{font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;}
+        p{font-size:0.85rem;color:#6b7280;line-height:1.6;margin-bottom:1.5rem;}
+        .btn-home{display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.5rem;border-radius:12px;background:#1e2a3a;color:#fff;text-decoration:none;font-size:0.85rem;font-weight:600;transition:all 0.15s;}
+        .btn-home:hover{background:#2d3f54;transform:translateY(-1px);}
+    </style>
 </head>
-<body class="bg-slate-100 text-slate-900 min-h-screen antialiased">
-    <main class="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-        <section class="rounded-3xl bg-white border border-slate-200 shadow-[0_16px_40px_rgba(15,23,42,0.12)] p-6 sm:p-8 text-center space-y-4">
-            <div class="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-emerald-50 text-2xl">
-                ✅
-            </div>
-            <h1 class="text-lg font-semibold text-slate-900">
-                Thank you for your feedback
-            </h1>
-            <p class="text-xs text-slate-500">
-                We’ve received your feedback and will use it to improve our service.
-            </p>
-            <a href="@Url.Action("Index", "Home")"
-               class="inline-flex items-center justify-center mt-3 rounded-full bg-slate-900 text-slate-50 text-xs sm:text-[13px] font-medium px-4 py-2 shadow-sm hover:bg-slate-800 transition">
-                Back to home
-            </a>
-        </section>
-    </main>
+<body>
+    <div class="thanks-card">
+        <div class="icon-wrap">✅</div>
+        <h1>Thank You!</h1>
+        <p>We've received your feedback and will use it to improve our service. Your opinion matters to us.</p>
+        <a href="@Url.Action("Index", "Home")" class="btn-home">Back to Home</a>
+    </div>
 </body>
 </html>

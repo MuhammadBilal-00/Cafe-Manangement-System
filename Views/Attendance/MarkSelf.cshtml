@@ -3,53 +3,51 @@
     ViewData["Title"] = "Clock In";
 }
 
-<div class="max-w-lg mx-auto">
-    <div class="flex items-center mb-6">
-        <a asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
-            <i class="fas fa-arrow-left text-xl"></i>
-        </a>
-        <h1 class="text-2xl font-bold text-gray-800">Clock In</h1>
+<div style="max-width:520px; margin:0 auto;">
+    <!-- Header -->
+    <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+        <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title" style="margin:0;">Clock In</h1>
     </div>
 
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="text-center mb-6">
-            <div class="text-4xl text-blue-600 mb-2">
-                <i class="fas fa-sign-in-alt"></i>
+    <div class="card">
+        <div class="card-body" style="text-align:center;">
+            <!-- Clock Icon -->
+            <div style="width:72px; height:72px; border-radius:50%; background:rgba(34,197,94,0.1); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                <i class="fas fa-sign-in-alt" style="font-size:1.75rem; color:#16a34a;"></i>
             </div>
-            <p class="text-gray-600">Today: @DateTime.Today.ToString("dddd, dd MMMM yyyy")</p>
-        </div>
+            <p class="body-text" style="margin-bottom:1.5rem;">@DateTime.Today.ToString("dddd, dd MMMM yyyy")</p>
 
-        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p class="text-sm text-blue-800">
-                <i class="fas fa-info-circle mr-1"></i>
-                Your status will be <strong>automatically calculated</strong> when you clock out.
-                Late is detected if you clock in more than 15 minutes after your shift starts.
-            </p>
-        </div>
-
-        <form asp-action="MarkSelf" method="post">
-            @Html.AntiForgeryToken()
-
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Check In Time</label>
-                    <input type="time" name="CheckInTime" value="@DateTime.Now.ToString("HH:mm")" class="w-full border rounded-lg px-3 py-2" />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                    <textarea name="Notes" rows="2" class="w-full border rounded-lg px-3 py-2" placeholder="Optional notes..."></textarea>
-                </div>
+            <!-- Info -->
+            <div style="background:var(--bg-body); border-radius:var(--radius-card); padding:1rem; margin-bottom:1.5rem; text-align:left;">
+                <p class="caption" style="margin:0;">
+                    <i class="fas fa-info-circle" style="color:var(--accent); margin-right:0.5rem;"></i>
+                    Your status will be <strong>automatically calculated</strong> when you clock out.
+                    Late is detected if you clock in more than 15 minutes after your shift starts.
+                </p>
             </div>
 
-            <div class="mt-6">
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg text-lg font-medium">
-                    <i class="fas fa-sign-in-alt mr-2"></i> Clock In
+            <form asp-action="MarkSelf" method="post" style="text-align:left;">
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    <label class="form-label">Check In Time</label>
+                    <input type="time" name="CheckInTime" value="@DateTime.Now.ToString("HH:mm")" class="form-control" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea name="Notes" rows="2" class="form-control" placeholder="Optional notes..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%; padding:0.875rem; font-size:1.1rem; margin-top:0.5rem;">
+                    <i class="fas fa-sign-in-alt" style="margin-right:0.5rem;"></i> Clock In
                 </button>
-            </div>
 
-            <p class="mt-4 text-center text-sm text-gray-500">
-                Remember to <a asp-action="ClockOut" class="text-blue-600 hover:underline">Clock Out</a> when your shift ends.
-            </p>
-        </form>
+                <p class="caption" style="text-align:center; margin-top:1rem;">
+                    Remember to <a asp-action="ClockOut" style="color:var(--accent); text-decoration:underline;">Clock Out</a> when your shift ends.
+                </p>
+            </form>
+        </div>
     </div>
 </div>

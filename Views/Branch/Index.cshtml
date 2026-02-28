@@ -1,181 +1,145 @@
 ﻿@model IEnumerable<Cafe.Models.Branch>
-
 @{
     ViewData["Title"] = "Branches";
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
 }
 
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Branches Management</h1>
-
-     @if (Context.Session.GetString("UserRole") == "Owner") 
-    { 
-        <a asp-action="Create" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
-            <i class="fas fa-plus mr-2"></i> Add New Branch
-        </a>
-     } 
-</div>
-
-<!-- Stats Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-        <div class="flex items-center">
-            <div class="p-3 rounded-lg bg-blue-100 text-blue-600 mr-4">
-                <i class="fas fa-store text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">Total Branches</p>
-                <p class="text-2xl font-bold text-gray-800">@Model.Count()</p>
-            </div>
-        </div>
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
+    <div>
+        <h1 class="page-title">Branches</h1>
+        <p class="body-text mt-1">Manage all branch locations and their assigned managers.</p>
     </div>
-
-    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-        <div class="flex items-center">
-            <div class="p-3 rounded-lg bg-green-100 text-green-600 mr-4">
-                <i class="fas fa-check-circle text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">Active Branches</p>
-                <p class="text-2xl font-bold text-gray-800">@Model.Count(b => b.IsActive)</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
-        <div class="flex items-center">
-            <div class="p-3 rounded-lg bg-yellow-100 text-yellow-600 mr-4">
-                <i class="fas fa-users text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">Managed Branches</p>
-                <p class="text-2xl font-bold text-gray-800">@Model.Count(b => b.ManagerId.HasValue)</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-        <div class="flex items-center">
-            <div class="p-3 rounded-lg bg-purple-100 text-purple-600 mr-4">
-                <i class="fas fa-clock text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">Recently Added</p>
-                <p class="text-2xl font-bold text-gray-800">@Model.Count(b => b.CreatedDate >= DateTime.Now.AddDays(-30))</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Branches Table -->
-<div class="bg-white rounded-lg shadow-md overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Info</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @foreach (var item in Model)
-                {
-                    <tr class="hover:bg-gray-50 transition duration-150">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">@item.Name</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-600">@item.Location</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-600">@item.ContactInfo</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-600">
-                                @if (item.Manager != null)
-                                {
-                                    @item.Manager.Name
-                                }
-                                else
-                                {
-                                    <span class="text-gray-400">Not assigned</span>
-                                }
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if (item.IsActive)
-                            {
-                                <span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Active</span>
-                            }
-                            else
-                            {
-                                <span class="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">Inactive</span>
-                            }
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a asp-action="Details" asp-route-id="@item.Id" class="text-blue-600 hover:text-blue-900 mr-3">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-
-                            @if (Context.Session.GetString("UserRole") == "Owner") 
-                             {
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="text-yellow-600 hover:text-yellow-900 mr-3">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="text-red-600 hover:text-red-900">
-                                    <i class="fas fa-trash"></i> Delete
-                                </a>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-
-    @if (!Model.Any())
+    @if (isOwner)
     {
-        <div class="text-center py-12">
-            <div class="text-gray-400 text-5xl mb-4">
-                <i class="fas fa-store-slash"></i>
-            </div>
-            <h3 class="text-lg font-medium text-gray-600">No branches found</h3>
-            <p class="text-gray-500 mt-1">Get started by adding your first branch.</p>
-
-            @if (Context.Session.GetString("UserRole") == "Owner")
-            {
-                <div class="mt-6">
-                    <a asp-action="Create" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 inline-flex items-center">
-                        <i class="fas fa-plus mr-2"></i> Add First Branch
-                    </a>
-                </div>
-            }
+        <div class="flex items-center gap-3">
+            <a asp-controller="Branch" asp-action="ExportCsv" class="btn btn-ghost btn-sm">
+                <i class="fas fa-download"></i> Export
+            </a>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Branch
+            </a>
         </div>
     }
 </div>
 
-<!-- Quick Actions -->
-@if (Context.Session.GetString("UserRole") == "Owner")
-{
-    <div class="mt-8 bg-blue-50 rounded-lg p-6">
-        <h3 class="text-lg font-medium text-blue-800 mb-4">Quick Actions</h3>
-        <div class="flex flex-wrap gap-4">
-            <a asp-action="Create" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
-                <i class="fas fa-plus mr-2"></i> Add New Branch
-            </a>
-            <a asp-controller="Branch" asp-action="ExportCsv" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
-                <i class="fas fa-download mr-2"></i> Export Data
-            </a>
-            <a asp-controller="Reports" asp-action="BranchPerformance" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
-                <i class="fas fa-chart-bar mr-2"></i> View Reports
-            </a>
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(212,175,55,0.10);color:#d4af37;">
+            <i class="fas fa-store"></i>
         </div>
+        <div class="kpi-label">Total Branches</div>
+        <div class="kpi-value">@Model.Count()</div>
     </div>
-}
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(34,197,94,0.10);color:#22c55e;">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="kpi-label">Active</div>
+        <div class="kpi-value">@Model.Count(b => b.IsActive)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(99,102,241,0.10);color:#6366f1;">
+            <i class="fas fa-user-tie"></i>
+        </div>
+        <div class="kpi-label">Managed</div>
+        <div class="kpi-value">@Model.Count(b => b.ManagerId.HasValue)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(168,85,247,0.10);color:#a855f7;">
+            <i class="fas fa-calendar-plus"></i>
+        </div>
+        <div class="kpi-label">New (30 days)</div>
+        <div class="kpi-value">@Model.Count(b => b.CreatedDate >= DateTime.Now.AddDays(-30))</div>
+    </div>
+</div>
 
-@section Scripts {
-   
-}
+<!-- Branches Table -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="section-title">All Branches</h3>
+        <span class="badge badge-neutral">@Model.Count() records</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+        @if (Model.Any())
+        {
+            <div class="overflow-x-auto">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Location</th>
+                            <th>Contact</th>
+                            <th>Manager</th>
+                            <th>Status</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="font-semibold" style="color:var(--text-primary);">@item.Name</span>
+                                </td>
+                                <td>@item.Location</td>
+                                <td>@item.ContactInfo</td>
+                                <td>
+                                    @if (item.Manager != null)
+                                    {
+                                        <span>@item.Manager.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--text-tertiary);">Not assigned</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-neutral">Inactive</span>
+                                    }
+                                </td>
+                                <td style="text-align:right;">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-ghost btn-sm" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        @if (isOwner)
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-secondary btn-sm" title="Edit">
+                                                <i class="fas fa-pen"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-store"></i></div>
+                <p class="empty-state-title">No branches found</p>
+                <p class="empty-state-text">Get started by adding your first branch location.</p>
+                @if (isOwner)
+                {
+                    <a asp-action="Create" class="btn btn-primary" style="margin-top:16px;">
+                        <i class="fas fa-plus"></i> Add First Branch
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</div>

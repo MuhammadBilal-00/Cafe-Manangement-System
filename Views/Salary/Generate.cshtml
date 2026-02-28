@@ -3,29 +3,25 @@
     ViewData["Title"] = "Generate Salaries";
 }
 
-<div class="max-w-4xl mx-auto">
-    <div class="flex items-center mb-6">
-        <a asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
-            <i class="fas fa-arrow-left text-xl"></i>
-        </a>
-        <h1 class="text-2xl font-bold text-gray-800">Generate Monthly Salaries</h1>
+<div style="max-width:960px; margin:0 auto;">
+    <!-- Header -->
+    <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+        <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title" style="margin:0;">Generate Monthly Salaries</h1>
     </div>
 
     <!-- Active Policy Info -->
     @if (Model.ActivePolicy != null)
     {
-        <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
-            <div class="flex items-center">
-                <div class="p-2 rounded-lg bg-indigo-100 text-indigo-600 mr-3">
-                    <i class="fas fa-file-contract text-lg"></i>
-                </div>
+        <div class="card" style="border-left:4px solid var(--accent); margin-bottom:1.5rem;">
+            <div class="card-body" style="display:flex; align-items:center; gap:0.75rem; padding:1rem 1.25rem;">
+                <div class="kpi-icon" style="background:rgba(212,175,55,0.1); color:var(--accent); width:36px; height:36px; font-size:0.9rem;"><i class="fas fa-file-contract"></i></div>
                 <div>
-                    <p class="text-sm font-medium text-indigo-800">Policy: <strong>@Model.ActivePolicy.Name</strong></p>
-                    <p class="text-xs text-indigo-600">
-                        OT Multiplier: @(Model.ActivePolicy.OvertimeMultiplier)x |
-                        Absence Factor: @(Model.ActivePolicy.AbsenceDeductionFactor)x |
-                        Late Penalty: Every @(Model.ActivePolicy.LatePenaltyThreshold) lates = @(Model.ActivePolicy.LatePenaltyFactor)x daily rate |
-                        Attendance Bonus: @(Model.ActivePolicy.AttendanceBonusPercentage)% (if &le;@(Model.ActivePolicy.MaxLateForBonus) late, &le;@(Model.ActivePolicy.MaxAbsentForBonus) absent)
+                    <p class="body-text" style="font-weight:600; margin:0;">Policy: @Model.ActivePolicy.Name</p>
+                    <p class="caption" style="margin:0;">
+                        OT: @(Model.ActivePolicy.OvertimeMultiplier)x | Absence: @(Model.ActivePolicy.AbsenceDeductionFactor)x |
+                        Late: Every @(Model.ActivePolicy.LatePenaltyThreshold) = @(Model.ActivePolicy.LatePenaltyFactor)x |
+                        Bonus: @(Model.ActivePolicy.AttendanceBonusPercentage)%
                     </p>
                 </div>
             </div>
@@ -33,133 +29,143 @@
     }
     else
     {
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-            <p class="text-sm text-amber-800">
-                <i class="fas fa-exclamation-triangle mr-1"></i>
-                No active salary policy. Salary generation will fail. Please create a policy first.
-            </p>
+        <div class="card" style="border-left:4px solid #dc2626; margin-bottom:1.5rem;">
+            <div class="card-body" style="padding:1rem 1.25rem;">
+                <p class="caption" style="margin:0; color:#dc2626;"><i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i> No active salary policy. Salary generation will fail. Please create a policy first.</p>
+            </div>
         </div>
     }
 
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
-            <p class="text-sm text-amber-800">
-                <i class="fas fa-info-circle mr-1"></i>
-                Use <strong>Preview</strong> to see calculated salaries without saving. When satisfied, click <strong>Generate</strong> to commit.
-                Already-generated records will not be overwritten.
-            </p>
+    <div class="card">
+        <div class="card-body">
+            <!-- Info -->
+            <div style="background:var(--bg-body); border-radius:var(--radius-card); padding:1rem; margin-bottom:1.5rem;">
+                <p class="caption" style="margin:0;">
+                    <i class="fas fa-info-circle" style="color:var(--accent); margin-right:0.5rem;"></i>
+                    Use <strong>Preview</strong> to see calculated salaries without saving. When satisfied, click <strong>Generate</strong> to commit. Already-generated records will not be overwritten.
+                </p>
+            </div>
+
+            <form id="salaryForm" method="post">
+                @Html.AntiForgeryToken()
+
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label">Year *</label>
+                        <select name="Year" class="form-select" required>
+                            @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 3; y--)
+                            {
+                                <option value="@y" selected="@(y == Model.Year)">@y</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Month *</label>
+                        <select name="Month" class="form-select" required>
+                            @for (int m = 1; m <= 12; m++)
+                            {
+                                <option value="@m" selected="@(m == Model.Month)">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Branch</label>
+                        <select name="BranchId" class="form-select">
+                            <option value="">All Branches</option>
+                            @foreach (var b in Model.Branches)
+                            {
+                                <option value="@b.Id" selected="@(Model.BranchId == b.Id)">@b.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <button type="submit" formaction="@Url.Action("Preview")" class="btn btn-secondary" style="padding:0.875rem; font-size:1rem;">
+                        <i class="fas fa-eye" style="margin-right:0.5rem;"></i> Preview
+                    </button>
+                    <button type="submit" formaction="@Url.Action("Generate")" class="btn btn-primary" style="padding:0.875rem; font-size:1rem;"
+                            onclick="return confirm('Generate and save salary records for the selected period?');">
+                        <i class="fas fa-calculator" style="margin-right:0.5rem;"></i> Generate & Save
+                    </button>
+                </div>
+            </form>
         </div>
-
-        <form id="salaryForm" method="post">
-            @Html.AntiForgeryToken()
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Year *</label>
-                    <select name="Year" class="w-full border rounded-lg px-3 py-2" required>
-                        @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 3; y--)
-                        {
-                            <option value="@y" selected="@(y == Model.Year)">@y</option>
-                        }
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Month *</label>
-                    <select name="Month" class="w-full border rounded-lg px-3 py-2" required>
-                        @for (int m = 1; m <= 12; m++)
-                        {
-                            <option value="@m" selected="@(m == Model.Month)">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)</option>
-                        }
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Branch</label>
-                    <select name="BranchId" class="w-full border rounded-lg px-3 py-2">
-                        <option value="">All Branches</option>
-                        @foreach (var b in Model.Branches)
-                        {
-                            <option value="@b.Id" selected="@(Model.BranchId == b.Id)">@b.Name</option>
-                        }
-                    </select>
-                </div>
-            </div>
-
-            <div class="mt-6 flex gap-3">
-                <button type="submit" formaction="@Url.Action("Preview")" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg text-lg font-medium">
-                    <i class="fas fa-eye mr-2"></i> Preview
-                </button>
-                <button type="submit" formaction="@Url.Action("Generate")" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-medium"
-                        onclick="return confirm('Generate and save salary records for the selected period?');">
-                    <i class="fas fa-calculator mr-2"></i> Generate & Save
-                </button>
-            </div>
-        </form>
     </div>
 
     <!-- Preview Results -->
     @if (Model.IsPreview && Model.PreviewRecords != null && Model.PreviewRecords.Any())
     {
-        <div class="bg-white rounded-lg shadow-md mt-6 overflow-hidden">
-            <div class="p-4 border-b bg-amber-50">
-                <h3 class="font-medium text-amber-800">
-                    <i class="fas fa-eye mr-2"></i> Preview: @Model.PreviewRecords.Count salary record(s) for
+        <div class="card" style="margin-top:1.5rem;">
+            <div class="card-header" style="background:rgba(212,175,55,0.08);">
+                <h3 style="margin:0; font-weight:600; color:var(--accent);">
+                    <i class="fas fa-eye" style="margin-right:0.5rem;"></i> Preview: @Model.PreviewRecords.Count salary record(s) for
                     @(new DateTime(Model.Year, Model.Month, 1).ToString("MMMM yyyy"))
                 </h3>
-                <p class="text-xs text-amber-600 mt-1">These are not yet saved. Click "Generate & Save" above to commit.</p>
+                <p class="caption" style="margin:0.25rem 0 0;">These are not yet saved. Click "Generate & Save" above to commit.</p>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Base</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Days</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Attend%</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">OT Pay</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bonus</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Deductions</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Net Salary</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @{
-                            decimal totalNet = 0, totalBase = 0;
-                        }
-                        @foreach (var p in Model.PreviewRecords)
-                        {
-                            totalNet += p.FinalSalary;
-                            totalBase += p.BaseSalary;
-                            var pctClass = p.AttendancePercentage >= 90 ? "text-green-600" :
-                                           p.AttendancePercentage >= 70 ? "text-yellow-600" : "text-red-600";
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 text-sm font-medium text-gray-800">@(p.Staff?.User?.Name ?? "Staff #" + p.StaffId)</td>
-                                <td class="px-4 py-3 text-sm text-right">Rs. @p.BaseSalary.ToString("N0")</td>
-                                <td class="px-4 py-3 text-sm text-center">@p.DaysPresent/@p.TotalWorkingDays</td>
-                                <td class="px-4 py-3 text-sm text-center font-bold @pctClass">@p.AttendancePercentage%</td>
-                                <td class="px-4 py-3 text-sm text-right text-blue-600">@(p.OvertimePay > 0 ? $"+{p.OvertimePay:N0}" : "-")</td>
-                                <td class="px-4 py-3 text-sm text-right text-green-600">@(p.AttendanceBonus > 0 ? $"+{p.AttendanceBonus:N0}" : "-")</td>
-                                <td class="px-4 py-3 text-sm text-right text-red-600">@(p.TotalDeductions > 0 ? $"-{p.TotalDeductions:N0}" : "-")</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold">Rs. @p.FinalSalary.ToString("N0")</td>
+            <div class="card-body" style="padding:0;">
+                <div style="overflow-x:auto;">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Staff</th>
+                                <th style="text-align:right;">Base</th>
+                                <th style="text-align:center;">Days</th>
+                                <th style="text-align:center;">Attend%</th>
+                                <th style="text-align:right;">OT Pay</th>
+                                <th style="text-align:right;">Bonus</th>
+                                <th style="text-align:right;">Deductions</th>
+                                <th style="text-align:right;">Net Salary</th>
                             </tr>
-                        }
-                    </tbody>
-                    <tfoot class="bg-gray-50 font-bold">
-                        <tr>
-                            <td class="px-4 py-3 text-sm">Total (@Model.PreviewRecords.Count staff)</td>
-                            <td class="px-4 py-3 text-sm text-right">Rs. @totalBase.ToString("N0")</td>
-                            <td colspan="5"></td>
-                            <td class="px-4 py-3 text-sm text-right text-purple-700">Rs. @totalNet.ToString("N0")</td>
-                        </tr>
-                    </tfoot>
-                </table>
+                        </thead>
+                        <tbody>
+                            @{
+                                decimal totalNet = 0, totalBase = 0;
+                            }
+                            @foreach (var p in Model.PreviewRecords)
+                            {
+                                totalNet += p.FinalSalary;
+                                totalBase += p.BaseSalary;
+                                var pctColor = p.AttendancePercentage >= 90 ? "#16a34a" :
+                                               p.AttendancePercentage >= 70 ? "#ca8a04" : "#dc2626";
+                                <tr>
+                                    <td style="font-weight:500;">@(p.Staff?.User?.Name ?? "Staff #" + p.StaffId)</td>
+                                    <td style="text-align:right;">Rs. @p.BaseSalary.ToString("N0")</td>
+                                    <td style="text-align:center;">@p.DaysPresent/@p.TotalWorkingDays</td>
+                                    <td style="text-align:center; font-weight:700; color:@pctColor;">@p.AttendancePercentage%</td>
+                                    <td style="text-align:right; color:#3b82f6;">@(p.OvertimePay > 0 ? $"+{p.OvertimePay:N0}" : "-")</td>
+                                    <td style="text-align:right; color:#16a34a;">@(p.AttendanceBonus > 0 ? $"+{p.AttendanceBonus:N0}" : "-")</td>
+                                    <td style="text-align:right; color:#dc2626;">@(p.TotalDeductions > 0 ? $"-{p.TotalDeductions:N0}" : "-")</td>
+                                    <td style="text-align:right; font-weight:700;">Rs. @p.FinalSalary.ToString("N0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:var(--bg-body); font-weight:700;">
+                                <td>Total (@Model.PreviewRecords.Count staff)</td>
+                                <td style="text-align:right;">Rs. @totalBase.ToString("N0")</td>
+                                <td colspan="5"></td>
+                                <td style="text-align:right; color:#9333ea;">Rs. @totalNet.ToString("N0")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </div>
     }
     else if (Model.IsPreview)
     {
-        <div class="bg-white rounded-lg shadow-md mt-6 p-8 text-center text-gray-500">
-            <i class="fas fa-info-circle text-3xl mb-2"></i>
-            <p>No staff found for the selected period/branch, or all salaries are already generated.</p>
+        <div class="card" style="margin-top:1.5rem;">
+            <div class="card-body">
+                <div class="empty-state">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>No staff found</h3>
+                    <p>No staff found for the selected period/branch, or all salaries are already generated.</p>
+                </div>
+            </div>
         </div>
     }
 </div>

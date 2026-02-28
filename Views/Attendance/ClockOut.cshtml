@@ -4,56 +4,54 @@
     var staffName = (string)ViewBag.StaffName;
 }
 
-<div class="max-w-lg mx-auto">
-    <div class="flex items-center mb-6">
-        <a asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
-            <i class="fas fa-arrow-left text-xl"></i>
-        </a>
-        <h1 class="text-2xl font-bold text-gray-800">Clock Out</h1>
+<div style="max-width:520px; margin:0 auto;">
+    <!-- Header -->
+    <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+        <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title" style="margin:0;">Clock Out</h1>
     </div>
 
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="text-center mb-6">
-            <div class="text-4xl text-orange-600 mb-2">
-                <i class="fas fa-sign-out-alt"></i>
+    <div class="card">
+        <div class="card-body" style="text-align:center;">
+            <!-- Clock Icon -->
+            <div style="width:72px; height:72px; border-radius:50%; background:rgba(249,115,22,0.1); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                <i class="fas fa-sign-out-alt" style="font-size:1.75rem; color:#ea580c;"></i>
             </div>
-            <p class="text-gray-600">Today: @DateTime.Today.ToString("dddd, dd MMMM yyyy")</p>
-            <p class="text-sm text-gray-500 mt-1">@staffName</p>
-        </div>
+            <p class="body-text">@DateTime.Today.ToString("dddd, dd MMMM yyyy")</p>
+            <p class="caption">@staffName</p>
 
-        <div class="mb-6 p-4 bg-blue-50 rounded-lg text-center">
-            <p class="text-sm text-blue-800"><strong>Clocked In At:</strong> @(clockInTime?.ToString(@"hh\:mm") ?? "N/A")</p>
-            @if (clockInTime.HasValue)
-            {
-                var elapsed = DateTime.Now.TimeOfDay - clockInTime.Value;
-                <p class="text-sm text-blue-600 mt-1">Time elapsed: @($"{(int)elapsed.TotalHours}h {elapsed.Minutes}m")</p>
-            }
-        </div>
+            <!-- Clock In Info -->
+            <div style="background:var(--bg-body); border-radius:var(--radius-card); padding:1rem; margin:1.5rem 0; text-align:center;">
+                <p class="body-text" style="margin:0;"><strong>Clocked In At:</strong> @(clockInTime?.ToString(@"hh\:mm") ?? "N/A")</p>
+                @if (clockInTime.HasValue)
+                {
+                    var elapsed = DateTime.Now.TimeOfDay - clockInTime.Value;
+                    <p class="caption" style="margin:0.5rem 0 0; color:var(--accent);">Time elapsed: @($"{(int)elapsed.TotalHours}h {elapsed.Minutes}m")</p>
+                }
+            </div>
 
-        <form asp-action="ClockOut" method="post">
-            @Html.AntiForgeryToken()
+            <form asp-action="ClockOut" method="post" style="text-align:left;">
+                @Html.AntiForgeryToken()
 
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Check Out Time</label>
-                    <input type="time" name="checkOutTime" value="@DateTime.Now.ToString("HH:mm")" class="w-full border rounded-lg px-3 py-2" />
+                <div class="form-group">
+                    <label class="form-label">Check Out Time</label>
+                    <input type="time" name="checkOutTime" value="@DateTime.Now.ToString("HH:mm")" class="form-control" />
                 </div>
-            </div>
 
-            <div class="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
-                <p><i class="fas fa-info-circle mr-1"></i> Your status will be automatically calculated based on total hours worked:</p>
-                <ul class="mt-2 ml-4 list-disc">
-                    <li><span class="font-medium text-green-700">Present</span> — 8+ hours</li>
-                    <li><span class="font-medium text-orange-700">Half-Day</span> — 4-8 hours</li>
-                    <li><span class="font-medium text-red-700">Absent</span> — Less than 4 hours</li>
-                </ul>
-            </div>
+                <!-- Status Guide -->
+                <div style="background:var(--bg-body); border-radius:var(--radius-card); padding:1rem; margin-bottom:1.5rem;">
+                    <p class="caption" style="margin-bottom:0.5rem;"><i class="fas fa-info-circle" style="color:var(--accent); margin-right:0.25rem;"></i> Status auto-calculated based on hours:</p>
+                    <ul style="margin:0; padding-left:1.25rem; list-style:disc;">
+                        <li class="caption"><span style="color:#16a34a; font-weight:600;">Present</span> — 8+ hours</li>
+                        <li class="caption"><span style="color:#ea580c; font-weight:600;">Half-Day</span> — 4-8 hours</li>
+                        <li class="caption"><span style="color:#dc2626; font-weight:600;">Absent</span> — Less than 4 hours</li>
+                    </ul>
+                </div>
 
-            <div class="mt-6">
-                <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg text-lg font-medium">
-                    <i class="fas fa-sign-out-alt mr-2"></i> Confirm Clock Out
+                <button type="submit" class="btn btn-primary" style="width:100%; padding:0.875rem; font-size:1.1rem; background:#ea580c; border-color:#ea580c;">
+                    <i class="fas fa-sign-out-alt" style="margin-right:0.5rem;"></i> Confirm Clock Out
                 </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>

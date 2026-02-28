@@ -1,266 +1,236 @@
-﻿@model Cafe.Models.ViewModels.SalaryIndexViewModel
+@model Cafe.Models.ViewModels.SalaryIndexViewModel
 @{
     ViewData["Title"] = "Salary Management";
     var monthName = new DateTime(Model.Year, Model.Month, 1).ToString("MMMM yyyy");
     var isOwner = Context.Session.GetString("UserRole") == "Owner";
 }
 
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Salary Management - @monthName</h1>
+<!-- Page Header -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Salary Management</h1>
+        <p class="body-text" style="margin-top:0.25rem;">@monthName</p>
+    </div>
     @if (isOwner || Context.Session.GetString("UserRole") == "BranchManager")
     {
-        <a asp-action="Generate" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
-            <i class="fas fa-calculator mr-2"></i> Generate Salaries
-        </a>
+        <a asp-action="Generate" class="btn btn-primary"><i class="fas fa-calculator" style="margin-right:0.5rem;"></i> Generate Salaries</a>
     }
 </div>
 
 <!-- Active Policy Info -->
 @if (Model.ActivePolicy != null)
 {
-    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6 flex items-center justify-between">
-        <div class="flex items-center">
-            <div class="p-2 rounded-lg bg-indigo-100 text-indigo-600 mr-3">
-                <i class="fas fa-file-contract text-lg"></i>
+    <div class="card" style="border-left:4px solid var(--accent); margin-bottom:1.5rem;">
+        <div class="card-body" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div class="kpi-icon" style="background:rgba(212,175,55,0.1); color:var(--accent); width:40px; height:40px; font-size:1rem;"><i class="fas fa-file-contract"></i></div>
+                <div>
+                    <p class="body-text" style="font-weight:600; margin:0;">Active Policy: @Model.ActivePolicy.Name</p>
+                    <p class="caption" style="margin:0;">
+                        Effective from @Model.ActivePolicy.EffectiveFrom.ToString("dd MMM yyyy")
+                        @(Model.ActivePolicy.EffectiveTo.HasValue ? $"to {Model.ActivePolicy.EffectiveTo.Value:dd MMM yyyy}" : "(ongoing)")
+                        &bull; OT: @(Model.ActivePolicy.OvertimeMultiplier)x &bull; Absence: @(Model.ActivePolicy.AbsenceDeductionFactor)x &bull; Bonus: @(Model.ActivePolicy.AttendanceBonusPercentage)%
+                    </p>
+                </div>
             </div>
-            <div>
-                <p class="text-sm font-medium text-indigo-800">Active Salary Policy: <strong>@Model.ActivePolicy.Name</strong></p>
-                <p class="text-xs text-indigo-600">
-                    Effective from @Model.ActivePolicy.EffectiveFrom.ToString("dd MMM yyyy")
-                    @(Model.ActivePolicy.EffectiveTo.HasValue ? $"to {Model.ActivePolicy.EffectiveTo.Value:dd MMM yyyy}" : "(ongoing)")
-                    &bull; OT: @(Model.ActivePolicy.OvertimeMultiplier)x &bull; Absence: @(Model.ActivePolicy.AbsenceDeductionFactor)x &bull; Attendance Bonus: @(Model.ActivePolicy.AttendanceBonusPercentage)%
-                </p>
-            </div>
+            @if (isOwner)
+            {
+                <a asp-controller="SalaryPolicy" asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-cog" style="margin-right:0.25rem;"></i> Manage Policies</a>
+            }
         </div>
-        @if (isOwner)
-        {
-            <a asp-controller="SalaryPolicy" asp-action="Index" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
-                <i class="fas fa-cog mr-1"></i> Manage Policies
-            </a>
-        }
     </div>
 }
 else if (isOwner)
 {
-    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-        <p class="text-sm text-amber-800">
-            <i class="fas fa-exclamation-triangle mr-1"></i>
-            No active salary policy found. <a asp-controller="SalaryPolicy" asp-action="Create" class="underline font-medium">Create one</a> before generating salaries.
-        </p>
+    <div class="card" style="border-left:4px solid #f59e0b; margin-bottom:1.5rem;">
+        <div class="card-body" style="padding:1rem 1.25rem;">
+            <p class="caption" style="margin:0;"><i class="fas fa-exclamation-triangle" style="color:#f59e0b; margin-right:0.5rem;"></i> No active salary policy found. <a asp-controller="SalaryPolicy" asp-action="Create" style="color:var(--accent); text-decoration:underline; font-weight:600;">Create one</a> before generating salaries.</p>
+        </div>
     </div>
 }
 
-<!-- Stats Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-        <div class="flex items-center">
-            <div class="p-3 rounded-lg bg-blue-100 text-blue-600 mr-4">
-                <i class="fas fa-money-bill-wave text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">Total Base Salary</p>
-                <p class="text-xl font-bold text-gray-800">Rs. @Model.TotalBaseSalary.ToString("N0")</p>
-            </div>
-        </div>
+<!-- KPI Cards -->
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.25rem; margin-bottom:2rem;">
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-money-bill-wave"></i></div>
+        <div class="kpi-label">Total Base Salary</div>
+        <div class="kpi-value">Rs. @Model.TotalBaseSalary.ToString("N0")</div>
     </div>
-    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-        <div class="flex items-center">
-            <div class="p-3 rounded-lg bg-green-100 text-green-600 mr-4">
-                <i class="fas fa-gift text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">Total Earnings</p>
-                <p class="text-xl font-bold text-green-600">+ Rs. @Model.TotalBonuses.ToString("N0")</p>
-                <p class="text-xs text-gray-400">OT: @Model.TotalOvertimePay.ToString("N0") | Bonus: @Model.TotalAttendanceBonus.ToString("N0")</p>
-            </div>
-        </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-gift"></i></div>
+        <div class="kpi-label">Total Earnings</div>
+        <div class="kpi-value" style="color:#16a34a;">+ Rs. @Model.TotalBonuses.ToString("N0")</div>
+        <p class="caption" style="margin:0;">OT: @Model.TotalOvertimePay.ToString("N0") | Bonus: @Model.TotalAttendanceBonus.ToString("N0")</p>
     </div>
-    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
-        <div class="flex items-center">
-            <div class="p-3 rounded-lg bg-red-100 text-red-600 mr-4">
-                <i class="fas fa-minus-circle text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">Total Deductions</p>
-                <p class="text-xl font-bold text-red-600">- Rs. @Model.TotalDeductions.ToString("N0")</p>
-            </div>
-        </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(239,68,68,0.1); color:#dc2626;"><i class="fas fa-minus-circle"></i></div>
+        <div class="kpi-label">Total Deductions</div>
+        <div class="kpi-value" style="color:#dc2626;">- Rs. @Model.TotalDeductions.ToString("N0")</div>
     </div>
-    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-        <div class="flex items-center">
-            <div class="p-3 rounded-lg bg-purple-100 text-purple-600 mr-4">
-                <i class="fas fa-wallet text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">Net Payable</p>
-                <p class="text-xl font-bold text-gray-800">Rs. @Model.TotalFinalSalary.ToString("N0")</p>
-                <p class="text-xs text-gray-400">Draft: @Model.DraftCount | Finalized: @Model.FinalizedCount | Paid: @Model.Records.Count(r => r.Status == "Paid")</p>
-            </div>
-        </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(147,51,234,0.1); color:#9333ea;"><i class="fas fa-wallet"></i></div>
+        <div class="kpi-label">Net Payable</div>
+        <div class="kpi-value">Rs. @Model.TotalFinalSalary.ToString("N0")</div>
+        <p class="caption" style="margin:0;">Draft: @Model.DraftCount | Finalized: @Model.FinalizedCount | Paid: @Model.Records.Count(r => r.Status == "Paid")</p>
     </div>
 </div>
 
 <!-- Filters -->
-<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-    <form method="get" class="flex gap-4 items-end flex-wrap">
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
-            <select name="branchId" class="border rounded-lg px-3 py-2">
-                <option value="">All Branches</option>
-                @foreach (var b in Model.Branches)
-                {
-                    <option value="@b.Id" selected="@(Model.BranchId == b.Id)">@b.Name</option>
-                }
-            </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-            <select name="year" class="border rounded-lg px-3 py-2">
-                @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 3; y--)
-                {
-                    <option value="@y" selected="@(y == Model.Year)">@y</option>
-                }
-            </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
-            <select name="month" class="border rounded-lg px-3 py-2">
-                @for (int m = 1; m <= 12; m++)
-                {
-                    <option value="@m" selected="@(m == Model.Month)">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)</option>
-                }
-            </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Workflow</label>
-            <select name="workflowStatus" class="border rounded-lg px-3 py-2">
-                <option value="">All</option>
-                <option value="Draft" selected="@(Model.WorkflowStatus == "Draft")">Draft</option>
-                <option value="Finalized" selected="@(Model.WorkflowStatus == "Finalized")">Finalized</option>
-                <option value="Paid" selected="@(Model.WorkflowStatus == "Paid")">Paid</option>
-            </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Payment</label>
-            <select name="paymentStatus" class="border rounded-lg px-3 py-2">
-                <option value="">All</option>
-                <option value="Pending" selected="@(Model.PaymentStatus == "Pending")">Pending</option>
-                <option value="Paid" selected="@(Model.PaymentStatus == "Paid")">Paid</option>
-            </select>
-        </div>
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-            <i class="fas fa-filter mr-1"></i> Filter
-        </button>
-    </form>
+<div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-body">
+        <form method="get" class="form-row" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
+            <div class="form-group">
+                <label class="form-label">Branch</label>
+                <select name="branchId" class="form-select">
+                    <option value="">All Branches</option>
+                    @foreach (var b in Model.Branches)
+                    {
+                        <option value="@b.Id" selected="@(Model.BranchId == b.Id)">@b.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Year</label>
+                <select name="year" class="form-select">
+                    @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 3; y--)
+                    {
+                        <option value="@y" selected="@(y == Model.Year)">@y</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Month</label>
+                <select name="month" class="form-select">
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m" selected="@(m == Model.Month)">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Workflow</label>
+                <select name="workflowStatus" class="form-select">
+                    <option value="">All</option>
+                    <option value="Draft" selected="@(Model.WorkflowStatus == "Draft")">Draft</option>
+                    <option value="Finalized" selected="@(Model.WorkflowStatus == "Finalized")">Finalized</option>
+                    <option value="Paid" selected="@(Model.WorkflowStatus == "Paid")">Paid</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Payment</label>
+                <select name="paymentStatus" class="form-select">
+                    <option value="">All</option>
+                    <option value="Pending" selected="@(Model.PaymentStatus == "Pending")">Pending</option>
+                    <option value="Paid" selected="@(Model.PaymentStatus == "Paid")">Paid</option>
+                </select>
+            </div>
+            <div class="form-group" style="display:flex; align-items:flex-end;">
+                <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fas fa-filter" style="margin-right:0.5rem;"></i> Filter</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Salary Table -->
-<div class="bg-white rounded-lg shadow-md overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-            <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Base</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Days</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Attend%</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Earnings</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Deductions</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Net</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Workflow</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Payment</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            @if (!Model.Records.Any())
-            {
-                <tr>
-                    <td colspan="11" class="px-6 py-12 text-center text-gray-500">
-                        <i class="fas fa-file-invoice-dollar text-4xl mb-3 block"></i>
-                        No salary records found. Generate salaries first.
-                    </td>
-                </tr>
-            }
-            @foreach (var r in Model.Records)
-            {
-                var pctClass = r.AttendancePercentage >= 90 ? "text-green-600" :
-                               r.AttendancePercentage >= 70 ? "text-yellow-600" : "text-red-600";
-                var wfClass = r.Status == "Paid" ? "bg-purple-100 text-purple-800" :
-                               r.Status == "Finalized" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
-                var pyClass = r.PaymentStatus == "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-4 text-sm font-medium text-gray-800">@r.Staff?.User?.Name</td>
-                    <td class="px-4 py-4 text-sm text-gray-600">@r.Branch?.Name</td>
-                    <td class="px-4 py-4 text-sm text-right">Rs. @r.BaseSalary.ToString("N0")</td>
-                    <td class="px-4 py-4 text-sm text-center">@r.DaysPresent/@r.TotalWorkingDays</td>
-                    <td class="px-4 py-4 text-sm text-center font-bold @pctClass">@r.AttendancePercentage%</td>
-                    <td class="px-4 py-4 text-sm text-right text-green-600">@(r.BonusAmount > 0 ? $"+{r.BonusAmount:N0}" : "-")</td>
-                    <td class="px-4 py-4 text-sm text-right text-red-600">@(r.TotalDeductions > 0 ? $"-{r.TotalDeductions:N0}" : "-")</td>
-                    <td class="px-4 py-4 text-sm text-right font-bold">Rs. @r.FinalSalary.ToString("N0")</td>
-                    <td class="px-4 py-4 text-center">
-                        <span class="px-2 py-1 text-xs font-medium rounded-full @wfClass">@r.Status</span>
-                    </td>
-                    <td class="px-4 py-4 text-center">
-                        <span class="px-2 py-1 text-xs font-medium rounded-full @pyClass">@r.PaymentStatus</span>
-                    </td>
-                    <td class="px-4 py-4 text-center text-sm">
-                        <button onclick="viewSalaryDetail(@r.Id)" class="text-blue-600 hover:text-blue-800 mr-1" title="View Details">
-                            <i class="fas fa-file-alt"></i>
-                        </button>
-                        <a asp-action="Payslip" asp-route-id="@r.Id" class="text-purple-600 hover:text-purple-800 mr-1" title="View Payslip">
-                            <i class="fas fa-receipt"></i>
-                        </a>
-                        @if (r.Status == "Draft" && r.PaymentStatus != "Paid")
-                        {
-                            <button onclick="openAdjustModal(@r.Id)" class="text-orange-600 hover:text-orange-800 mr-1" title="Add Adjustment">
-                                <i class="fas fa-plus-circle"></i>
-                            </button>
-                        }
-                        @if (isOwner && r.Status == "Draft")
-                        {
-                            <form asp-action="Finalize" asp-route-id="@r.Id" method="post" class="inline" data-confirm="Finalize this salary record?">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="text-indigo-600 hover:text-indigo-800 mr-1" title="Finalize">
-                                    <i class="fas fa-lock"></i>
-                                </button>
-                            </form>
-                        }
-                        @if (isOwner && r.Status == "Finalized" && r.PaymentStatus != "Paid")
-                        {
-                            <form asp-action="Unlock" asp-route-id="@r.Id" method="post" class="inline" data-confirm="Unlock this salary record for editing?">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="text-amber-600 hover:text-amber-800 mr-1" title="Unlock">
-                                    <i class="fas fa-unlock"></i>
-                                </button>
-                            </form>
-                        }
-                        @if (r.Status == "Finalized" && r.PaymentStatus == "Pending")
-                        {
-                            <form asp-action="MarkPaid" asp-route-id="@r.Id" method="post" class="inline" data-confirm="Mark this salary as paid?">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="text-green-600 hover:text-green-800" title="Mark Paid">
-                                    <i class="fas fa-check-circle"></i>
-                                </button>
-                            </form>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        <div style="overflow-x:auto;">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Staff</th>
+                        <th>Branch</th>
+                        <th style="text-align:right;">Base</th>
+                        <th style="text-align:center;">Days</th>
+                        <th style="text-align:center;">Attend%</th>
+                        <th style="text-align:right;">Earnings</th>
+                        <th style="text-align:right;">Deductions</th>
+                        <th style="text-align:right;">Net</th>
+                        <th style="text-align:center;">Workflow</th>
+                        <th style="text-align:center;">Payment</th>
+                        <th style="text-align:center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Records.Any())
+                    {
+                        <tr>
+                            <td colspan="11">
+                                <div class="empty-state">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                    <h3>No salary records found</h3>
+                                    <p>Generate salaries first.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var r in Model.Records)
+                    {
+                        var pctColor = r.AttendancePercentage >= 90 ? "#16a34a" :
+                                       r.AttendancePercentage >= 70 ? "#ca8a04" : "#dc2626";
+                        var wfBadge = r.Status == "Paid" ? "badge badge-accent" :
+                                      r.Status == "Finalized" ? "badge badge-success" : "badge badge-neutral";
+                        var pyBadge = r.PaymentStatus == "Paid" ? "badge badge-success" : "badge badge-warning";
+                        <tr>
+                            <td style="font-weight:500;">@r.Staff?.User?.Name</td>
+                            <td class="caption">@r.Branch?.Name</td>
+                            <td style="text-align:right;">Rs. @r.BaseSalary.ToString("N0")</td>
+                            <td style="text-align:center;">@r.DaysPresent/@r.TotalWorkingDays</td>
+                            <td style="text-align:center; font-weight:700; color:@pctColor;">@r.AttendancePercentage%</td>
+                            <td style="text-align:right; color:#16a34a;">@(r.BonusAmount > 0 ? $"+{r.BonusAmount:N0}" : "-")</td>
+                            <td style="text-align:right; color:#dc2626;">@(r.TotalDeductions > 0 ? $"-{r.TotalDeductions:N0}" : "-")</td>
+                            <td style="text-align:right; font-weight:700;">Rs. @r.FinalSalary.ToString("N0")</td>
+                            <td style="text-align:center;"><span class="@wfBadge">@r.Status</span></td>
+                            <td style="text-align:center;"><span class="@pyBadge">@r.PaymentStatus</span></td>
+                            <td style="text-align:center;">
+                                <div style="display:flex; align-items:center; justify-content:center; gap:0.25rem;">
+                                    <button onclick="viewSalaryDetail(@r.Id)" class="btn btn-ghost btn-sm" title="View Details"><i class="fas fa-file-alt"></i></button>
+                                    <a asp-action="Payslip" asp-route-id="@r.Id" class="btn btn-ghost btn-sm" title="Payslip"><i class="fas fa-receipt"></i></a>
+                                    @if (r.Status == "Draft" && r.PaymentStatus != "Paid")
+                                    {
+                                        <button onclick="openAdjustModal(@r.Id)" class="btn btn-ghost btn-sm" title="Add Adjustment" style="color:#ea580c;"><i class="fas fa-plus-circle"></i></button>
+                                    }
+                                    @if (isOwner && r.Status == "Draft")
+                                    {
+                                        <form asp-action="Finalize" asp-route-id="@r.Id" method="post" style="display:inline;" data-confirm="Finalize this salary record?">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Finalize" style="color:var(--accent);"><i class="fas fa-lock"></i></button>
+                                        </form>
+                                    }
+                                    @if (isOwner && r.Status == "Finalized" && r.PaymentStatus != "Paid")
+                                    {
+                                        <form asp-action="Unlock" asp-route-id="@r.Id" method="post" style="display:inline;" data-confirm="Unlock this salary record for editing?">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Unlock" style="color:#f59e0b;"><i class="fas fa-unlock"></i></button>
+                                        </form>
+                                    }
+                                    @if (r.Status == "Finalized" && r.PaymentStatus == "Pending")
+                                    {
+                                        <form asp-action="MarkPaid" asp-route-id="@r.Id" method="post" style="display:inline;" data-confirm="Mark this salary as paid?">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Mark Paid" style="color:#16a34a;"><i class="fas fa-check-circle"></i></button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <!-- Pagination -->
 @if (Model.TotalPages > 1)
 {
-    <div class="flex justify-center items-center mt-6 gap-2">
+    <div style="display:flex; justify-content:center; align-items:center; margin-top:1.5rem; gap:0.5rem;">
         @for (int i = 1; i <= Model.TotalPages; i++)
         {
             <a asp-action="Index" asp-route-page="@i" asp-route-year="@Model.Year" asp-route-month="@Model.Month"
                asp-route-branchId="@Model.BranchId" asp-route-paymentStatus="@Model.PaymentStatus"
                asp-route-workflowStatus="@Model.WorkflowStatus"
-               class="px-3 py-1 rounded @(i == Model.CurrentPage ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300")">
+               class="btn @(i == Model.CurrentPage ? "btn-primary" : "btn-secondary") btn-sm">
                 @i
             </a>
         }
@@ -268,83 +238,81 @@ else if (isOwner)
 }
 
 <!-- Quick Actions -->
-<div class="mt-8 bg-blue-50 rounded-lg p-6">
-    <h3 class="text-lg font-medium text-blue-800 mb-4">Quick Actions</h3>
-    <div class="flex flex-wrap gap-4">
-        @if (isOwner && Model.DraftCount > 0)
-        {
-            <form asp-action="FinalizeAll" method="post" class="inline" data-confirm="Finalize all @Model.DraftCount draft salary records?">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="year" value="@Model.Year" />
-                <input type="hidden" name="month" value="@Model.Month" />
-                <input type="hidden" name="branchId" value="@Model.BranchId" />
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-lock mr-2"></i> Finalize All Draft (@Model.DraftCount)
-                </button>
-            </form>
-        }
-        @if (Model.FinalizedCount > 0 && Model.PendingCount > 0)
-        {
-            <form asp-action="MarkAllPaid" method="post" class="inline" data-confirm="Mark all finalized pending salaries as paid?">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="year" value="@Model.Year" />
-                <input type="hidden" name="month" value="@Model.Month" />
-                <input type="hidden" name="branchId" value="@Model.BranchId" />
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-check-double mr-2"></i> Mark All Paid (Finalized Only)
-                </button>
-            </form>
-        }
-        <a asp-action="ExportCsv" asp-route-year="@Model.Year" asp-route-month="@Model.Month" asp-route-branchId="@Model.BranchId"
-           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center">
-            <i class="fas fa-download mr-2"></i> Export Data
-        </a>
+<div class="card" style="margin-top:2rem; background:var(--sidebar-bg); border:none;">
+    <div class="card-body">
+        <h3 style="color:#fff; font-weight:600; margin-bottom:1rem;">Quick Actions</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+            @if (isOwner && Model.DraftCount > 0)
+            {
+                <form asp-action="FinalizeAll" method="post" style="display:inline;" data-confirm="Finalize all @Model.DraftCount draft salary records?">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="year" value="@Model.Year" />
+                    <input type="hidden" name="month" value="@Model.Month" />
+                    <input type="hidden" name="branchId" value="@Model.BranchId" />
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-lock" style="margin-right:0.5rem;"></i> Finalize All Draft (@Model.DraftCount)</button>
+                </form>
+            }
+            @if (Model.FinalizedCount > 0 && Model.PendingCount > 0)
+            {
+                <form asp-action="MarkAllPaid" method="post" style="display:inline;" data-confirm="Mark all finalized pending salaries as paid?">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="year" value="@Model.Year" />
+                    <input type="hidden" name="month" value="@Model.Month" />
+                    <input type="hidden" name="branchId" value="@Model.BranchId" />
+                    <button type="submit" class="btn btn-primary" style="background:#16a34a; border-color:#16a34a;"><i class="fas fa-check-double" style="margin-right:0.5rem;"></i> Mark All Paid</button>
+                </form>
+            }
+            <a asp-action="ExportCsv" asp-route-year="@Model.Year" asp-route-month="@Model.Month" asp-route-branchId="@Model.BranchId"
+               class="btn btn-secondary"><i class="fas fa-download" style="margin-right:0.5rem;"></i> Export Data</a>
+        </div>
     </div>
 </div>
 
 <!-- Salary Detail Modal -->
-<div id="salaryDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold"><i class="fas fa-user-circle mr-2 text-blue-600"></i> Salary Details</h3>
-            <button onclick="closeSalaryModal()" class="text-gray-500 hover:text-black text-xl">&times;</button>
+<div id="salaryDetailModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div class="card" style="width:100%; max-width:720px; max-height:90vh; overflow-y:auto; margin:1rem;">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0; font-weight:600;"><i class="fas fa-user-circle" style="margin-right:0.5rem; color:var(--accent);"></i> Salary Details</h3>
+            <button onclick="closeSalaryModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-tertiary);">&times;</button>
         </div>
-        <div id="salaryDetailContent" class="space-y-4"></div>
-        <div class="text-right mt-4">
-            <button class="bg-gray-300 px-3 py-1 rounded" onclick="closeSalaryModal()">Close</button>
+        <div class="card-body">
+            <div id="salaryDetailContent"></div>
+        </div>
+        <div style="padding:1rem 1.5rem; border-top:1px solid var(--border-light); text-align:right;">
+            <button class="btn btn-secondary btn-sm" onclick="closeSalaryModal()">Close</button>
         </div>
     </div>
 </div>
 
 <!-- Add Adjustment Modal -->
-<div id="adjustSalaryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white p-6 rounded-lg w-full max-w-md">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold"><i class="fas fa-plus-circle mr-2 text-orange-600"></i> Add Adjustment</h3>
-            <button onclick="closeAdjustModal()" class="text-gray-500 hover:text-black text-xl">&times;</button>
+<div id="adjustSalaryModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div class="card" style="width:100%; max-width:480px; margin:1rem;">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0; font-weight:600;"><i class="fas fa-plus-circle" style="margin-right:0.5rem; color:#ea580c;"></i> Add Adjustment</h3>
+            <button onclick="closeAdjustModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-tertiary);">&times;</button>
         </div>
-        <input type="hidden" id="adjustRecordId">
-        <div class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select id="adjType" class="border rounded px-3 py-2 w-full">
+        <div class="card-body">
+            <input type="hidden" id="adjustRecordId">
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select id="adjType" class="form-select">
                     <option value="Bonus">Bonus</option>
                     <option value="Deduction">Deduction</option>
                 </select>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Amount (Rs.)</label>
-                <input id="adjAmount" type="number" min="1" step="100" class="border rounded px-3 py-2 w-full" placeholder="Enter amount">
+            <div class="form-group">
+                <label class="form-label">Amount (Rs.)</label>
+                <input id="adjAmount" type="number" min="1" step="100" class="form-control" placeholder="Enter amount">
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Reason</label>
-                <input id="adjReason" type="text" class="border rounded px-3 py-2 w-full" placeholder="e.g., Performance bonus, Advance deduction">
+            <div class="form-group">
+                <label class="form-label">Reason</label>
+                <input id="adjReason" type="text" class="form-control" placeholder="e.g., Performance bonus, Advance deduction">
             </div>
         </div>
-        <div class="mt-4 flex justify-end space-x-2 border-t pt-4">
-            <button class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400" onclick="closeAdjustModal()">Cancel</button>
-            <button id="saveAdjustBtn" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700" onclick="saveAdjustment()">
-                <i class="fas fa-save mr-1"></i> Add Adjustment
+        <div style="padding:1rem 1.5rem; border-top:1px solid var(--border-light); display:flex; justify-content:flex-end; gap:0.75rem;">
+            <button class="btn btn-secondary" onclick="closeAdjustModal()">Cancel</button>
+            <button id="saveAdjustBtn" class="btn btn-primary" style="background:#ea580c; border-color:#ea580c;" onclick="saveAdjustment()">
+                <i class="fas fa-save" style="margin-right:0.5rem;"></i> Add Adjustment
             </button>
         </div>
     </div>
@@ -365,7 +333,6 @@ else if (isOwner)
 
                     const pctClass = data.attendancePercentage >= 90 ? 'text-green-600' :
                                      data.attendancePercentage >= 70 ? 'text-yellow-600' : 'text-red-600';
-
                     const wfClass = data.status === 'Paid' ? 'bg-purple-100 text-purple-800' :
                                      data.status === 'Finalized' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
                     const pyClass = data.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
@@ -411,8 +378,6 @@ else if (isOwner)
                                <span class="px-2 py-0.5 text-xs rounded-full ${pyClass} ml-1">${data.paymentStatus}</span></p>
                         </div>
                         ${data.finalizedBy ? `<p class="text-xs text-gray-400 mt-1">Finalized by ${data.finalizedBy} on ${data.finalizedAt}</p>` : ''}
-
-                        <!-- Formula Breakdown -->
                         <div class="mt-4 border rounded-lg overflow-hidden">
                             <div class="bg-gray-50 px-4 py-2 font-medium text-sm">Salary Formula Breakdown</div>
                             <table class="w-full text-sm">
@@ -421,16 +386,14 @@ else if (isOwner)
                                     ${data.overtimePay > 0 ? `<tr class="border-t"><td class="px-4 py-2 text-green-600">+ Overtime Pay (${data.overtimeHours}h)</td><td class="px-4 py-2 text-right text-green-600">+ Rs. ${data.overtimePay.toLocaleString()}</td></tr>` : ''}
                                     ${data.attendanceBonus > 0 ? `<tr class="border-t"><td class="px-4 py-2 text-green-600">+ Attendance Bonus (5%)</td><td class="px-4 py-2 text-right text-green-600">+ Rs. ${data.attendanceBonus.toLocaleString()}</td></tr>` : ''}
                                     <tr class="border-t bg-blue-50"><td class="px-4 py-2 font-medium">Gross Salary</td><td class="px-4 py-2 text-right font-bold">Rs. ${data.grossSalary.toLocaleString()}</td></tr>
-                                    ${data.absenceDeduction > 0 ? `<tr class="border-t"><td class="px-4 py-2 text-red-600">- Absence Deduction (${data.daysAbsent} days)</td><td class="px-4 py-2 text-right text-red-600">- Rs. ${data.absenceDeduction.toLocaleString()}</td></tr>` : ''}
-                                    ${data.halfDayDeduction > 0 ? `<tr class="border-t"><td class="px-4 py-2 text-red-600">- Half-Day Deduction (${data.daysHalfDay} days)</td><td class="px-4 py-2 text-right text-red-600">- Rs. ${data.halfDayDeduction.toLocaleString()}</td></tr>` : ''}
+                                    ${data.absenceDeduction > 0 ? `<tr class="border-t"><td class="px-4 py-2 text-red-600">- Absence (${data.daysAbsent} days)</td><td class="px-4 py-2 text-right text-red-600">- Rs. ${data.absenceDeduction.toLocaleString()}</td></tr>` : ''}
+                                    ${data.halfDayDeduction > 0 ? `<tr class="border-t"><td class="px-4 py-2 text-red-600">- Half-Day (${data.daysHalfDay} days)</td><td class="px-4 py-2 text-right text-red-600">- Rs. ${data.halfDayDeduction.toLocaleString()}</td></tr>` : ''}
                                     ${data.latePenaltyDeduction > 0 ? `<tr class="border-t"><td class="px-4 py-2 text-red-600">- Late Penalty (${data.daysLate} lates)</td><td class="px-4 py-2 text-right text-red-600">- Rs. ${data.latePenaltyDeduction.toLocaleString()}</td></tr>` : ''}
                                     <tr class="border-t bg-red-50"><td class="px-4 py-2 font-medium">Total Deductions</td><td class="px-4 py-2 text-right font-bold text-red-600">- Rs. ${data.totalDeductions.toLocaleString()}</td></tr>
                                     <tr class="border-t-2 border-gray-400 bg-purple-50"><td class="px-4 py-2 font-bold text-lg">Net Salary</td><td class="px-4 py-2 text-right font-bold text-lg text-purple-700">Rs. ${data.finalSalary.toLocaleString()}</td></tr>
                                 </tbody>
                             </table>
                         </div>
-
-                        <!-- Attendance -->
                         <div class="mt-4">
                             <h4 class="font-medium text-sm text-gray-700 mb-1">Attendance Summary</h4>
                             <div class="grid grid-cols-5 gap-2 text-center text-xs">
@@ -441,51 +404,38 @@ else if (isOwner)
                                 <div class="bg-gray-50 p-2 rounded"><p class="text-gray-500">Rate</p><p class="font-bold ${pctClass}">${data.attendancePercentage}%</p></div>
                             </div>
                         </div>
-
                         ${adjustmentRows ? `
                         <div class="mt-4">
                             <h4 class="font-medium text-sm text-gray-700 mb-2">Manual Adjustments</h4>
                             <table class="min-w-full border rounded text-xs">
-                                <thead class="bg-gray-50"><tr>
-                                    <th class="px-3 py-1 text-left">Type</th>
-                                    <th class="px-3 py-1 text-right">Amount</th>
-                                    <th class="px-3 py-1 text-left">Reason</th>
-                                    <th class="px-3 py-1 text-left">By</th>
-                                </tr></thead>
+                                <thead class="bg-gray-50"><tr><th class="px-3 py-1 text-left">Type</th><th class="px-3 py-1 text-right">Amount</th><th class="px-3 py-1 text-left">Reason</th><th class="px-3 py-1 text-left">By</th></tr></thead>
                                 <tbody>${adjustmentRows}</tbody>
                             </table>
                         </div>` : ''}
-
                         ${historyRows ? `
                         <div class="mt-4">
                             <h4 class="font-medium text-sm text-gray-700 mb-2">Salary History</h4>
                             <table class="min-w-full border rounded text-xs">
-                                <thead class="bg-gray-50"><tr>
-                                    <th class="px-3 py-1 text-left">Period</th>
-                                    <th class="px-3 py-1 text-right">Base</th>
-                                    <th class="px-3 py-1 text-right">Net</th>
-                                    <th class="px-3 py-1 text-center">Status</th>
-                                    <th class="px-3 py-1 text-center">Payment</th>
-                                </tr></thead>
+                                <thead class="bg-gray-50"><tr><th class="px-3 py-1 text-left">Period</th><th class="px-3 py-1 text-right">Base</th><th class="px-3 py-1 text-right">Net</th><th class="px-3 py-1 text-center">Status</th><th class="px-3 py-1 text-center">Payment</th></tr></thead>
                                 <tbody>${historyRows}</tbody>
                             </table>
                         </div>` : ''}
                     `;
-                    document.getElementById('salaryDetailModal').classList.remove('hidden');
+                    document.getElementById('salaryDetailModal').style.display = 'flex';
                 });
         }
 
-        function closeSalaryModal() { document.getElementById('salaryDetailModal').classList.add('hidden'); }
+        function closeSalaryModal() { document.getElementById('salaryDetailModal').style.display = 'none'; }
 
         function openAdjustModal(id) {
             document.getElementById('adjustRecordId').value = id;
             document.getElementById('adjType').value = 'Bonus';
             document.getElementById('adjAmount').value = '';
             document.getElementById('adjReason').value = '';
-            document.getElementById('adjustSalaryModal').classList.remove('hidden');
+            document.getElementById('adjustSalaryModal').style.display = 'flex';
         }
 
-        function closeAdjustModal() { document.getElementById('adjustSalaryModal').classList.add('hidden'); }
+        function closeAdjustModal() { document.getElementById('adjustSalaryModal').style.display = 'none'; }
 
         function saveAdjustment() {
             const request = {
@@ -494,32 +444,24 @@ else if (isOwner)
                 amount: parseFloat(document.getElementById('adjAmount').value) || 0,
                 reason: document.getElementById('adjReason').value || null
             };
-
-            if (request.amount <= 0) {
-                ActionCard.error('Validation Error', 'Amount must be greater than 0.');
-                return;
-            }
-
+            if (request.amount <= 0) { ActionCard.error('Validation Error', 'Amount must be greater than 0.'); return; }
             document.getElementById('saveAdjustBtn').disabled = true;
             document.getElementById('saveAdjustBtn').textContent = 'Saving...';
-
             fetch('/Salary/AddAdjustment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
                 body: JSON.stringify(request)
             }).then(r => r.json()).then(res => {
                 document.getElementById('saveAdjustBtn').disabled = false;
-                document.getElementById('saveAdjustBtn').innerHTML = '<i class="fas fa-save mr-1"></i> Add Adjustment';
+                document.getElementById('saveAdjustBtn').innerHTML = '<i class="fas fa-save" style="margin-right:0.5rem;"></i> Add Adjustment';
                 if (res.success) {
                     closeAdjustModal();
                     ActionCard.success('Adjustment Added', res.message, { autoDismiss: 3000 });
                     setTimeout(() => location.reload(), 2000);
-                } else {
-                    ActionCard.error('Error', res.message);
-                }
+                } else { ActionCard.error('Error', res.message); }
             }).catch(() => {
                 document.getElementById('saveAdjustBtn').disabled = false;
-                document.getElementById('saveAdjustBtn').innerHTML = '<i class="fas fa-save mr-1"></i> Add Adjustment';
+                document.getElementById('saveAdjustBtn').innerHTML = '<i class="fas fa-save" style="margin-right:0.5rem;"></i> Add Adjustment';
             });
         }
     </script>

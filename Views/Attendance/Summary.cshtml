@@ -4,94 +4,103 @@
     var monthName = new DateTime(Model.Year, Model.Month, 1).ToString("MMMM yyyy");
 }
 
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Attendance Summary - @monthName</h1>
-    <a asp-action="Index" class="text-gray-500 hover:text-gray-700">
-        <i class="fas fa-arrow-left mr-2"></i> Back to Records
-    </a>
+<!-- Header -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Attendance Summary</h1>
+        <p class="body-text" style="margin-top:0.25rem;">@monthName</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left" style="margin-right:0.5rem;"></i> Back to Records</a>
 </div>
 
 <!-- Filters -->
-<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-    <form method="get" class="flex gap-4 items-end flex-wrap">
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
-            <select name="branchId" class="border rounded-lg px-3 py-2">
-                <option value="">All Branches</option>
-                @foreach (var b in Model.Branches)
-                {
-                    <option value="@b.Id" selected="@(Model.BranchId == b.Id)">@b.Name</option>
-                }
-            </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-            <select name="year" class="border rounded-lg px-3 py-2">
-                @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 3; y--)
-                {
-                    <option value="@y" selected="@(y == Model.Year)">@y</option>
-                }
-            </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
-            <select name="month" class="border rounded-lg px-3 py-2">
-                @for (int m = 1; m <= 12; m++)
-                {
-                    <option value="@m" selected="@(m == Model.Month)">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)</option>
-                }
-            </select>
-        </div>
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-            <i class="fas fa-filter mr-1"></i> View
-        </button>
-    </form>
+<div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-body">
+        <form method="get" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Branch</label>
+                <select name="branchId" class="form-select">
+                    <option value="">All Branches</option>
+                    @foreach (var b in Model.Branches)
+                    {
+                        <option value="@b.Id" selected="@(Model.BranchId == b.Id)">@b.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Year</label>
+                <select name="year" class="form-select">
+                    @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 3; y--)
+                    {
+                        <option value="@y" selected="@(y == Model.Year)">@y</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Month</label>
+                <select name="month" class="form-select">
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m" selected="@(m == Model.Month)">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter" style="margin-right:0.5rem;"></i> View</button>
+        </form>
+    </div>
 </div>
 
 <!-- Summary Table -->
-<div class="bg-white rounded-lg shadow-md overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-            <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Working Days</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Present</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Absent</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Late</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Half-Day</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Overtime</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Attendance %</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            @if (!Model.Summaries.Any())
-            {
-                <tr>
-                    <td colspan="10" class="px-6 py-12 text-center text-gray-500">
-                        <i class="fas fa-chart-bar text-4xl mb-3 block"></i>
-                        No summary data available for this period.
-                    </td>
-                </tr>
-            }
-            @foreach (var s in Model.Summaries)
-            {
-                var pctClass = s.AttendancePercentage >= 90 ? "text-green-600" :
-                               s.AttendancePercentage >= 70 ? "text-yellow-600" : "text-red-600";
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-800">@s.StaffName</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">@s.BranchName</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">@s.Role</td>
-                    <td class="px-6 py-4 text-sm text-center">@s.TotalWorkingDays</td>
-                    <td class="px-6 py-4 text-sm text-center text-green-600 font-medium">@s.DaysPresent</td>
-                    <td class="px-6 py-4 text-sm text-center text-red-600 font-medium">@s.DaysAbsent</td>
-                    <td class="px-6 py-4 text-sm text-center text-yellow-600 font-medium">@s.DaysLate</td>
-                    <td class="px-6 py-4 text-sm text-center text-orange-600 font-medium">@s.DaysHalfDay</td>
-                    <td class="px-6 py-4 text-sm text-center @(s.TotalOvertimeHours > 0 ? "text-blue-600 font-medium" : "text-gray-400")">@(s.TotalOvertimeHours > 0 ? $"{s.TotalOvertimeHours:F1}h" : "-")</td>
-                    <td class="px-6 py-4 text-sm text-center font-bold @pctClass">@s.AttendancePercentage%</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        <div style="overflow-x:auto;">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Staff</th>
+                        <th>Branch</th>
+                        <th>Role</th>
+                        <th style="text-align:center;">Working Days</th>
+                        <th style="text-align:center;">Present</th>
+                        <th style="text-align:center;">Absent</th>
+                        <th style="text-align:center;">Late</th>
+                        <th style="text-align:center;">Half-Day</th>
+                        <th style="text-align:center;">Overtime</th>
+                        <th style="text-align:center;">Attendance %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Summaries.Any())
+                    {
+                        <tr>
+                            <td colspan="10">
+                                <div class="empty-state">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <h3>No summary data available</h3>
+                                    <p>No data found for this period.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var s in Model.Summaries)
+                    {
+                        var pctColor = s.AttendancePercentage >= 90 ? "#16a34a" :
+                                       s.AttendancePercentage >= 70 ? "#ca8a04" : "#dc2626";
+                        <tr>
+                            <td style="font-weight:500;">@s.StaffName</td>
+                            <td class="caption">@s.BranchName</td>
+                            <td class="caption">@s.Role</td>
+                            <td style="text-align:center;">@s.TotalWorkingDays</td>
+                            <td style="text-align:center; color:#16a34a; font-weight:600;">@s.DaysPresent</td>
+                            <td style="text-align:center; color:#dc2626; font-weight:600;">@s.DaysAbsent</td>
+                            <td style="text-align:center; color:#ca8a04; font-weight:600;">@s.DaysLate</td>
+                            <td style="text-align:center; color:#ea580c; font-weight:600;">@s.DaysHalfDay</td>
+                            <td style="text-align:center; @(s.TotalOvertimeHours > 0 ? "color:var(--accent); font-weight:600;" : "color:var(--text-tertiary);")">@(s.TotalOvertimeHours > 0 ? $"{s.TotalOvertimeHours:F1}h" : "-")</td>
+                            <td style="text-align:center; font-weight:700; color:@pctColor;">@s.AttendancePercentage%</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>

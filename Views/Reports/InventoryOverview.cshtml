@@ -1,4 +1,4 @@
-﻿@model Cafe.Models.ViewModels.InventoryOverviewViewModel
+@model Cafe.Models.ViewModels.InventoryOverviewViewModel
 
 @{
     ViewData["Title"] = "Inventory Overview";
@@ -9,252 +9,138 @@
     var branchRows = Model.Branches;
     decimal maxValue = branchRows.Any() ? branchRows.Max(b => b.TotalValue) : 1m;
     if (maxValue <= 0) maxValue = 1;
-
     int maxItems = branchRows.Any() ? branchRows.Max(b => b.ItemCount) : 1;
     if (maxItems <= 0) maxItems = 1;
 
     string FormatCurrency(decimal value) => "$" + value.ToString("N2");
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <title>@ViewData["Title"] - Cafe OS</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Page Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Inventory Overview</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Stock levels, values and health across all branches.</p>
+    </div>
+    <a asp-action="Index" asp-controller="Reports" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Reports</a>
+</div>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    animation: {
-                        'float': 'float 6s ease-in-out infinite',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        },
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-slate-100 text-slate-900 min-h-screen antialiased">
-
-    <!-- Top bar -->
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="relative w-10 h-10">
-                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-emerald-500 via-cyan-500 to-sky-400 blur-sm opacity-80"></div>
-                    <div class="relative w-full h-full rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm">
-                        📦
-                    </div>
-                </div>
-                <div>
-                    <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400">
-                        Cafe OS
-                    </p>
-                    <h1 class="text-sm sm:text-base font-semibold tracking-wide text-slate-900">
-                        Inventory Overview
-                    </h1>
-                </div>
-            </div>
-
-            <a href="@Url.Action("Index", "Reports")"
-               class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-slate-50 text-xs sm:text-[13px] font-medium px-3 py-1.5 shadow-sm hover:bg-slate-800 transition">
-                ⬅ Reports
-            </a>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
-
-        <!-- Filters (branch only; inventory is not time-based here) -->
-        <section class="rounded-3xl bg-white/95 border border-slate-200 shadow-[0_16px_40px_rgba(15,23,42,0.12)] p-4 sm:p-6 lg:p-7 space-y-4">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div class="space-y-1">
-                    <p class="text-xs font-semibold tracking-[0.2em] uppercase text-slate-500">
-                        Filters
-                    </p>
-                </div>
-
-                <form method="get" class="w-full lg:w-auto flex flex-col sm:flex-row gap-3 sm:items-end">
-                    <div class="sm:w-52">
-                        <label class="block text-[11px] font-medium text-slate-500 mb-1 uppercase tracking-[0.16em]">
-                            Branch
-                        </label>
-                        <select name="branchId"
-                                class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-400/60">
-                            <option value="">All branches</option>
-                            @foreach (var b in branches)
-                            {
-                                var isSelected = selectedBranchId == b.Id;
-                                <option value="@b.Id" selected="@(isSelected ? "selected" : null)">
-                                    @b.Name
-                                </option>
-                            }
-                        </select>
-                    </div>
-
-                    <div class="flex gap-2 sm:gap-3">
-                        <button type="submit"
-                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs sm:text-sm font-semibold shadow-md shadow-emerald-400/40 hover:-translate-y-0.5 hover:shadow-lg transition">
-                            🔍 Apply
-                        </button>
-                        <a href="@Url.Action("InventoryOverview", "Reports")"
-                           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs sm:text-sm font-medium border border-slate-200 hover:bg-slate-200 transition">
-                            Reset
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <!-- Summary cards -->
-        <section class="grid md:grid-cols-4 gap-4 sm:gap-5">
-            <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-[11px] text-slate-500 uppercase tracking-[0.2em]">Inventory value</p>
-                    <span class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 text-sm">
-                        💰
-                    </span>
-                </div>
-                <p class="text-2xl sm:text-3xl font-bold text-slate-900 leading-none">
-                    @FormatCurrency(Model.TotalInventoryValue)
-                </p>
-            </div>
-
-            <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-[11px] text-slate-500 uppercase tracking-[0.2em]">Items</p>
-                    <span class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-sky-50 text-sky-600 text-sm">
-                        📦
-                    </span>
-                </div>
-                <p class="text-2xl sm:text-3xl font-bold text-slate-900 leading-none">
-                    @Model.TotalItems
-                </p>
-            </div>
-
-            <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-[11px] text-slate-500 uppercase tracking-[0.2em]">Low stock</p>
-                    <span class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-amber-50 text-amber-600 text-sm">
-                        ⚠️
-                    </span>
-                </div>
-                <p class="text-2xl sm:text-3xl font-bold text-amber-600 leading-none">
-                    @Model.LowStockItems
-                </p>
-            </div>
-
-            <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-[11px] text-slate-500 uppercase tracking-[0.2em]">Out of stock</p>
-                    <span class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-rose-50 text-rose-600 text-sm">
-                        ⛔
-                    </span>
-                </div>
-                <p class="text-2xl sm:text-3xl font-bold text-rose-600 leading-none">
-                    @Model.OutOfStockItems
-                </p>
-            </div>
-        </section>
-
-        <!-- Branch grid -->
-        <section class="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-            @if (branchRows.Any())
-            {
-                @foreach (var b in branchRows)
+<!-- Filter -->
+<form method="get" class="card" style="margin-bottom:1.5rem;">
+    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:end;">
+        <div class="form-group" style="min-width:180px;margin:0;">
+            <label class="form-label">Branch</label>
+            <select name="branchId" class="form-select">
+                <option value="">All branches</option>
+                @foreach (var b in branches)
                 {
-                    int valuePct = (int)Math.Round(b.TotalValue / maxValue * 100m);
-                    int itemsPct = (int)Math.Round((decimal)b.ItemCount / maxItems * 100m);
-                    int lowPct = (int)Math.Round(b.LowStockRate);
-                    int outPct = (int)Math.Round(b.OutOfStockRate);
+                    <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Apply</button>
+        <a asp-action="InventoryOverview" class="btn btn-ghost btn-sm">Reset</a>
+    </div>
+</form>
 
-                    <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col gap-3">
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <p class="text-[11px] uppercase tracking-[0.18em] text-emerald-600 mb-0.5">
-                                    Branch
-                                </p>
-                                <h3 class="text-sm font-semibold text-slate-900">
-                                    @b.BranchName
-                                </h3>
-                                @if (!string.IsNullOrWhiteSpace(b.Location))
-                                {
-                                    <p class="text-[11px] text-slate-500">
-                                        @b.Location
-                                    </p>
-                                }
+<!-- KPI Cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-dollar-sign"></i></div>
+        <div class="kpi-label">Inventory Value</div>
+        <div class="kpi-value">@FormatCurrency(Model.TotalInventoryValue)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-boxes"></i></div>
+        <div class="kpi-label">Total Items</div>
+        <div class="kpi-value">@Model.TotalItems</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="kpi-label">Low Stock</div>
+        <div class="kpi-value" style="color:#d97706;">@Model.LowStockItems</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-ban"></i></div>
+        <div class="kpi-label">Out of Stock</div>
+        <div class="kpi-value" style="color:#dc2626;">@Model.OutOfStockItems</div>
+    </div>
+</div>
+
+<!-- Branch Inventory Cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;">
+    @if (branchRows.Any())
+    {
+        @foreach (var b in branchRows)
+        {
+            int valuePct = (int)Math.Round(b.TotalValue / maxValue * 100m);
+            int lowPct = (int)Math.Round(b.LowStockRate);
+            int outPct = (int)Math.Round(b.OutOfStockRate);
+
+            <div class="card">
+                <div class="card-body">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.75rem;">
+                        <div>
+                            <span class="badge badge-success" style="font-size:0.6rem;margin-bottom:0.4rem;">Branch</span>
+                            <h3 style="font-weight:700;font-size:0.95rem;margin:0;">@b.BranchName</h3>
+                            @if (!string.IsNullOrWhiteSpace(b.Location))
+                            {
+                                <span class="caption">@b.Location</span>
+                            }
+                        </div>
+                        <div style="width:36px;height:36px;border-radius:10px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-warehouse"></i>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
+                        <div style="padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
+                            <div class="caption">Value</div>
+                            <div style="font-weight:700;font-size:0.85rem;">@FormatCurrency(b.TotalValue)</div>
+                        </div>
+                        <div style="padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
+                            <div class="caption">Items</div>
+                            <div style="font-weight:700;font-size:0.85rem;">@b.ItemCount</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.15rem;">
+                                <span style="color:var(--text-tertiary);">Value share</span>
+                                <span style="font-weight:600;">@valuePct%</span>
                             </div>
-                            <div class="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 text-base">
-                                🏬
+                            <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
+                                <div style="height:100%;width:@(valuePct)%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:3px;"></div>
                             </div>
                         </div>
-
-                        <div class="grid grid-cols-2 gap-2 text-[11px]">
-                            <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2">
-                                <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Value</p>
-                                <p class="font-semibold text-slate-900">
-                                    @FormatCurrency(b.TotalValue)
-                                </p>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.15rem;">
+                                <span style="color:var(--text-tertiary);">Low stock</span>
+                                <span style="font-weight:600;color:#d97706;">@b.LowStockCount (@lowPct%)</span>
                             </div>
-                            <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2">
-                                <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Items</p>
-                                <p class="font-semibold text-slate-900">
-                                    @b.ItemCount
-                                </p>
+                            <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
+                                <div style="height:100%;width:@(lowPct)%;background:#f59e0b;border-radius:3px;"></div>
                             </div>
                         </div>
-
-                        <div class="space-y-2 text-[11px]">
-                            <div>
-                                <div class="flex items-center justify-between mb-0.5">
-                                    <span class="text-slate-500">Value share</span>
-                                    <span class="text-slate-600">@valuePct%</span>
-                                </div>
-                                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
-                                         style="width:@valuePct%;"></div>
-                                </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.15rem;">
+                                <span style="color:var(--text-tertiary);">Out of stock</span>
+                                <span style="font-weight:600;color:#dc2626;">@b.OutOfStockCount (@outPct%)</span>
                             </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-0.5">
-                                    <span class="text-slate-500">Low stock</span>
-                                    <span class="text-amber-600">@b.LowStockCount (@lowPct%)</span>
-                                </div>
-                                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500"
-                                         style="width:@lowPct%;"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-0.5">
-                                    <span class="text-slate-500">Out of stock</span>
-                                    <span class="text-rose-600">@b.OutOfStockCount (@outPct%)</span>
-                                </div>
-                                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-rose-400 to-rose-500"
-                                         style="width:@outPct%;"></div>
-                                </div>
+                            <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
+                                <div style="height:100%;width:@(outPct)%;background:#ef4444;border-radius:3px;"></div>
                             </div>
                         </div>
                     </div>
-                }
-            }
-            else
-            {
-                <div class="md:col-span-2 xl:col-span-3 rounded-3xl bg-white border border-slate-200 shadow-sm p-6 text-sm text-slate-500">
-                    No inventory items found (or you do not have access to any branches).
                 </div>
-            }
-        </section>
-    </main>
-</body>
-</html>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="card" style="grid-column:1/-1;padding:3rem;text-align:center;">
+            <div style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:0.5rem;"><i class="fas fa-boxes"></i></div>
+            <p class="body-text">No inventory items found.</p>
+        </div>
+    }
+</div>

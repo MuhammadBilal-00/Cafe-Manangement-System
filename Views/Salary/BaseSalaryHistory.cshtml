@@ -3,99 +3,93 @@
     ViewData["Title"] = "Base Salary History";
 }
 
-<div class="max-w-3xl mx-auto">
-    <div class="flex items-center mb-6">
-        <a asp-controller="Salary" asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
-            <i class="fas fa-arrow-left text-xl"></i>
-        </a>
-        <h1 class="text-2xl font-bold text-gray-800">Base Salary History</h1>
+<div style="max-width:800px; margin:0 auto;">
+    <!-- Header -->
+    <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+        <a asp-controller="Salary" asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title" style="margin:0;">Base Salary History</h1>
     </div>
 
     <!-- Staff Info -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-                <p class="text-sm text-gray-500">Employee</p>
-                <p class="font-medium text-gray-800">@Model.Staff.User?.Name</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500">Role</p>
-                <p class="font-medium text-gray-800">@Model.Staff.StaffRole?.RoleName</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500">Branch</p>
-                <p class="font-medium text-gray-800">@Model.Staff.Branch?.Name</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500">Current Base Salary</p>
-                <p class="font-bold text-lg text-blue-600">Rs. @Model.CurrentBaseSalary.ToString("N0")</p>
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-body">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem;">
+                <div><span class="caption">Employee</span><p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@Model.Staff.User?.Name</p></div>
+                <div><span class="caption">Role</span><p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@Model.Staff.StaffRole?.RoleName</p></div>
+                <div><span class="caption">Branch</span><p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@Model.Staff.Branch?.Name</p></div>
+                <div><span class="caption">Current Base Salary</span><p style="font-size:1.25rem; font-weight:700; margin:0.25rem 0 0; color:var(--accent);">Rs. @Model.CurrentBaseSalary.ToString("N0")</p></div>
             </div>
         </div>
     </div>
 
     <!-- Update Base Salary -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h3 class="text-lg font-medium text-gray-700 mb-4">Update Base Salary</h3>
-        <div class="flex gap-4 items-end">
-            <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1">New Base Salary (Rs.)</label>
-                <input id="newBaseSalary" type="number" min="1" step="500" class="w-full border rounded-lg px-3 py-2"
-                       placeholder="Enter new base salary" value="@Model.CurrentBaseSalary" />
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header"><h3 style="margin:0; font-weight:600;">Update Base Salary</h3></div>
+        <div class="card-body">
+            <div style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+                <div style="flex:1; min-width:180px;">
+                    <label class="form-label">New Base Salary (Rs.)</label>
+                    <input id="newBaseSalary" type="number" min="1" step="500" class="form-control" placeholder="Enter new base salary" value="@Model.CurrentBaseSalary" />
+                </div>
+                <div style="flex:1; min-width:180px;">
+                    <label class="form-label">Reason</label>
+                    <input id="changeReason" type="text" class="form-control" placeholder="e.g., Annual increment, Promotion" />
+                </div>
+                <button id="updateSalaryBtn" onclick="updateBaseSalary()" class="btn btn-primary">
+                    <i class="fas fa-save" style="margin-right:0.5rem;"></i> Update
+                </button>
             </div>
-            <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Reason</label>
-                <input id="changeReason" type="text" class="w-full border rounded-lg px-3 py-2"
-                       placeholder="e.g., Annual increment, Promotion" />
-            </div>
-            <button id="updateSalaryBtn" onclick="updateBaseSalary()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
-                <i class="fas fa-save mr-1"></i> Update
-            </button>
         </div>
     </div>
 
     <!-- History Table -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="p-4 border-b bg-gray-50">
-            <h3 class="font-medium text-gray-700">Salary History</h3>
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-weight:600;">Salary History</h3></div>
+        <div class="card-body" style="padding:0;">
+            <div style="overflow-x:auto;">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Base Salary</th>
+                            <th>Payment Type</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Reason</th>
+                            <th style="text-align:center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.History.Any())
+                        {
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <i class="fas fa-history"></i>
+                                        <h3>No salary history</h3>
+                                        <p>No salary history records found.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var h in Model.History)
+                        {
+                            <tr style="@(h.IsActive ? "background:rgba(34,197,94,0.04);" : "")">
+                                <td style="font-weight:700;">Rs. @h.BaseSalary.ToString("N0")</td>
+                                <td>@h.PaymentType</td>
+                                <td>@h.EffectiveFromDate.ToString("dd MMM yyyy")</td>
+                                <td>@(h.EffectiveToDate?.ToString("dd MMM yyyy") ?? "Current")</td>
+                                <td class="caption">@(h.ChangeReason ?? "-")</td>
+                                <td style="text-align:center;">
+                                    <span class="badge @(h.IsActive ? "badge-success" : "badge-neutral")">
+                                        @(h.IsActive ? "Active" : "Closed")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Base Salary</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Type</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @if (!Model.History.Any())
-                {
-                    <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                            No salary history records found.
-                        </td>
-                    </tr>
-                }
-                @foreach (var h in Model.History)
-                {
-                    var statusClass = h.IsActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600";
-                    <tr class="hover:bg-gray-50 @(h.IsActive ? "bg-green-50" : "")">
-                        <td class="px-4 py-3 text-sm font-bold">Rs. @h.BaseSalary.ToString("N0")</td>
-                        <td class="px-4 py-3 text-sm">@h.PaymentType</td>
-                        <td class="px-4 py-3 text-sm">@h.EffectiveFromDate.ToString("dd MMM yyyy")</td>
-                        <td class="px-4 py-3 text-sm">@(h.EffectiveToDate?.ToString("dd MMM yyyy") ?? "Current")</td>
-                        <td class="px-4 py-3 text-sm text-gray-600">@(h.ChangeReason ?? "-")</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="px-2 py-1 text-xs font-medium rounded-full @statusClass">
-                                @(h.IsActive ? "Active" : "Closed")
-                            </span>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
     </div>
 </div>
 
@@ -104,35 +98,26 @@
         function updateBaseSalary() {
             const newSalary = parseFloat(document.getElementById('newBaseSalary').value) || 0;
             const reason = document.getElementById('changeReason').value || null;
-
             if (newSalary <= 0) {
                 ActionCard.error('Validation', 'Please enter a valid salary amount.');
                 return;
             }
-
             if (!confirm(`Update base salary to Rs. ${newSalary.toLocaleString()}?`)) return;
-
             const btn = document.getElementById('updateSalaryBtn');
             btn.disabled = true;
             btn.textContent = 'Updating...';
-
             const token = document.querySelector('[name="__RequestVerificationToken"]')?.value ||
                           document.querySelector('meta[name="RequestVerificationToken"]')?.content;
-
             fetch('@Url.Action("UpdateBaseSalary", "Salary")', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': token
                 },
-                body: JSON.stringify({
-                    staffId: @Model.Staff.Id,
-                    newBaseSalary: newSalary,
-                    reason: reason
-                })
+                body: JSON.stringify({ staffId: @Model.Staff.Id, newBaseSalary: newSalary, reason: reason })
             }).then(r => r.json()).then(res => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save mr-1"></i> Update';
+                btn.innerHTML = '<i class="fas fa-save" style="margin-right:0.5rem;"></i> Update';
                 if (res.success) {
                     ActionCard.success('Updated', res.message, { autoDismiss: 3000 });
                     setTimeout(() => location.reload(), 2000);
@@ -141,7 +126,7 @@
                 }
             }).catch(() => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save mr-1"></i> Update';
+                btn.innerHTML = '<i class="fas fa-save" style="margin-right:0.5rem;"></i> Update';
             });
         }
     </script>

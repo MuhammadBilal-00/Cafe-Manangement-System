@@ -45,6 +45,9 @@ namespace Cafe.Data
         // Audit
         public DbSet<AuditLog> AuditLogs { get; set; }
 
+        // Todo
+        public DbSet<TodoItem> TodoItems { get; set; }
+
         // Attendance, Salary & Financial
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<SalaryRecord> SalaryRecords { get; set; }

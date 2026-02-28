@@ -3,130 +3,134 @@
     ViewData["Title"] = "Create Salary Policy";
 }
 
-<div class="max-w-2xl mx-auto">
-    <div class="flex items-center mb-6">
-        <a asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
-            <i class="fas fa-arrow-left text-xl"></i>
-        </a>
-        <h1 class="text-2xl font-bold text-gray-800">Create Salary Policy</h1>
+<div style="max-width:720px; margin:0 auto;">
+    <!-- Header -->
+    <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+        <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title" style="margin:0;">Create Salary Policy</h1>
     </div>
 
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <form asp-action="Create" method="post">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-red-600 mb-4"></div>
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="form-error" style="margin-bottom:1rem;"></div>
 
-            <!-- Basic Info -->
-            <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-700 border-b pb-2 mb-4">Basic Information</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label asp-for="Name" class="block text-sm font-medium text-gray-700 mb-1"></label>
-                        <input asp-for="Name" class="w-full border rounded-lg px-3 py-2" placeholder="e.g., Standard Policy 2026" />
-                        <span asp-validation-for="Name" class="text-red-500 text-sm"></span>
+                <!-- Basic Info -->
+                <h3 class="section-title" style="padding-bottom:0.5rem; border-bottom:1px solid var(--border-light); margin-bottom:1rem;">Basic Information</h3>
+                <div class="form-group">
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name" class="form-control" placeholder="e.g., Standard Policy 2026" />
+                    <span asp-validation-for="Name" class="form-error"></span>
+                </div>
+                <div class="form-row" style="margin-bottom:1rem;">
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="EffectiveFrom" class="form-label"></label>
+                        <input asp-for="EffectiveFrom" type="date" class="form-control" />
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label asp-for="EffectiveFrom" class="block text-sm font-medium text-gray-700 mb-1"></label>
-                            <input asp-for="EffectiveFrom" type="date" class="w-full border rounded-lg px-3 py-2" />
-                        </div>
-                        <div>
-                            <label asp-for="EffectiveTo" class="block text-sm font-medium text-gray-700 mb-1">Effective To (optional)</label>
-                            <input asp-for="EffectiveTo" type="date" class="w-full border rounded-lg px-3 py-2" />
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        <input asp-for="IsActive" type="checkbox" class="mr-2 h-4 w-4 text-blue-600 rounded" />
-                        <label asp-for="IsActive" class="text-sm text-gray-700">Activate immediately</label>
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="EffectiveTo" class="form-label">Effective To (optional)</label>
+                        <input asp-for="EffectiveTo" type="date" class="form-control" />
                     </div>
                 </div>
-            </div>
+                <div class="form-group" style="margin-bottom:1.5rem;">
+                    <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                        <input asp-for="IsActive" type="checkbox" style="width:1rem; height:1rem; accent-color:var(--accent);" />
+                        <span class="form-label" style="margin:0;">Activate immediately</span>
+                    </label>
+                </div>
 
-            <!-- Deduction Factors -->
-            <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-700 border-b pb-2 mb-4">Deduction Factors</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label asp-for="AbsenceDeductionFactor" class="block text-sm font-medium text-gray-700 mb-1">Absence Deduction Factor</label>
-                        <input asp-for="AbsenceDeductionFactor" type="number" step="0.1" min="0" class="w-full border rounded-lg px-3 py-2" />
-                        <p class="text-xs text-gray-400 mt-1">Multiplied by daily rate per absent day (default: 1.0)</p>
+                <div class="divider"></div>
+
+                <!-- Deduction Factors -->
+                <h3 class="section-title" style="padding-bottom:0.5rem; border-bottom:1px solid var(--border-light); margin-bottom:1rem;">Deduction Factors</h3>
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="AbsenceDeductionFactor" class="form-label">Absence Deduction Factor</label>
+                        <input asp-for="AbsenceDeductionFactor" type="number" step="0.1" min="0" class="form-control" />
+                        <span class="caption">Multiplied by daily rate per absent day (default: 1.0)</span>
                     </div>
-                    <div>
-                        <label asp-for="HalfDayDeductionFactor" class="block text-sm font-medium text-gray-700 mb-1">Half-Day Deduction Factor</label>
-                        <input asp-for="HalfDayDeductionFactor" type="number" step="0.1" min="0" class="w-full border rounded-lg px-3 py-2" />
-                        <p class="text-xs text-gray-400 mt-1">Multiplied by daily rate per half-day (default: 0.5)</p>
-                    </div>
-                    <div>
-                        <label asp-for="LatePenaltyThreshold" class="block text-sm font-medium text-gray-700 mb-1">Late Penalty Threshold</label>
-                        <input asp-for="LatePenaltyThreshold" type="number" min="1" class="w-full border rounded-lg px-3 py-2" />
-                        <p class="text-xs text-gray-400 mt-1">Number of lates before penalty triggers (default: 3)</p>
-                    </div>
-                    <div>
-                        <label asp-for="LatePenaltyFactor" class="block text-sm font-medium text-gray-700 mb-1">Late Penalty Factor</label>
-                        <input asp-for="LatePenaltyFactor" type="number" step="0.1" min="0" class="w-full border rounded-lg px-3 py-2" />
-                        <p class="text-xs text-gray-400 mt-1">Multiplied by daily rate per penalty unit (default: 0.5)</p>
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="HalfDayDeductionFactor" class="form-label">Half-Day Deduction Factor</label>
+                        <input asp-for="HalfDayDeductionFactor" type="number" step="0.1" min="0" class="form-control" />
+                        <span class="caption">Multiplied by daily rate per half-day (default: 0.5)</span>
                     </div>
                 </div>
-            </div>
-
-            <!-- Earnings Factors -->
-            <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-700 border-b pb-2 mb-4">Earnings Factors</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label asp-for="OvertimeMultiplier" class="block text-sm font-medium text-gray-700 mb-1">Overtime Multiplier</label>
-                        <input asp-for="OvertimeMultiplier" type="number" step="0.1" min="1" class="w-full border rounded-lg px-3 py-2" />
-                        <p class="text-xs text-gray-400 mt-1">Applied to hourly rate for OT hours (default: 1.5x)</p>
+                <div class="form-row" style="margin-bottom:1.5rem;">
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="LatePenaltyThreshold" class="form-label">Late Penalty Threshold</label>
+                        <input asp-for="LatePenaltyThreshold" type="number" min="1" class="form-control" />
+                        <span class="caption">Number of lates before penalty triggers (default: 3)</span>
                     </div>
-                    <div>
-                        <label asp-for="AttendanceBonusPercentage" class="block text-sm font-medium text-gray-700 mb-1">Attendance Bonus %</label>
-                        <input asp-for="AttendanceBonusPercentage" type="number" step="0.5" min="0" class="w-full border rounded-lg px-3 py-2" />
-                        <p class="text-xs text-gray-400 mt-1">% of base salary as bonus for good attendance (default: 5%)</p>
-                    </div>
-                    <div>
-                        <label asp-for="MaxLateForBonus" class="block text-sm font-medium text-gray-700 mb-1">Max Lates for Bonus</label>
-                        <input asp-for="MaxLateForBonus" type="number" min="0" class="w-full border rounded-lg px-3 py-2" />
-                        <p class="text-xs text-gray-400 mt-1">Max late days to still qualify for attendance bonus (default: 2)</p>
-                    </div>
-                    <div>
-                        <label asp-for="MaxAbsentForBonus" class="block text-sm font-medium text-gray-700 mb-1">Max Absents for Bonus</label>
-                        <input asp-for="MaxAbsentForBonus" type="number" min="0" class="w-full border rounded-lg px-3 py-2" />
-                        <p class="text-xs text-gray-400 mt-1">Max absent days to still qualify for attendance bonus (default: 0)</p>
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="LatePenaltyFactor" class="form-label">Late Penalty Factor</label>
+                        <input asp-for="LatePenaltyFactor" type="number" step="0.1" min="0" class="form-control" />
+                        <span class="caption">Multiplied by daily rate per penalty unit (default: 0.5)</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- Work Standards -->
-            <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-700 border-b pb-2 mb-4">Work Standards</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label asp-for="StandardDailyHours" class="block text-sm font-medium text-gray-700 mb-1">Standard Daily Hours</label>
-                        <input asp-for="StandardDailyHours" type="number" step="0.5" min="1" class="w-full border rounded-lg px-3 py-2" />
-                        <p class="text-xs text-gray-400 mt-1">Used to compute hourly rate (default: 8h)</p>
+                <div class="divider"></div>
+
+                <!-- Earnings Factors -->
+                <h3 class="section-title" style="padding-bottom:0.5rem; border-bottom:1px solid var(--border-light); margin-bottom:1rem;">Earnings Factors</h3>
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="OvertimeMultiplier" class="form-label">Overtime Multiplier</label>
+                        <input asp-for="OvertimeMultiplier" type="number" step="0.1" min="1" class="form-control" />
+                        <span class="caption">Applied to hourly rate for OT hours (default: 1.5x)</span>
                     </div>
-                    <div>
-                        <label asp-for="LateThresholdMinutes" class="block text-sm font-medium text-gray-700 mb-1">Late Threshold (minutes)</label>
-                        <input asp-for="LateThresholdMinutes" type="number" min="0" class="w-full border rounded-lg px-3 py-2" />
-                        <p class="text-xs text-gray-400 mt-1">Minutes after shift start to consider late (default: 15)</p>
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="AttendanceBonusPercentage" class="form-label">Attendance Bonus %</label>
+                        <input asp-for="AttendanceBonusPercentage" type="number" step="0.5" min="0" class="form-control" />
+                        <span class="caption">% of base salary as bonus for good attendance (default: 5%)</span>
                     </div>
                 </div>
-            </div>
+                <div class="form-row" style="margin-bottom:1.5rem;">
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="MaxLateForBonus" class="form-label">Max Lates for Bonus</label>
+                        <input asp-for="MaxLateForBonus" type="number" min="0" class="form-control" />
+                        <span class="caption">Max late days to still qualify for bonus (default: 2)</span>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="MaxAbsentForBonus" class="form-label">Max Absents for Bonus</label>
+                        <input asp-for="MaxAbsentForBonus" type="number" min="0" class="form-control" />
+                        <span class="caption">Max absent days to still qualify for bonus (default: 0)</span>
+                    </div>
+                </div>
 
-            <!-- Notes -->
-            <div class="mb-6">
-                <label asp-for="Notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
-                <textarea asp-for="Notes" rows="2" class="w-full border rounded-lg px-3 py-2" placeholder="Internal notes about this policy..."></textarea>
-            </div>
+                <div class="divider"></div>
 
-            <div class="flex gap-3">
-                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
-                    <i class="fas fa-save mr-2"></i> Create Policy
-                </button>
-                <a asp-action="Index" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-3 rounded-lg font-medium text-center">
-                    Cancel
-                </a>
-            </div>
-        </form>
+                <!-- Work Standards -->
+                <h3 class="section-title" style="padding-bottom:0.5rem; border-bottom:1px solid var(--border-light); margin-bottom:1rem;">Work Standards</h3>
+                <div class="form-row" style="margin-bottom:1.5rem;">
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="StandardDailyHours" class="form-label">Standard Daily Hours</label>
+                        <input asp-for="StandardDailyHours" type="number" step="0.5" min="1" class="form-control" />
+                        <span class="caption">Used to compute hourly rate (default: 8h)</span>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label asp-for="LateThresholdMinutes" class="form-label">Late Threshold (minutes)</label>
+                        <input asp-for="LateThresholdMinutes" type="number" min="0" class="form-control" />
+                        <span class="caption">Minutes after shift start to consider late (default: 15)</span>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Notes -->
+                <div class="form-group" style="margin-bottom:1.5rem;">
+                    <label asp-for="Notes" class="form-label">Notes (optional)</label>
+                    <textarea asp-for="Notes" rows="2" class="form-control" placeholder="Internal notes about this policy..."></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div style="display:flex; gap:0.75rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">
+                        <i class="fas fa-save" style="margin-right:0.5rem;"></i> Create Policy
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>

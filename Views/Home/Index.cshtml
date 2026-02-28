@@ -1,452 +1,470 @@
-﻿<!DOCTYPE html>
-<html lang="en">
-@{
+﻿@{
     ViewData["Title"] = "Dashboard";
+    var userRole = Context.Session.GetString("UserRole");
+    var userName = Context.Session.GetString("UserName");
+    var isOwner = userRole == "Owner";
+    var isManager = userRole == "BranchManager";
+    var isOwnerOrManager = isOwner || isManager;
 }
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cafe Management System - Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .dashboard-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
 
-            .dashboard-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+<!-- Welcome Bar -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
+    <div>
+        <h1 class="page-title">Welcome back, @(userName ?? "User") 👋</h1>
+        <p class="body-text mt-1">Here's what's happening across your operations today.</p>
+    </div>
+    @if (isOwnerOrManager)
+    {
+        <div class="flex items-center gap-3">
+            <a asp-controller="Reports" asp-action="Index" class="btn btn-primary">
+                <i class="fas fa-chart-line"></i> View Reports
+            </a>
+        </div>
+    }
+</div>
+
+<!-- KPI Cards Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
+    <!-- Branches -->
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(212,175,55,0.10); color: #d4af37;">
+            <i class="fas fa-store"></i>
+        </div>
+        <div class="kpi-label">Active Branches</div>
+        <div class="kpi-value">@ViewBag.DashboardData.TotalBranches</div>
+        <div class="kpi-change neutral">
+            <i class="fas fa-building"></i> Operating
+        </div>
+    </div>
+
+    <!-- Staff -->
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(99,102,241,0.10); color: #6366f1;">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="kpi-label">Total Staff</div>
+        <div class="kpi-value">@ViewBag.TotalStaff</div>
+        <div class="kpi-change up">
+            <i class="fas fa-user-check"></i> @ViewBag.ActiveStaff active
+        </div>
+    </div>
+
+    <!-- Orders Today -->
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(34,197,94,0.10); color: #22c55e;">
+            <i class="fas fa-receipt"></i>
+        </div>
+        <div class="kpi-label">Today's Orders</div>
+        <div class="kpi-value">@ViewBag.TodayOrders</div>
+        <div class="kpi-change neutral">
+            <i class="fas fa-clock"></i> @ViewBag.PendingOrders pending
+        </div>
+    </div>
+
+    <!-- Total Orders -->
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(168,85,247,0.10); color: #a855f7;">
+            <i class="fas fa-chart-bar"></i>
+        </div>
+        <div class="kpi-label">Total Orders</div>
+        <div class="kpi-value">@ViewBag.TotalOrders</div>
+        <div class="kpi-change up">
+            <i class="fas fa-check-circle"></i> @ViewBag.CompletedOrders completed
+        </div>
+    </div>
+</div>
+
+<!-- Second Row: More KPIs for Owner/Manager -->
+@if (isOwnerOrManager)
+{
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: rgba(236,72,153,0.10); color: #ec4899;">
+                <i class="fas fa-user-friends"></i>
+            </div>
+            <div class="kpi-label">Customers</div>
+            <div class="kpi-value">@ViewBag.TotalCustomers</div>
+            <div class="kpi-change neutral">
+                <i class="fas fa-heart"></i> Registered
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: rgba(14,165,233,0.10); color: #0ea5e9;">
+                <i class="fas fa-utensils"></i>
+            </div>
+            <div class="kpi-label">Menu Items</div>
+            <div class="kpi-value">@ViewBag.TotalMenuItems</div>
+            <div class="kpi-change up">
+                <i class="fas fa-check"></i> Available
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: rgba(34,197,94,0.10); color: #22c55e;">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="kpi-label">Avg. Order Value</div>
+            <div class="kpi-value">$@ViewBag.AverageOrderValue</div>
+            <div class="kpi-change neutral">
+                <i class="fas fa-arrow-trend-up"></i> Per order
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: rgba(245,158,11,0.10); color: #f59e0b;">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="kpi-label">Low Stock Items</div>
+            <div class="kpi-value">@(ViewBag.LowStockItems != null ? ((IEnumerable<dynamic>)ViewBag.LowStockItems).Count() : 0)</div>
+            <div class="kpi-change @(ViewBag.LowStockItems != null && ((IEnumerable<dynamic>)ViewBag.LowStockItems).Count() > 0 ? "down" : "up")">
+                <i class="fas fa-boxes-stacked"></i> @(ViewBag.LowStockItems != null && ((IEnumerable<dynamic>)ViewBag.LowStockItems).Count() > 0 ? "Needs attention" : "All healthy")
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Charts Row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-7">
+    <!-- Revenue Chart -->
+    <div class="lg:col-span-2 card">
+        <div class="card-header">
+            <h3 class="section-title">Revenue Overview</h3>
+            <span class="badge badge-neutral">Last 12 Months</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-container" style="height:300px;">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="section-title">Quick Stats</h3>
+        </div>
+        <div class="card-body space-y-4">
+            <div class="flex items-center justify-between py-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg flex items-center justify-center text-sm" style="background:rgba(99,102,241,0.08); color:#6366f1;">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <span class="text-sm text-[var(--text-secondary)]">Active Menu</span>
+                </div>
+                <span class="font-semibold text-sm">@ViewBag.TotalMenuItems</span>
+            </div>
+            <hr class="divider" style="margin:0;">
+            <div class="flex items-center justify-between py-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg flex items-center justify-center text-sm" style="background:rgba(245,158,11,0.08); color:#f59e0b;">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <span class="text-sm text-[var(--text-secondary)]">Pending</span>
+                </div>
+                <span class="font-semibold text-sm text-amber-600">@ViewBag.PendingOrders</span>
+            </div>
+            <hr class="divider" style="margin:0;">
+            <div class="flex items-center justify-between py-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg flex items-center justify-center text-sm" style="background:rgba(34,197,94,0.08); color:#22c55e;">
+                        <i class="fas fa-circle-check"></i>
+                    </div>
+                    <span class="text-sm text-[var(--text-secondary)]">Completed</span>
+                </div>
+                <span class="font-semibold text-sm text-green-600">@ViewBag.CompletedOrders</span>
+            </div>
+            <hr class="divider" style="margin:0;">
+            <div class="flex items-center justify-between py-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg flex items-center justify-center text-sm" style="background:rgba(212,175,55,0.08); color:#d4af37;">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <span class="text-sm text-[var(--text-secondary)]">Avg. Value</span>
+                </div>
+                <span class="font-semibold text-sm">$@ViewBag.AverageOrderValue</span>
+            </div>
+
+            @if (isOwner)
+            {
+                <hr class="divider" style="margin:4px 0 8px;">
+                <div class="caption mb-3">Quick Actions</div>
+                <div class="flex flex-col gap-2">
+                    <a asp-controller="Staff" asp-action="Create" class="btn btn-secondary btn-sm w-full">
+                        <i class="fas fa-user-plus"></i> Add Staff
+                    </a>
+                    <a asp-controller="Order" asp-action="Index" class="btn btn-primary btn-sm w-full">
+                        <i class="fas fa-plus"></i> New Order
+                    </a>
+                </div>
             }
-
-        .notification-dot {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            width: 18px;
-            height: 18px;
-            background-color: #f44336;
-            border-radius: 50%;
-            color: white;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<header class="rounded-3xl border border-slate-200 bg-white/90 backdrop-blur-lg shadow-[0_18px_60px_rgba(15,23,42,0.08)] px-4 sm:px-6 py-4 sm:py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div class="flex items-center gap-3">
-        <div class="relative w-11 h-11">
-            <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-300 via-rose-300 to-sky-300 blur-sm opacity-80">
-            </div>
-            <div class="relative w-full h-full rounded-2xl bg-white flex items-center justify-center text-xl shadow-sm border border-slate-100">
-                <i class="fas fa-mug-hot text-amber-600"></i>
-            </div>
         </div>
-        <div>
-            <p class="pill-badge border-slate-200 bg-slate-50 text-slate-500">
-                Cafe OS
-            </p>
-            <h1 class="mt-1 text-lg sm:text-xl font-semibold tracking-tight text-slate-900">
-                Dashboard Overview
-            </h1>
-            <p class="text-xs text-slate-500">
-                Quick view of branches, staff, orders and menu performance.
-            </p>
+    </div>
+</div>
+
+<!-- To-Do Widget -->
+<div class="card mb-5">
+    <div class="card-header">
+        <h3 class="section-title" style="display:flex; align-items:center; gap:0.5rem;">
+            <i class="fas fa-tasks" style="color:var(--accent);"></i> My Tasks
+        </h3>
+        <span id="todoCount" class="badge badge-accent" style="font-size:0.7rem;">0</span>
+    </div>
+    <div class="card-body">
+        <!-- Add Task -->
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+            <input type="text" id="todoInput" class="form-control" placeholder="Add a new task..." style="flex:1;" onkeydown="if(event.key==='Enter')addTodo()" />
+            <select id="todoPriority" class="form-select" style="width:110px;">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+            </select>
+            <button onclick="addTodo()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i></button>
+        </div>
+        <!-- Task List -->
+        <div id="todoList" style="max-height:280px; overflow-y:auto;"></div>
+        <div id="todoEmpty" class="empty-state" style="display:none; padding:1.5rem;">
+            <i class="fas fa-clipboard-check" style="font-size:1.5rem; color:var(--text-tertiary);"></i>
+            <p class="caption" style="margin-top:0.5rem;">No tasks yet. Add one above!</p>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Row: Low Stock + Recent Orders -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <!-- Low Stock Alerts -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="section-title flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                Low Stock
+            </h3>
+            <a asp-controller="InventoryItem" asp-action="Index" class="text-xs font-medium" style="color:var(--accent);">View all</a>
+        </div>
+        <div class="card-body">
+            @if (ViewBag.LowStockItems != null && ((IEnumerable<dynamic>)ViewBag.LowStockItems).Any())
+            {
+                <div class="space-y-3">
+                    @foreach (var item in ViewBag.LowStockItems)
+                    {
+                        <div class="flex items-center justify-between p-3 rounded-lg" style="border:1px solid var(--border-light);">
+                            <div>
+                                <p class="text-sm font-medium" style="color:var(--text-primary);">@item.Name</p>
+                                <p class="text-xs" style="color:var(--text-tertiary);">@item.Branch?.Name</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-sm font-bold @(item.Quantity == 0 ? "text-red-500" : "text-amber-500")">
+                                    @item.Quantity @item.Unit
+                                </span>
+                                <p class="text-xs" style="color:var(--text-tertiary);">Min: @item.ReorderLevel</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state" style="padding:32px 16px;">
+                    <div class="empty-state-icon" style="background:rgba(34,197,94,0.08); color:#22c55e;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <p class="empty-state-text">All stock levels are healthy</p>
+                </div>
+            }
         </div>
     </div>
 
-    <div class="flex items-center gap-2 sm:gap-3">
-        <a href="@Url.Action("Index", "Reports")"
-           class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-slate-50 text-xs sm:text-[13px] font-semibold px-3.5 py-1.5 shadow-sm hover:bg-slate-800 transition">
-            <i class="fas fa-chart-line text-[11px]"></i>
-            <span>Go to Reports</span>
-        </a>
-    </div>
-</header>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Main content area -->
-    <div class="main-content flex-1 ml-0 ">
-        <!-- Header -->
-        <header class="bg-white border-b border-gray-200">
-            <div class="flex items-center justify-between p-4">
-               
-
-                <div class="flex items-center space-x-4">
-                    <!-- Notifications -->
-                    @* <div class="relative"> *@
-                    @*     <button class="text-gray-500 hover:text-gray-700 transition-colors"> *@
-                    @*         <i class="fas fa-bell text-xl"></i> *@
-                    @*     </button> *@
-                    @*     <span class="notification-dot">3</span> *@
-                    @* </div> *@
-
-                    <!-- User info -->
-                    @* <div class="flex items-center space-x-3"> *@
-                    @*     <div class="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold"> *@
-                    @*         @if (Context.Session.GetString("UserName") != null) *@
-                    @*         { *@
-                    @*             @Context.Session.GetString("UserName").Substring(0, 1).ToUpper() *@
-                    @*         } *@
-                    @*         else *@
-                    @*         { *@
-                    @*             <i class="fas fa-user"></i> *@
-                    @*         } *@
-                    @*     </div> *@
-                    @*     <div class="hidden md:block"> *@
-                    @*         <div class="text-sm font-medium text-gray-700"> *@
-                    @*             @(Context.Session.GetString("UserName") ?? "Guest") *@
-                    @*         </div> *@
-                    @*         <div class="text-xs text-gray-500"> *@
-                    @*             @(Context.Session.GetString("UserRole") ?? "Not logged in") *@
-                    @*         </div> *@
-                    @*     </div> *@
-                    @* </div> *@
-                </div>
-            </div>
-        </header>
-
-        <!-- Main content -->
-        <main class="p-6">
-            <!-- Stats grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Total Branches -->
-                <div class="dashboard-card bg-white rounded-xl shadow-md p-6 border-l-4 border-orange-500">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-lg bg-orange-100 text-orange-600">
-                            <i class="fas fa-store text-2xl"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-sm text-gray-500">Total Branches</h3>
-                            <p class="text-2xl font-bold text-gray-800">@ViewBag.DashboardData.TotalBranches</p>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <p class="text-xs text-gray-500">
-                            <span class="text-green-600 mr-1"><i class="fas fa-arrow-up"></i> @(ViewBag.DashboardData.TotalBranches > 0 ? "Active" : "No branches")</span>
-                            currently operating
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Total Staff -->
-                <div class="dashboard-card bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-lg bg-blue-100 text-blue-600">
-                            <i class="fas fa-users text-2xl"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-sm text-gray-500">Total Staff</h3>
-                            <p class="text-2xl font-bold text-gray-800">@ViewBag.TotalStaff</p>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <p class="text-xs text-gray-500">
-                            <span class="text-green-600 mr-1"><i class="fas fa-user-check"></i> @ViewBag.ActiveStaff active</span>
-                            team members
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Total Customers -->
-                <div class="dashboard-card bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-lg bg-green-100 text-green-600">
-                            <i class="fas fa-user-friends text-2xl"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-sm text-gray-500">Total Customers</h3>
-                            <p class="text-2xl font-bold text-gray-800">@ViewBag.TotalCustomers</p>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <p class="text-xs text-gray-500">
-                            <span class="text-green-600 mr-1"><i class="fas fa-users"></i> @ViewBag.ActiveCustomers active</span>
-                            loyal customers
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Total Orders -->
-                <div class="dashboard-card bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-lg bg-purple-100 text-purple-600">
-                            <i class="fas fa-shopping-cart text-2xl"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-sm text-gray-500">Total Orders</h3>
-                            <p class="text-2xl font-bold text-gray-800">@ViewBag.TotalOrders</p>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <p class="text-xs text-gray-500">
-                            <span class="text-green-600 mr-1"><i class="fas fa-chart-line"></i> @ViewBag.TodayOrders today</span>
-                            orders processed
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts and content grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Revenue chart -->
-                <div class="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800">Monthly Revenue Overview</h3>
-                        <div>
-                            <select class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option>Last 7 Days</option>
-                                <option>Last 30 Days</option>
-                                <option selected>Last 90 Days</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="h-80">
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Right side stats -->
-                <div class="space-y-6">
-                    <!-- Quick Stats -->
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Stats</h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">Active Menu Items</span>
-                                <span class="text-sm font-semibold">@ViewBag.TotalMenuItems</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">Pending Orders</span>
-                                <span class="text-sm font-semibold text-orange-600">@ViewBag.PendingOrders</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">Completed Orders</span>
-                                <span class="text-sm font-semibold text-green-600">@ViewBag.CompletedOrders</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">Avg. Order Value</span>
-                                <span class="text-sm font-semibold">$@ViewBag.AverageOrderValue</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quick Actions -->
-                    @if (Context.Session.GetString("UserRole") == "Owner")
-                    {
-                        <div class="bg-white rounded-xl shadow-md p-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
-                            <div class="space-y-3">
-
-                                <a asp-controller="Staff" asp-action="Create" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center transition-colors">
-                                    <i class="fas fa-user-plus mr-2"></i> Add Staff
-                                </a>
-                                <a asp-controller="Branch" asp-action="Create" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center transition-colors">
-                                    <i class="fas fa-store mr-2"></i> New Branch
-                                </a>
-                                <a asp-controller="Order" asp-action="Create" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center transition-colors">
-                                    <i class="fas fa-plus-circle mr-2"></i> New Order
-                                </a>
-
-                            </div>
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <!-- Recent orders and popular items -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Low Stock Alerts -->
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">
-                            <i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>Low Stock
-                        </h3>
-                        <a asp-controller="InventoryItem" asp-action="Index" class="text-sm text-blue-600 hover:underline">View all</a>
-                    </div>
-                    @if (ViewBag.LowStockItems != null && ViewBag.LowStockItems.Count > 0)
-                    {
-                        <div class="space-y-3">
-                            @foreach (var item in ViewBag.LowStockItems)
-                            {
-                                <div class="flex items-center justify-between p-3 rounded-lg bg-amber-50 border border-amber-200">
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-800">@item.Name</p>
-                                        <p class="text-xs text-gray-500">@item.Branch?.Name</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="text-sm font-bold @(item.Quantity == 0 ? "text-red-600" : "text-amber-600")">
-                                            @item.Quantity @item.Unit
-                                        </span>
-                                        <p class="text-xs text-gray-400">Min: @item.ReorderLevel</p>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-6">
-                            <i class="fas fa-check-circle text-3xl text-green-400 mb-2"></i>
-                            <p class="text-sm text-gray-500">All stock levels are healthy</p>
-                        </div>
-                    }
-                </div>
-
-                <!-- Recent Orders -->
-                <div class="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800">Recent Orders</h3>
-                        <a asp-controller="Order" asp-action="Index" class="text-sm text-blue-600 hover:underline">View all</a>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="text-left text-gray-500 text-sm border-b">
-                                    <th class="pb-3">Order #</th>
-                                    <th class="pb-3">Customer</th>
-                                    <th class="pb-3">Amount</th>
-                                    <th class="pb-3">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y">
-                                @if (ViewBag.RecentOrders != null && ViewBag.RecentOrders.Count > 0)
-                                {
-                                    @foreach (var order in ViewBag.RecentOrders)
-                                    {
-                                        <tr class="hover:bg-gray-50 transition-colors">
-                                            <td class="py-3 text-sm font-medium">#@order.OrderNumber</td>
-                                            <td class="py-3 text-sm">@order.CustomerName</td>
-                                            <td class="py-3 text-sm">$@order.TotalAmount</td>
-                                            <td class="py-3">
-                                                <span class="px-2 py-1 text-xs rounded-full
-                                                    @(order.Status == "Completed" ? "bg-green-100 text-green-800" :
-                                                      order.Status == "Pending" ? "bg-yellow-100 text-yellow-800" :
-                                                      "bg-red-100 text-red-800")">
-                                                    @order.Status
-                                                </span>
-                                            </td>
-                                        </tr>
+    <!-- Recent Orders -->
+    <div class="lg:col-span-2 card">
+        <div class="card-header">
+            <h3 class="section-title">Recent Orders</h3>
+            <a asp-controller="Order" asp-action="Index" class="text-xs font-medium" style="color:var(--accent);">View all</a>
+        </div>
+        <div class="card-body" style="padding-top:8px;">
+            @if (ViewBag.RecentOrders != null && ((IEnumerable<dynamic>)ViewBag.RecentOrders).Any())
+            {
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in ViewBag.RecentOrders)
+                        {
+                            <tr>
+                                <td class="font-medium">#@order.OrderNumber</td>
+                                <td>@order.CustomerName</td>
+                                <td class="font-medium">$@order.TotalAmount</td>
+                                <td>
+                                    @{
+                                        var badgeCls = (string)order.Status switch
+                                        {
+                                            "Completed" => "badge-success",
+                                            "Pending" => "badge-warning",
+                                            "Preparing" => "badge-info",
+                                            "Ready" => "badge-accent",
+                                            _ => "badge-danger"
+                                        };
                                     }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="4" class="py-4 text-center text-gray-500">
-                                            No recent orders found
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Popular Menu Items -->
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800">Popular Menu Items</h3>
-                        <a asp-controller="MenuItem" asp-action="Index" class="text-sm text-blue-600 hover:underline">View all</a>
-                    </div>
-                    <div class="space-y-4">
-                        @if (ViewBag.DashboardData.PopularItems != null && ViewBag.DashboardData.PopularItems.Count > 0)
-                        {
-                            var rank = 1;
-                            @foreach (var item in ViewBag.DashboardData.PopularItems)
-                            {
-                                <div class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                    <div class="w-10 h-10 rounded-lg @(rank == 1 ? "bg-orange-500" : rank == 2 ? "bg-gray-400" : rank == 3 ? "bg-yellow-600" : "bg-gray-300") flex items-center justify-center text-white font-bold">
-                                        @rank
-                                    </div>
-                                    <div class="ml-4 flex-1">
-                                        <h4 class="text-sm font-medium text-gray-800">@item.Name</h4>
-                                        <p class="text-xs text-gray-500">@item.Category?.Name</p>
-                                    </div>
-                                    <div class="text-sm font-medium text-gray-700">$@item.Price</div>
-                                </div>
-                                rank++;
-                            }
+                                    <span class="badge @badgeCls">@order.Status</span>
+                                </td>
+                            </tr>
                         }
-                        else
-                        {
-                            <div class="text-center text-gray-500 py-4">
-                                No menu items available
-                            </div>
-                        }
-                    </div>
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="fas fa-receipt"></i></div>
+                    <p class="empty-state-title">No recent orders</p>
+                    <p class="empty-state-text">Orders will appear here once placed.</p>
                 </div>
-            </div>
-        </main>
+            }
+        </div>
     </div>
+</div>
 
+@section Scripts {
     <script>
-        // Revenue chart with real data
-        document.addEventListener('DOMContentLoaded', function() {
-            var chartLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.ChartLabels));
-            var chartData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.ChartData));
+        // ── To-Do Widget ──
+        const todoList = document.getElementById('todoList');
+        const todoEmpty = document.getElementById('todoEmpty');
+        const todoCount = document.getElementById('todoCount');
+        const todoInput = document.getElementById('todoInput');
 
-            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-            const revenueChart = new Chart(revenueCtx, {
+        function getToken() {
+            return document.querySelector('[name="__RequestVerificationToken"]')?.value ||
+                   document.querySelector('meta[name="RequestVerificationToken"]')?.content || '';
+        }
+
+        async function loadTodos() {
+            try {
+                const res = await fetch('/Todo');
+                const items = await res.json();
+                renderTodos(items);
+            } catch { todoList.innerHTML = ''; }
+        }
+
+        function renderTodos(items) {
+            const pending = items.filter(t => !t.isCompleted);
+            todoCount.textContent = pending.length;
+            if (!items.length) { todoList.innerHTML = ''; todoEmpty.style.display = 'block'; return; }
+            todoEmpty.style.display = 'none';
+            todoList.innerHTML = items.map(t => {
+                const priColor = t.priority === 'High' ? '#ef4444' : t.priority === 'Medium' ? '#f59e0b' : '#22c55e';
+                const checked = t.isCompleted ? 'checked' : '';
+                const strike = t.isCompleted ? 'text-decoration:line-through; opacity:0.5;' : '';
+                return `<div style="display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0; border-bottom:1px solid var(--border-light);">
+                    <input type="checkbox" ${checked} onchange="toggleTodo(${t.id})" style="width:1rem; height:1rem; accent-color:var(--accent); cursor:pointer;" />
+                    <span style="width:6px; height:6px; border-radius:50%; background:${priColor}; flex-shrink:0;" title="${t.priority}"></span>
+                    <span style="flex:1; font-size:0.875rem; ${strike}">${t.title}</span>
+                    ${t.dueDate ? `<span class="caption">${new Date(t.dueDate).toLocaleDateString('en-GB', {day:'numeric',month:'short'})}</span>` : ''}
+                    <button onclick="deleteTodo(${t.id})" style="background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:0.25rem;" title="Delete">
+                        <i class="fas fa-times" style="font-size:0.7rem;"></i>
+                    </button>
+                </div>`;
+            }).join('');
+        }
+
+        async function addTodo() {
+            const title = todoInput.value.trim();
+            if (!title) return;
+            const priority = document.getElementById('todoPriority').value;
+            try {
+                await fetch('/Todo/Create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                    body: JSON.stringify({ title, priority })
+                });
+                todoInput.value = '';
+                loadTodos();
+            } catch {}
+        }
+
+        async function toggleTodo(id) {
+            try {
+                await fetch(`/Todo/Toggle/${id}`, { method: 'PUT', headers: { 'RequestVerificationToken': getToken() } });
+                loadTodos();
+            } catch {}
+        }
+
+        async function deleteTodo(id) {
+            try {
+                await fetch(`/Todo/Delete/${id}`, { method: 'DELETE', headers: { 'RequestVerificationToken': getToken() } });
+                loadTodos();
+            } catch {}
+        }
+
+        document.addEventListener('DOMContentLoaded', loadTodos);
+
+        // ── Revenue Chart ──
+        document.addEventListener('DOMContentLoaded', function () {
+            var labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.ChartLabels));
+            var data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.ChartData));
+
+            const ctx = document.getElementById('revenueChart')?.getContext('2d');
+            if (!ctx) return;
+
+            new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: chartLabels,
+                    labels: labels,
                     datasets: [{
-                        label: 'Monthly Revenue ($)',
-                        data: chartData,
-                        borderColor: '#4f46e5',
-                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        label: 'Revenue',
+                        data: data,
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212,175,55,0.06)',
                         tension: 0.4,
                         fill: true,
-                        borderWidth: 3
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#d4af37',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        legend: {
-                            display: false
-                        },
+                        legend: { display: false },
                         tooltip: {
-                            mode: 'index',
-                            intersect: false,
+                            backgroundColor: '#1e2a3a',
+                            titleColor: '#94a3b8',
+                            bodyColor: '#fff',
+                            bodyFont: { weight: '600' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
                             callbacks: {
-                                label: function(context) {
-                                    return '$' + context.parsed.y.toLocaleString();
-                                }
+                                label: ctx => '$' + ctx.parsed.y.toLocaleString()
                             }
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            grid: {
-                                drawBorder: false
-                            },
+                            grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
                             ticks: {
-                                callback: function(value) {
-                                    return '$' + value.toLocaleString();
-                                }
+                                color: '#9ca3af',
+                                font: { size: 11 },
+                                callback: v => '$' + v.toLocaleString()
                             }
                         },
                         x: {
-                            grid: {
-                                display: false
-                            }
+                            grid: { display: false },
+                            ticks: { color: '#9ca3af', font: { size: 11 } }
                         }
                     }
                 }
             });
-
-            // Add animation to dashboard cards
-            const cards = document.querySelectorAll('.dashboard-card');
-            cards.forEach((card, index) => {
-                card.style.animationDelay = `${index * 0.1}s`;
-            });
         });
     </script>
-</body>
-</html>
+}

@@ -1,836 +1,316 @@
-﻿<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu Management - Cafe System</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="~/css/MenuDesign.css" />
-</head>
-<body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="logo">
-            <h1><i class="fas fa-utensils"></i> Cafe Manager</h1>
-            <p class="text-gray-300 text-sm mt-1">Owner Dashboard</p>
-        </div>
+﻿@model IEnumerable<Cafe.Models.MenuItem>
+@{
+    ViewData["Title"] = "Menu Management";
+    var branches = ViewBag.Branches as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new();
+    var categories = ViewBag.Categories as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new();
+    var selectedBranch = ViewBag.SelectedBranch as int?;
+    var selectedCategory = ViewBag.SelectedCategory as int?;
+    var searchTerm = ViewBag.Search as string ?? "";
+    var dietaryFilter = ViewBag.DietaryFilter as string ?? "";
+    var showInactive = (bool)(ViewBag.ShowInactive ?? false);
 
-        <a href="#" class="nav-item">
-            <i class="fas fa-chart-pie"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fas fa-store"></i>
-            <span>Branches</span>
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fas fa-users"></i>
-            <span>Staff</span>
-        </a>
-        <a href="#" class="nav-item active">
-            <i class="fas fa-book-open"></i>
-            <span>Menu</span>
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fas fa-shopping-cart"></i>
-            <span>Orders</span>
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fas fa-boxes"></i>
-            <span>Inventory</span>
-        </a>
+    var totalItems = Model.Count();
+    var availableCount = Model.Count(m => m.Availability);
+    var unavailableCount = totalItems - availableCount;
+    var avgPrice = totalItems > 0 ? Model.Average(m => m.Price) : 0;
+    var categoryCount = Model.Select(m => m.CategoryId).Distinct().Count();
+}
 
-        <div class="mt-6 pt-6 border-t border-gray-700">
-            <a href="#" class="nav-item">
-                <i class="fas fa-user"></i>
-                <span>Profile</span>
+<!-- Page Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Menu Management</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Manage your restaurant's menu items across all branches.</p>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+        @if (Context.Session.GetString("UserRole") == "Owner")
+        {
+            <a asp-controller="MenuItem" asp-action="ExportCsv" class="btn btn-secondary btn-sm">
+                <i class="fas fa-download"></i> Export
             </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
-        </div>
+        }
+        <a asp-controller="Menu" asp-action="Create" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> New Item
+        </a>
     </div>
+</div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Header -->
-        <div class="header">
-            <h2 class="text-2xl font-semibold text-gray-800">Menu Management</h2>
-            <div class="flex items-center space-x-4">
-                <div class="user-info flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">O</div>
-                    <div class="ml-3">
-                        <div class="text-sm font-medium text-gray-700">Owner</div>
-                        <div class="text-xs text-gray-500">Administrator</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Content -->
-        <div class="content">
-            <!-- Tabs -->
-            <div class="tab-container">
-                <div class="tab active" onclick="switchTab('list-view')">List View</div>
-                <div class="tab" onclick="switchTab('grid-view')">Grid View</div>
-                <div class="tab" onclick="switchTab('categories')">Categories</div>
-            </div>
-
-            <!-- Action Bar -->
-            <div class="card mb-6">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center space-x-4">
-                        <div class="form-group mb-0">
-                            <input type="text" class="form-input" placeholder="Search menu items..." style="min-width: 300px;">
-                        </div>
-                        <select class="form-select" style="width: 150px;">
-                            <option>All Categories</option>
-                            <option>Coffee</option>
-                            <option>Tea</option>
-                            <option>Pastries</option>
-                            <option>Sandwiches</option>
-                        </select>
-                        <select class="form-select" style="width: 150px;">
-                            <option>All Branches</option>
-                            <option>Downtown Branch</option>
-                            <option>Uptown Branch</option>
-                        </select>
-                        <select class="form-select" style="width: 150px;">
-                            <option>Dietary Filters</option>
-                            <option>Vegetarian</option>
-                            <option>Vegan</option>
-                            <option>Gluten-Free</option>
-                            <option>Dairy-Free</option>
-                            <option>Spicy</option>
-                        </select>
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" class="form-checkbox">
-                            <span class="text-sm">Show Inactive</span>
-                        </label>
-                    </div>
-                    <button class="btn btn-primary" onclick="openCreateModal()">
-                        <i class="fas fa-plus mr-2"></i> New Menu Item
-                    </button>
-                </div>
-            </div>
-
-            <!-- List View -->
-            <div id="list-view" class="view">
-                <div class="card">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Category</th>
-                                <th>Branch</th>
-                                <th>Price</th>
-                                <th>Status</th>
-                                <th>Dietary</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <div class="font-medium">Cappuccino</div>
-                                    <div class="text-sm text-gray-500">Espresso with steamed milk</div>
-                                </td>
-                                <td>
-                                    <span class="badge badge-primary">Coffee</span>
-                                </td>
-                                <td>Downtown Branch</td>
-                                <td class="font-medium text-green-600">$4.50</td>
-                                <td>
-                                    <span class="status status-available">Available</span>
-                                </td>
-                                <td>
-                                    <span class="dietary-tag vegetarian">Vegetarian</span>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn btn-outline btn-sm" onclick="openViewModal()">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn btn-outline btn-sm" onclick="openEditModal()">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-outline btn-sm">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="font-medium">Chocolate Cake</div>
-                                    <div class="text-sm text-gray-500">Rich chocolate cake with frosting</div>
-                                </td>
-                                <td>
-                                    <span class="badge badge-warning">Pastries</span>
-                                </td>
-                                <td>Uptown Branch</td>
-                                <td class="font-medium text-green-600">$5.75</td>
-                                <td>
-                                    <span class="status status-available">Available</span>
-                                </td>
-                                <td>
-                                    <span class="dietary-tag vegetarian">Vegetarian</span>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn btn-outline btn-sm" onclick="openViewModal()">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn btn-outline btn-sm" onclick="openEditModal()">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-outline btn-sm">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="font-medium">Green Tea</div>
-                                    <div class="text-sm text-gray-500">Traditional Japanese green tea</div>
-                                </td>
-                                <td>
-                                    <span class="badge badge-success">Tea</span>
-                                </td>
-                                <td>Downtown Branch</td>
-                                <td class="font-medium text-green-600">$3.25</td>
-                                <td>
-                                    <span class="status status-available">Available</span>
-                                </td>
-                                <td>
-                                    <span class="dietary-tag vegan">Vegan</span>
-                                    <span class="dietary-tag gluten-free">GF</span>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn btn-outline btn-sm" onclick="openViewModal()">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn btn-outline btn-sm" onclick="openEditModal()">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-outline btn-sm">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="font-medium">Turkey Club</div>
-                                    <div class="text-sm text-gray-500">Turkey with bacon and avocado</div>
-                                </td>
-                                <td>
-                                    <span class="badge badge-info">Sandwiches</span>
-                                </td>
-                                <td>Uptown Branch</td>
-                                <td class="font-medium text-green-600">$8.95</td>
-                                <td>
-                                    <span class="status status-unavailable">Unavailable</span>
-                                </td>
-                                <td>
-                                    <span class="dietary-tag dairy-free">DF</span>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn btn-outline btn-sm" onclick="openViewModal()">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn btn-outline btn-sm" onclick="openEditModal()">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-outline btn-sm">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Grid View -->
-            <div id="grid-view" class="view" style="display: none;">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <!-- Menu Item Card -->
-                    <div class="menu-item-card">
-                        <div class="menu-item-image">
-                            <i class="fas fa-coffee fa-3x"></i>
-                        </div>
-                        <div class="menu-item-content">
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-semibold text-lg">Cappuccino</h3>
-                                <span class="menu-item-price">$4.50</span>
-                            </div>
-                            <p class="text-gray-500 text-sm mt-1">Espresso with steamed milk</p>
-                            <div class="mt-2">
-                                <span class="badge badge-primary">Coffee</span>
-                                <span class="dietary-tag vegetarian">Vegetarian</span>
-                            </div>
-                            <div class="nutrition-grid mt-3">
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">120</div>
-                                    <div class="nutrition-label">Calories</div>
-                                </div>
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">6g</div>
-                                    <div class="nutrition-label">Protein</div>
-                                </div>
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">10g</div>
-                                    <div class="nutrition-label">Carbs</div>
-                                </div>
-                            </div>
-                            <div class="menu-item-actions">
-                                <button class="btn btn-outline btn-sm flex-1" onclick="openViewModal()">
-                                    <i class="fas fa-eye mr-1"></i> View
-                                </button>
-                                <button class="btn btn-outline btn-sm flex-1" onclick="openEditModal()">
-                                    <i class="fas fa-edit mr-1"></i> Edit
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Menu Item Card -->
-                    <div class="menu-item-card">
-                        <div class="menu-item-image">
-                            <i class="fas fa-birthday-cake fa-3x"></i>
-                        </div>
-                        <div class="menu-item-content">
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-semibold text-lg">Chocolate Cake</h3>
-                                <span class="menu-item-price">$5.75</span>
-                            </div>
-                            <p class="text-gray-500 text-sm mt-1">Rich chocolate cake with frosting</p>
-                            <div class="mt-2">
-                                <span class="badge badge-warning">Pastries</span>
-                                <span class="dietary-tag vegetarian">Vegetarian</span>
-                            </div>
-                            <div class="nutrition-grid mt-3">
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">350</div>
-                                    <div class="nutrition-label">Calories</div>
-                                </div>
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">5g</div>
-                                    <div class="nutrition-label">Protein</div>
-                                </div>
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">45g</div>
-                                    <div class="nutrition-label">Carbs</div>
-                                </div>
-                            </div>
-                            <div class="menu-item-actions">
-                                <button class="btn btn-outline btn-sm flex-1" onclick="openViewModal()">
-                                    <i class="fas fa-eye mr-1"></i> View
-                                </button>
-                                <button class="btn btn-outline btn-sm flex-1" onclick="openEditModal()">
-                                    <i class="fas fa-edit mr-1"></i> Edit
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Menu Item Card -->
-                    <div class="menu-item-card">
-                        <div class="menu-item-image">
-                            <i class="fas fa-mug-hot fa-3x"></i>
-                        </div>
-                        <div class="menu-item-content">
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-semibold text-lg">Green Tea</h3>
-                                <span class="menu-item-price">$3.25</span>
-                            </div>
-                            <p class="text-gray-500 text-sm mt-1">Traditional Japanese green tea</p>
-                            <div class="mt-2">
-                                <span class="badge badge-success">Tea</span>
-                                <span class="dietary-tag vegan">Vegan</span>
-                                <span class="dietary-tag gluten-free">GF</span>
-                            </div>
-                            <div class="nutrition-grid mt-3">
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">0</div>
-                                    <div class="nutrition-label">Calories</div>
-                                </div>
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">0g</div>
-                                    <div class="nutrition-label">Protein</div>
-                                </div>
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">0g</div>
-                                    <div class="nutrition-label">Carbs</div>
-                                </div>
-                            </div>
-                            <div class="menu-item-actions">
-                                <button class="btn btn-outline btn-sm flex-1" onclick="openViewModal()">
-                                    <i class="fas fa-eye mr-1"></i> View
-                                </button>
-                                <button class="btn btn-outline btn-sm flex-1" onclick="openEditModal()">
-                                    <i class="fas fa-edit mr-1"></i> Edit
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Menu Item Card -->
-                    <div class="menu-item-card">
-                        <div class="menu-item-image">
-                            <i class="fas fa-utensils fa-3x"></i>
-                        </div>
-                        <div class="menu-item-content">
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-semibold text-lg">Turkey Club</h3>
-                                <span class="menu-item-price">$8.95</span>
-                            </div>
-                            <p class="text-gray-500 text-sm mt-1">Turkey with bacon and avocado</p>
-                            <div class="mt-2">
-                                <span class="badge badge-info">Sandwiches</span>
-                                <span class="dietary-tag dairy-free">DF</span>
-                            </div>
-                            <div class="nutrition-grid mt-3">
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">450</div>
-                                    <div class="nutrition-label">Calories</div>
-                                </div>
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">25g</div>
-                                    <div class="nutrition-label">Protein</div>
-                                </div>
-                                <div class="nutrition-item">
-                                    <div class="nutrition-value">35g</div>
-                                    <div class="nutrition-label">Carbs</div>
-                                </div>
-                            </div>
-                            <div class="menu-item-actions">
-                                <button class="btn btn-outline btn-sm flex-1" onclick="openViewModal()">
-                                    <i class="fas fa-eye mr-1"></i> View
-                                </button>
-                                <button class="btn btn-outline btn-sm flex-1" onclick="openEditModal()">
-                                    <i class="fas fa-edit mr-1"></i> Edit
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Categories View -->
-            <div id="categories" class="view" style="display: none;">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Category Card -->
-                    <div class="card">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-lg">Coffee</h3>
-                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">12 items</span>
-                        </div>
-                        <p class="text-gray-500 mb-4">Hot and cold coffee beverages</p>
-                        <div class="flex justify-between">
-                            <button class="btn btn-outline btn-sm">View Items</button>
-                            <div>
-                                <button class="btn btn-outline btn-sm">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-outline btn-sm">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Category Card -->
-                    <div class="card">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-lg">Tea</h3>
-                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">8 items</span>
-                        </div>
-                        <p class="text-gray-500 mb-4">Traditional and herbal teas</p>
-                        <div class="flex justify-between">
-                            <button class="btn btn-outline btn-sm">View Items</button>
-                            <div>
-                                <button class="btn btn-outline btn-sm">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-outline btn-sm">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Category Card -->
-                    <div class="card">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-lg">Pastries</h3>
-                            <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">15 items</span>
-                        </div>
-                        <p class="text-gray-500 mb-4">Fresh baked pastries and desserts</p>
-                        <div class="flex justify-between">
-                            <button class="btn btn-outline btn-sm">View Items</button>
-                            <div>
-                                <button class="btn btn-outline btn-sm">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-outline btn-sm">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Category Card -->
-                    <div class="card">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-lg">Sandwiches</h3>
-                            <span class="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded">10 items</span>
-                        </div>
-                        <p class="text-gray-500 mb-4">Fresh made sandwiches and wraps</p>
-                        <div class="flex justify-between">
-                            <button class="btn btn-outline btn-sm">View Items</button>
-                            <div>
-                                <button class="btn btn-outline btn-sm">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-outline btn-sm">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-6">
-                    <button class="btn btn-primary">
-                        <i class="fas fa-plus mr-2"></i> Add New Category
-                    </button>
-                </div>
-            </div>
-
-            <!-- Pagination -->
-            <div class="flex justify-between items-center mt-6">
-                <div class="text-sm text-gray-500">
-                    Showing 1 to 4 of 42 menu items
-                </div>
-                <div class="flex space-x-2">
-                    <button class="btn btn-outline btn-sm">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button class="btn btn-primary btn-sm">1</button>
-                    <button class="btn btn-outline btn-sm">2</button>
-                    <button class="btn btn-outline btn-sm">3</button>
-                    <button class="btn btn-outline btn-sm">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
+<!-- KPI Cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fas fa-utensils"></i></div>
+        <div class="kpi-label">Total Items</div>
+        <div class="kpi-value">@totalItems</div>
     </div>
-
-    <!-- View Menu Item Modal -->
-    <div class="modal" id="viewMenuItemModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="text-lg font-semibold">Cappuccino Details</h3>
-                <button onclick="closeModal('viewMenuItemModal')" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <div class="menu-item-image" style="height: 250px;">
-                            <i class="fas fa-coffee fa-5x"></i>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-start mb-4">
-                            <h2 class="text-2xl font-bold">Cappuccino</h2>
-                            <span class="menu-item-price text-2xl">$4.50</span>
-                        </div>
-
-                        <div class="mb-4">
-                            <span class="badge badge-primary">Coffee</span>
-                            <span class="dietary-tag vegetarian">Vegetarian</span>
-                        </div>
-
-                        <p class="text-gray-600 mb-4">Espresso with steamed milk and a deep layer of foam. Perfect balance of rich espresso and creamy texture.</p>
-
-                        <div class="mb-4">
-                            <div class="form-label">Branch</div>
-                            <div class="font-medium">Downtown Branch</div>
-                        </div>
-
-                        <div class="mb-4">
-                            <div class="form-label">Preparation Time</div>
-                            <div class="font-medium">5 minutes</div>
-                        </div>
-
-                        <div class="mb-4">
-                            <div class="form-label">Status</div>
-                            <div><span class="status status-available">Available</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-6">
-                    <h4 class="font-medium mb-3">Nutritional Information</h4>
-                    <div class="nutrition-grid" style="grid-template-columns: repeat(4, 1fr);">
-                        <div class="nutrition-item">
-                            <div class="nutrition-value">120</div>
-                            <div class="nutrition-label">Calories</div>
-                        </div>
-                        <div class="nutrition-item">
-                            <div class="nutrition-value">6g</div>
-                            <div class="nutrition-label">Protein</div>
-                        </div>
-                        <div class="nutrition-item">
-                            <div class="nutrition-value">10g</div>
-                            <div class="nutrition-label">Carbs</div>
-                        </div>
-                        <div class="nutrition-item">
-                            <div class="nutrition-value">4g</div>
-                            <div class="nutrition-label">Fat</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-6">
-                    <h4 class="font-medium mb-3">Ingredients</h4>
-                    <ul class="list-disc list-inside text-gray-600">
-                        <li>Espresso (2 shots)</li>
-                        <li>Steamed Milk (150ml)</li>
-                        <li>Milk Foam</li>
-                        <li>Cocoa Powder (optional)</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeModal('viewMenuItemModal')">Close</button>
-                <button class="btn btn-primary">Edit Item</button>
-            </div>
-        </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-check-circle"></i></div>
+        <div class="kpi-label">Available</div>
+        <div class="kpi-value">@availableCount</div>
     </div>
-
-    <!-- Create Menu Item Modal -->
-    <div class="modal" id="createMenuItemModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="text-lg font-semibold">Create New Menu Item</h3>
-                <button onclick="closeModal('createMenuItemModal')" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label class="form-label">Name</label>
-                        <input type="text" class="form-input" placeholder="Enter item name">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Category</label>
-                        <select class="form-select">
-                            <option>Select category</option>
-                            <option>Coffee</option>
-                            <option>Tea</option>
-                            <option>Pastries</option>
-                            <option>Sandwiches</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Price ($)</label>
-                        <input type="number" class="form-input" placeholder="0.00" step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Cost Price ($)</label>
-                        <input type="number" class="form-input" placeholder="0.00" step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Branch</label>
-                        <select class="form-select">
-                            <option>Select branch</option>
-                            <option>Downtown Branch</option>
-                            <option>Uptown Branch</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Preparation Time (minutes)</label>
-                        <input type="number" class="form-input" placeholder="15">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea class="form-textarea" rows="2" placeholder="Short description"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Long Description</label>
-                    <textarea class="form-textarea" rows="3" placeholder="Detailed description"></textarea>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label class="form-label">Calories</label>
-                        <input type="number" class="form-input" placeholder="0">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Protein (g)</label>
-                        <input type="number" class="form-input" placeholder="0.0" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Carbohydrates (g)</label>
-                        <input type="number" class="form-input" placeholder="0.0" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Fat (g)</label>
-                        <input type="number" class="form-input" placeholder="0.0" step="0.1">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Dietary Information</label>
-                    <div class="grid grid-cols-2 gap-4">
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" class="form-checkbox">
-                            <span>Vegetarian</span>
-                        </label>
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" class="form-checkbox">
-                            <span>Vegan</span>
-                        </label>
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" class="form-checkbox">
-                            <span>Gluten-Free</span>
-                        </label>
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" class="form-checkbox">
-                            <span>Dairy-Free</span>
-                        </label>
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" class="form-checkbox">
-                            <span>Nut-Free</span>
-                        </label>
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" class="form-checkbox">
-                            <span>Spicy</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Spice Level (if spicy)</label>
-                    <select class="form-select">
-                        <option value="">Select level</option>
-                        <option value="1">Mild</option>
-                        <option value="2">Medium</option>
-                        <option value="3">Hot</option>
-                        <option value="4">Very Hot</option>
-                        <option value="5">Extremely Hot</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Tags (comma separated)</label>
-                    <input type="text" class="form-input" placeholder="breakfast, popular, seasonal">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Image</label>
-                    <input type="file" class="form-input">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <select class="form-select">
-                        <option>Available</option>
-                        <option>Unavailable</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeModal('createMenuItemModal')">Cancel</button>
-                <button class="btn btn-primary">Create Item</button>
-            </div>
-        </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-times-circle"></i></div>
+        <div class="kpi-label">Unavailable</div>
+        <div class="kpi-value">@unavailableCount</div>
     </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:var(--accent-light);color:var(--accent);"><i class="fas fa-dollar-sign"></i></div>
+        <div class="kpi-label">Avg. Price</div>
+        <div class="kpi-value">$@avgPrice.ToString("F2")</div>
+    </div>
+</div>
 
-    @if (Context.Session.GetString("UserRole") == "Owner")
+<!-- Filters -->
+<form method="get" class="card" style="margin-bottom:1.5rem;">
+    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:end;">
+        <div class="form-group" style="flex:1;min-width:180px;margin:0;">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" value="@searchTerm" placeholder="Name, description, tags..." class="form-control" />
+        </div>
+        <div class="form-group" style="min-width:150px;margin:0;">
+            <label class="form-label">Branch</label>
+            <select name="branchId" class="form-select">
+                <option value="">All Branches</option>
+                @foreach (var b in branches)
+                {
+                    <option value="@b.Value" selected="@(selectedBranch?.ToString() == b.Value)">@b.Text</option>
+                }
+            </select>
+        </div>
+        <div class="form-group" style="min-width:150px;margin:0;">
+            <label class="form-label">Category</label>
+            <select name="categoryId" class="form-select">
+                <option value="">All Categories</option>
+                @foreach (var c in categories)
+                {
+                    <option value="@c.Value" selected="@(selectedCategory?.ToString() == c.Value)">@c.Text</option>
+                }
+            </select>
+        </div>
+        <div class="form-group" style="min-width:140px;margin:0;">
+            <label class="form-label">Dietary</label>
+            <select name="dietaryFilter" class="form-select">
+                <option value="">All</option>
+                <option value="vegetarian" selected="@(dietaryFilter == "vegetarian")">Vegetarian</option>
+                <option value="vegan" selected="@(dietaryFilter == "vegan")">Vegan</option>
+                <option value="glutenfree" selected="@(dietaryFilter == "glutenfree")">Gluten-Free</option>
+                <option value="dairyfree" selected="@(dietaryFilter == "dairyfree")">Dairy-Free</option>
+                <option value="spicy" selected="@(dietaryFilter == "spicy")">Spicy</option>
+            </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.1rem;">
+            <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:var(--text-secondary);cursor:pointer;">
+                <input type="checkbox" name="showInactive" value="true" @(showInactive ? "checked" : "") style="accent-color:var(--accent);width:16px;height:16px;" />
+                Show Inactive
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Filter</button>
+        <a asp-action="Index" class="btn btn-ghost btn-sm">Clear</a>
+    </div>
+</form>
+
+<!-- View Tabs -->
+<div style="display:flex;gap:0.4rem;margin-bottom:1.5rem;">
+    <button class="view-tab active" data-view="grid"><i class="fas fa-th-large"></i> Grid</button>
+    <button class="view-tab" data-view="list"><i class="fas fa-list"></i> List</button>
+</div>
+
+<!-- Grid View -->
+<div id="grid-view" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-bottom:2rem;">
+    @foreach (var item in Model)
     {
-        <!-- Quick Actions -->
-        <div class="mt-8 mx-6 bg-blue-50 rounded-lg p-6">
-            <h3 class="text-lg font-medium text-blue-800 mb-4">Quick Actions</h3>
-            <div class="flex flex-wrap gap-4">
-                <a asp-controller="Menu" asp-action="Create" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Add Menu Item
-                </a>
-                <a asp-controller="MenuItem" asp-action="ExportCsv" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
-                    <i class="fas fa-download mr-2"></i> Export Data
-                </a>
-                <a asp-controller="Reports" asp-action="SalesOverview" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
-                    <i class="fas fa-chart-bar mr-2"></i> View Reports
-                </a>
+        <div class="card" style="overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+            <!-- Image Header -->
+            <div style="height:100px;background:linear-gradient(135deg,var(--sidebar-bg),#2d3e50);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:2rem;">
+                @if (item.IsSpicy)
+                {
+                    <i class="fas fa-pepper-hot"></i>
+                }
+                else if (item.Category?.Name?.Contains("Coffee") == true)
+                {
+                    <i class="fas fa-coffee"></i>
+                }
+                else if (item.Category?.Name?.Contains("Tea") == true)
+                {
+                    <i class="fas fa-mug-hot"></i>
+                }
+                else if (item.Category?.Name?.Contains("Pastry") == true || item.Category?.Name?.Contains("Cake") == true || item.Category?.Name?.Contains("Dessert") == true)
+                {
+                    <i class="fas fa-birthday-cake"></i>
+                }
+                else
+                {
+                    <i class="fas fa-utensils"></i>
+                }
+            </div>
+            <div class="card-body" style="padding:1rem;">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.25rem;">
+                    <h3 style="font-weight:700;font-size:0.95rem;color:var(--text-primary);margin:0;">@item.Name</h3>
+                    <span style="font-weight:700;color:#16a34a;font-size:0.95rem;white-space:nowrap;">$@item.Price.ToString("F2")</span>
+                </div>
+                @if (!string.IsNullOrEmpty(item.Description))
+                {
+                    <p style="font-size:0.78rem;color:var(--text-tertiary);margin:0.25rem 0 0.5rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">@item.Description</p>
+                }
+                <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem;">
+                    @if (item.Category != null)
+                    {
+                        <span class="badge badge-info" style="font-size:0.65rem;">@item.Category.Name</span>
+                    }
+                    @if (item.Branch != null)
+                    {
+                        <span class="badge badge-neutral" style="font-size:0.65rem;">@item.Branch.Name</span>
+                    }
+                    @if (!item.Availability)
+                    {
+                        <span class="badge badge-danger" style="font-size:0.65rem;">Unavailable</span>
+                    }
+                </div>
+                <!-- Dietary tags -->
+                <div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:0.75rem;">
+                    @if (item.IsVegetarian) { <span style="font-size:0.6rem;padding:0.15rem 0.4rem;border-radius:6px;background:#dcfce7;color:#16a34a;font-weight:600;">Veg</span> }
+                    @if (item.IsVegan) { <span style="font-size:0.6rem;padding:0.15rem 0.4rem;border-radius:6px;background:#d1fae5;color:#059669;font-weight:600;">Vegan</span> }
+                    @if (item.IsGlutenFree) { <span style="font-size:0.6rem;padding:0.15rem 0.4rem;border-radius:6px;background:#fef3c7;color:#d97706;font-weight:600;">GF</span> }
+                    @if (item.IsDairyFree) { <span style="font-size:0.6rem;padding:0.15rem 0.4rem;border-radius:6px;background:#e0e7ff;color:#4f46e5;font-weight:600;">DF</span> }
+                </div>
+                <!-- Nutrition mini row -->
+                @if (item.Calories > 0)
+                {
+                    <div style="display:flex;gap:0.75rem;font-size:0.7rem;color:var(--text-tertiary);padding:0.4rem 0;border-top:1px solid var(--border-light);">
+                        <span><strong>@item.Calories</strong> cal</span>
+                        @if (item.Protein > 0) { <span><strong>@item.Protein.Value.ToString("F0")</strong>g prot</span> }
+                        @if (item.Carbohydrates > 0) { <span><strong>@item.Carbohydrates.Value.ToString("F0")</strong>g carb</span> }
+                    </div>
+                }
+                <!-- Actions -->
+                <div style="display:flex;gap:0.4rem;margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-light);">
+                    <a asp-controller="Menu" asp-action="Details" asp-route-id="@item.Id" class="btn btn-ghost btn-sm" style="flex:1;"><i class="fas fa-eye"></i> View</a>
+                    <a asp-controller="Menu" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-ghost btn-sm" style="flex:1;"><i class="fas fa-edit"></i> Edit</a>
+                    <a asp-controller="Menu" asp-action="Delete" asp-route-id="@item.Id" class="btn btn-ghost btn-sm" style="flex:1;color:#dc2626;"><i class="fas fa-trash"></i></a>
+                </div>
             </div>
         </div>
     }
+    @if (!Model.Any())
+    {
+        <div class="card" style="grid-column:1/-1;padding:3rem;text-align:center;">
+            <div style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:0.75rem;"><i class="fas fa-utensils"></i></div>
+            <h3 style="font-weight:600;color:var(--text-secondary);margin-bottom:0.25rem;">No Menu Items Found</h3>
+            <p class="body-text">Try adjusting your filters or create a new menu item.</p>
+        </div>
+    }
+</div>
 
-    <script>
-        // Tab switching functionality
-        function switchTab(tabId) {
-            // Hide all views
-            document.querySelectorAll('.view').forEach(view => {
-                view.style.display = 'none';
-            });
-
-            // Show selected view
-            document.getElementById(tabId).style.display = 'block';
-
-            // Update active tab
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.currentTarget.classList.add('active');
-        }
-
-        // Modal functionality
-        function openViewModal() {
-            document.getElementById('viewMenuItemModal').style.display = 'flex';
-        }
-
-        function openCreateModal() {
-            document.getElementById('createMenuItemModal').style.display = 'flex';
-        }
-
-        function openEditModal() {
-            ActionCard.info('Coming Soon', 'Edit menu item functionality will be available here.');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
+<!-- List View (hidden by default) -->
+<div id="list-view" class="card" style="display:none;margin-bottom:2rem;">
+    <div style="overflow-x:auto;">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Branch</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Dietary</th>
+                    <th>Calories</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            <div style="font-weight:600;">@item.Name</div>
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <div style="font-size:0.75rem;color:var(--text-tertiary);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@item.Description</div>
+                            }
+                        </td>
+                        <td><span class="badge badge-info">@(item.Category?.Name ?? "—")</span></td>
+                        <td>@(item.Branch?.Name ?? "—")</td>
+                        <td style="font-weight:600;color:#16a34a;">$@item.Price.ToString("F2")</td>
+                        <td>
+                            @if (item.Availability)
+                            {
+                                <span class="badge badge-success">Available</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">Unavailable</span>
+                            }
+                        </td>
+                        <td style="white-space:nowrap;">
+                            @if (item.IsVegetarian) { <span style="font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:5px;background:#dcfce7;color:#16a34a;font-weight:600;">V</span> }
+                            @if (item.IsVegan) { <span style="font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:5px;background:#d1fae5;color:#059669;font-weight:600;">Ve</span> }
+                            @if (item.IsGlutenFree) { <span style="font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:5px;background:#fef3c7;color:#d97706;font-weight:600;">GF</span> }
+                            @if (item.IsDairyFree) { <span style="font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:5px;background:#e0e7ff;color:#4f46e5;font-weight:600;">DF</span> }
+                        </td>
+                        <td>@(item.Calories > 0 ? item.Calories.ToString() : "—")</td>
+                        <td style="white-space:nowrap;">
+                            <a asp-controller="Menu" asp-action="Details" asp-route-id="@item.Id" class="btn btn-ghost btn-sm"><i class="fas fa-eye"></i></a>
+                            <a asp-controller="Menu" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-ghost btn-sm"><i class="fas fa-edit"></i></a>
+                            <a asp-controller="Menu" asp-action="Delete" asp-route-id="@item.Id" class="btn btn-ghost btn-sm" style="color:#dc2626;"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
                 }
-            });
-        };
-    </script>
-</body>
-</html>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-tertiary);">No menu items found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Context.Session.GetString("UserRole") == "Owner")
+{
+    <!-- Quick Actions Panel -->
+    <div class="card" style="background:linear-gradient(135deg,#1e2a3a 0%,#2d3e50 100%);color:#fff;">
+        <div class="card-body">
+            <h3 style="font-weight:700;font-size:1rem;margin-bottom:1rem;color:var(--accent);">Quick Actions</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+                <a asp-controller="Menu" asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Menu Item</a>
+                <a asp-controller="MenuItem" asp-action="ExportCsv" class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2);"><i class="fas fa-download"></i> Export CSV</a>
+                <a asp-controller="Reports" asp-action="SalesOverview" class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2);"><i class="fas fa-chart-bar"></i> View Reports</a>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.view-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            const view = this.dataset.view;
+            document.getElementById('grid-view').style.display = view === 'grid' ? 'grid' : 'none';
+            document.getElementById('list-view').style.display = view === 'list' ? 'block' : 'none';
+        });
+    });
+</script>
+}
+
+@section Styles {
+<style>
+    .view-tab {
+        padding: 0.4rem 0.9rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-light);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .view-tab:hover { background: var(--bg-body); }
+    .view-tab.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+    }
+</style>
+}
 

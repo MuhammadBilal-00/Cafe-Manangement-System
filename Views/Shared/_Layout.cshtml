@@ -3,285 +3,255 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Cafe Management System</title>
+    <title>@ViewData["Title"] - Cafe Management</title>
 
-    <!-- Tailwind CSS -->
+    <!-- Design System -->
+    <link rel="stylesheet" href="~/css/design-system.css" asp-append-version="true" />
+
+    <!-- Tailwind CSS (utility support) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        accent: { DEFAULT: '#d4af37', hover: '#c5a028', light: 'rgba(212,175,55,0.10)' },
+                        surface: { DEFAULT: '#ffffff', alt: '#faf9f7', hover: '#fafaf8' },
+                        body: '#f5f3f0',
+                        sidebar: '#1e2a3a',
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    borderRadius: { card: '16px' }
+                }
+            }
+        }
+    </script>
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="~/css/LayoutDesign.css" />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    <!-- Hide sidebar scrollbar -->
-    <style>
-        .sidebar nav { scrollbar-width: none; -ms-overflow-style: none; }
-        .sidebar nav::-webkit-scrollbar { display: none; }
-    </style>
-
-    <!-- Your existing files for compatibility -->
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
-<body class="bg-gray-50">
-    <!-- Mobile overlay -->
-    <div class="overlay" id="overlay"></div>
+<body>
+    @{
+        var userRole = Context.Session.GetString("UserRole");
+        var userName = Context.Session.GetString("UserName");
+        var isOwner = userRole == "Owner";
+        var isManager = userRole == "BranchManager";
+        var isStaff = userRole == "Staff";
+        var isOwnerOrManager = isOwner || isManager;
+        var isAuthenticated = Context.Session.GetString("UserId") != null;
+    }
 
-    <div class="flex">
-        <!-- Sidebar -->
-        <div class="sidebar bg-[#3a506b] text-white w-64 h-screen flex flex-col fixed">
-            <div class="p-5 border-b border-gray-700">
-                <h1 class="text-xl font-bold flex items-center">
-                    <i class="fas fa-utensils mr-2"></i>
-                    Cafe Manager
-                </h1>
-                <p class="text-gray-300 text-sm">
-                    @if (Context.Session.GetString("UserRole") != null)
-                    {
-                        @Context.Session.GetString("UserRole") <text>Dashboard</text>
-                    }
-                    else
-                    {
-                        <text>Please login</text>
-                    }
-                </p>
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="app-shell">
+        <!-- ═══ SIDEBAR ═══ -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Brand -->
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon">
+                    <i class="fas fa-mug-hot"></i>
+                </div>
+                <div class="sidebar-brand-text">
+                    <div class="sidebar-brand-name">Cafe Manager</div>
+                    <div class="sidebar-brand-sub">
+                        @if (isAuthenticated)
+                        {
+                            @userRole<text> Panel</text>
+                        }
+                        else
+                        {
+                            <text>Please sign in</text>
+                        }
+                    </div>
+                </div>
             </div>
 
-            <nav class="flex-1 overflow-y-auto py-4">
-                <div class="px-4 space-y-2">
-                    <!-- Dashboard (all authenticated users) -->
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="Home" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-chart-pie mr-3"></i>
-                            Dashboard
-                        </a>
-                    </div>
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <!-- Main Navigation -->
+                <div class="sidebar-section-label">Main</div>
 
-                    @if (Context.Session.GetString("UserRole") == "Owner" || Context.Session.GetString("UserRole") == "BranchManager")
-                    {
-                        <!-- Branches (Owner + Manager) -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="Branch" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-store mr-3"></i>
-                                Branches
-                            </a>
-                        </div>
+                <a asp-controller="Home" asp-action="Index" class="sidebar-link" data-nav="Home">
+                    <span class="sidebar-link-icon"><i class="fas fa-grid-2"></i></span>
+                    <span class="sidebar-link-text">Dashboard</span>
+                </a>
 
-                        <!-- Staff (Owner + Manager) -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="Staff" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-users mr-3"></i>
-                                Staff
-                            </a>
-                        </div>
-                    }
+                @if (isOwnerOrManager)
+                {
+                    <a asp-controller="Branch" asp-action="Index" class="sidebar-link" data-nav="Branch">
+                        <span class="sidebar-link-icon"><i class="fas fa-store"></i></span>
+                        <span class="sidebar-link-text">Branches</span>
+                    </a>
 
-                    @if (Context.Session.GetString("UserRole") != "Customer")
-                    {
-                        <!-- Menu (Owner + Manager + Staff) -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="MenuItem" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-book-open mr-3"></i>
-                                Menu
-                            </a>
-                        </div>
+                    <a asp-controller="Staff" asp-action="Index" class="sidebar-link" data-nav="Staff">
+                        <span class="sidebar-link-icon"><i class="fas fa-users"></i></span>
+                        <span class="sidebar-link-text">Staff</span>
+                    </a>
+                }
 
-                        <!-- Orders (Owner + Manager + Staff) -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="Order" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-shopping-cart mr-3"></i>
-                                Orders
-                            </a>
-                        </div>
-                    }
+                @if (userRole != "Customer")
+                {
+                    <div class="sidebar-section-label">Operations</div>
 
-                    @if (Context.Session.GetString("UserRole") == "Owner" || Context.Session.GetString("UserRole") == "BranchManager")
-                    {
-                        <!-- Inventory (Owner + Manager) -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="InventoryItem" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-boxes mr-3"></i>
-                                Inventory
-                            </a>
-                        </div>
-                    }
+                    <a asp-controller="MenuItem" asp-action="Index" class="sidebar-link" data-nav="MenuItem">
+                        <span class="sidebar-link-icon"><i class="fas fa-utensils"></i></span>
+                        <span class="sidebar-link-text">Menu</span>
+                    </a>
 
-                    @if (Context.Session.GetString("UserRole") != "Customer")
-                    {
-                        <!-- Attendance (Owner + Manager + Staff can view own) -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="Attendance" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-calendar-check mr-3"></i>
-                                Attendance
-                            </a>
-                        </div>
-                    }
+                    <a asp-controller="Order" asp-action="Index" class="sidebar-link" data-nav="Order">
+                        <span class="sidebar-link-icon"><i class="fas fa-receipt"></i></span>
+                        <span class="sidebar-link-text">Orders</span>
+                    </a>
+                }
 
-                    @if (Context.Session.GetString("UserRole") == "Owner" || Context.Session.GetString("UserRole") == "BranchManager")
-                    {
-                        <!-- Salary Management (Owner + Manager) -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="Salary" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-money-check-alt mr-3"></i>
-                                Salary
-                            </a>
-                        </div>
+                @if (isOwnerOrManager)
+                {
+                    <a asp-controller="InventoryItem" asp-action="Index" class="sidebar-link" data-nav="InventoryItem">
+                        <span class="sidebar-link-icon"><i class="fas fa-boxes-stacked"></i></span>
+                        <span class="sidebar-link-text">Inventory</span>
+                    </a>
+                }
 
-                        <!-- Financial Management (Owner + Manager) -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="Financial" asp-action="Dashboard" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-coins mr-3"></i>
-                                Financials
-                            </a>
-                        </div>
+                @if (userRole != "Customer")
+                {
+                    <div class="sidebar-section-label">People</div>
 
-                        <!-- Reports (Owner + Manager) -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="Reports" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-chart-line mr-3"></i>
-                                Reports
-                            </a>
-                        </div>
+                    <a asp-controller="Attendance" asp-action="Index" class="sidebar-link" data-nav="Attendance">
+                        <span class="sidebar-link-icon"><i class="fas fa-calendar-check"></i></span>
+                        <span class="sidebar-link-text">Attendance</span>
+                    </a>
+                }
 
-                        <!-- Feedback (Owner + Manager) -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="Feedback" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-star mr-3"></i>
-                                Feedback
-                            </a>
-                        </div>
-                    }
+                @if (isOwnerOrManager)
+                {
+                    <a asp-controller="Salary" asp-action="Index" class="sidebar-link" data-nav="Salary">
+                        <span class="sidebar-link-icon"><i class="fas fa-wallet"></i></span>
+                        <span class="sidebar-link-text">Payroll</span>
+                    </a>
 
-                    @if (Context.Session.GetString("UserRole") == "Owner")
-                    {
-                        <!-- Audit Logs -->
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="AuditLog" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-clipboard-list mr-3"></i>
-                                Audit Logs
-                            </a>
-                        </div>
-                    }
-                </div>
+                    <div class="sidebar-section-label">Analytics</div>
 
-                <!-- Account Section -->
-                <div class="mt-10 px-4">
-                    <p class="text-gray-400 text-xs uppercase mb-2 px-3">Account</p>
+                    <a asp-controller="Financial" asp-action="Dashboard" class="sidebar-link" data-nav="Financial">
+                        <span class="sidebar-link-icon"><i class="fas fa-chart-pie"></i></span>
+                        <span class="sidebar-link-text">Financials</span>
+                    </a>
 
-                    <!-- Profile -->
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="User" asp-action="Profile" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-user mr-3"></i>
-                            Profile
-                        </a>
-                    </div>
+                    <a asp-controller="Reports" asp-action="Index" class="sidebar-link" data-nav="Reports">
+                        <span class="sidebar-link-icon"><i class="fas fa-chart-line"></i></span>
+                        <span class="sidebar-link-text">Reports</span>
+                    </a>
 
-                    <!-- Settings -->
-                    <div class="rounded-lg py-2 px-3">
-                        <a asp-controller="User" asp-action="Settings" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-cog mr-3"></i>
-                            Settings
-                        </a>
-                    </div>
+                    <a asp-controller="Feedback" asp-action="Index" class="sidebar-link" data-nav="Feedback">
+                        <span class="sidebar-link-icon"><i class="fas fa-message"></i></span>
+                        <span class="sidebar-link-text">Feedback</span>
+                    </a>
+                }
 
-                    <!-- Login/Logout -->
-                    @if (Context.Session.GetString("UserId") != null)
-                    {
-                        <div class="rounded-lg py-2 px-3">
-                            <form asp-controller="Auth" asp-action="Logout" method="post" class="inline">
-                                <button type="submit" class="flex items-center text-gray-300 hover:text-white transition-colors w-full">
-                                    <i class="fas fa-sign-out-alt mr-3"></i>
-                                    Logout
-                                </button>
-                            </form>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="rounded-lg py-2 px-3">
-                            <a asp-controller="Auth" asp-action="Login" class="flex items-center text-gray-300 hover:text-white transition-colors">
-                                <i class="fas fa-sign-in-alt mr-3"></i>
-                                Login
-                            </a>
-                        </div>
-                    }
-                </div>
+                @if (isOwner)
+                {
+                    <div class="sidebar-section-label">System</div>
+
+                    <a asp-controller="AuditLog" asp-action="Index" class="sidebar-link" data-nav="AuditLog">
+                        <span class="sidebar-link-icon"><i class="fas fa-shield-halved"></i></span>
+                        <span class="sidebar-link-text">Audit Logs</span>
+                    </a>
+                }
             </nav>
-        </div>
 
-        <!-- Main content area -->
-        <div class="main-content flex-1 ml-64">
-            <!-- Header -->
-            <header class="bg-white border-b border-gray-200">
-                <div class="flex items-center justify-between p-4">
-                    <div class="flex items-center">
-                        <button id="mobileMenuButton" class="md:hidden mr-3 text-gray-600">
-                            <i class="fas fa-bars text-xl"></i>
-                        </button>
-                        <h2 class="text-2xl font-semibold text-gray-800">@ViewData["Title"]</h2>
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                @if (isAuthenticated)
+                {
+                    <a asp-controller="User" asp-action="Profile" class="sidebar-link" data-nav="User">
+                        <span class="sidebar-link-icon"><i class="fas fa-circle-user"></i></span>
+                        <span class="sidebar-link-text">My Profile</span>
+                    </a>
+                    <a asp-controller="User" asp-action="Settings" class="sidebar-link" data-nav="Settings">
+                        <span class="sidebar-link-icon"><i class="fas fa-gear"></i></span>
+                        <span class="sidebar-link-text">Settings</span>
+                    </a>
+                }
+
+                <!-- Collapse Toggle -->
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- ═══ MAIN WRAPPER ═══ -->
+        <div class="main-wrapper" id="mainWrapper">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div>
+                        <h1 class="header-title">@ViewData["Title"]</h1>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <button class="header-icon-btn" data-tooltip="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge-dot"></span>
+                    </button>
+                    <button class="header-icon-btn" data-tooltip="Search" id="globalSearchBtn">
+                        <i class="fas fa-magnifying-glass"></i>
+                    </button>
+
+                    <div class="header-avatar">
+                        <div class="header-avatar-img">
+                            @if (!string.IsNullOrEmpty(userName))
+                            {
+                                @userName.Substring(0, 1).ToUpper()
+                            }
+                            else
+                            {
+                                <i class="fas fa-user" style="font-size:13px;"></i>
+                            }
+                        </div>
+                        <div class="header-avatar-info" style="display:none;">
+                        </div>
                     </div>
 
-                    <div class="flex items-center space-x-4">
-                        <!-- Notifications -->
-                        <div class="relative">
-                            <button class="text-gray-500 hover:text-gray-700 transition-colors">
-                                <i class="fas fa-bell text-xl"></i>
+                    @if (isAuthenticated)
+                    {
+                        <form asp-controller="Auth" asp-action="Logout" method="post" style="margin:0;">
+                            <button type="submit" class="header-icon-btn" data-tooltip="Sign out">
+                                <i class="fas fa-arrow-right-from-bracket"></i>
                             </button>
-                            <span class="notification-dot">3</span>
-                        </div>
-
-                        <!-- User info -->
-                        <div class="flex items-center space-x-3">
-                            <div class="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
-                                @{
-                                    var userName = Context.Session.GetString("UserName");
-                                }
-                                @if (!string.IsNullOrEmpty(userName))
-                                {
-                                    @userName.Substring(0, 1).ToUpper()
-                                }
-                                else
-                                {
-                                    <i class="fas fa-user"></i>
-                                }
-                            </div>
-                            <div class="hidden md:block">
-                                <div class="text-sm font-medium text-gray-700">
-                                    @Context.Session.GetString("UserName") 
-                                </div>
-                                <div class="text-xs text-gray-500">
-                                    @Context.Session.GetString("UserRole") 
-                                </div>
-                            </div>
-                            <i class="fas fa-chevron-down text-gray-500"></i>
-                        </div>
-                    </div>
+                        </form>
+                    }
                 </div>
             </header>
 
-            <!-- Main content -->
-            <main class="p-6">
-                <!-- ActionCard TempData triggers (hidden) -->
+            <!-- Page Content -->
+            <main class="page-content">
+                <!-- ActionCard TempData triggers -->
                 @if (TempData["Success"] != null)
                 {
-                    <div id="ac-tempdata-success" data-message="@TempData["Success"]" class="hidden"></div>
+                    <div id="ac-tempdata-success" data-message="@TempData["Success"]" style="display:none;"></div>
                 }
                 @if (TempData["Error"] != null)
                 {
-                    <div id="ac-tempdata-error" data-message="@TempData["Error"]" class="hidden"></div>
+                    <div id="ac-tempdata-error" data-message="@TempData["Error"]" style="display:none;"></div>
                 }
 
-                <!-- Page content -->
                 @RenderBody()
             </main>
 
             <!-- Footer -->
-            <footer class="bg-white border-t border-gray-200 mt-auto">
-                <div class="max-w-7xl mx-auto py-4 px-6">
-                    <div class="text-center text-gray-500 text-sm">
-                        &copy; 2025 - Cafe Management System - <a asp-controller="Home" asp-action="Privacy" class="text-indigo-600 hover:text-indigo-500">Privacy</a>
-                    </div>
-                </div>
+            <footer class="app-footer">
+                &copy; @DateTime.Now.Year Cafe Management System &middot;
+                <a asp-controller="Home" asp-action="Privacy">Privacy Policy</a>
             </footer>
         </div>
     </div>
@@ -290,30 +260,48 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/actioncard.js"></script>
     <script>
-        // Mobile menu functionality
-        document.getElementById('mobileMenuButton')?.addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('open');
-            document.getElementById('overlay').classList.toggle('open');
-        });
+        // ── Sidebar Collapse ──
+        (function() {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            const overlay = document.getElementById('sidebarOverlay');
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            const STORAGE_KEY = 'sidebar-collapsed';
 
-        document.getElementById('overlay')?.addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.remove('open');
-            this.classList.remove('open');
-        });
+            // Restore saved state
+            if (localStorage.getItem(STORAGE_KEY) === 'true' && window.innerWidth > 1024) {
+                sidebar.classList.add('collapsed');
+            }
 
-        // Add active class to current page
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('nav a');
+            toggle?.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem(STORAGE_KEY, sidebar.classList.contains('collapsed'));
+            });
 
-            navLinks.forEach(link => {
+            mobileBtn?.addEventListener('click', function() {
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('visible');
+            });
+
+            overlay?.addEventListener('click', function() {
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('visible');
+            });
+
+            // ── Active Nav Highlight ──
+            const currentPath = window.location.pathname.toLowerCase();
+            document.querySelectorAll('.sidebar-link[data-nav]').forEach(link => {
                 const href = link.getAttribute('href');
-                if (href && currentPath.includes(href)) {
-                    link.classList.add('nav-link-active');
-                    link.classList.remove('text-gray-300');
+                if (href) {
+                    const hrefLower = href.toLowerCase();
+                    // Exact match for root, or starts-with for controller paths
+                    if ((hrefLower === '/' && currentPath === '/') ||
+                        (hrefLower !== '/' && currentPath.startsWith(hrefLower))) {
+                        link.classList.add('active');
+                    }
                 }
             });
-        });
+        })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

@@ -1,53 +1,63 @@
-﻿@model List<Cafe.Models.Feedback>
-
+@model List<Cafe.Models.Feedback>
 @{
     ViewData["Title"] = "Feedback - Needs Attention";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <title>@ViewData["Title"]</title>
-</head>
-<body>
+<!-- Page Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">
+            <i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i> Needs Attention
+        </h1>
+        <p class="body-text" style="margin-top:0.25rem;">Low-rated (1-2 stars), unresolved feedback from the last 7 days.</p>
+    </div>
+    <a href="@Url.Action("Index", "Feedback")" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left"></i> Back to Feedback
+    </a>
+</div>
 
-    <h1>Feedback - Needs Attention</h1>
-
-    <p>
-        Showing low-rated (1-2 stars), unresolved feedback from the last 7 days.
-    </p>
-
-    @if (Model != null && Model.Any())
-    {
-        <ul>
+@if (Model != null && Model.Any())
+{
+    <div class="card">
+        <div class="card-header">
+            <span style="font-weight:600;">@Model.Count urgent feedback item(s)</span>
+        </div>
+        <div style="padding:1rem 1.5rem;">
             @foreach (var f in Model)
             {
-                var fullStars = new string('*', f.Rating);
-                var emptyStars = new string('-', 5 - f.Rating);
-                var ratingStars = fullStars + emptyStars;
-
-                <li>
-                    <strong>@ratingStars</strong>
-                    @f.Date.ToString("yyyy-MM-dd HH:mm")
-                    @(" | Branch: " + (f.Branch != null ? f.Branch.Name : ""))
-                    <br />
-                    @("Comments: " + (f.Comments ?? ""))
-                    <br />
-                    @("Customer: " + (f.Customer != null ? f.Customer.Name : "Anonymous"))
-                    <br />
-                    <a href="@Url.Action("Details", "Feedback", new { id = f.Id })">
-                        View and resolve
-                    </a>
-                    <hr />
-                </li>
+                var ratingStars = new string('★', f.Rating) + new string('☆', 5 - f.Rating);
+                <div style="border:1px solid #fecaca;border-radius:var(--radius-card);padding:1rem;margin-bottom:0.75rem;background:#fef2f2;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.4rem;">
+                                <span style="color:#dc2626;font-weight:700;font-size:0.9rem;">@ratingStars</span>
+                                <span class="caption">@f.Date.ToString("dd MMM yyyy HH:mm")</span>
+                                @if (f.Branch != null)
+                                {
+                                    <span class="badge badge-accent">@f.Branch.Name</span>
+                                }
+                            </div>
+                            <p style="font-weight:600;font-size:0.9rem;color:var(--text-primary);margin:0.25rem 0;">
+                                @(f.Comments ?? "No comments")
+                            </p>
+                            <p class="caption">@(f.Customer != null ? f.Customer.Name : "Anonymous")</p>
+                        </div>
+                        <a href="@Url.Action("Details", "Feedback", new { id = f.Id })" class="btn btn-danger btn-sm">
+                            View & Resolve
+                        </a>
+                    </div>
+                </div>
             }
-        </ul>
-    }
-    else
-    {
-        <p>No urgent feedback right now.</p>
-    }
-
-</body>
-</html>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="empty-state">
+            <i class="fas fa-check-circle" style="font-size:2.5rem;color:#16a34a;margin-bottom:0.75rem;"></i>
+            <p style="font-weight:600;color:var(--text-primary);">All clear!</p>
+            <p class="caption">No urgent feedback right now. Great job!</p>
+        </div>
+    </div>
+}

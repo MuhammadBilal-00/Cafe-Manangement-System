@@ -7,61 +7,93 @@
     var overtimeHours = (decimal)ViewBag.OvertimeHours;
 }
 
-<div class="max-w-2xl mx-auto">
-    <div class="flex items-center mb-6">
-        <a asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
-            <i class="fas fa-arrow-left text-xl"></i>
-        </a>
-        <h1 class="text-2xl font-bold text-gray-800">Edit Attendance</h1>
+<div style="max-width:720px; margin:0 auto;">
+    <!-- Header -->
+    <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+        <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title" style="margin:0;">Edit Attendance</h1>
     </div>
 
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-            <div class="grid grid-cols-2 gap-2 text-sm text-blue-800">
-                <p><strong>Staff:</strong> @staffName</p>
-                <p><strong>Date:</strong> @Model.Date.ToString("dd MMM yyyy")</p>
-                <p><strong>Current Status:</strong> <span class="font-bold">@Model.Status</span></p>
-                <p><strong>Hours:</strong> @totalHours.ToString("F1")h @(overtimeHours > 0 ? $"(OT: {overtimeHours:F1}h)" : "")</p>
+    <!-- Current Info -->
+    <div class="card" style="margin-bottom:1.5rem; border-left:4px solid var(--accent);">
+        <div class="card-body">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                <div>
+                    <span class="caption">Staff</span>
+                    <p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@staffName</p>
+                </div>
+                <div>
+                    <span class="caption">Date</span>
+                    <p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@Model.Date.ToString("dd MMM yyyy")</p>
+                </div>
+                <div>
+                    <span class="caption">Current Status</span>
+                    <p style="margin:0.25rem 0 0;">
+                        @{
+                            var sBadge = Model.Status switch
+                            {
+                                "Present" => "badge badge-success",
+                                "Absent" => "badge badge-danger",
+                                "Late" => "badge badge-warning",
+                                "Half-Day" => "badge badge-info",
+                                _ => "badge badge-neutral"
+                            };
+                        }
+                        <span class="@sBadge">@Model.Status</span>
+                    </p>
+                </div>
+                <div>
+                    <span class="caption">Hours</span>
+                    <p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@totalHours.ToString("F1")h @(overtimeHours > 0 ? $"(OT: {overtimeHours:F1}h)" : "")</p>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
-            <p class="text-sm text-amber-800">
-                <i class="fas fa-info-circle mr-1"></i>
+    <!-- Warning -->
+    <div class="card" style="border-left:4px solid #f59e0b; margin-bottom:1.5rem;">
+        <div class="card-body" style="padding:1rem 1.25rem;">
+            <p class="caption" style="margin:0;">
+                <i class="fas fa-info-circle" style="color:#f59e0b; margin-right:0.5rem;"></i>
                 Status will be <strong>auto-recalculated</strong> when you save.
                 Change check-in/check-out times and the system will determine the correct status.
             </p>
         </div>
+    </div>
 
-        <form asp-action="Edit" asp-route-id="@attendanceId" method="post">
-            @Html.AntiForgeryToken()
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="Edit" asp-route-id="@attendanceId" method="post">
+                @Html.AntiForgeryToken()
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Check In Time</label>
-                    <input type="time" name="CheckInTime" value="@Model.CheckInTime?.ToString(@"hh\:mm")" class="w-full border rounded-lg px-3 py-2" />
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Check In Time</label>
+                        <input type="time" name="CheckInTime" value="@Model.CheckInTime?.ToString(@"hh\:mm")" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Check Out Time</label>
+                        <input type="time" name="CheckOutTime" value="@Model.CheckOutTime?.ToString(@"hh\:mm")" class="form-control" />
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Check Out Time</label>
-                    <input type="time" name="CheckOutTime" value="@Model.CheckOutTime?.ToString(@"hh\:mm")" class="w-full border rounded-lg px-3 py-2" />
+
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea name="Notes" rows="3" class="form-control">@Model.Notes</textarea>
                 </div>
-            </div>
 
-            <div class="mt-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                <textarea name="Notes" rows="3" class="w-full border rounded-lg px-3 py-2">@Model.Notes</textarea>
-            </div>
+                <p class="caption">
+                    <i class="fas fa-lightbulb" style="color:var(--accent); margin-right:0.25rem;"></i>
+                    Clear both times to mark as Absent.
+                </p>
 
-            <div class="mt-2 text-xs text-gray-500">
-                <p><i class="fas fa-lightbulb mr-1"></i> Clear both times to mark as Absent.</p>
-            </div>
+                <div class="divider"></div>
 
-            <div class="mt-6 flex justify-end gap-3">
-                <a asp-action="Index" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</a>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
-                    <i class="fas fa-save mr-2"></i> Update Attendance
-                </button>
-            </div>
-        </form>
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:0.5rem;"></i> Update Attendance</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>

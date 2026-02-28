@@ -3,72 +3,68 @@
     ViewData["Title"] = "Settings";
 }
 
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Account Settings</h1>
-    <p class="text-sm text-gray-500 mt-1">Manage your account preferences and security.</p>
+<!-- Page Header -->
+<div style="margin-bottom:2rem;">
+    <h1 class="page-title" style="margin:0;">Account Settings</h1>
+    <p class="body-text" style="margin-top:0.25rem;">Manage your account preferences and security.</p>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Profile Information -->
-    <div class="bg-white rounded-xl shadow-md p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-user-circle mr-2 text-indigo-600"></i>Profile Information
-        </h2>
-        <div class="space-y-4">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.5rem;">
+    <!-- Profile Info (read-only) -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-user-circle" style="color:var(--accent);margin-right:0.5rem;"></i>
+            Profile Information
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:1.25rem;">
             <div>
-                <label class="block text-sm font-medium text-gray-600">Name</label>
-                <p class="mt-1 text-gray-800 font-medium">@Model.Name</p>
+                <span class="caption" style="text-transform:uppercase;letter-spacing:0.08em;">Name</span>
+                <p style="font-weight:600;color:var(--text-primary);margin-top:0.15rem;">@Model.Name</p>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-600">Email</label>
-                <p class="mt-1 text-gray-800">@Model.Email</p>
+                <span class="caption" style="text-transform:uppercase;letter-spacing:0.08em;">Email</span>
+                <p style="font-weight:500;color:var(--text-primary);margin-top:0.15rem;">@Model.Email</p>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-600">Phone</label>
-                <p class="mt-1 text-gray-800">@(Model.Phone ?? "Not set")</p>
+                <span class="caption" style="text-transform:uppercase;letter-spacing:0.08em;">Phone</span>
+                <p style="font-weight:500;color:var(--text-primary);margin-top:0.15rem;">@(Model.Phone ?? "Not set")</p>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-600">Role</label>
-                <span class="mt-1 inline-block px-3 py-1 text-xs rounded-full font-medium bg-indigo-100 text-indigo-800">@Model.Role</span>
+                <span class="caption" style="text-transform:uppercase;letter-spacing:0.08em;">Role</span>
+                <p style="margin-top:0.15rem;"><span class="badge badge-accent">@Model.Role</span></p>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-600">Member Since</label>
-                <p class="mt-1 text-gray-800">@Model.CreatedDate.ToString("MMMM dd, yyyy")</p>
+                <span class="caption" style="text-transform:uppercase;letter-spacing:0.08em;">Member Since</span>
+                <p style="font-weight:500;color:var(--text-primary);margin-top:0.15rem;">@Model.CreatedDate.ToString("MMMM dd, yyyy")</p>
             </div>
         </div>
     </div>
 
     <!-- Change Password -->
-    <div class="bg-white rounded-xl shadow-md p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-lock mr-2 text-indigo-600"></i>Change Password
-        </h2>
-        <form asp-controller="User" asp-action="ChangePassword" method="post">
-            @Html.AntiForgeryToken()
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                    <input type="password" name="CurrentPassword" required
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                           placeholder="Enter current password" />
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-lock" style="color:var(--accent);margin-right:0.5rem;"></i>
+            Change Password
+        </div>
+        <div class="card-body">
+            <form asp-controller="User" asp-action="ChangePassword" method="post">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" name="CurrentPassword" required class="form-control" placeholder="Enter current password" />
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                    <input type="password" name="NewPassword" required minlength="6"
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                           placeholder="Enter new password (min 6 characters)" />
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input type="password" name="NewPassword" required minlength="6" class="form-control" placeholder="Min 6 characters" />
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                    <input type="password" name="ConfirmNewPassword" required minlength="6"
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                           placeholder="Confirm new password" />
+                <div class="form-group">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" name="ConfirmNewPassword" required minlength="6" class="form-control" placeholder="Re-enter new password" />
                 </div>
-                <button type="submit"
-                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-                    <i class="fas fa-key mr-1"></i> Update Password
+                <button type="submit" class="btn btn-primary" style="width:100%;">
+                    <i class="fas fa-key"></i> Update Password
                 </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>

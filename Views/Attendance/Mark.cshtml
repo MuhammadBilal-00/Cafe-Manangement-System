@@ -3,69 +3,75 @@
     ViewData["Title"] = "Mark Attendance";
 }
 
-<div class="max-w-2xl mx-auto">
-    <div class="flex items-center mb-6">
-        <a asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
-            <i class="fas fa-arrow-left text-xl"></i>
-        </a>
-        <h1 class="text-2xl font-bold text-gray-800">Mark Attendance</h1>
+<div style="max-width:720px; margin:0 auto;">
+    <!-- Header -->
+    <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+        <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title" style="margin:0;">Mark Attendance</h1>
     </div>
 
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p class="text-sm text-blue-800">
-                <i class="fas fa-info-circle mr-1"></i>
+    <!-- Info Banner -->
+    <div class="card" style="border-left:4px solid var(--accent); margin-bottom:1.5rem;">
+        <div class="card-body" style="padding:1rem 1.25rem;">
+            <p class="caption" style="margin:0;">
+                <i class="fas fa-info-circle" style="color:var(--accent); margin-right:0.5rem;"></i>
                 Status is <strong>automatically calculated</strong> from check-in/check-out times:
-                <span class="font-medium">Present</span> (8+h),
-                <span class="font-medium">Half-Day</span> (4-8h),
-                <span class="font-medium">Absent</span> (&lt;4h or no times).
+                <strong>Present</strong> (8+h), <strong>Half-Day</strong> (4-8h), <strong>Absent</strong> (&lt;4h or no times).
                 Late if check-in &gt; shift start + 15 min.
             </p>
         </div>
+    </div>
 
-        <form asp-action="Mark" method="post">
-            @Html.AntiForgeryToken()
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="Mark" method="post">
+                @Html.AntiForgeryToken()
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Staff Member *</label>
-                    <select name="StaffId" class="w-full border rounded-lg px-3 py-2" required>
-                        <option value="">Select Staff</option>
-                        @foreach (var s in (List<Cafe.Models.Staff>)ViewBag.StaffList)
-                        {
-                            <option value="@s.Id" selected="@(s.Id == Model.StaffId)">@s.User?.Name</option>
-                        }
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Staff Member *</label>
+                        <select name="StaffId" class="form-select" required>
+                            <option value="">Select Staff</option>
+                            @foreach (var s in (List<Cafe.Models.Staff>)ViewBag.StaffList)
+                            {
+                                <option value="@s.Id" selected="@(s.Id == Model.StaffId)">@s.User?.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date *</label>
+                        <input type="date" name="Date" value="@Model.Date.ToString("yyyy-MM-dd")" class="form-control" required />
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Date *</label>
-                    <input type="date" name="Date" value="@Model.Date.ToString("yyyy-MM-dd")" class="w-full border rounded-lg px-3 py-2" required />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Check In Time</label>
-                    <input type="time" name="CheckInTime" value="@Model.CheckInTime?.ToString(@"hh\:mm")" class="w-full border rounded-lg px-3 py-2" />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Check Out Time</label>
-                    <input type="time" name="CheckOutTime" value="@Model.CheckOutTime?.ToString(@"hh\:mm")" class="w-full border rounded-lg px-3 py-2" />
-                </div>
-            </div>
 
-            <div class="mt-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                <textarea name="Notes" rows="3" class="w-full border rounded-lg px-3 py-2" placeholder="Optional notes...">@Model.Notes</textarea>
-            </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Check In Time</label>
+                        <input type="time" name="CheckInTime" value="@Model.CheckInTime?.ToString(@"hh\:mm")" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Check Out Time</label>
+                        <input type="time" name="CheckOutTime" value="@Model.CheckOutTime?.ToString(@"hh\:mm")" class="form-control" />
+                    </div>
+                </div>
 
-            <div class="mt-2 text-xs text-gray-500">
-                <p><i class="fas fa-lightbulb mr-1"></i> Leave both times empty to mark as Absent. Provide only Check In for a clock-in record (status finalized on clock-out).</p>
-            </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea name="Notes" rows="3" class="form-control" placeholder="Optional notes...">@Model.Notes</textarea>
+                </div>
 
-            <div class="mt-6 flex justify-end gap-3">
-                <a asp-action="Index" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</a>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
-                    <i class="fas fa-check mr-2"></i> Mark Attendance
-                </button>
-            </div>
-        </form>
+                <p class="caption" style="margin-top:0.5rem;">
+                    <i class="fas fa-lightbulb" style="color:var(--accent); margin-right:0.25rem;"></i>
+                    Leave both times empty to mark as Absent. Provide only Check In for a clock-in record.
+                </p>
+
+                <div class="divider"></div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-check" style="margin-right:0.5rem;"></i> Mark Attendance</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>

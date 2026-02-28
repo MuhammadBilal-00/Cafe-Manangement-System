@@ -1,272 +1,200 @@
-﻿@model Cafe.Models.ViewModels.PayslipViewModel
+@model Cafe.Models.ViewModels.PayslipViewModel
 @{
     ViewData["Title"] = "Payslip";
     var r = Model.Record;
     var monthName = new DateTime(r.Year, r.Month, 1).ToString("MMMM yyyy");
 }
 
-<div class="max-w-3xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-        <div class="flex items-center">
-            <a asp-action="Index" class="text-gray-500 hover:text-gray-700 mr-4">
-                <i class="fas fa-arrow-left text-xl"></i>
-            </a>
-            <h1 class="text-2xl font-bold text-gray-800">Payslip - @monthName</h1>
+<div style="max-width:800px; margin:0 auto;">
+    <!-- Header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+            <h1 class="page-title" style="margin:0;">Payslip — @monthName</h1>
         </div>
-        <button onclick="window.print()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
-            <i class="fas fa-print mr-2"></i> Print
-        </button>
+        <button onclick="window.print()" class="btn btn-secondary"><i class="fas fa-print" style="margin-right:0.5rem;"></i> Print</button>
     </div>
 
-    <div class="bg-white rounded-lg shadow-md p-8" id="payslip">
-        <!-- Header -->
-        <div class="border-b pb-6 mb-6">
-            <div class="flex justify-between items-start">
+    <div class="card" id="payslip">
+        <div class="card-body" style="padding:2rem;">
+            <!-- Header -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:1.5rem; border-bottom:2px solid var(--border-light); margin-bottom:1.5rem;">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-utensils mr-2"></i> Cafe Management</h2>
-                    <p class="text-gray-500">Salary Slip - @monthName</p>
+                    <h2 style="font-size:1.5rem; font-weight:700; margin:0; color:var(--text-primary);"><i class="fas fa-utensils" style="margin-right:0.5rem; color:var(--accent);"></i> Cafe Management</h2>
+                    <p class="caption" style="margin:0.25rem 0 0;">Salary Slip — @monthName</p>
                 </div>
-                <div class="text-right space-y-1">
-                    <p class="text-sm text-gray-500">Generated: @r.GeneratedAt.ToString("dd MMM yyyy")</p>
-                    @{
-                        var wfClass = r.Status == "Paid" ? "bg-purple-100 text-purple-800" :
-                                      r.Status == "Finalized" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
-                        var pyClass = r.PaymentStatus == "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
-                    }
-                    <span class="px-3 py-1 text-sm font-medium rounded-full @wfClass">@r.Status</span>
-                    <span class="px-3 py-1 text-sm font-medium rounded-full @pyClass">@r.PaymentStatus</span>
+                <div style="text-align:right;">
+                    <p class="caption" style="margin:0;">Generated: @r.GeneratedAt.ToString("dd MMM yyyy")</p>
+                    <div style="margin-top:0.5rem; display:flex; gap:0.5rem; justify-content:flex-end;">
+                        @{
+                            var wfBadge = r.Status == "Paid" ? "badge badge-accent" :
+                                          r.Status == "Finalized" ? "badge badge-success" : "badge badge-neutral";
+                            var pyBadge = r.PaymentStatus == "Paid" ? "badge badge-success" : "badge badge-warning";
+                        }
+                        <span class="@wfBadge">@r.Status</span>
+                        <span class="@pyBadge">@r.PaymentStatus</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Employee Info -->
-        <div class="grid grid-cols-2 gap-6 mb-8">
-            <div>
-                <p class="text-sm text-gray-500">Employee Name</p>
-                <p class="font-medium text-gray-800">@r.Staff?.User?.Name</p>
+            <!-- Employee Info -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:2rem;">
+                <div><span class="caption">Employee Name</span><p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@r.Staff?.User?.Name</p></div>
+                <div><span class="caption">Role</span><p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@r.Staff?.StaffRole?.RoleName</p></div>
+                <div><span class="caption">Branch</span><p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@r.Branch?.Name</p></div>
+                <div><span class="caption">Period</span><p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@monthName</p></div>
+                @if (Model.PolicyUsed != null)
+                {
+                    <div><span class="caption">Salary Policy</span><p class="body-text" style="font-weight:600; margin:0.25rem 0 0; color:var(--accent);">@Model.PolicyUsed.Name</p></div>
+                }
             </div>
-            <div>
-                <p class="text-sm text-gray-500">Role</p>
-                <p class="font-medium text-gray-800">@r.Staff?.StaffRole?.RoleName</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500">Branch</p>
-                <p class="font-medium text-gray-800">@r.Branch?.Name</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500">Period</p>
-                <p class="font-medium text-gray-800">@monthName</p>
-            </div>
-            @if (Model.PolicyUsed != null)
-            {
-                <div>
-                    <p class="text-sm text-gray-500">Salary Policy</p>
-                    <p class="font-medium text-indigo-700">@Model.PolicyUsed.Name</p>
-                </div>
-            }
-        </div>
 
-        <!-- Attendance Summary -->
-        <div class="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 class="font-medium text-gray-700 mb-3">Attendance Summary</h3>
-            <div class="grid grid-cols-3 md:grid-cols-7 gap-3 text-center">
-                <div>
-                    <p class="text-xs text-gray-500">Working Days</p>
-                    <p class="font-bold text-lg">@r.TotalWorkingDays</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500">Present</p>
-                    <p class="font-bold text-lg text-green-600">@r.DaysPresent</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500">Absent</p>
-                    <p class="font-bold text-lg text-red-600">@r.DaysAbsent</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500">Late</p>
-                    <p class="font-bold text-lg text-yellow-600">@r.DaysLate</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500">Half-Day</p>
-                    <p class="font-bold text-lg text-orange-600">@r.DaysHalfDay</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500">Overtime</p>
-                    <p class="font-bold text-lg text-blue-600">@(r.OvertimeHours > 0 ? $"{r.OvertimeHours:F1}h" : "-")</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500">Attendance %</p>
-                    <p class="font-bold text-lg text-blue-600">@r.AttendancePercentage%</p>
+            <!-- Attendance Summary -->
+            <div style="background:var(--bg-body); border-radius:var(--radius-card); padding:1.25rem; margin-bottom:1.5rem;">
+                <h3 class="section-title" style="margin-bottom:0.75rem;">Attendance Summary</h3>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(80px,1fr)); gap:0.75rem; text-align:center;">
+                    <div><p class="caption" style="margin:0;">Working Days</p><p style="font-size:1.25rem; font-weight:700; margin:0;">@r.TotalWorkingDays</p></div>
+                    <div><p class="caption" style="margin:0;">Present</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:#16a34a;">@r.DaysPresent</p></div>
+                    <div><p class="caption" style="margin:0;">Absent</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:#dc2626;">@r.DaysAbsent</p></div>
+                    <div><p class="caption" style="margin:0;">Late</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:#ca8a04;">@r.DaysLate</p></div>
+                    <div><p class="caption" style="margin:0;">Half-Day</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:#ea580c;">@r.DaysHalfDay</p></div>
+                    <div><p class="caption" style="margin:0;">Overtime</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:var(--accent);">@(r.OvertimeHours > 0 ? $"{r.OvertimeHours:F1}h" : "-")</p></div>
+                    <div><p class="caption" style="margin:0;">Rate</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:var(--accent);">@r.AttendancePercentage%</p></div>
                 </div>
             </div>
-        </div>
 
-        <!-- Salary Formula Breakdown -->
-        <div class="mb-6">
-            <h3 class="font-medium text-gray-700 mb-3">Salary Formula Breakdown</h3>
-            <table class="w-full">
-                <tbody class="divide-y divide-gray-200">
-                    <!-- Earnings -->
-                    <tr>
-                        <td class="py-3 text-gray-600">Base Salary</td>
-                        <td class="py-3 text-right font-medium">Rs. @r.BaseSalary.ToString("N2")</td>
+            <!-- Salary Formula Breakdown -->
+            <h3 class="section-title" style="margin-bottom:0.75rem;">Salary Breakdown</h3>
+            <table style="width:100%; border-collapse:collapse;">
+                <tbody>
+                    <tr style="border-bottom:1px solid var(--border-light);">
+                        <td style="padding:0.75rem 0;">Base Salary</td>
+                        <td style="padding:0.75rem 0; text-align:right; font-weight:600;">Rs. @r.BaseSalary.ToString("N2")</td>
                     </tr>
                     @if (r.OvertimePay > 0)
                     {
-                        <tr>
-                            <td class="py-3 text-green-600">
-                                <i class="fas fa-clock mr-1"></i> Overtime Pay
-                                <span class="text-xs text-gray-400 block">@r.OvertimeHours.ToString("F1")h x Hourly Rate x 1.5</span>
-                            </td>
-                            <td class="py-3 text-right font-medium text-green-600">+ Rs. @r.OvertimePay.ToString("N2")</td>
+                        <tr style="border-bottom:1px solid var(--border-light);">
+                            <td style="padding:0.75rem 0; color:#16a34a;"><i class="fas fa-clock" style="margin-right:0.5rem;"></i> Overtime Pay <span class="caption" style="display:block;">@r.OvertimeHours.ToString("F1")h x Hourly Rate x 1.5</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#16a34a;">+ Rs. @r.OvertimePay.ToString("N2")</td>
                         </tr>
                     }
                     @if (r.AttendanceBonus > 0)
                     {
-                        <tr>
-                            <td class="py-3 text-green-600">
-                                <i class="fas fa-star mr-1"></i> Attendance Bonus
-                                <span class="text-xs text-gray-400 block">5% of Base (0 absent, &#8804;2 late)</span>
-                            </td>
-                            <td class="py-3 text-right font-medium text-green-600">+ Rs. @r.AttendanceBonus.ToString("N2")</td>
+                        <tr style="border-bottom:1px solid var(--border-light);">
+                            <td style="padding:0.75rem 0; color:#16a34a;"><i class="fas fa-star" style="margin-right:0.5rem;"></i> Attendance Bonus <span class="caption" style="display:block;">5% of Base (0 absent, &#8804;2 late)</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#16a34a;">+ Rs. @r.AttendanceBonus.ToString("N2")</td>
                         </tr>
                     }
-
-                    <!-- Manual Bonus Adjustments -->
                     @foreach (var adj in Model.Adjustments.Where(a => a.Type == "Bonus"))
                     {
-                        <tr>
-                            <td class="py-3 text-green-600">
-                                <i class="fas fa-gift mr-1"></i> @(adj.Reason ?? "Manual Bonus")
-                                <span class="text-xs text-gray-400 block">Added by @(adj.CreatedBy?.Name ?? "System") on @adj.CreatedAt.ToString("dd MMM")</span>
-                            </td>
-                            <td class="py-3 text-right font-medium text-green-600">+ Rs. @adj.Amount.ToString("N2")</td>
+                        <tr style="border-bottom:1px solid var(--border-light);">
+                            <td style="padding:0.75rem 0; color:#16a34a;"><i class="fas fa-gift" style="margin-right:0.5rem;"></i> @(adj.Reason ?? "Manual Bonus") <span class="caption" style="display:block;">By @(adj.CreatedBy?.Name ?? "System") on @adj.CreatedAt.ToString("dd MMM")</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#16a34a;">+ Rs. @adj.Amount.ToString("N2")</td>
                         </tr>
                     }
-
-                    <tr class="bg-blue-50">
-                        <td class="py-3 font-bold text-gray-800">Gross Salary</td>
-                        <td class="py-3 text-right font-bold text-gray-800">Rs. @r.GrossSalary.ToString("N2")</td>
+                    <tr style="background:rgba(59,130,246,0.05); border-bottom:1px solid var(--border-light);">
+                        <td style="padding:0.75rem 0; font-weight:700;">Gross Salary</td>
+                        <td style="padding:0.75rem 0; text-align:right; font-weight:700;">Rs. @r.GrossSalary.ToString("N2")</td>
                     </tr>
-
-                    <!-- Deductions -->
                     @if (r.AbsenceDeduction > 0)
                     {
-                        <tr>
-                            <td class="py-3 text-red-600">
-                                <i class="fas fa-calendar-times mr-1"></i> Absence Deduction
-                                <span class="text-xs text-gray-400 block">@r.DaysAbsent day(s) x Daily Rate</span>
-                            </td>
-                            <td class="py-3 text-right font-medium text-red-600">- Rs. @r.AbsenceDeduction.ToString("N2")</td>
+                        <tr style="border-bottom:1px solid var(--border-light);">
+                            <td style="padding:0.75rem 0; color:#dc2626;"><i class="fas fa-calendar-times" style="margin-right:0.5rem;"></i> Absence Deduction <span class="caption" style="display:block;">@r.DaysAbsent day(s) x Daily Rate</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#dc2626;">- Rs. @r.AbsenceDeduction.ToString("N2")</td>
                         </tr>
                     }
                     @if (r.HalfDayDeduction > 0)
                     {
-                        <tr>
-                            <td class="py-3 text-red-600">
-                                <i class="fas fa-adjust mr-1"></i> Half-Day Deduction
-                                <span class="text-xs text-gray-400 block">@r.DaysHalfDay day(s) x Daily Rate / 2</span>
-                            </td>
-                            <td class="py-3 text-right font-medium text-red-600">- Rs. @r.HalfDayDeduction.ToString("N2")</td>
+                        <tr style="border-bottom:1px solid var(--border-light);">
+                            <td style="padding:0.75rem 0; color:#dc2626;"><i class="fas fa-adjust" style="margin-right:0.5rem;"></i> Half-Day Deduction <span class="caption" style="display:block;">@r.DaysHalfDay day(s) x Daily Rate / 2</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#dc2626;">- Rs. @r.HalfDayDeduction.ToString("N2")</td>
                         </tr>
                     }
                     @if (r.LatePenaltyDeduction > 0)
                     {
-                        <tr>
-                            <td class="py-3 text-red-600">
-                                <i class="fas fa-exclamation-triangle mr-1"></i> Late Penalty
-                                <span class="text-xs text-gray-400 block">@r.DaysLate late(s) = @(r.DaysLate / 3) half-day penalty</span>
-                            </td>
-                            <td class="py-3 text-right font-medium text-red-600">- Rs. @r.LatePenaltyDeduction.ToString("N2")</td>
+                        <tr style="border-bottom:1px solid var(--border-light);">
+                            <td style="padding:0.75rem 0; color:#dc2626;"><i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i> Late Penalty <span class="caption" style="display:block;">@r.DaysLate late(s) = @(r.DaysLate / 3) half-day penalty</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#dc2626;">- Rs. @r.LatePenaltyDeduction.ToString("N2")</td>
                         </tr>
                     }
-
-                    <!-- Manual Deduction Adjustments -->
                     @foreach (var adj in Model.Adjustments.Where(a => a.Type == "Deduction"))
                     {
-                        <tr>
-                            <td class="py-3 text-red-600">
-                                <i class="fas fa-minus-circle mr-1"></i> @(adj.Reason ?? "Manual Deduction")
-                                <span class="text-xs text-gray-400 block">Added by @(adj.CreatedBy?.Name ?? "System") on @adj.CreatedAt.ToString("dd MMM")</span>
-                            </td>
-                            <td class="py-3 text-right font-medium text-red-600">- Rs. @adj.Amount.ToString("N2")</td>
+                        <tr style="border-bottom:1px solid var(--border-light);">
+                            <td style="padding:0.75rem 0; color:#dc2626;"><i class="fas fa-minus-circle" style="margin-right:0.5rem;"></i> @(adj.Reason ?? "Manual Deduction") <span class="caption" style="display:block;">By @(adj.CreatedBy?.Name ?? "System") on @adj.CreatedAt.ToString("dd MMM")</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#dc2626;">- Rs. @adj.Amount.ToString("N2")</td>
                         </tr>
                     }
-
-                    <tr class="bg-red-50">
-                        <td class="py-3 font-bold text-gray-800">Total Deductions</td>
-                        <td class="py-3 text-right font-bold text-red-600">- Rs. @r.TotalDeductions.ToString("N2")</td>
+                    <tr style="background:rgba(239,68,68,0.05); border-bottom:1px solid var(--border-light);">
+                        <td style="padding:0.75rem 0; font-weight:700;">Total Deductions</td>
+                        <td style="padding:0.75rem 0; text-align:right; font-weight:700; color:#dc2626;">- Rs. @r.TotalDeductions.ToString("N2")</td>
                     </tr>
-
-                    <tr class="border-t-2 border-gray-400 bg-purple-50">
-                        <td class="py-4 font-bold text-gray-800 text-lg">Net Payable</td>
-                        <td class="py-4 text-right font-bold text-purple-700 text-lg">Rs. @r.FinalSalary.ToString("N2")</td>
+                    <tr style="background:rgba(147,51,234,0.05); border-top:3px solid var(--accent);">
+                        <td style="padding:1rem 0; font-weight:700; font-size:1.15rem;">Net Payable</td>
+                        <td style="padding:1rem 0; text-align:right; font-weight:700; font-size:1.15rem; color:#9333ea;">Rs. @r.FinalSalary.ToString("N2")</td>
                     </tr>
                 </tbody>
             </table>
+
+            @if (r.FinalizedAt.HasValue)
+            {
+                <div style="background:rgba(212,175,55,0.08); border-radius:var(--radius-card); padding:1rem; margin-top:1.5rem;">
+                    <p class="caption" style="margin:0;"><i class="fas fa-lock" style="color:var(--accent); margin-right:0.5rem;"></i> Finalized by @(r.FinalizedBy?.Name ?? "N/A") on @r.FinalizedAt.Value.ToString("dd MMM yyyy HH:mm")</p>
+                </div>
+            }
+
+            @if (r.PaidDate.HasValue)
+            {
+                <div style="background:rgba(34,197,94,0.08); border-radius:var(--radius-card); padding:1rem; margin-top:0.75rem;">
+                    <p class="caption" style="margin:0;"><i class="fas fa-check-circle" style="color:#16a34a; margin-right:0.5rem;"></i> Paid on @r.PaidDate.Value.ToString("dd MMM yyyy")</p>
+                </div>
+            }
         </div>
-
-        @if (r.FinalizedAt.HasValue)
-        {
-            <div class="bg-indigo-50 rounded-lg p-4 mb-4">
-                <p class="text-sm text-indigo-800">
-                    <i class="fas fa-lock mr-1"></i>
-                    Finalized by @(r.FinalizedBy?.Name ?? "N/A") on @r.FinalizedAt.Value.ToString("dd MMM yyyy HH:mm")
-                </p>
-            </div>
-        }
-
-        @if (r.PaidDate.HasValue)
-        {
-            <div class="bg-green-50 rounded-lg p-4">
-                <p class="text-sm text-green-800">
-                    <i class="fas fa-check-circle mr-1"></i>
-                    Paid on @r.PaidDate.Value.ToString("dd MMM yyyy")
-                </p>
-            </div>
-        }
     </div>
 
     <!-- Attendance Details -->
     @if (Model.AttendanceDetails.Any())
     {
-        <div class="bg-white rounded-lg shadow-md mt-6 overflow-hidden">
-            <div class="p-4 border-b bg-gray-50">
-                <h3 class="font-medium text-gray-700">Daily Attendance Details</h3>
+        <div class="card" style="margin-top:1.5rem;">
+            <div class="card-header">
+                <h3 style="margin:0; font-weight:600;">Daily Attendance Details</h3>
             </div>
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check In</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check Out</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hours</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Overtime</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    @foreach (var a in Model.AttendanceDetails)
-                    {
-                        var sBadge = a.Status switch
-                        {
-                            "Present" => "bg-green-100 text-green-800",
-                            "Absent" => "bg-red-100 text-red-800",
-                            "Late" => "bg-yellow-100 text-yellow-800",
-                            "Half-Day" => "bg-orange-100 text-orange-800",
-                            _ => "bg-gray-100 text-gray-800"
-                        };
-                        <tr>
-                            <td class="px-4 py-2 text-sm">@a.Date.ToString("dd MMM (ddd)")</td>
-                            <td class="px-4 py-2"><span class="px-2 py-0.5 text-xs rounded-full @sBadge">@a.Status</span></td>
-                            <td class="px-4 py-2 text-sm text-gray-600">@(a.CheckInTime?.ToString(@"hh\:mm") ?? "-")</td>
-                            <td class="px-4 py-2 text-sm text-gray-600">@(a.CheckOutTime?.ToString(@"hh\:mm") ?? "-")</td>
-                            <td class="px-4 py-2 text-sm text-gray-600">@(a.TotalHours > 0 ? $"{a.TotalHours:F1}h" : "-")</td>
-                            <td class="px-4 py-2 text-sm @(a.OvertimeHours > 0 ? "text-blue-600 font-medium" : "text-gray-400")">@(a.OvertimeHours > 0 ? $"{a.OvertimeHours:F1}h" : "-")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <div class="card-body" style="padding:0;">
+                <div style="overflow-x:auto;">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Check In</th>
+                                <th>Check Out</th>
+                                <th>Hours</th>
+                                <th>Overtime</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model.AttendanceDetails)
+                            {
+                                var sBadge = a.Status switch
+                                {
+                                    "Present" => "badge badge-success",
+                                    "Absent" => "badge badge-danger",
+                                    "Late" => "badge badge-warning",
+                                    "Half-Day" => "badge badge-info",
+                                    _ => "badge badge-neutral"
+                                };
+                                <tr>
+                                    <td>@a.Date.ToString("dd MMM (ddd)")</td>
+                                    <td><span class="@sBadge">@a.Status</span></td>
+                                    <td class="caption">@(a.CheckInTime?.ToString(@"hh\:mm") ?? "-")</td>
+                                    <td class="caption">@(a.CheckOutTime?.ToString(@"hh\:mm") ?? "-")</td>
+                                    <td class="caption">@(a.TotalHours > 0 ? $"{a.TotalHours:F1}h" : "-")</td>
+                                    <td style="@(a.OvertimeHours > 0 ? "color:var(--accent); font-weight:600;" : "")">@(a.OvertimeHours > 0 ? $"{a.OvertimeHours:F1}h" : "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     }
 </div>

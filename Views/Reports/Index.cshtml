@@ -3,229 +3,113 @@
     var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <title>@ViewData["Title"] - Cafe OS</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Page Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Reporting Hub</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Access all analytics and performance reports across @branches.Count branch@(branches.Count == 1 ? "" : "es").</p>
+    </div>
+</div>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    animation: {
-                        'float': 'float 6s ease-in-out infinite',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        },
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-slate-100 text-slate-900 min-h-screen antialiased">
+<!-- Report Cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;">
 
-    <!-- Top bar -->
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="relative w-10 h-10">
-                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-pink-500 via-violet-500 to-cyan-400 blur-sm opacity-80"></div>
-                    <div class="relative w-full h-full rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm">
-                        📊
-                    </div>
-                </div>
+    <!-- Sales Overview -->
+    <a asp-action="SalesOverview" asp-controller="Reports" class="card" style="text-decoration:none;color:inherit;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.12)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="height:6px;background:linear-gradient(90deg,#ec4899,#8b5cf6);"></div>
+        <div class="card-body" style="padding:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
                 <div>
-                    <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400">
-                        Cafe OS
-                    </p>
-                    <h1 class="text-sm sm:text-base font-semibold tracking-wide text-slate-900">
-                        Reports
-                    </h1>
+                    <span class="badge badge-accent" style="margin-bottom:0.5rem;">Sales</span>
+                    <h3 style="font-weight:700;font-size:1.05rem;margin:0.25rem 0;">Sales Overview</h3>
+                    <p style="font-size:0.8rem;color:var(--text-tertiary);line-height:1.5;">Revenue trends, order analytics, top items and daily breakdowns by branch.</p>
+                </div>
+                <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#ec4899,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.25rem;flex-shrink:0;">
+                    <i class="fas fa-chart-line"></i>
                 </div>
             </div>
-
-            <a href="@Url.Action("Index", "Home")"
-               class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-slate-50 text-xs sm:text-[13px] font-medium px-3 py-1.5 shadow-sm hover:bg-slate-800 transition">
-                ⬅ Back
-            </a>
+            <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+                <span style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:6px;background:#f8f8f6;color:var(--text-tertiary);">Revenue & Orders</span>
+                <span style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:6px;background:#f8f8f6;color:var(--text-tertiary);">Date + Branch filters</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border-light);">
+                <span style="font-size:0.78rem;color:var(--text-tertiary);">Open report</span>
+                <span style="width:28px;height:28px;border-radius:50%;background:var(--sidebar-bg);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;">→</span>
+            </div>
         </div>
-    </header>
+    </a>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
-
-        <!-- Hero strip -->
-        <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-slate-50 p-5 sm:p-7 shadow-[0_16px_40px_rgba(15,23,42,0.7)]">
-            <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-pink-500/40 blur-3xl"></div>
-            <div class="absolute left-4 bottom-0 h-24 w-24 rounded-full bg-cyan-400/30 blur-3xl"></div>
-
-            <div class="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
-                <div class="space-y-2">
-                    <div class="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1 text-[11px]">
-                        <span class="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-slow"></span>
-                        Live analytics
-                    </div>
-                    <div class="flex items-baseline gap-2">
-                        <h2 class="text-2xl sm:text-3xl font-black tracking-tight">
-                            Reporting Hub
-                        </h2>
-                        @if (branches.Any())
-                        {
-                            <span class="text-[11px] text-slate-400">
-                                @branches.Count branch@(branches.Count == 1 ? "" : "es")
-                            </span>
-                        }
-                    </div>
+    <!-- Branch Performance -->
+    <a asp-action="BranchPerformance" asp-controller="Reports" class="card" style="text-decoration:none;color:inherit;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.12)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="height:6px;background:linear-gradient(90deg,#0ea5e9,#06b6d4);"></div>
+        <div class="card-body" style="padding:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div>
+                    <span class="badge badge-info" style="margin-bottom:0.5rem;">Branch</span>
+                    <h3 style="font-weight:700;font-size:1.05rem;margin:0.25rem 0;">Branch Performance</h3>
+                    <p style="font-size:0.8rem;color:var(--text-tertiary);line-height:1.5;">Compare revenue, orders and customer feedback across all branches.</p>
                 </div>
-
-                <div class="flex flex-wrap gap-3 text-[11px]">
-                    <div class="flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-3 py-2 min-w-[140px]">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300 text-base">
-                            💵
-                        </div>
-                        <div>
-                            <p class="text-slate-400 uppercase tracking-[0.16em]">Primary</p>
-                            <p class="font-semibold text-slate-50">Sales overview</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-3 py-2 min-w-[140px]">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-200 text-base">
-                            🏬
-                        </div>
-                        <div>
-                            <p class="text-slate-400 uppercase tracking-[0.16em]">Next</p>
-                            <p class="font-semibold text-slate-50">Branch & inventory</p>
-                        </div>
-                    </div>
+                <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#0ea5e9,#06b6d4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.25rem;flex-shrink:0;">
+                    <i class="fas fa-building"></i>
                 </div>
             </div>
-        </section>
+            <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+                <span style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:6px;background:#f8f8f6;color:var(--text-tertiary);">Compare Branches</span>
+                <span style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:6px;background:#f8f8f6;color:var(--text-tertiary);">Feedback scores</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border-light);">
+                <span style="font-size:0.78rem;color:var(--text-tertiary);">Open report</span>
+                <span style="width:28px;height:28px;border-radius:50%;background:var(--sidebar-bg);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;">→</span>
+            </div>
+        </div>
+    </a>
 
-        <!-- Report cards grid -->
-        <section class="grid md:grid-cols-3 gap-5">
-
-            <!-- Sales Overview -->
-            <a href="@Url.Action("SalesOverview", "Reports")"
-               class="group relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-sm p-5 flex flex-col gap-4 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(236,72,153,0.25)] hover:border-pink-400/70 transition">
-                <div class="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-pink-200/70 blur-2xl opacity-70 group-hover:opacity-90 transition"></div>
-                <div class="relative flex items-start justify-between gap-3">
-                    <div class="space-y-1">
-                        <span class="inline-flex items-center gap-1 rounded-full bg-pink-50 text-pink-700 border border-pink-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]">
-                            Sales
-                        </span>
-                        <h3 class="text-sm font-semibold text-slate-900">
-                            Sales overview
-                        </h3>
-                    </div>
-                    <div class="relative w-10 h-10">
-                        <div class="absolute inset-0 rounded-2xl bg-pink-500/60 blur-md opacity-80"></div>
-                        <div class="relative w-full h-full rounded-2xl bg-pink-500 text-white flex items-center justify-center text-lg">
-                            💵
-                        </div>
-                    </div>
+    <!-- Inventory Overview -->
+    <a asp-action="InventoryOverview" asp-controller="Reports" class="card" style="text-decoration:none;color:inherit;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.12)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="height:6px;background:linear-gradient(90deg,#10b981,#059669);"></div>
+        <div class="card-body" style="padding:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div>
+                    <span class="badge badge-success" style="margin-bottom:0.5rem;">Inventory</span>
+                    <h3 style="font-weight:700;font-size:1.05rem;margin:0.25rem 0;">Inventory Overview</h3>
+                    <p style="font-size:0.8rem;color:var(--text-tertiary);line-height:1.5;">Stock levels, values, low stock alerts and inventory health across branches.</p>
                 </div>
-
-                <div class="relative grid grid-cols-2 gap-3 text-[11px]">
-                    <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2">
-                        <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Metrics</p>
-                        <p class="font-semibold text-slate-900">Revenue, orders, ticket</p>
-                    </div>
-                    <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2">
-                        <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Scope</p>
-                        <p class="font-semibold text-slate-900">Date + branch</p>
-                    </div>
+                <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.25rem;flex-shrink:0;">
+                    <i class="fas fa-boxes"></i>
                 </div>
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+                <span style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:6px;background:#f8f8f6;color:var(--text-tertiary);">Stock & Value</span>
+                <span style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:6px;background:#f8f8f6;color:var(--text-tertiary);">Low stock alerts</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border-light);">
+                <span style="font-size:0.78rem;color:var(--text-tertiary);">Open report</span>
+                <span style="width:28px;height:28px;border-radius:50%;background:var(--sidebar-bg);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;">→</span>
+            </div>
+        </div>
+    </a>
 
-                <div class="relative flex items-center justify-between text-[11px] text-slate-500 pt-1">
-                    <span>Open report</span>
-                    <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-slate-900 text-slate-50 text-xs group-hover:translate-x-0.5 transition">
-                        →
-                    </span>
+    <!-- Menu Performance -->
+    <a asp-action="MenuPerformance" asp-controller="Reports" class="card" style="text-decoration:none;color:inherit;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;opacity:0.7;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.12)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="height:6px;background:linear-gradient(90deg,#f59e0b,#d97706);"></div>
+        <div class="card-body" style="padding:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div>
+                    <span class="badge badge-warning" style="margin-bottom:0.5rem;">Menu</span>
+                    <h3 style="font-weight:700;font-size:1.05rem;margin:0.25rem 0;">Menu Performance</h3>
+                    <p style="font-size:0.8rem;color:var(--text-tertiary);line-height:1.5;">Analyze best sellers, pricing trends and category performance.</p>
                 </div>
-            </a>
-
-            <!-- Branch Performance (placeholder) -->
-            <a href="@Url.Action("BranchPerformance", "Reports")"
-               class="group relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-sm p-5 flex flex-col gap-4 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(236,72,153,0.25)] hover:border-pink-400/70 transition">
-                <div class="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-sky-200/70 blur-2xl opacity-70"></div>
-                <div class="relative flex items-start justify-between gap-3">
-                    <div class="space-y-1">
-                        <span class="inline-flex items-center gap-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]">
-                            Branch
-                        </span>
-                        <h3 class="text-sm font-semibold text-slate-900">
-                            Branch performance
-                        </h3>
-                    </div>
-                    <div class="relative w-10 h-10">
-                        <div class="absolute inset-0 rounded-2xl bg-sky-500/60 blur-md opacity-80"></div>
-                        <div class="relative w-full h-full rounded-2xl bg-sky-500 text-white flex items-center justify-center text-lg">
-                            🏬
-                        </div>
-                    </div>
+                <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.25rem;flex-shrink:0;">
+                    <i class="fas fa-utensils"></i>
                 </div>
-
-                <div class="relative grid grid-cols-2 gap-3 text-[11px]">
-                    <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2">
-                        <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Compare</p>
-                        <p class="font-semibold text-slate-900">Revenue & orders</p>
-                    </div>
-                    <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2">
-                        <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Scope</p>
-                        <p class="font-semibold text-slate-900">Day + branch</p>
-                    </div>
-                </div>
-                <div class="relative flex items-center justify-between text-[11px] text-slate-500 pt-1">
-                    <span>Open report</span>
-                    <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-slate-900 text-slate-50 text-xs group-hover:translate-x-0.5 transition">
-                        →
-                    </span>
-                </div>
-            </a>
-
-
-            <!-- Inventory Overview (placeholder) -->
-            <a href="@Url.Action("InventoryOverview", "Reports")"
-               class="relative overflow-hidden rounded-3xl bg-white border border-slate-200/90 shadow-sm p-5 flex flex-col gap-4 opacity-95 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(52,211,153,0.25)] hover:border-emerald-400/70 transition">
-                <!-- keep the inner content of the existing card -->
-            
-                <div class="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-emerald-200/70 blur-2xl opacity-70"></div>
-                <div class="relative flex items-start justify-between gap-3">
-                    <div class="space-y-1">
-                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]">
-                            Inventory
-                        </span>
-                        <h3 class="text-sm font-semibold text-slate-900">
-                            Inventory overview
-                        </h3>
-                    </div>
-                    <div class="relative w-10 h-10">
-                        <div class="absolute inset-0 rounded-2xl bg-emerald-500/60 blur-md opacity-80"></div>
-                        <div class="relative w-full h-full rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-lg">
-                            📦
-                        </div>
-                    </div>
-                </div>
-
-                <div class="relative grid grid-cols-2 gap-3 text-[11px]">
-                    <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2">
-                        <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Focus</p>
-                        <p class="font-semibold text-slate-900">Stock & value</p>
-                    </div>
-                    <div class="rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2">
-                        <p class="text-slate-500 uppercase tracking-[0.16em] mb-0.5">Status</p>
-                        <p class="font-semibold text-slate-400">Soon</p>
-                    </div>
-                </div>
-            </a>
-        </section>
-    </main>
-</body>
-</html>
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+                <span style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:6px;background:#fef3c7;color:#92400e;">Coming Soon</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border-light);">
+                <span style="font-size:0.78rem;color:var(--text-tertiary);">Preview</span>
+                <span style="width:28px;height:28px;border-radius:50%;background:var(--sidebar-bg);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;">→</span>
+            </div>
+        </div>
+    </a>
+</div>

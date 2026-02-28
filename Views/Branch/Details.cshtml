@@ -1,114 +1,91 @@
-﻿    @model Cafe.Models.Branch
+@model Cafe.Models.Branch
+@{
+    ViewData["Title"] = "Branch Details";
+}
 
-    @{
-        ViewData["Title"] = "Branch Details";
-    }
-
-    <div class="max-w-4xl mx-auto">
-        <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center">
-                <a asp-action="Index" class="text-blue-600 hover:text-blue-800 mr-3">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
-                <h1 class="text-2xl font-bold text-gray-800">Branch Details</h1>
-            </div>
-
-            <div class="flex space-x-2">
-                <a asp-action="Edit" asp-route-id="@Model.Id" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition duration-150">
-                    <i class="fas fa-edit mr-2"></i> Edit
-                </a>
-                <a asp-action="Index" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-150">
-                    Back to List
-                </a>
-            </div>
+<!-- Page Header -->
+<div class="flex items-center justify-between mb-7">
+    <div class="flex items-center gap-3">
+        <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h1 class="page-title">@Model.Name</h1>
+            <p class="body-text mt-1">Branch detail overview and quick stats.</p>
         </div>
+    </div>
+    <div class="flex items-center gap-3">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary btn-sm"><i class="fas fa-pen"></i> Edit</a>
+        <a asp-action="Index" class="btn btn-ghost btn-sm">Back to List</a>
+    </div>
+</div>
 
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold">@Model.Name</h2>
-                        <p class="text-blue-100">@Model.Location</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium @(Model.IsActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800")">
-                            @(Model.IsActive ? "Active" : "Inactive")
-                        </span>
-                        <p class="text-blue-100 text-sm mt-1">Created: @Model.CreatedDate.ToString("MMM dd, yyyy")</p>
-                    </div>
-                </div>
+<!-- Branch Header Card -->
+<div class="card mb-5" style="overflow:hidden;">
+    <div style="background:linear-gradient(135deg,var(--sidebar-bg),#2d3e50);padding:28px 32px;color:#fff;">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h2 style="font-size:1.5rem;font-weight:700;">@Model.Name</h2>
+                <p style="color:#94a3b8;margin-top:4px;">@Model.Location</p>
             </div>
-
-            <!-- Details -->
-            <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Contact Information -->
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                            <i class="fas fa-phone mr-2 text-blue-600"></i> Contact Information
-                        </h3>
-                        <div class="space-y-2">
-                            <p><span class="font-medium text-gray-700">Phone/Email:</span> @Model.ContactInfo</p>
-                            <p>
-                                <span class="font-medium text-gray-700">Manager:</span>
-                                @if (Model.Manager != null)
-                                {
-                                    @Model.Manager.Name
-                                }
-                                else
-                                {
-                                    <span class="text-gray-500">Not assigned</span>
-                                }
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Opening Hours -->
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                            <i class="fas fa-clock mr-2 text-blue-600"></i> Opening Hours
-                        </h3>
-                        <p class="text-gray-700">
-                            @if (!string.IsNullOrEmpty(Model.OpeningHours))
-                            {
-                                @Model.OpeningHours
-                            }
-                            else
-                            {
-                                <span class="text-gray-500">Not specified</span>
-                            }
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Statistics Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                    <div class="bg-blue-50 rounded-lg p-4 text-center">
-                        <div class="text-blue-600 text-2xl font-bold">25</div>
-                        <div class="text-blue-800 text-sm">Staff Members</div>
-                    </div>
-                    <div class="bg-green-50 rounded-lg p-4 text-center">
-                        <div class="text-green-600 text-2xl font-bold">142</div>
-                        <div class="text-green-800 text-sm">This Week's Orders</div>
-                    </div>
-                    <div class="bg-purple-50 rounded-lg p-4 text-center">
-                        <div class="text-purple-600 text-2xl font-bold">$8,542</div>
-                        <div class="text-purple-800 text-sm">This Week's Revenue</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                <div class="flex justify-end space-x-3">
-                    <a asp-action="Edit" asp-route-id="@Model.Id" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition duration-150 flex items-center">
-                        <i class="fas fa-edit mr-2"></i> Edit Branch
-                    </a>
-                    <a asp-action="Index" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-150">
-                        Back to List
-                    </a>
-                </div>
+            <div class="text-right">
+                @if (Model.IsActive)
+                {
+                    <span class="badge badge-success">Active</span>
+                }
+                else
+                {
+                    <span class="badge badge-neutral">Inactive</span>
+                }
+                <p style="color:#94a3b8;font-size:12px;margin-top:6px;">Created @Model.CreatedDate.ToString("MMM dd, yyyy")</p>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Detail Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+    <!-- Contact -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="section-title"><i class="fas fa-phone" style="color:var(--accent);margin-right:8px;"></i>Contact</h3>
+        </div>
+        <div class="card-body space-y-3">
+            <div>
+                <span class="caption">Phone / Email</span>
+                <p class="font-medium" style="color:var(--text-primary);">@Model.ContactInfo</p>
+            </div>
+            <div>
+                <span class="caption">Manager</span>
+                <p class="font-medium" style="color:var(--text-primary);">
+                    @(Model.Manager != null ? Model.Manager.Name : "Not assigned")
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hours -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="section-title"><i class="fas fa-clock" style="color:var(--accent);margin-right:8px;"></i>Opening Hours</h3>
+        </div>
+        <div class="card-body">
+            @if (!string.IsNullOrWhiteSpace(Model.OpeningHours))
+            {
+                <p style="color:var(--text-secondary);white-space:pre-line;">@Model.OpeningHours</p>
+            }
+            else
+            {
+                <p style="color:var(--text-tertiary);">Not specified</p>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="card">
+    <div class="card-body">
+        <div class="flex justify-end gap-3">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary"><i class="fas fa-pen"></i> Edit Branch</a>
+            <a asp-action="Index" class="btn btn-ghost">Back to List</a>
+        </div>
+    </div>
+</div>
