@@ -178,9 +178,9 @@
                     </a>
                 }
 
-                <!-- Collapse Toggle -->
-                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
-                    <i class="fas fa-chevron-left"></i>
+                <!-- Pin/Unpin Toggle -->
+                <button class="sidebar-toggle" id="sidebarToggle" title="Pin sidebar">
+                    <i class="fas fa-thumbtack"></i>
                 </button>
             </div>
         </aside>
@@ -260,22 +260,16 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/actioncard.js"></script>
     <script>
-        // ── Sidebar Collapse ──
+        // ── Sidebar: collapsed by default, expand on hover ──
         (function() {
             const sidebar = document.getElementById('sidebar');
             const toggle = document.getElementById('sidebarToggle');
             const overlay = document.getElementById('sidebarOverlay');
             const mobileBtn = document.getElementById('mobileMenuBtn');
-            const STORAGE_KEY = 'sidebar-collapsed';
 
-            // Restore saved state
-            if (localStorage.getItem(STORAGE_KEY) === 'true' && window.innerWidth > 1024) {
-                sidebar.classList.add('collapsed');
-            }
-
+            // Toggle pin/unpin sidebar
             toggle?.addEventListener('click', function() {
-                sidebar.classList.toggle('collapsed');
-                localStorage.setItem(STORAGE_KEY, sidebar.classList.contains('collapsed'));
+                sidebar.classList.toggle('expanded');
             });
 
             mobileBtn?.addEventListener('click', function() {
@@ -294,7 +288,6 @@
                 const href = link.getAttribute('href');
                 if (href) {
                     const hrefLower = href.toLowerCase();
-                    // Exact match for root, or starts-with for controller paths
                     if ((hrefLower === '/' && currentPath === '/') ||
                         (hrefLower !== '/' && currentPath.startsWith(hrefLower))) {
                         link.classList.add('active');

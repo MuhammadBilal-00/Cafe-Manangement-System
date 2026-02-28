@@ -144,7 +144,7 @@ body {
   top: 0;
   left: 0;
   bottom: 0;
-  width: var(--sidebar-width);
+  width: var(--sidebar-collapsed-width);
   background: var(--sidebar-bg);
   display: flex;
   flex-direction: column;
@@ -152,6 +152,11 @@ body {
   transition: width var(--transition-slow);
   overflow: hidden;
   border-right: 1px solid var(--sidebar-border);
+}
+
+.sidebar:hover,
+.sidebar.expanded {
+  width: var(--sidebar-width);
 }
 
 .sidebar.collapsed {
@@ -183,7 +188,15 @@ body {
 .sidebar-brand-text {
   overflow: hidden;
   white-space: nowrap;
-  transition: opacity var(--transition-base);
+  opacity: 0;
+  width: 0;
+  transition: opacity var(--transition-base), width var(--transition-base);
+}
+
+.sidebar:hover .sidebar-brand-text,
+.sidebar.expanded .sidebar-brand-text {
+  opacity: 1;
+  width: auto;
 }
 
 .sidebar.collapsed .sidebar-brand-text {
@@ -225,7 +238,18 @@ body {
   padding: 16px 14px 6px;
   white-space: nowrap;
   overflow: hidden;
-  transition: opacity var(--transition-base);
+  opacity: 0;
+  height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: opacity var(--transition-base), height var(--transition-base), padding var(--transition-base);
+}
+
+.sidebar:hover .sidebar-section-label,
+.sidebar.expanded .sidebar-section-label {
+  opacity: 1;
+  height: auto;
+  padding: 16px 14px 6px;
 }
 
 .sidebar.collapsed .sidebar-section-label {
@@ -288,11 +312,30 @@ body {
 .sidebar-link-text {
   transition: opacity var(--transition-base);
   overflow: hidden;
+  opacity: 0;
+  width: 0;
+}
+
+.sidebar:hover .sidebar-link-text,
+.sidebar.expanded .sidebar-link-text {
+  opacity: 1;
+  width: auto;
 }
 
 .sidebar.collapsed .sidebar-link-text {
   opacity: 0;
   width: 0;
+}
+
+.sidebar-link {
+  justify-content: center;
+  padding: 10px;
+}
+
+.sidebar:hover .sidebar-link,
+.sidebar.expanded .sidebar-link {
+  justify-content: flex-start;
+  padding: 9px 14px;
 }
 
 .sidebar.collapsed .sidebar-link {
@@ -329,18 +372,24 @@ body {
   transition: transform var(--transition-slow);
 }
 
-.sidebar.collapsed .sidebar-toggle i {
-  transform: rotate(180deg);
+.sidebar.expanded .sidebar-toggle i {
+  transform: rotate(45deg);
+  color: var(--accent);
 }
 
 /* ── Main Content Area ─────────────────────────────────────── */
 .main-wrapper {
   flex: 1;
-  margin-left: var(--sidebar-width);
+  margin-left: var(--sidebar-collapsed-width);
   transition: margin-left var(--transition-slow);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+}
+
+.sidebar:hover ~ .main-wrapper,
+.sidebar.expanded ~ .main-wrapper {
+  margin-left: var(--sidebar-width);
 }
 
 .sidebar.collapsed ~ .main-wrapper {
@@ -1035,4 +1084,5 @@ body {
 .gap-grid { gap: 20px; }
 
 /* Override Tailwind defaults for our system */
+.hidden { display: none !important; }
 .bg-body { background-color: var(--bg-body) !important; }

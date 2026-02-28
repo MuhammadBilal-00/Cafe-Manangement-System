@@ -372,5 +372,11 @@ namespace Cafe.Controllers
 
             return query;
         }
+
+        // PLACEHOLDER: /Reports/MenuPerformance
+        public IActionResult MenuPerformance()
+        {
+            return View();
+        }
     }
 }
