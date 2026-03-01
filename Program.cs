@@ -30,6 +30,7 @@ builder.Services.AddScoped<ISalaryCalculationService, SalaryCalculationService>(
 builder.Services.AddScoped<ISalaryPolicyService, SalaryPolicyService>();
 builder.Services.AddScoped<ISalaryService, SalaryService>();
 builder.Services.AddScoped<IFinancialService, FinancialService>();
+builder.Services.AddScoped<IMenuReportService, MenuReportService>();
 builder.Services.AddHttpContextAccessor();
 
 // Add session support

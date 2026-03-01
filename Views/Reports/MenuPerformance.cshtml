@@ -8,6 +8,8 @@
 
     var items = Model.Items;
     var cats = Model.Categories;
+    var topSellers = Model.TopSellers;
+    var leastSellers = Model.LeastSellers;
 
     string FormatCurrency(decimal value) => "$" + value.ToString("N2");
 
@@ -16,7 +18,8 @@
     int maxQty = items.Any() ? items.Max(i => i.QuantitySold) : 1;
     if (maxQty <= 0) maxQty = 1;
 
-    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var branches = Model.AvailableBranches;
+    var categories = Model.AvailableCategories;
 }
 
 <!-- Page Header -->
@@ -24,12 +27,14 @@
     <div>
         <h1 class="page-title" style="margin:0;">Menu Performance</h1>
         <p class="body-text" style="margin-top:0.25rem;">
-            Analyze best sellers, revenue per item, profit margins and category trends
+            Analyze best &amp; least sellers, revenue per item, profit margins &amp; category trends
             @if (Model.BranchName != "All Branches") { <text> — <strong>@Model.BranchName</strong></text> }
+            @if (Model.CategoryName != null) { <text> — <strong>@Model.CategoryName</strong></text> }
         </p>
     </div>
-    <div style="display:flex;gap:0.5rem;">
-        <a asp-action="ExportMenuPerformanceCsv" asp-route-from="@from.ToString("yyyy-MM-dd")" asp-route-to="@to.ToString("yyyy-MM-dd")" asp-route-branchId="@Model.BranchId" class="btn btn-ghost btn-sm"><i class="fas fa-download"></i> CSV</a>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <a asp-action="ExportMenuPerformanceExcel" asp-route-from="@from.ToString("yyyy-MM-dd")" asp-route-to="@to.ToString("yyyy-MM-dd")" asp-route-branchId="@Model.BranchId" asp-route-categoryId="@Model.CategoryId" class="btn btn-primary btn-sm"><i class="fas fa-file-excel"></i> Excel</a>
+        <a asp-action="ExportMenuPerformanceCsv" asp-route-from="@from.ToString("yyyy-MM-dd")" asp-route-to="@to.ToString("yyyy-MM-dd")" asp-route-branchId="@Model.BranchId" asp-route-categoryId="@Model.CategoryId" class="btn btn-ghost btn-sm"><i class="fas fa-file-csv"></i> CSV</a>
         <a asp-action="Index" asp-controller="Reports" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Reports</a>
     </div>
 </div>
@@ -53,19 +58,40 @@
                     <option value="">All Branches</option>
                     @foreach (var b in branches)
                     {
-                        var isSelected = Model.BranchId == b.Id;
-                        <option value="@b.Id" selected="@isSelected">@b.Name</option>
+                        var isSel = Model.BranchId == b.Id;
+                        <option value="@b.Id" selected="@isSel">@b.Name</option>
                     }
                 </select>
             </div>
         }
+        <div class="form-group" style="min-width:160px;margin:0;">
+            <label class="form-label">Category</label>
+            <select name="categoryId" class="form-select">
+                <option value="">All Categories</option>
+                @foreach (var c in categories)
+                {
+                    var isCatSel = Model.CategoryId == c.Id;
+                    <option value="@c.Id" selected="@isCatSel">@c.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-group" style="min-width:100px;margin:0;">
+            <label class="form-label">Top N</label>
+            <select name="topN" class="form-select">
+                @foreach (var n in new[] { 5, 10, 20, 50 })
+                {
+                    var isNSel = Model.TopN == n;
+                    <option value="@n" selected="@isNSel">Top @n</option>
+                }
+            </select>
+        </div>
         <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Apply</button>
         <a asp-action="MenuPerformance" class="btn btn-ghost btn-sm">Reset</a>
     </div>
 </form>
 
 <!-- Summary KPIs -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;">
     <div class="kpi-card">
         <div class="kpi-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-utensils"></i></div>
         <div class="kpi-label">Items Sold</div>
@@ -77,12 +103,22 @@
         <div class="kpi-value">@FormatCurrency(Model.TotalMenuRevenue)</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-list"></i></div>
+        <div class="kpi-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-coins"></i></div>
+        <div class="kpi-label">Total Profit</div>
+        <div class="kpi-value">@FormatCurrency(Model.TotalProfit)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fas fa-percentage"></i></div>
+        <div class="kpi-label">Overall Margin</div>
+        <div class="kpi-value">@Model.OverallProfitMargin.ToString("0.0")%</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#fce7f3;color:#db2777;"><i class="fas fa-list"></i></div>
         <div class="kpi-label">Unique Items</div>
         <div class="kpi-value">@Model.UniqueItemsOrdered</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fas fa-tags"></i></div>
+        <div class="kpi-icon" style="background:#e0f2fe;color:#0284c7;"><i class="fas fa-tags"></i></div>
         <div class="kpi-label">Avg Item Price</div>
         <div class="kpi-value">@FormatCurrency(Model.AverageItemPrice)</div>
     </div>
@@ -91,19 +127,42 @@
 @if (!items.Any())
 {
     <div class="card" style="padding:3rem;text-align:center;">
-        <div style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:0.5rem;"><i class="fas fa-utensils"></i></div>
-        <p class="body-text">No completed orders found for this date range.</p>
+        <div style="font-size:3rem;color:var(--text-tertiary);margin-bottom:1rem;"><i class="fas fa-chart-bar"></i></div>
+        <h2 style="font-weight:700;font-size:1.15rem;margin-bottom:0.5rem;">No Data Found</h2>
+        <p class="body-text" style="max-width:420px;margin:0 auto;">No completed orders match the selected filters. Try adjusting the date range, branch, or category.</p>
     </div>
 }
 else
 {
-    <!-- Category Breakdown -->
+    <!-- ============ CHARTS ROW ============ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+        <!-- Bar Chart: Top Sellers -->
+        <div class="card" style="min-width:0;">
+            <div class="card-header">
+                <h3 class="section-title"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:0.5rem;"></i>Top @Model.TopN Items by Revenue</h3>
+            </div>
+            <div class="card-body" style="position:relative;height:340px;">
+                <canvas id="topItemsBarChart"></canvas>
+            </div>
+        </div>
+        <!-- Pie Chart: Category Breakdown -->
+        <div class="card" style="min-width:0;">
+            <div class="card-header">
+                <h3 class="section-title"><i class="fas fa-chart-pie" style="color:var(--accent);margin-right:0.5rem;"></i>Category Revenue Split</h3>
+            </div>
+            <div class="card-body" style="position:relative;height:340px;">
+                <canvas id="categoryPieChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CATEGORY CARDS ============ -->
     <div class="card" style="margin-bottom:1.5rem;">
         <div class="card-header">
-            <h3 class="section-title"><i class="fas fa-chart-pie" style="color:var(--accent);margin-right:0.5rem;"></i>Category Breakdown</h3>
+            <h3 class="section-title"><i class="fas fa-layer-group" style="color:var(--accent);margin-right:0.5rem;"></i>Category Breakdown</h3>
         </div>
         <div class="card-body">
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem;">
                 @{
                     decimal catMaxRev = cats.Any() ? cats.Max(c => c.Revenue) : 1m;
                     if (catMaxRev <= 0) catMaxRev = 1;
@@ -112,16 +171,15 @@ else
                 {
                     int catPct = (int)Math.Round(cat.Revenue / catMaxRev * 100m);
                     string catColor = cat.Color ?? "#6366f1";
-                    decimal catSharePct = Model.TotalMenuRevenue > 0 ? cat.Revenue / Model.TotalMenuRevenue * 100 : 0;
                     <div style="padding:1rem;background:var(--bg-body);border-radius:12px;border:1px solid var(--border-light);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
                             <span style="font-weight:700;font-size:0.85rem;">@cat.CategoryName</span>
-                            <span class="badge" style="background:@(catColor)22;color:@catColor;font-size:0.65rem;">@catSharePct.ToString("0.0")%</span>
+                            <span class="badge" style="background:@(catColor)22;color:@catColor;font-size:0.65rem;">@cat.RevenueSharePct.ToString("0.0")%</span>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;font-size:0.75rem;margin-bottom:0.5rem;">
                             <div><span style="color:var(--text-tertiary);">Revenue</span><br/><strong>@FormatCurrency(cat.Revenue)</strong></div>
                             <div><span style="color:var(--text-tertiary);">Qty Sold</span><br/><strong>@cat.QuantitySold.ToString("N0")</strong></div>
-                            <div><span style="color:var(--text-tertiary);">Items</span><br/><strong>@cat.ItemCount</strong></div>
+                            <div><span style="color:var(--text-tertiary);">Profit</span><br/><strong>@FormatCurrency(cat.Profit)</strong></div>
                             <div><span style="color:var(--text-tertiary);">Avg Price</span><br/><strong>@FormatCurrency(cat.AvgItemPrice)</strong></div>
                         </div>
                         <div style="height:6px;background:var(--border-light);border-radius:3px;overflow:hidden;">
@@ -133,87 +191,102 @@ else
         </div>
     </div>
 
-    <!-- Top 10 Best Sellers -->
-    <div class="card" style="margin-bottom:1.5rem;">
-        <div class="card-header">
-            <h3 class="section-title"><i class="fas fa-trophy" style="color:var(--accent);margin-right:0.5rem;"></i>Top Sellers by Revenue</h3>
+    <!-- ============ TOP SELLERS ============ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+        <!-- Top Selling -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="section-title"><i class="fas fa-trophy" style="color:#d4af37;margin-right:0.5rem;"></i>Top @Model.TopN Sellers (by Qty)</h3>
+            </div>
+            <div class="card-body" style="padding:0;">
+                @if (topSellers.Any())
+                {
+                    @foreach (var (item, idx) in topSellers.Select((v, i) => (v, i)))
+                    {
+                        int qPct = (int)Math.Round((decimal)item.QuantitySold / maxQty * 100m);
+                        string catColor = item.CategoryColor ?? "#6366f1";
+                        <div style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 1rem;border-bottom:1px solid var(--border-light);">
+                            <div style="width:26px;height:26px;border-radius:50%;background:@(idx < 3 ? "#d4af37" : "var(--bg-body)");color:@(idx < 3 ? "#fff" : "var(--text-secondary)");display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;flex-shrink:0;border:1px solid var(--border-light);">@(idx + 1)</div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@item.ItemName</div>
+                                <div style="font-size:0.68rem;color:var(--text-tertiary);">@item.CategoryName · @FormatCurrency(item.Revenue) rev</div>
+                            </div>
+                            <div style="text-align:right;flex-shrink:0;">
+                                <div style="font-weight:700;font-size:0.85rem;">@item.QuantitySold</div>
+                                <div class="caption">sold</div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
         </div>
-        <div class="card-body" style="padding:0;">
-            @{
-                var top10 = items.Take(10).ToList();
-            }
-            @foreach (var (item, idx) in top10.Select((v, i) => (v, i)))
-            {
-                int revPct = (int)Math.Round(item.Revenue / maxRevenue * 100m);
-                int qtyPct = (int)Math.Round((decimal)item.QuantitySold / maxQty * 100m);
-                string catColor = item.CategoryColor ?? "#6366f1";
-                string profitColor = item.ProfitMargin >= 40 ? "#16a34a" : item.ProfitMargin >= 20 ? "#d97706" : "#dc2626";
-                <div style="display:flex;align-items:center;gap:1rem;padding:0.85rem 1.25rem;border-bottom:1px solid var(--border-light);">
-                    <!-- Rank -->
-                    <div style="width:28px;height:28px;border-radius:50%;background:@(idx < 3 ? "var(--accent)" : "var(--bg-body)");color:@(idx < 3 ? "#fff" : "var(--text-secondary)");display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0;border:1px solid var(--border-light);">
-                        @(idx + 1)
-                    </div>
-                    <!-- Info -->
-                    <div style="flex:1;min-width:0;">
-                        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.2rem;">
-                            <span style="font-weight:700;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@item.ItemName</span>
-                            <span class="badge" style="background:@(catColor)18;color:@catColor;font-size:0.6rem;flex-shrink:0;">@item.CategoryName</span>
-                            @if (!item.IsAvailable)
-                            {
-                                <span class="badge badge-danger" style="font-size:0.55rem;">Unavailable</span>
-                            }
+
+        <!-- Least Selling -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="section-title"><i class="fas fa-arrow-down" style="color:#dc2626;margin-right:0.5rem;"></i>Least @Model.TopN Sellers (by Qty)</h3>
+            </div>
+            <div class="card-body" style="padding:0;">
+                @if (leastSellers.Any())
+                {
+                    @foreach (var (item, idx) in leastSellers.Select((v, i) => (v, i)))
+                    {
+                        string catColor = item.CategoryColor ?? "#6366f1";
+                        string profitColor = item.ProfitMargin >= 20 ? "#16a34a" : item.ProfitMargin >= 0 ? "#d97706" : "#dc2626";
+                        <div style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 1rem;border-bottom:1px solid var(--border-light);">
+                            <div style="width:26px;height:26px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;flex-shrink:0;border:1px solid var(--border-light);">@(idx + 1)</div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@item.ItemName</div>
+                                <div style="font-size:0.68rem;color:var(--text-tertiary);">@item.CategoryName · @FormatCurrency(item.Revenue) rev</div>
+                            </div>
+                            <div style="text-align:right;flex-shrink:0;">
+                                <div style="font-weight:700;font-size:0.85rem;">@item.QuantitySold</div>
+                                <div class="caption" style="color:@profitColor;">@item.ProfitMargin.ToString("0.0")% margin</div>
+                            </div>
                         </div>
-                        <div style="display:flex;gap:1.5rem;font-size:0.72rem;color:var(--text-tertiary);">
-                            <span><strong style="color:var(--text-primary);">@item.QuantitySold</strong> sold</span>
-                            <span><strong style="color:var(--text-primary);">@item.OrderCount</strong> orders</span>
-                            <span>Price: <strong style="color:var(--text-primary);">@FormatCurrency(item.Price)</strong></span>
-                        </div>
-                        <!-- Mini bar -->
-                        <div style="height:4px;background:var(--border-light);border-radius:2px;overflow:hidden;margin-top:0.35rem;">
-                            <div style="height:100%;width:@(revPct)%;background:linear-gradient(90deg,#d4af37,#f59e0b);border-radius:2px;"></div>
-                        </div>
-                    </div>
-                    <!-- Revenue -->
-                    <div style="text-align:right;flex-shrink:0;">
-                        <div style="font-weight:700;font-size:0.9rem;">@FormatCurrency(item.Revenue)</div>
-                        <div style="font-size:0.65rem;color:@profitColor;font-weight:600;">@item.ProfitMargin.ToString("0.0")% margin</div>
-                    </div>
-                </div>
-            }
+                    }
+                }
+            </div>
         </div>
     </div>
 
-    <!-- Full Item Table -->
+    <!-- ============ FULL TABLE ============ -->
     <div class="card">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-            <h3 class="section-title"><i class="fas fa-table" style="color:var(--accent);margin-right:0.5rem;"></i>All Menu Items</h3>
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+            <h3 class="section-title"><i class="fas fa-table" style="color:var(--accent);margin-right:0.5rem;"></i>All Menu Items (@items.Count)</h3>
             <input type="text" id="itemSearch" class="form-control" placeholder="Search items..." style="max-width:220px;" oninput="filterTable()" />
         </div>
         <div class="card-body" style="overflow-x:auto;">
             <table class="table" id="menuTable">
                 <thead>
                     <tr>
-                        <th style="cursor:pointer;" onclick="sortTable(0)">Item <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
-                        <th style="cursor:pointer;" onclick="sortTable(1)">Category <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
-                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(2)">Price <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
-                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(3)">Cost <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
-                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(4)">Qty Sold <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
-                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(5)">Revenue <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
-                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(6)">Profit <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
-                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(7)">Margin <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
-                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(8)">Orders <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;" onclick="sortTable(0)"># <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;" onclick="sortTable(1)">Item <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;" onclick="sortTable(2)">Category <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;" onclick="sortTable(3)">Branch <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(4)">Price <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(5)">Cost <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(6)">Qty <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(7)">Revenue <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(8)">Profit <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(9)">Margin <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
+                        <th style="cursor:pointer;text-align:right;" onclick="sortTable(10)">Orders <i class="fas fa-sort" style="font-size:0.6rem;"></i></th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @{ int rank = 0; }
                     @foreach (var item in items)
                     {
+                        rank++;
                         string profitColor = item.ProfitMargin >= 40 ? "#16a34a" : item.ProfitMargin >= 20 ? "#d97706" : "#dc2626";
                         <tr>
+                            <td style="color:var(--text-tertiary);">@rank</td>
                             <td style="font-weight:600;">@item.ItemName</td>
                             <td>
                                 <span class="badge" style="background:@(item.CategoryColor ?? "#6366f1")18;color:@(item.CategoryColor ?? "#6366f1");font-size:0.65rem;">@item.CategoryName</span>
                             </td>
+                            <td style="font-size:0.8rem;">@(item.BranchName ?? "—")</td>
                             <td style="text-align:right;">@FormatCurrency(item.Price)</td>
                             <td style="text-align:right;">@FormatCurrency(item.CostPrice)</td>
                             <td style="text-align:right;font-weight:600;">@item.QuantitySold.ToString("N0")</td>
@@ -241,37 +314,133 @@ else
 
 @section Scripts {
 <script>
-    // Simple client-side search filter
+    // ===== Client-side table filter =====
     function filterTable() {
         const query = document.getElementById('itemSearch').value.toLowerCase();
         const rows = document.querySelectorAll('#menuTable tbody tr');
         rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(query) ? '' : 'none';
+            row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
         });
     }
 
-    // Simple client-side sort
+    // ===== Client-side sort =====
     let sortDir = {};
     function sortTable(colIdx) {
         const table = document.getElementById('menuTable');
+        if (!table) return;
         const tbody = table.querySelector('tbody');
         const rows = Array.from(tbody.querySelectorAll('tr'));
         const dir = sortDir[colIdx] = !(sortDir[colIdx] ?? false);
-
         rows.sort((a, b) => {
             let aText = a.cells[colIdx]?.textContent.trim() ?? '';
             let bText = b.cells[colIdx]?.textContent.trim() ?? '';
-            // Try numeric
             let aNum = parseFloat(aText.replace(/[$,%]/g, '').replace(/,/g, ''));
             let bNum = parseFloat(bText.replace(/[$,%]/g, '').replace(/,/g, ''));
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-                return dir ? aNum - bNum : bNum - aNum;
-            }
+            if (!isNaN(aNum) && !isNaN(bNum)) return dir ? aNum - bNum : bNum - aNum;
             return dir ? aText.localeCompare(bText) : bText.localeCompare(aText);
         });
-
         rows.forEach(r => tbody.appendChild(r));
+    }
+
+    // ===== Chart.js — Top Items Bar Chart =====
+    @if (items.Any())
+    {
+        <text>
+        (function() {
+            const topLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(topSellers.Select(x => x.ItemName).ToArray()));
+            const topRevData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(topSellers.Select(x => Math.Round(x.Revenue, 2)).ToArray()));
+            const topQtyData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(topSellers.Select(x => x.QuantitySold).ToArray()));
+
+            const barCtx = document.getElementById('topItemsBarChart')?.getContext('2d');
+            if (barCtx) {
+                new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: topLabels,
+                        datasets: [
+                            {
+                                label: 'Revenue ($)',
+                                data: topRevData,
+                                backgroundColor: 'rgba(212,175,55,0.75)',
+                                borderColor: '#d4af37',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Qty Sold',
+                                data: topQtyData,
+                                backgroundColor: 'rgba(99,102,241,0.55)',
+                                borderColor: '#6366f1',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) {
+                                        if (ctx.dataset.yAxisID === 'y') return 'Revenue: $' + ctx.raw.toLocaleString();
+                                        return 'Qty Sold: ' + ctx.raw;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
+                            y: { position: 'left', title: { display: true, text: 'Revenue ($)' }, ticks: { callback: v => '$' + v.toLocaleString() } },
+                            y1: { position: 'right', title: { display: true, text: 'Quantity' }, grid: { drawOnChartArea: false } }
+                        }
+                    }
+                });
+            }
+
+            // ===== Chart.js — Category Pie =====
+            const catLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cats.Select(x => x.CategoryName).ToArray()));
+            const catData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cats.Select(x => Math.Round(x.Revenue, 2)).ToArray()));
+            const catColors = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cats.Select(x => x.Color ?? "#6366f1").ToArray()));
+
+            const pieCtx = document.getElementById('categoryPieChart')?.getContext('2d');
+            if (pieCtx) {
+                new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            data: catData,
+                            backgroundColor: catColors.map(c => c + 'cc'),
+                            borderColor: catColors,
+                            borderWidth: 2,
+                            hoverOffset: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) {
+                                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                        const pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
+                                        return ctx.label + ': $' + ctx.raw.toLocaleString() + ' (' + pct + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        })();
+        </text>
     }
 </script>
 }

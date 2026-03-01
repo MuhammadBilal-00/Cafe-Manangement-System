@@ -6,6 +6,7 @@ using Cafe.Data;
 using Cafe.Models;
 using Cafe.Models.ViewModels;
 using Cafe.Helpers;
+using Cafe.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,17 @@ namespace Cafe.Controllers
     [RequireManagerOrOwner]
     public class ReportsController : BaseController
     {
-        public ReportsController(ApplicationDbContext context) : base(context) { }
+        private readonly IMenuReportService _menuReportService;
+        private readonly IAuditLogService _auditLogService;
+
+        public ReportsController(
+            ApplicationDbContext context,
+            IMenuReportService menuReportService,
+            IAuditLogService auditLogService) : base(context)
+        {
+            _menuReportService = menuReportService;
+            _auditLogService = auditLogService;
+        }
 
         // HUB: /Reports
         public async Task<IActionResult> Index()
@@ -373,159 +384,118 @@ namespace Cafe.Controllers
             return query;
         }
 
-        // MENU PERFORMANCE: /Reports/MenuPerformance
-        public async Task<IActionResult> MenuPerformance(DateTime? from, DateTime? to, int? branchId)
+        // ==============================
+        // MENU PERFORMANCE (service-based)
+        // ==============================
+        public async Task<IActionResult> MenuPerformance(DateTime? from, DateTime? to, int? branchId, int? categoryId, int? topN)
         {
             var (start, end) = GetDateRangeOrDefault(from, to);
+            int n = topN ?? 10;
 
-            // ---------- item-level data ----------
-            IQueryable<OrderItem> oiQuery = _context.OrderItems
-                .Include(oi => oi.Order).ThenInclude(o => o.Branch)
-                .Include(oi => oi.MenuItem).ThenInclude(m => m.Category)
-                .Where(oi => oi.Order.Status == "Completed"
-                             && oi.Order.OrderDate >= start
-                             && oi.Order.OrderDate < end);
-
-            // role-based branch filtering (reuse order filter logic inline)
-            int? effectiveBranchId = branchId;
-            if (!HttpContext.Session.IsOwner())
-            {
-                var userBranchId = HttpContext.Session.IsBranchManager()
+            var userRole = HttpContext.Session.GetUserRole() ?? "";
+            var userBranchId = HttpContext.Session.IsOwner() ? (int?)null
+                : HttpContext.Session.IsBranchManager()
                     ? HttpContext.Session.GetManagedBranchId()
                     : HttpContext.Session.GetStaffBranchId();
-                if (userBranchId.HasValue)
-                {
-                    effectiveBranchId = userBranchId.Value;
-                    oiQuery = oiQuery.Where(oi => oi.Order.BranchId == userBranchId.Value);
-                }
-            }
-            else if (branchId.HasValue)
-            {
-                oiQuery = oiQuery.Where(oi => oi.Order.BranchId == branchId.Value);
-            }
 
-            var rawItems = await oiQuery
-                .GroupBy(oi => new
-                {
-                    oi.MenuItemId,
-                    oi.MenuItem.Name,
-                    CategoryName = oi.MenuItem.Category.Name,
-                    CategoryColor = oi.MenuItem.Category.Color,
-                    oi.MenuItem.Price,
-                    oi.MenuItem.CostPrice,
-                    oi.MenuItem.Availability
-                })
-                .Select(g => new MenuItemPerformanceRow
-                {
-                    MenuItemId = g.Key.MenuItemId,
-                    ItemName = g.Key.Name,
-                    CategoryName = g.Key.CategoryName,
-                    CategoryColor = g.Key.CategoryColor,
-                    Price = g.Key.Price,
-                    CostPrice = g.Key.CostPrice,
-                    QuantitySold = g.Sum(x => x.Quantity),
-                    Revenue = g.Sum(x => x.Quantity * x.Price),
-                    OrderCount = g.Select(x => x.OrderId).Distinct().Count(),
-                    IsAvailable = g.Key.Availability
-                })
-                .OrderByDescending(x => x.Revenue)
-                .ToListAsync();
+            var model = await _menuReportService.GenerateReportAsync(
+                start, end.AddDays(-1), branchId, categoryId, n, userRole, userBranchId);
 
-            // ---------- category-level aggregation ----------
-            var categories = rawItems
-                .GroupBy(i => new { i.CategoryName, i.CategoryColor })
-                .Select(g => new CategoryPerformanceRow
-                {
-                    CategoryName = g.Key.CategoryName,
-                    Color = g.Key.CategoryColor,
-                    ItemCount = g.Count(),
-                    QuantitySold = g.Sum(x => x.QuantitySold),
-                    Revenue = g.Sum(x => x.Revenue),
-                    AvgItemPrice = g.Any() ? g.Average(x => x.Price) : 0
-                })
-                .OrderByDescending(c => c.Revenue)
-                .ToList();
-
-            var currentBranch = effectiveBranchId.HasValue
-                ? await _context.Branches.FindAsync(effectiveBranchId.Value)
-                : null;
-
-            ViewBag.Branches = await GetAccessibleBranches();
-
-            var model = new MenuPerformanceViewModel
-            {
-                FromDate = start,
-                ToDate = end.AddDays(-1),
-                BranchId = effectiveBranchId,
-                BranchName = currentBranch?.Name ?? "All Branches",
-                TotalItemsSold = rawItems.Sum(x => x.QuantitySold),
-                TotalMenuRevenue = rawItems.Sum(x => x.Revenue),
-                UniqueItemsOrdered = rawItems.Count,
-                AverageItemPrice = rawItems.Any() ? rawItems.Average(x => x.Price) : 0,
-                Items = rawItems,
-                Categories = categories
-            };
+            await _auditLogService.LogAsync("ViewReport", "MenuPerformance", null,
+                $"Menu performance report viewed ({model.FromDate:yyyy-MM-dd} to {model.ToDate:yyyy-MM-dd}, Branch={model.BranchName})");
 
             return View(model);
         }
 
-        // CSV Export: /Reports/ExportMenuPerformanceCsv
-        public async Task<IActionResult> ExportMenuPerformanceCsv(DateTime? from, DateTime? to, int? branchId)
+        // EXCEL EXPORT
+        public async Task<IActionResult> ExportMenuPerformanceExcel(DateTime? from, DateTime? to, int? branchId, int? categoryId)
         {
             var (start, end) = GetDateRangeOrDefault(from, to);
 
-            IQueryable<OrderItem> oiQuery = _context.OrderItems
-                .Include(oi => oi.Order)
-                .Include(oi => oi.MenuItem).ThenInclude(m => m.Category)
-                .Where(oi => oi.Order.Status == "Completed"
-                             && oi.Order.OrderDate >= start
-                             && oi.Order.OrderDate < end);
-
-            int? effectiveBranchId = branchId;
-            if (!HttpContext.Session.IsOwner())
-            {
-                var userBranchId = HttpContext.Session.IsBranchManager()
+            var userRole = HttpContext.Session.GetUserRole() ?? "";
+            var userBranchId = HttpContext.Session.IsOwner() ? (int?)null
+                : HttpContext.Session.IsBranchManager()
                     ? HttpContext.Session.GetManagedBranchId()
                     : HttpContext.Session.GetStaffBranchId();
-                if (userBranchId.HasValue)
-                {
-                    effectiveBranchId = userBranchId.Value;
-                    oiQuery = oiQuery.Where(oi => oi.Order.BranchId == userBranchId.Value);
-                }
-            }
-            else if (branchId.HasValue)
+
+            var rows = await _menuReportService.GetExportRowsAsync(
+                start, end.AddDays(-1), branchId, categoryId, userRole, userBranchId);
+
+            using var workbook = new ClosedXML.Excel.XLWorkbook();
+            var ws = workbook.Worksheets.Add("Menu Performance");
+
+            // Header row
+            var headers = new[] { "Item", "Category", "Branch", "Price", "Cost", "Qty Sold", "Revenue", "Profit", "Margin %", "Orders", "Status" };
+            for (int i = 0; i < headers.Length; i++)
             {
-                oiQuery = oiQuery.Where(oi => oi.Order.BranchId == branchId.Value);
+                ws.Cell(1, i + 1).Value = headers[i];
+                ws.Cell(1, i + 1).Style.Font.Bold = true;
+                ws.Cell(1, i + 1).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#2c2c2c");
+                ws.Cell(1, i + 1).Style.Font.FontColor = ClosedXML.Excel.XLColor.White;
             }
 
-            var rows = await oiQuery
-                .GroupBy(oi => new
-                {
-                    oi.MenuItem.Name,
-                    Category = oi.MenuItem.Category.Name,
-                    oi.MenuItem.Price,
-                    oi.MenuItem.CostPrice
-                })
-                .Select(g => new
-                {
-                    g.Key.Name,
-                    g.Key.Category,
-                    g.Key.Price,
-                    g.Key.CostPrice,
-                    Qty = g.Sum(x => x.Quantity),
-                    Rev = g.Sum(x => x.Quantity * x.Price)
-                })
-                .OrderByDescending(x => x.Rev)
-                .ToListAsync();
-
-            var csv = new System.Text.StringBuilder();
-            csv.AppendLine("Item,Category,Price,CostPrice,QtySold,Revenue,Profit,ProfitMargin%");
+            int row = 2;
             foreach (var r in rows)
             {
-                var profit = r.Rev - (r.CostPrice * r.Qty);
-                var margin = r.Rev > 0 ? profit / r.Rev * 100 : 0;
-                csv.AppendLine($"{EscapeCsv(r.Name)},{EscapeCsv(r.Category)},{r.Price:F2},{r.CostPrice:F2},{r.Qty},{r.Rev:F2},{profit:F2},{margin:F1}");
+                ws.Cell(row, 1).Value = r.ItemName;
+                ws.Cell(row, 2).Value = r.CategoryName;
+                ws.Cell(row, 3).Value = r.BranchName ?? "";
+                ws.Cell(row, 4).Value = r.Price;
+                ws.Cell(row, 5).Value = r.CostPrice;
+                ws.Cell(row, 6).Value = r.QuantitySold;
+                ws.Cell(row, 7).Value = r.Revenue;
+                ws.Cell(row, 8).Value = r.Profit;
+                ws.Cell(row, 9).Value = Math.Round(r.ProfitMargin, 1);
+                ws.Cell(row, 10).Value = r.OrderCount;
+                ws.Cell(row, 11).Value = r.IsAvailable ? "Active" : "Inactive";
+
+                ws.Cell(row, 4).Style.NumberFormat.Format = "$#,##0.00";
+                ws.Cell(row, 5).Style.NumberFormat.Format = "$#,##0.00";
+                ws.Cell(row, 7).Style.NumberFormat.Format = "$#,##0.00";
+                ws.Cell(row, 8).Style.NumberFormat.Format = "$#,##0.00";
+                ws.Cell(row, 9).Style.NumberFormat.Format = "0.0\"%\"";
+                row++;
             }
+
+            ws.Columns().AdjustToContents();
+
+            using var stream = new System.IO.MemoryStream();
+            workbook.SaveAs(stream);
+            stream.Position = 0;
+
+            await _auditLogService.LogAsync("ExportReport", "MenuPerformance", null,
+                $"Menu performance exported to Excel ({rows.Count} items)");
+
+            return File(stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"menu-performance-{start:yyyyMMdd}-{end:yyyyMMdd}.xlsx");
+        }
+
+        // CSV EXPORT
+        public async Task<IActionResult> ExportMenuPerformanceCsv(DateTime? from, DateTime? to, int? branchId, int? categoryId)
+        {
+            var (start, end) = GetDateRangeOrDefault(from, to);
+
+            var userRole = HttpContext.Session.GetUserRole() ?? "";
+            var userBranchId = HttpContext.Session.IsOwner() ? (int?)null
+                : HttpContext.Session.IsBranchManager()
+                    ? HttpContext.Session.GetManagedBranchId()
+                    : HttpContext.Session.GetStaffBranchId();
+
+            var rows = await _menuReportService.GetExportRowsAsync(
+                start, end.AddDays(-1), branchId, categoryId, userRole, userBranchId);
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("Item,Category,Branch,Price,CostPrice,QtySold,Revenue,Profit,ProfitMargin%,Orders,Status");
+            foreach (var r in rows)
+            {
+                var profit = r.Profit;
+                var margin = r.ProfitMargin;
+                csv.AppendLine($"{EscapeCsv(r.ItemName)},{EscapeCsv(r.CategoryName)},{EscapeCsv(r.BranchName ?? "")},{r.Price:F2},{r.CostPrice:F2},{r.QuantitySold},{r.Revenue:F2},{profit:F2},{margin:F1},{r.OrderCount},{(r.IsAvailable ? "Active" : "Inactive")}");
+            }
+
+            await _auditLogService.LogAsync("ExportReport", "MenuPerformance", null,
+                $"Menu performance exported to CSV ({rows.Count} items)");
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
             return File(bytes, "text/csv", $"menu-performance-{start:yyyyMMdd}-{end:yyyyMMdd}.csv");
