@@ -344,7 +344,8 @@
 
         async function loadTodos() {
             try {
-                const res = await fetch('/Todo');
+                const res = await fetch('/Todo/Index');
+                if (!res.ok) throw new Error('Failed to load');
                 const items = await res.json();
                 renderTodos(items);
             } catch { todoList.innerHTML = ''; }
@@ -376,14 +377,15 @@
             if (!title) return;
             const priority = document.getElementById('todoPriority').value;
             try {
-                await fetch('/Todo/Create', {
+                const res = await fetch('/Todo/Create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
                     body: JSON.stringify({ title, priority })
                 });
+                if (!res.ok) throw new Error('Failed to create');
                 todoInput.value = '';
                 loadTodos();
-            } catch {}
+            } catch (e) { console.error('addTodo failed:', e); }
         }
 
         async function toggleTodo(id) {

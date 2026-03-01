@@ -5,7 +5,7 @@
 --              FK reference to Branches and an index.
 -- ============================================================
 
--- Step 1: Add BranchId column (nullable int)
+-- Step 1: Add BranchId colum
 IF NOT EXISTS (
     SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_NAME = 'AuditLogs' AND COLUMN_NAME = 'BranchId'

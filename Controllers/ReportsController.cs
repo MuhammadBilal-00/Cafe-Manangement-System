@@ -373,10 +373,162 @@ namespace Cafe.Controllers
             return query;
         }
 
-        // PLACEHOLDER: /Reports/MenuPerformance
-        public IActionResult MenuPerformance()
+        // MENU PERFORMANCE: /Reports/MenuPerformance
+        public async Task<IActionResult> MenuPerformance(DateTime? from, DateTime? to, int? branchId)
         {
-            return View();
+            var (start, end) = GetDateRangeOrDefault(from, to);
+
+            // ---------- item-level data ----------
+            IQueryable<OrderItem> oiQuery = _context.OrderItems
+                .Include(oi => oi.Order).ThenInclude(o => o.Branch)
+                .Include(oi => oi.MenuItem).ThenInclude(m => m.Category)
+                .Where(oi => oi.Order.Status == "Completed"
+                             && oi.Order.OrderDate >= start
+                             && oi.Order.OrderDate < end);
+
+            // role-based branch filtering (reuse order filter logic inline)
+            int? effectiveBranchId = branchId;
+            if (!HttpContext.Session.IsOwner())
+            {
+                var userBranchId = HttpContext.Session.IsBranchManager()
+                    ? HttpContext.Session.GetManagedBranchId()
+                    : HttpContext.Session.GetStaffBranchId();
+                if (userBranchId.HasValue)
+                {
+                    effectiveBranchId = userBranchId.Value;
+                    oiQuery = oiQuery.Where(oi => oi.Order.BranchId == userBranchId.Value);
+                }
+            }
+            else if (branchId.HasValue)
+            {
+                oiQuery = oiQuery.Where(oi => oi.Order.BranchId == branchId.Value);
+            }
+
+            var rawItems = await oiQuery
+                .GroupBy(oi => new
+                {
+                    oi.MenuItemId,
+                    oi.MenuItem.Name,
+                    CategoryName = oi.MenuItem.Category.Name,
+                    CategoryColor = oi.MenuItem.Category.Color,
+                    oi.MenuItem.Price,
+                    oi.MenuItem.CostPrice,
+                    oi.MenuItem.Availability
+                })
+                .Select(g => new MenuItemPerformanceRow
+                {
+                    MenuItemId = g.Key.MenuItemId,
+                    ItemName = g.Key.Name,
+                    CategoryName = g.Key.CategoryName,
+                    CategoryColor = g.Key.CategoryColor,
+                    Price = g.Key.Price,
+                    CostPrice = g.Key.CostPrice,
+                    QuantitySold = g.Sum(x => x.Quantity),
+                    Revenue = g.Sum(x => x.Quantity * x.Price),
+                    OrderCount = g.Select(x => x.OrderId).Distinct().Count(),
+                    IsAvailable = g.Key.Availability
+                })
+                .OrderByDescending(x => x.Revenue)
+                .ToListAsync();
+
+            // ---------- category-level aggregation ----------
+            var categories = rawItems
+                .GroupBy(i => new { i.CategoryName, i.CategoryColor })
+                .Select(g => new CategoryPerformanceRow
+                {
+                    CategoryName = g.Key.CategoryName,
+                    Color = g.Key.CategoryColor,
+                    ItemCount = g.Count(),
+                    QuantitySold = g.Sum(x => x.QuantitySold),
+                    Revenue = g.Sum(x => x.Revenue),
+                    AvgItemPrice = g.Any() ? g.Average(x => x.Price) : 0
+                })
+                .OrderByDescending(c => c.Revenue)
+                .ToList();
+
+            var currentBranch = effectiveBranchId.HasValue
+                ? await _context.Branches.FindAsync(effectiveBranchId.Value)
+                : null;
+
+            ViewBag.Branches = await GetAccessibleBranches();
+
+            var model = new MenuPerformanceViewModel
+            {
+                FromDate = start,
+                ToDate = end.AddDays(-1),
+                BranchId = effectiveBranchId,
+                BranchName = currentBranch?.Name ?? "All Branches",
+                TotalItemsSold = rawItems.Sum(x => x.QuantitySold),
+                TotalMenuRevenue = rawItems.Sum(x => x.Revenue),
+                UniqueItemsOrdered = rawItems.Count,
+                AverageItemPrice = rawItems.Any() ? rawItems.Average(x => x.Price) : 0,
+                Items = rawItems,
+                Categories = categories
+            };
+
+            return View(model);
+        }
+
+        // CSV Export: /Reports/ExportMenuPerformanceCsv
+        public async Task<IActionResult> ExportMenuPerformanceCsv(DateTime? from, DateTime? to, int? branchId)
+        {
+            var (start, end) = GetDateRangeOrDefault(from, to);
+
+            IQueryable<OrderItem> oiQuery = _context.OrderItems
+                .Include(oi => oi.Order)
+                .Include(oi => oi.MenuItem).ThenInclude(m => m.Category)
+                .Where(oi => oi.Order.Status == "Completed"
+                             && oi.Order.OrderDate >= start
+                             && oi.Order.OrderDate < end);
+
+            int? effectiveBranchId = branchId;
+            if (!HttpContext.Session.IsOwner())
+            {
+                var userBranchId = HttpContext.Session.IsBranchManager()
+                    ? HttpContext.Session.GetManagedBranchId()
+                    : HttpContext.Session.GetStaffBranchId();
+                if (userBranchId.HasValue)
+                {
+                    effectiveBranchId = userBranchId.Value;
+                    oiQuery = oiQuery.Where(oi => oi.Order.BranchId == userBranchId.Value);
+                }
+            }
+            else if (branchId.HasValue)
+            {
+                oiQuery = oiQuery.Where(oi => oi.Order.BranchId == branchId.Value);
+            }
+
+            var rows = await oiQuery
+                .GroupBy(oi => new
+                {
+                    oi.MenuItem.Name,
+                    Category = oi.MenuItem.Category.Name,
+                    oi.MenuItem.Price,
+                    oi.MenuItem.CostPrice
+                })
+                .Select(g => new
+                {
+                    g.Key.Name,
+                    g.Key.Category,
+                    g.Key.Price,
+                    g.Key.CostPrice,
+                    Qty = g.Sum(x => x.Quantity),
+                    Rev = g.Sum(x => x.Quantity * x.Price)
+                })
+                .OrderByDescending(x => x.Rev)
+                .ToListAsync();
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("Item,Category,Price,CostPrice,QtySold,Revenue,Profit,ProfitMargin%");
+            foreach (var r in rows)
+            {
+                var profit = r.Rev - (r.CostPrice * r.Qty);
+                var margin = r.Rev > 0 ? profit / r.Rev * 100 : 0;
+                csv.AppendLine($"{EscapeCsv(r.Name)},{EscapeCsv(r.Category)},{r.Price:F2},{r.CostPrice:F2},{r.Qty},{r.Rev:F2},{profit:F2},{margin:F1}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", $"menu-performance-{start:yyyyMMdd}-{end:yyyyMMdd}.csv");
         }
     }
 }
