@@ -20,6 +20,25 @@
 
     var branches = Model.AvailableBranches;
     var categories = Model.AvailableCategories;
+
+    // Build a consistent category-to-color map
+    string[] _palette = new[] { "#6366f1","#f59e0b","#10b981","#ef4444","#3b82f6","#ec4899","#8b5cf6","#14b8a6","#f97316","#06b6d4","#84cc16","#e11d48","#a855f7","#0ea5e9","#facc15" };
+    var _catColorMap = new Dictionary<string, string>();
+    int _palIdx = 0;
+    foreach (var c in cats)
+    {
+        string key = c.CategoryName ?? "";
+        if (!_catColorMap.ContainsKey(key))
+        {
+            _catColorMap[key] = !string.IsNullOrEmpty(c.Color) ? c.Color : _palette[_palIdx % _palette.Length];
+            _palIdx++;
+        }
+    }
+    string CatColor(string? catName, string? dbColor)
+    {
+        if (!string.IsNullOrEmpty(dbColor) && dbColor.Length > 3) return dbColor;
+        return _catColorMap.ContainsKey(catName ?? "") ? _catColorMap[catName ?? ""] : _palette[0];
+    }
 }
 
 <!-- Page Header -->
@@ -166,11 +185,14 @@ else
                 @{
                     decimal catMaxRev = cats.Any() ? cats.Max(c => c.Revenue) : 1m;
                     if (catMaxRev <= 0) catMaxRev = 1;
+                    string[] cardPalette = new[] { "#6366f1","#f59e0b","#10b981","#ef4444","#3b82f6","#ec4899","#8b5cf6","#14b8a6","#f97316","#06b6d4","#84cc16","#e11d48" };
+                    int catIdx = 0;
                 }
                 @foreach (var cat in cats)
                 {
                     int catPct = (int)Math.Round(cat.Revenue / catMaxRev * 100m);
-                    string catColor = cat.Color ?? "#6366f1";
+                    string catColor = !string.IsNullOrEmpty(cat.Color) ? cat.Color : cardPalette[catIdx % cardPalette.Length];
+                    catIdx++;
                     <div style="padding:1rem;background:var(--bg-body);border-radius:12px;border:1px solid var(--border-light);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
                             <span style="font-weight:700;font-size:0.85rem;">@cat.CategoryName</span>
@@ -204,7 +226,7 @@ else
                     @foreach (var (item, idx) in topSellers.Select((v, i) => (v, i)))
                     {
                         int qPct = (int)Math.Round((decimal)item.QuantitySold / maxQty * 100m);
-                        string catColor = item.CategoryColor ?? "#6366f1";
+                        string catColor = CatColor(item.CategoryName, item.CategoryColor);
                         <div style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 1rem;border-bottom:1px solid var(--border-light);">
                             <div style="width:26px;height:26px;border-radius:50%;background:@(idx < 3 ? "#d4af37" : "var(--bg-body)");color:@(idx < 3 ? "#fff" : "var(--text-secondary)");display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;flex-shrink:0;border:1px solid var(--border-light);">@(idx + 1)</div>
                             <div style="flex:1;min-width:0;">
@@ -231,7 +253,7 @@ else
                 {
                     @foreach (var (item, idx) in leastSellers.Select((v, i) => (v, i)))
                     {
-                        string catColor = item.CategoryColor ?? "#6366f1";
+                        string catColor = CatColor(item.CategoryName, item.CategoryColor);
                         string profitColor = item.ProfitMargin >= 20 ? "#16a34a" : item.ProfitMargin >= 0 ? "#d97706" : "#dc2626";
                         <div style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 1rem;border-bottom:1px solid var(--border-light);">
                             <div style="width:26px;height:26px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;flex-shrink:0;border:1px solid var(--border-light);">@(idx + 1)</div>
@@ -284,7 +306,7 @@ else
                             <td style="color:var(--text-tertiary);">@rank</td>
                             <td style="font-weight:600;">@item.ItemName</td>
                             <td>
-                                <span class="badge" style="background:@(item.CategoryColor ?? "#6366f1")18;color:@(item.CategoryColor ?? "#6366f1");font-size:0.65rem;">@item.CategoryName</span>
+                                <span class="badge" style="background:@(CatColor(item.CategoryName, item.CategoryColor))18;color:@(CatColor(item.CategoryName, item.CategoryColor));font-size:0.65rem;">@item.CategoryName</span>
                             </td>
                             <td style="font-size:0.8rem;">@(item.BranchName ?? "—")</td>
                             <td style="text-align:right;">@FormatCurrency(item.Price)</td>
@@ -405,7 +427,11 @@ else
             // ===== Chart.js — Category Pie =====
             const catLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cats.Select(x => x.CategoryName).ToArray()));
             const catData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cats.Select(x => Math.Round(x.Revenue, 2)).ToArray()));
-            const catColors = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cats.Select(x => x.Color ?? "#6366f1").ToArray()));
+            const dbColors = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cats.Select(x => x.Color ?? "").ToArray()));
+
+            // Distinct color palette fallback when DB colors are missing/identical
+            const palette = ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6','#f97316','#06b6d4','#84cc16','#e11d48','#a855f7','#0ea5e9','#facc15'];
+            const catColors = dbColors.map((c, i) => (c && c.length > 3) ? c : palette[i % palette.length]);
 
             const pieCtx = document.getElementById('categoryPieChart')?.getContext('2d');
             if (pieCtx) {
