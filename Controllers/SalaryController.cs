@@ -20,16 +20,19 @@ namespace Cafe.Controllers
         private readonly ISalaryService _salaryService;
         private readonly ISalaryPolicyService _policyService;
         private readonly ISalaryCalculationService _calcService;
+        private readonly INotificationService _notificationService;
 
         public SalaryController(
             ApplicationDbContext context,
             ISalaryService salaryService,
             ISalaryPolicyService policyService,
-            ISalaryCalculationService calcService) : base(context)
+            ISalaryCalculationService calcService,
+            INotificationService notificationService) : base(context)
         {
             _salaryService = salaryService;
             _policyService = policyService;
             _calcService = calcService;
+            _notificationService = notificationService;
         }
 
         // ================================================================
@@ -177,6 +180,17 @@ namespace Cafe.Controllers
                     model.Year, model.Month, model.BranchId, GetCurrentUserId());
 
                 int newCount = results.Count(r => r.GeneratedAt.Date == DateTime.Today);
+
+                // Notification: salaries generated
+                await _notificationService.CreateNotificationAsync(
+                    "Salaries Generated",
+                    $"{results.Count} salary records generated for {model.Month}/{model.Year} ({newCount} new).",
+                    "Success", NotificationCategory.Financial,
+                    branchId: model.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: $"/Salary/Index?year={model.Year}&month={model.Month}",
+                    icon: "fas fa-calculator");
+
                 SetSuccessMessage($"Salary records generated successfully! {results.Count} total ({newCount} new). All records start as Draft.");
             }
             catch (Exception ex)
@@ -243,7 +257,19 @@ namespace Cafe.Controllers
 
             var success = await _salaryService.FinalizeSalaryAsync(id, userId.Value);
             if (success)
+            {
+                // Notification: salary finalized
+                await _notificationService.CreateNotificationAsync(
+                    "Salary Finalized",
+                    $"Salary record #{id} has been finalized and is ready for payment.",
+                    "Success", NotificationCategory.Financial,
+                    roleTarget: "BranchManager",
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/Salary/Index",
+                    icon: "fas fa-check-double");
+
                 SetSuccessMessage("Salary finalized! It can now be marked as paid.");
+            }
             else
                 SetErrorMessage("Failed to finalize salary. It may already be finalized or paid.");
 
@@ -274,6 +300,20 @@ namespace Cafe.Controllers
             }
 
             SetSuccessMessage($"{finalized} salary record(s) finalized!");
+
+            // Notification: bulk finalize
+            if (finalized > 0)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    "Salaries Finalized",
+                    $"{finalized} salary record(s) finalized for {month}/{year}.",
+                    "Success", NotificationCategory.Financial,
+                    branchId: branchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: $"/Salary/Index?year={year}&month={month}",
+                    icon: "fas fa-check-double");
+            }
+
             return RedirectToAction(nameof(Index), new { year, month, branchId });
         }
 

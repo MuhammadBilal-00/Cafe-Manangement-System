@@ -55,6 +55,11 @@ namespace Cafe.Data
         public DbSet<SalaryPolicy> SalaryPolicies { get; set; }
         public DbSet<Expense> Expenses { get; set; }
 
+        // Notifications & Email
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<EmailQueue> EmailQueues { get; set; }
+        public DbSet<NotificationPreference> NotificationPreferences { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -64,6 +69,7 @@ namespace Cafe.Data
             ConfigureRelationships(modelBuilder);
             ConfigureDefaultValues(modelBuilder);
             ConfigureCheckConstraints(modelBuilder);
+            ConfigureNotifications(modelBuilder);
         }
 
         private void ConfigureDecimalPrecision(ModelBuilder modelBuilder)
@@ -287,6 +293,11 @@ namespace Cafe.Data
             // SalaryRecord: composite index for dashboard queries
             modelBuilder.Entity<SalaryRecord>()
                 .HasIndex(sr => new { sr.BranchId, sr.Year, sr.Month });
+
+            // NotificationPreference: one per user
+            modelBuilder.Entity<NotificationPreference>()
+                .HasIndex(np => np.UserId)
+                .IsUnique();
         }
 
         private void ConfigureRelationships(ModelBuilder modelBuilder)
@@ -859,6 +870,61 @@ namespace Cafe.Data
             modelBuilder.Entity<Expense>()
                 .ToTable(t => t.HasCheckConstraint("CK_Expense_ApprovalStatus",
                     "[ApprovalStatus] IN ('Pending','Approved','Rejected')"));
+        }
+
+        private void ConfigureNotifications(ModelBuilder modelBuilder)
+        {
+            // Notification indexes for performance
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.UserId);
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.IsRead);
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.CreatedAt);
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.RoleTarget);
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.BranchId);
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.Type);
+
+            // Notification relationships - prevent cascade cycles
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.Branch)
+                .WithMany()
+                .HasForeignKey(n => n.BranchId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.Creator)
+                .WithMany()
+                .HasForeignKey(n => n.CreatedBy)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // EmailQueue indexes
+            modelBuilder.Entity<EmailQueue>()
+                .HasIndex(e => e.IsSent);
+            modelBuilder.Entity<EmailQueue>()
+                .HasIndex(e => e.CreatedAt);
+
+            modelBuilder.Entity<EmailQueue>()
+                .HasOne(e => e.Notification)
+                .WithMany()
+                .HasForeignKey(e => e.NotificationId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // NotificationPreference relationship
+            modelBuilder.Entity<NotificationPreference>()
+                .HasOne(np => np.User)
+                .WithMany()
+                .HasForeignKey(np => np.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

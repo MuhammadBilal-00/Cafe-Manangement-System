@@ -5,6 +5,7 @@ using Cafe.Data;
 using Cafe.Models;
 using Cafe.Attributes;
 using Cafe.Helpers;
+using Cafe.Services;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 
@@ -13,7 +14,12 @@ namespace Cafe.Controllers
     [RequireManagerOrOwner]
     public class BranchController : BaseController
     {
-        public BranchController(ApplicationDbContext context) : base(context) { }
+        private readonly INotificationService _notificationService;
+
+        public BranchController(ApplicationDbContext context, INotificationService notificationService) : base(context)
+        {
+            _notificationService = notificationService;
+        }
 
         public async Task<IActionResult> Index()
         {
@@ -60,6 +66,16 @@ namespace Cafe.Controllers
 
             _context.Add(branch);
             await _context.SaveChangesAsync();
+
+            // Notification: new branch
+            await _notificationService.CreateNotificationAsync(
+                "New Branch Created",
+                $"Branch \"{branch.Name}\" has been created at {branch.Location}.",
+                "Success", NotificationCategory.System,
+                roleTarget: "Owner",
+                createdBy: GetCurrentUserId(),
+                redirectUrl: "/Branch/Index",
+                icon: "fas fa-store");
 
             SetSuccessMessage("Branch created successfully!");
             return RedirectToAction(nameof(Index));

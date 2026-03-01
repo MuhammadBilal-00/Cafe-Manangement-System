@@ -4,14 +4,18 @@ using Cafe.Models;
 using Cafe.Data;
 using Cafe.Attributes;
 using Cafe.Helpers;
+using Cafe.Services;
 
 namespace Cafe.Controllers
 {
     [RequireManagerOrOwner]
     public class InventoryItemController : BaseController
     {
-        public InventoryItemController(ApplicationDbContext context) : base(context)
+        private readonly INotificationService _notificationService;
+
+        public InventoryItemController(ApplicationDbContext context, INotificationService notificationService) : base(context)
         {
+            _notificationService = notificationService;
         }
 
         // Helper: get the branch this user is scoped to (null = all branches for Owner)
@@ -98,6 +102,16 @@ namespace Cafe.Controllers
                 _context.Add(inventoryItem);
                 await _context.SaveChangesAsync();
 
+                // Notification: inventory item created
+                await _notificationService.CreateNotificationAsync(
+                    "Inventory Item Added",
+                    $"\"{inventoryItem.Name}\" has been added to inventory.",
+                    "Info", NotificationCategory.Inventory,
+                    branchId: inventoryItem.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/InventoryItem/Index",
+                    icon: "fas fa-boxes-stacked");
+
                 TempData["Success"] = "Inventory item created successfully!";
                 return RedirectToAction(nameof(Index));
             }
@@ -178,8 +192,20 @@ namespace Cafe.Controllers
             var inventoryItem = await _context.InventoryItems.FindAsync(id);
             if (inventoryItem != null)
             {
+                var itemName = inventoryItem.Name;
+                var itemBranch = inventoryItem.BranchId;
                 _context.InventoryItems.Remove(inventoryItem);
                 await _context.SaveChangesAsync();
+
+                // Notification: inventory deleted
+                await _notificationService.CreateNotificationAsync(
+                    "Inventory Item Deleted",
+                    $"\"{itemName}\" has been removed from inventory.",
+                    "Warning", NotificationCategory.Inventory,
+                    branchId: itemBranch,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/InventoryItem/Index",
+                    icon: "fas fa-trash");
 
                 TempData["Success"] = "Inventory item deleted successfully!";
             }
@@ -201,6 +227,19 @@ namespace Cafe.Controllers
             inventoryItem.Quantity += add;
             inventoryItem.LastUpdated = DateTime.Now;
             await _context.SaveChangesAsync();
+
+            // Check low stock after restock
+            if (inventoryItem.Quantity <= inventoryItem.ReorderLevel)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    "Low Stock Alert",
+                    $"\"{inventoryItem.Name}\" is at {inventoryItem.Quantity} units (reorder level: {inventoryItem.ReorderLevel}).",
+                    "Warning", NotificationCategory.Inventory,
+                    branchId: inventoryItem.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/InventoryItem/LowStock",
+                    icon: "fas fa-triangle-exclamation");
+            }
 
             return Json(new { success = true });
         }

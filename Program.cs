@@ -4,6 +4,7 @@ using Cafe.Data;
 using Cafe.Services;
 using Cafe.Middleware;
 using Cafe.Interceptors;
+using Cafe.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +32,13 @@ builder.Services.AddScoped<ISalaryPolicyService, SalaryPolicyService>();
 builder.Services.AddScoped<ISalaryService, SalaryService>();
 builder.Services.AddScoped<IFinancialService, FinancialService>();
 builder.Services.AddScoped<IMenuReportService, MenuReportService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHostedService<EmailBackgroundWorker>();
 builder.Services.AddHttpContextAccessor();
+
+// Add SignalR for real-time notifications
+builder.Services.AddSignalR();
 
 // Add session support
 builder.Services.AddSession(options =>
@@ -132,5 +139,8 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Auth}/{action=Login}/{id?}");
+
+// Map SignalR hubs
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

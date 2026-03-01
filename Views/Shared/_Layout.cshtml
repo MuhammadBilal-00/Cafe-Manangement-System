@@ -157,6 +157,11 @@
                 {
                     <div class="sidebar-section-label">System</div>
 
+                    <a asp-controller="Notification" asp-action="Admin" class="sidebar-link" data-nav="NotificationAdmin">
+                        <span class="sidebar-link-icon"><i class="fas fa-bullhorn"></i></span>
+                        <span class="sidebar-link-text">Notifications</span>
+                    </a>
+
                     <a asp-controller="AuditLog" asp-action="Index" class="sidebar-link" data-nav="AuditLog">
                         <span class="sidebar-link-icon"><i class="fas fa-shield-halved"></i></span>
                         <span class="sidebar-link-text">Audit Logs</span>
@@ -199,10 +204,31 @@
                 </div>
 
                 <div class="header-right">
-                    <button class="header-icon-btn" data-tooltip="Notifications">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge-dot"></span>
-                    </button>
+                    <!-- Notification Bell -->
+                    @if (isAuthenticated)
+                    {
+                        <div style="position:relative;" id="notifBellContainer">
+                            <button class="header-icon-btn" data-tooltip="Notifications" id="notifBellBtn" onclick="toggleNotifDropdown(event)">
+                                <i class="fas fa-bell"></i>
+                                <span class="notif-badge" id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:#dc2626;color:#fff;font-size:0.55rem;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 4px;line-height:1;">0</span>
+                            </button>
+
+                            <!-- Dropdown -->
+                            <div id="notifDropdown" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:360px;background:var(--surface);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);border:1px solid var(--border-light);z-index:9999;overflow:hidden;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease,transform 0.2s ease;">
+                                <!-- Header -->
+                                <div style="padding:0.85rem 1rem;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;">
+                                    <span style="font-weight:700;font-size:0.9rem;color:var(--text-primary);">Notifications</span>
+                                    <button onclick="markAllReadFromBell()" style="background:none;border:none;color:#6366f1;font-size:0.72rem;cursor:pointer;font-weight:600;">Mark all read</button>
+                                </div>
+                                <!-- Items -->
+                                <div id="notifDropdownList" style="max-height:320px;overflow-y:auto;"></div>
+                                <!-- Footer -->
+                                <div style="padding:0.6rem 1rem;border-top:1px solid var(--border-light);text-align:center;">
+                                    <a href="/Notification/Index" style="color:#6366f1;font-size:0.78rem;font-weight:600;text-decoration:none;">View All Notifications</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
                     <button class="header-icon-btn" data-tooltip="Search" id="globalSearchBtn">
                         <i class="fas fa-magnifying-glass"></i>
                     </button>
@@ -297,6 +323,131 @@
         })();
     </script>
 
+    <!-- SignalR -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
+
+    @if (isAuthenticated)
+    {
+        <script>
+        // ── Notification System ──
+        (function() {
+            const badge = document.getElementById('notifBadge');
+            const dropdown = document.getElementById('notifDropdown');
+            const list = document.getElementById('notifDropdownList');
+            let isOpen = false;
+
+            function updateBadge(count) {
+                if (!badge) return;
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            function typeColor(type) {
+                switch(type) {
+                    case 'Success': return '#16a34a';
+                    case 'Warning': return '#d97706';
+                    case 'Error':   return '#dc2626';
+                    default:        return '#6366f1';
+                }
+            }
+
+            function renderItems(notifications) {
+                if (!list) return;
+                if (!notifications || notifications.length === 0) {
+                    list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-tertiary);font-size:0.82rem;"><i class="fas fa-bell-slash" style="font-size:1.5rem;margin-bottom:0.5rem;display:block;"></i>No notifications</div>';
+                    return;
+                }
+                list.innerHTML = notifications.map(n => {
+                    const c = typeColor(n.type);
+                    return `<a href="javascript:void(0)" onclick="clickNotif(${n.id}, '${n.redirectUrl || ''}')" style="display:flex;align-items:flex-start;gap:0.7rem;padding:0.75rem 1rem;border-bottom:1px solid var(--border-light);text-decoration:none;background:${n.isRead ? 'transparent' : 'rgba(99,102,241,0.04)'};transition:background 0.15s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='${n.isRead ? 'transparent' : 'rgba(99,102,241,0.04)}'">
+                        <div style="width:32px;height:32px;border-radius:8px;background:${c}12;color:${c};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem;"><i class="${n.icon || 'fas fa-info-circle'}"></i></div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:${n.isRead ? '500' : '700'};font-size:0.8rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.title}</div>
+                            <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.message}</div>
+                            <div style="font-size:0.65rem;color:var(--text-tertiary);margin-top:3px;">${n.timeAgo}</div>
+                        </div>
+                        ${!n.isRead ? `<span style="width:7px;height:7px;border-radius:50%;background:${c};flex-shrink:0;margin-top:6px;"></span>` : ''}
+                    </a>`;
+                }).join('');
+            }
+
+            async function loadNotifications() {
+                try {
+                    const res = await fetch('/Notification/GetRecent');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    updateBadge(data.unreadCount);
+                    renderItems(data.notifications);
+                } catch(e) { console.warn('Notif load error', e); }
+            }
+
+            window.toggleNotifDropdown = function(e) {
+                e?.stopPropagation();
+                isOpen = !isOpen;
+                if (isOpen) {
+                    dropdown.style.display = 'block';
+                    requestAnimationFrame(() => {
+                        dropdown.style.opacity = '1';
+                        dropdown.style.transform = 'translateY(0)';
+                    });
+                    loadNotifications();
+                } else {
+                    closeDropdown();
+                }
+            };
+
+            function closeDropdown() {
+                isOpen = false;
+                if (!dropdown) return;
+                dropdown.style.opacity = '0';
+                dropdown.style.transform = 'translateY(-8px)';
+                setTimeout(() => { dropdown.style.display = 'none'; }, 200);
+            }
+
+            document.addEventListener('click', function(e) {
+                const container = document.getElementById('notifBellContainer');
+                if (container && !container.contains(e.target)) closeDropdown();
+            });
+
+            window.clickNotif = async function(id, url) {
+                await fetch('/Notification/MarkAsRead?id=' + id, { method: 'POST' });
+                closeDropdown();
+                if (url && url.length > 0) window.location.href = url;
+                else loadNotifications();
+            };
+
+            window.markAllReadFromBell = async function() {
+                await fetch('/Notification/MarkAllAsRead', { method: 'POST' });
+                loadNotifications();
+            };
+
+            // Initial load
+            loadNotifications();
+
+            // Poll every 30s as fallback
+            setInterval(loadNotifications, 30000);
+
+            // ── SignalR Real-time ──
+            try {
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl('/hubs/notifications')
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on('ReceiveNotification', function(notif) {
+                    loadNotifications(); // Refresh dropdown + badge
+                });
+
+                connection.start().catch(err => console.warn('SignalR connect error:', err));
+            } catch(e) { console.warn('SignalR init error', e); }
+        })();
+        </script>
+    }
 </body>
 </html>

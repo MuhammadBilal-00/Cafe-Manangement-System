@@ -16,10 +16,12 @@ namespace Cafe.Controllers
     public class AttendanceController : BaseController
     {
         private readonly IAttendanceService _attendanceService;
+        private readonly INotificationService _notificationService;
 
-        public AttendanceController(ApplicationDbContext context, IAttendanceService attendanceService) : base(context)
+        public AttendanceController(ApplicationDbContext context, IAttendanceService attendanceService, INotificationService notificationService) : base(context)
         {
             _attendanceService = attendanceService;
+            _notificationService = notificationService;
         }
 
         // GET: Attendance
@@ -129,6 +131,16 @@ namespace Cafe.Controllers
                     model.StaffId, staff.BranchId, model.Date,
                     model.CheckInTime, model.CheckOutTime,
                     model.Notes, GetCurrentUserId());
+
+                // Notification: attendance marked
+                await _notificationService.CreateNotificationAsync(
+                    "Attendance Marked",
+                    $"Attendance marked for staff #{model.StaffId} on {model.Date:MMM dd, yyyy}.",
+                    "Info", NotificationCategory.Staff,
+                    branchId: staff.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/Attendance/Index",
+                    icon: "fas fa-calendar-check");
 
                 SetSuccessMessage("Attendance marked successfully! Status auto-calculated.");
                 return RedirectToAction(nameof(Index));
@@ -336,6 +348,20 @@ namespace Cafe.Controllers
             }
 
             SetSuccessMessage($"Attendance marked for {marked} staff member(s)! Status auto-calculated.");
+
+            // Notification: bulk attendance
+            if (marked > 0)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    "Bulk Attendance Marked",
+                    $"Attendance marked for {marked} staff member(s) on {model.Date:MMM dd, yyyy}.",
+                    "Info", NotificationCategory.Staff,
+                    branchId: model.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/Attendance/Index",
+                    icon: "fas fa-calendar-check");
+            }
+
             return RedirectToAction(nameof(Index));
         }
 

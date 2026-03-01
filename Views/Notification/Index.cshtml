@@ -1,0 +1,174 @@
+@{
+    ViewData["Title"] = "Notifications";
+
+    var notifications = (List<Cafe.Services.NotificationDto>)ViewBag.Notifications;
+    int page = ViewBag.Page;
+    int totalPages = ViewBag.TotalPages;
+    int totalCount = ViewBag.TotalCount;
+    int unreadCount = ViewBag.UnreadCount;
+    bool? filterRead = ViewBag.FilterIsRead;
+    string filterType = ViewBag.FilterType;
+    DateTime? filterFrom = ViewBag.FilterFrom;
+    DateTime? filterTo = ViewBag.FilterTo;
+}
+
+<!-- Page Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Notifications</h1>
+        <p class="body-text" style="margin-top:0.25rem;">
+            @totalCount total · <strong>@unreadCount unread</strong>
+        </p>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+        <button onclick="markAllRead()" class="btn btn-outline" style="font-size:0.8rem;">
+            <i class="fas fa-check-double" style="margin-right:0.3rem;"></i> Mark All Read
+        </button>
+        @if (ViewBag.UserRole == "Owner")
+        {
+            <a asp-action="Admin" class="btn btn-primary" style="font-size:0.8rem;">
+                <i class="fas fa-bullhorn" style="margin-right:0.3rem;"></i> Send Notification
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-body" style="padding:1rem 1.25rem;">
+        <form method="get" asp-action="Index" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:end;">
+            <div style="display:flex;flex-direction:column;gap:0.25rem;">
+                <label class="caption">Status</label>
+                <select name="isRead" class="form-control" style="min-width:130px;">
+                    <option value="">All</option>
+                    @{ var selUnread = filterRead == false ? "selected" : ""; }
+                    <option value="false" selected="@selUnread">Unread</option>
+                    @{ var selRead = filterRead == true ? "selected" : ""; }
+                    <option value="true" selected="@selRead">Read</option>
+                </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.25rem;">
+                <label class="caption">Type</label>
+                <select name="type" class="form-control" style="min-width:130px;">
+                    <option value="">All Types</option>
+                    @{ var selInfo = filterType == "Info" ? "selected" : ""; }
+                    <option value="Info" selected="@selInfo">Info</option>
+                    @{ var selSuccess = filterType == "Success" ? "selected" : ""; }
+                    <option value="Success" selected="@selSuccess">Success</option>
+                    @{ var selWarning = filterType == "Warning" ? "selected" : ""; }
+                    <option value="Warning" selected="@selWarning">Warning</option>
+                    @{ var selError = filterType == "Error" ? "selected" : ""; }
+                    <option value="Error" selected="@selError">Error</option>
+                </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.25rem;">
+                <label class="caption">From</label>
+                <input type="date" name="from" class="form-control" value="@(filterFrom?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.25rem;">
+                <label class="caption">To</label>
+                <input type="date" name="to" class="form-control" value="@(filterTo?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <button type="submit" class="btn btn-primary" style="font-size:0.8rem;">
+                <i class="fas fa-filter" style="margin-right:0.3rem;"></i> Filter
+            </button>
+            <a asp-action="Index" class="btn btn-outline" style="font-size:0.8rem;">Clear</a>
+        </form>
+    </div>
+</div>
+
+<!-- Notification List -->
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        @if (!notifications.Any())
+        {
+            <div style="text-align:center;padding:3rem;">
+                <i class="fas fa-bell-slash" style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:0.75rem;"></i>
+                <p class="body-text" style="color:var(--text-tertiary);">No notifications found</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var n in notifications)
+            {
+                string typeColor = n.Type switch
+                {
+                    "Success" => "#16a34a",
+                    "Warning" => "#d97706",
+                    "Error" => "#dc2626",
+                    _ => "#6366f1"
+                };
+                string bgColor = n.IsRead ? "transparent" : "rgba(99,102,241,0.04)";
+
+                <div class="notif-row" data-id="@n.Id"
+                     style="display:flex;align-items:flex-start;gap:0.85rem;padding:1rem 1.25rem;border-bottom:1px solid var(--border-light);background:@bgColor;cursor:pointer;transition:background 0.2s;"
+                     onclick="openNotification(@n.Id, '@(n.RedirectUrl ?? "")')"
+                     onmouseenter="this.style.background='var(--bg-hover)'"
+                     onmouseleave="this.style.background='@bgColor'">
+
+                    <!-- Icon -->
+                    <div style="width:36px;height:36px;border-radius:10px;background:@(typeColor)12;color:@typeColor;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.85rem;">
+                        <i class="@(n.Icon ?? "fas fa-info-circle")"></i>
+                    </div>
+
+                    <!-- Content -->
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.2rem;">
+                            <span style="font-weight:@(n.IsRead ? "500" : "700");font-size:0.85rem;color:var(--text-primary);">@n.Title</span>
+                            @if (!n.IsRead)
+                            {
+                                <span style="width:7px;height:7px;border-radius:50%;background:@typeColor;flex-shrink:0;"></span>
+                            }
+                            <span class="badge" style="background:@(typeColor)18;color:@typeColor;font-size:0.6rem;margin-left:auto;">@n.Type</span>
+                        </div>
+                        <p style="margin:0;font-size:0.78rem;color:var(--text-secondary);line-height:1.4;@(n.IsRead ? "" : "font-weight:500;")">
+                            @(n.Message.Length > 120 ? n.Message.Substring(0, 120) + "..." : n.Message)
+                        </p>
+                        <span class="caption" style="display:inline-block;margin-top:0.3rem;">@n.TimeAgo</span>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- Pagination -->
+@if (totalPages > 1)
+{
+    <div style="display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:1.25rem;">
+        @for (int p = 1; p <= totalPages; p++)
+        {
+            var isActive = p == page;
+            <a asp-action="Index"
+               asp-route-page="@p"
+               asp-route-isRead="@filterRead"
+               asp-route-type="@filterType"
+               asp-route-from="@(filterFrom?.ToString("yyyy-MM-dd"))"
+               asp-route-to="@(filterTo?.ToString("yyyy-MM-dd"))"
+               class="btn @(isActive ? "btn-primary" : "btn-outline")"
+               style="width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center;font-size:0.8rem;">
+                @p
+            </a>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        async function markAllRead() {
+            await fetch('/Notification/MarkAllAsRead', { method: 'POST' });
+            window.location.reload();
+        }
+
+        async function openNotification(id, url) {
+            await fetch('/Notification/MarkAsRead?id=' + id, { method: 'POST' });
+            if (url && url.length > 0) {
+                window.location.href = url;
+            } else {
+                // Just refresh to show read state
+                const row = document.querySelector(`.notif-row[data-id="${id}"]`);
+                if (row) row.style.background = 'transparent';
+            }
+        }
+    </script>
+}

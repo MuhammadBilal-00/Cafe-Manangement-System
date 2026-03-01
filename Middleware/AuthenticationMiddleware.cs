@@ -19,7 +19,8 @@
             var isPublicPath = path == "/" ||
                               publicPaths.Any(p => path?.StartsWith(p) == true) ||
                               path?.Contains("/css/") == true || path?.Contains("/js/") == true ||
-                              path?.Contains("/images/") == true;
+                              path?.Contains("/images/") == true ||
+                              path?.StartsWith("/hubs/") == true;
 
             if (!isPublicPath)
             {

@@ -14,10 +14,12 @@ namespace Cafe.Controllers
     public class StaffController : BaseController
     {
         private readonly IAuthService _authService;
+        private readonly INotificationService _notificationService;
 
-        public StaffController(ApplicationDbContext context, IAuthService authService) : base(context)
+        public StaffController(ApplicationDbContext context, IAuthService authService, INotificationService notificationService) : base(context)
         {
             _authService = authService;
+            _notificationService = notificationService;
         }
 
         // GET: Staff
@@ -135,6 +137,16 @@ namespace Cafe.Controllers
 
                 _context.Staff.Add(staff);
                 await _context.SaveChangesAsync();
+
+                // Notification: new staff added
+                await _notificationService.CreateNotificationAsync(
+                    "New Staff Member",
+                    $"{model.Name} has been added as staff in branch #{model.BranchId}.",
+                    "Success", NotificationCategory.Staff,
+                    branchId: model.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/Staff/Index",
+                    icon: "fas fa-user-plus");
 
                 TempData["Success"] = "Staff member created successfully!";
                 return RedirectToAction(nameof(Index));
@@ -305,6 +317,16 @@ namespace Cafe.Controllers
 
                 _context.Staff.Update(staff);
                 await _context.SaveChangesAsync();
+
+                // Notification: staff terminated
+                await _notificationService.CreateNotificationAsync(
+                    "Staff Member Removed",
+                    $"{staff.User?.Name ?? "Staff"} has been deactivated.",
+                    "Warning", NotificationCategory.Staff,
+                    branchId: staff.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/Staff/Index",
+                    icon: "fas fa-user-minus");
 
                 TempData["Success"] = "Staff member deleted successfully!";
             }

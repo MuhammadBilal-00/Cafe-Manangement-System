@@ -2,6 +2,7 @@ using Cafe.Data;
 using Cafe.Attributes;
 using Cafe.Helpers;
 using Cafe.Models;
+using Cafe.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,12 @@ namespace Cafe.Controllers
     [RequireStaffOrAbove]
     public class TodoController : BaseController
     {
-        public TodoController(ApplicationDbContext context) : base(context) { }
+        private readonly INotificationService _notificationService;
+
+        public TodoController(ApplicationDbContext context, INotificationService notificationService) : base(context)
+        {
+            _notificationService = notificationService;
+        }
 
         // GET: /Todo  – returns JSON list for the current user
         [HttpGet]
@@ -50,6 +56,15 @@ namespace Cafe.Controllers
             _context.TodoItems.Add(item);
             await _context.SaveChangesAsync();
 
+            // Notification: task created (self-targeted)
+            await _notificationService.CreateNotificationAsync(
+                "Task Created",
+                $"New task: \"{item.Title}\" ({item.Priority} priority)",
+                "Info", NotificationCategory.System,
+                userId: userId,
+                createdBy: userId,
+                icon: "fas fa-list-check");
+
             return Json(item);
         }
 
@@ -63,6 +78,17 @@ namespace Cafe.Controllers
 
             item.IsCompleted = !item.IsCompleted;
             await _context.SaveChangesAsync();
+
+            if (item.IsCompleted)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    "Task Completed",
+                    $"Task \"{item.Title}\" has been completed.",
+                    "Success", NotificationCategory.System,
+                    userId: userId,
+                    createdBy: userId,
+                    icon: "fas fa-circle-check");
+            }
 
             return Json(item);
         }

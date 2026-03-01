@@ -1,0 +1,113 @@
+@model Cafe.Models.NotificationPreference
+
+@{
+    ViewData["Title"] = "Notification Preferences";
+}
+
+<div style="max-width:640px;margin:0 auto;">
+    <div style="margin-bottom:1.5rem;">
+        <h1 class="page-title" style="margin:0;">Notification Preferences</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Choose how and what notifications you receive</p>
+    </div>
+
+    <form method="post" asp-action="SavePreferences">
+        <!-- Delivery Channels -->
+        <div class="card" style="margin-bottom:1.25rem;">
+            <div class="card-header">
+                <h3 class="section-title"><i class="fas fa-paper-plane" style="color:#6366f1;margin-right:0.5rem;"></i>Delivery Channels</h3>
+            </div>
+            <div class="card-body">
+                <div style="display:flex;flex-direction:column;gap:1rem;">
+                    <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;">
+                        <div style="position:relative;">
+                            <input type="checkbox" name="InAppEnabled" value="true" @(Model.InAppEnabled ? "checked" : "")
+                                   style="width:18px;height:18px;accent-color:#6366f1;cursor:pointer;" />
+                        </div>
+                        <div>
+                            <div style="font-weight:600;font-size:0.85rem;">In-App Notifications</div>
+                            <div class="caption">Show notifications in the bell icon dropdown and notifications page</div>
+                        </div>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;">
+                        <div style="position:relative;">
+                            <input type="checkbox" name="EmailEnabled" value="true" @(Model.EmailEnabled ? "checked" : "")
+                                   style="width:18px;height:18px;accent-color:#6366f1;cursor:pointer;" />
+                        </div>
+                        <div>
+                            <div style="font-weight:600;font-size:0.85rem;">Email Notifications</div>
+                            <div class="caption">Receive email alerts for important events</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Categories -->
+        <div class="card" style="margin-bottom:1.25rem;">
+            <div class="card-header">
+                <h3 class="section-title"><i class="fas fa-sliders" style="color:#d4af37;margin-right:0.5rem;"></i>Categories</h3>
+            </div>
+            <div class="card-body">
+                <div style="display:flex;flex-direction:column;gap:1rem;">
+                    <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;">
+                        <input type="checkbox" name="OrderNotifications" value="true" @(Model.OrderNotifications ? "checked" : "")
+                               style="width:18px;height:18px;accent-color:#6366f1;cursor:pointer;" />
+                        <div>
+                            <div style="font-weight:600;font-size:0.85rem;">
+                                <i class="fas fa-receipt" style="color:#f59e0b;margin-right:0.3rem;"></i> Orders
+                            </div>
+                            <div class="caption">New orders, status changes, cancellations</div>
+                        </div>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;">
+                        <input type="checkbox" name="StaffNotifications" value="true" @(Model.StaffNotifications ? "checked" : "")
+                               style="width:18px;height:18px;accent-color:#6366f1;cursor:pointer;" />
+                        <div>
+                            <div style="font-weight:600;font-size:0.85rem;">
+                                <i class="fas fa-users" style="color:#3b82f6;margin-right:0.3rem;"></i> Staff & HR
+                            </div>
+                            <div class="caption">New staff, attendance, schedule updates</div>
+                        </div>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;">
+                        <input type="checkbox" name="InventoryNotifications" value="true" @(Model.InventoryNotifications ? "checked" : "")
+                               style="width:18px;height:18px;accent-color:#6366f1;cursor:pointer;" />
+                        <div>
+                            <div style="font-weight:600;font-size:0.85rem;">
+                                <i class="fas fa-boxes-stacked" style="color:#ef4444;margin-right:0.3rem;"></i> Inventory
+                            </div>
+                            <div class="caption">Low stock alerts, restocking, inventory changes</div>
+                        </div>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;">
+                        <input type="checkbox" name="FinancialNotifications" value="true" @(Model.FinancialNotifications ? "checked" : "")
+                               style="width:18px;height:18px;accent-color:#6366f1;cursor:pointer;" />
+                        <div>
+                            <div style="font-weight:600;font-size:0.85rem;">
+                                <i class="fas fa-wallet" style="color:#16a34a;margin-right:0.3rem;"></i> Financial
+                            </div>
+                            <div class="caption">Salary generation, payments, expenses</div>
+                        </div>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;">
+                        <input type="checkbox" name="SystemNotifications" value="true" @(Model.SystemNotifications ? "checked" : "")
+                               style="width:18px;height:18px;accent-color:#6366f1;cursor:pointer;" />
+                        <div>
+                            <div style="font-weight:600;font-size:0.85rem;">
+                                <i class="fas fa-gear" style="color:#8b5cf6;margin-right:0.3rem;"></i> System
+                            </div>
+                            <div class="caption">Branch changes, admin announcements, system alerts</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:0.75rem;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save" style="margin-right:0.4rem;"></i> Save Preferences
+            </button>
+            <a asp-action="Index" class="btn btn-outline">Back to Notifications</a>
+        </div>
+    </form>
+</div>

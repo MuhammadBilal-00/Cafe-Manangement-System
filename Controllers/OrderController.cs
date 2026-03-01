@@ -15,10 +15,12 @@ namespace Cafe.Controllers
     public class OrderController : BaseController
     {
         private readonly IInventoryService _inventoryService;
+        private readonly INotificationService _notificationService;
 
-        public OrderController(ApplicationDbContext context, IInventoryService inventoryService) : base(context)
+        public OrderController(ApplicationDbContext context, IInventoryService inventoryService, INotificationService notificationService) : base(context)
         {
             _inventoryService = inventoryService;
+            _notificationService = notificationService;
         }
 
         // Main Index Page - Works with your HTML
@@ -260,6 +262,16 @@ namespace Cafe.Controllers
                     await _context.SaveChangesAsync();
                 }
 
+                // Notification: new order created
+                await _notificationService.CreateNotificationAsync(
+                    "New Order Created",
+                    $"Order #{order.OrderNumber} for {order.TotalAmount:C} has been placed.",
+                    "Success", NotificationCategory.Order,
+                    branchId: request.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: $"/Order/Index",
+                    icon: "fas fa-receipt");
+
                 return Json(new { success = true, orderId = order.Id, orderNumber = order.OrderNumber });
             }
             catch (Exception ex)
@@ -289,6 +301,17 @@ namespace Cafe.Controllers
 
                 order.Status = request.NewStatus;
                 await _context.SaveChangesAsync();
+
+                // Notification: order status changed
+                await _notificationService.CreateNotificationAsync(
+                    "Order Status Updated",
+                    $"Order #{order.OrderNumber} status changed to {request.NewStatus}.",
+                    request.NewStatus == "Completed" ? "Success" : "Info",
+                    NotificationCategory.Order,
+                    branchId: order.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: $"/Order/Index",
+                    icon: "fas fa-arrows-rotate");
 
                 return Json(new { success = true, message = $"Order status updated to {request.NewStatus}" });
             }
@@ -434,6 +457,16 @@ namespace Cafe.Controllers
                     : $"{order.Notes}\nCancelled: {request.Reason}";
 
                 await _context.SaveChangesAsync();
+
+                // Notification: order cancelled
+                await _notificationService.CreateNotificationAsync(
+                    "Order Cancelled",
+                    $"Order #{order.OrderNumber} has been cancelled. Reason: {request.Reason}",
+                    "Warning", NotificationCategory.Order,
+                    branchId: order.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: $"/Order/Index",
+                    icon: "fas fa-ban");
 
                 return Json(new { success = true, message = "Order cancelled successfully" });
             }
