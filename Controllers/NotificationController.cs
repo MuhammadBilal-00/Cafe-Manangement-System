@@ -46,10 +46,32 @@ namespace Cafe.Controllers
             ViewBag.PageSize = 20;
             ViewBag.TotalPages = (int)Math.Ceiling(total / 20.0);
             ViewBag.UnreadCount = unreadCount;
+            ViewBag.ReadCount = total - unreadCount;
             ViewBag.FilterIsRead = isRead;
             ViewBag.FilterType = type;
             ViewBag.FilterFrom = from;
             ViewBag.FilterTo = to;
+            ViewBag.UserRole = role;
+
+            // Analytics: type distribution (all user-visible notifications)
+            var allNotifs = await _notificationService.GetNotificationsAsync(
+                userId, role, branchId, 1, 10000, null, null, null, null);
+            var typeGroups = allNotifs.Items
+                .GroupBy(n => n.Type)
+                .Select(g => new { Type = g.Key, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .ToList();
+            ViewBag.TypeLabels = typeGroups.Select(g => g.Type).ToArray();
+            ViewBag.TypeCounts = typeGroups.Select(g => g.Count).ToArray();
+
+            // Analytics: daily trend (last 7 days)
+            var last7 = Enumerable.Range(0, 7).Select(i => DateTime.UtcNow.Date.AddDays(-i)).Reverse().ToList();
+            var dailyCounts = last7.Select(d => allNotifs.Items.Count(n => n.CreatedAt.Date == d)).ToArray();
+            ViewBag.TrendLabels = last7.Select(d => d.ToString("MMM dd")).ToArray();
+            ViewBag.TrendCounts = dailyCounts;
+
+            // Analytics: read vs unread for pie
+            ViewBag.ReadPieData = new[] { unreadCount, total - unreadCount };
 
             return View();
         }
@@ -113,10 +135,57 @@ namespace Cafe.Controllers
             ViewBag.Roles = new[] { "Owner", "BranchManager", "Staff" };
 
             // Email queue stats
-            ViewBag.EmailTotal = await _context.EmailQueues.CountAsync();
-            ViewBag.EmailSent = await _context.EmailQueues.CountAsync(e => e.IsSent);
-            ViewBag.EmailPending = await _context.EmailQueues.CountAsync(e => !e.IsSent && e.RetryCount < 3);
-            ViewBag.EmailFailed = await _context.EmailQueues.CountAsync(e => !e.IsSent && e.RetryCount >= 3);
+            var emailTotal = await _context.EmailQueues.CountAsync();
+            var emailSent = await _context.EmailQueues.CountAsync(e => e.IsSent);
+            var emailPending = await _context.EmailQueues.CountAsync(e => !e.IsSent && e.RetryCount < 3);
+            var emailFailed = await _context.EmailQueues.CountAsync(e => !e.IsSent && e.RetryCount >= 3);
+            ViewBag.EmailTotal = emailTotal;
+            ViewBag.EmailSent = emailSent;
+            ViewBag.EmailPending = emailPending;
+            ViewBag.EmailFailed = emailFailed;
+
+            // Notification stats
+            var notifTotal = await _context.Notifications.CountAsync();
+            var notifReadCount = await _context.Notifications.CountAsync(n => n.IsRead);
+            var notifUnreadCount = notifTotal - notifReadCount;
+            ViewBag.NotifTotal = notifTotal;
+            ViewBag.NotifRead = notifReadCount;
+            ViewBag.NotifUnread = notifUnreadCount;
+
+            // Notification type distribution
+            var typeGroups = await _context.Notifications
+                .GroupBy(n => n.Type)
+                .Select(g => new { Type = g.Key, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .ToListAsync();
+            ViewBag.NotifTypeLabels = typeGroups.Select(g => g.Type).ToArray();
+            ViewBag.NotifTypeCounts = typeGroups.Select(g => g.Count).ToArray();
+
+            // Target distribution (who notifications go to)
+            var userTargeted = await _context.Notifications.CountAsync(n => n.UserId != null);
+            var roleTargeted = await _context.Notifications.CountAsync(n => n.RoleTarget != null && n.UserId == null);
+            var branchTargeted = await _context.Notifications.CountAsync(n => n.BranchId != null && n.RoleTarget == null && n.UserId == null);
+            var globalBroadcast = notifTotal - userTargeted - roleTargeted - branchTargeted;
+            ViewBag.TargetLabels = new[] { "User-Specific", "Role-Based", "Branch-Based", "Global" };
+            ViewBag.TargetCounts = new[] { userTargeted, roleTargeted, branchTargeted, globalBroadcast };
+
+            // Daily email volume (last 7 days)
+            var last7 = Enumerable.Range(0, 7).Select(i => DateTime.UtcNow.Date.AddDays(-i)).Reverse().ToList();
+            var emailDaily = new List<int>();
+            foreach (var d in last7)
+            {
+                var count = await _context.EmailQueues.CountAsync(e => e.CreatedAt.Date == d);
+                emailDaily.Add(count);
+            }
+            ViewBag.EmailTrendLabels = last7.Select(d => d.ToString("MMM dd")).ToArray();
+            ViewBag.EmailTrendCounts = emailDaily.ToArray();
+
+            // Recent emails for table
+            var recentEmails = await _context.EmailQueues
+                .OrderByDescending(e => e.CreatedAt)
+                .Take(10)
+                .ToListAsync();
+            ViewBag.RecentEmails = recentEmails;
 
             return View();
         }
