@@ -4,6 +4,7 @@ using Cafe.Data;
 using Cafe.Models;
 using Cafe.Attributes;
 using Cafe.Helpers;
+using Cafe.Services;
 using System.Diagnostics;
 
 namespace Cafe.Controllers
@@ -12,10 +13,12 @@ namespace Cafe.Controllers
     public class HomeController : BaseController
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly INotificationService _notificationService;
 
-        public HomeController(ApplicationDbContext context, ILogger<HomeController> logger) : base(context)
+        public HomeController(ApplicationDbContext context, ILogger<HomeController> logger, INotificationService notificationService) : base(context)
         {
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         public async Task<IActionResult> Index()
@@ -137,6 +140,23 @@ namespace Cafe.Controllers
             ViewBag.ChartLabels = chartLabels;
             ViewBag.ChartData = chartData;
             ViewBag.LowStockItems = lowStockItems;
+
+            // ── Notification Activity Feed ──
+            try
+            {
+                var currentUserId = GetCurrentUserId() ?? 0;
+                var currentRole = userRole ?? "Staff";
+                int? notifBranchId = scopedBranchId;
+                var recentNotifications = await _notificationService.GetRecentAsync(currentUserId, currentRole, notifBranchId, 6);
+                var unreadCount = await _notificationService.GetUnreadCountAsync(currentUserId, currentRole, notifBranchId);
+                ViewBag.RecentNotifications = recentNotifications;
+                ViewBag.NotifUnreadCount = unreadCount;
+            }
+            catch
+            {
+                ViewBag.RecentNotifications = new List<NotificationDto>();
+                ViewBag.NotifUnreadCount = 0;
+            }
 
             return View();
         }

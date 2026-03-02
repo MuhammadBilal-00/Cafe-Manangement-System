@@ -208,26 +208,43 @@
                     @if (isAuthenticated)
                     {
                         <div style="position:relative;" id="notifBellContainer">
-                            <button class="header-icon-btn" data-tooltip="Notifications" id="notifBellBtn" onclick="toggleNotifDropdown(event)">
-                                <i class="fas fa-bell"></i>
-                                <span class="notif-badge" id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:#dc2626;color:#fff;font-size:0.55rem;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 4px;line-height:1;">0</span>
+                            <button class="header-icon-btn" data-tooltip="Notifications" id="notifBellBtn" onclick="toggleNotifDropdown(event)" style="position:relative;">
+                                <i class="fas fa-bell" id="notifBellIcon"></i>
+                                <span id="notifBadge" style="display:none;position:absolute;top:0;right:0;min-width:18px;height:18px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:0.6rem;font-weight:800;align-items:center;justify-content:center;padding:0 4px;line-height:1;box-shadow:0 2px 6px rgba(220,38,38,0.4);border:2px solid var(--surface);">0</span>
                             </button>
 
-                            <!-- Dropdown -->
-                            <div id="notifDropdown" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:360px;background:var(--surface);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);border:1px solid var(--border-light);z-index:9999;overflow:hidden;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease,transform 0.2s ease;">
+                            <!-- Premium Dropdown -->
+                            <div id="notifDropdown" style="display:none;position:absolute;top:calc(100% + 10px);right:-40px;width:400px;background:var(--surface);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.15),0 2px 8px rgba(0,0,0,0.08);border:1px solid var(--border-light);z-index:9999;overflow:hidden;opacity:0;transform:translateY(-10px);transition:opacity 0.25s ease,transform 0.25s ease;">
+                                <!-- Arrow -->
+                                <div style="position:absolute;top:-6px;right:52px;width:12px;height:12px;background:var(--surface);border-left:1px solid var(--border-light);border-top:1px solid var(--border-light);transform:rotate(45deg);z-index:1;"></div>
                                 <!-- Header -->
-                                <div style="padding:0.85rem 1rem;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;">
-                                    <span style="font-weight:700;font-size:0.9rem;color:var(--text-primary);">Notifications</span>
-                                    <button onclick="markAllReadFromBell()" style="background:none;border:none;color:#6366f1;font-size:0.72rem;cursor:pointer;font-weight:600;">Mark all read</button>
+                                <div style="padding:1rem 1.15rem;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,rgba(99,102,241,0.04),rgba(212,175,55,0.04));">
+                                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                                        <span style="font-weight:800;font-size:0.92rem;color:var(--text-primary);">Notifications</span>
+                                        <span id="notifCountPill" style="display:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:0.55rem;font-weight:700;padding:2px 7px;border-radius:20px;"></span>
+                                    </div>
+                                    <button onclick="markAllReadFromBell()" style="background:none;border:none;color:#6366f1;font-size:0.72rem;cursor:pointer;font-weight:600;padding:4px 8px;border-radius:6px;transition:background 0.15s;" onmouseenter="this.style.background='rgba(99,102,241,0.08)'" onmouseleave="this.style.background='none'">
+                                        <i class="fas fa-check-double" style="margin-right:0.25rem;font-size:0.6rem;"></i>Mark all read
+                                    </button>
+                                </div>
+                                <!-- Loading State -->
+                                <div id="notifLoading" style="display:none;text-align:center;padding:2rem;">
+                                    <div style="width:28px;height:28px;border:3px solid var(--border-light);border-top-color:#6366f1;border-radius:50%;animation:notifSpin 0.8s linear infinite;margin:0 auto;"></div>
+                                    <div class="caption" style="margin-top:0.5rem;">Loading...</div>
                                 </div>
                                 <!-- Items -->
-                                <div id="notifDropdownList" style="max-height:320px;overflow-y:auto;"></div>
+                                <div id="notifDropdownList" style="max-height:380px;overflow-y:auto;scrollbar-width:thin;"></div>
                                 <!-- Footer -->
-                                <div style="padding:0.6rem 1rem;border-top:1px solid var(--border-light);text-align:center;">
-                                    <a href="/Notification/Index" style="color:#6366f1;font-size:0.78rem;font-weight:600;text-decoration:none;">View All Notifications</a>
+                                <div style="padding:0.7rem 1rem;border-top:1px solid var(--border-light);text-align:center;background:linear-gradient(135deg,rgba(99,102,241,0.02),rgba(212,175,55,0.02));">
+                                    <a href="/Notification/Index" style="color:#6366f1;font-size:0.78rem;font-weight:700;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:0.35rem;padding:4px 0;border-radius:6px;transition:background 0.15s;" onmouseenter="this.style.background='rgba(99,102,241,0.06)'" onmouseleave="this.style.background='transparent'">
+                                        View All Notifications <i class="fas fa-arrow-right" style="font-size:0.6rem;"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Toast Container -->
+                        <div id="notifToastContainer" style="position:fixed;top:80px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none;"></div>
                     }
                     <button class="header-icon-btn" data-tooltip="Search" id="globalSearchBtn">
                         <i class="fas fa-magnifying-glass"></i>
@@ -331,13 +348,20 @@
     @if (isAuthenticated)
     {
         <script>
-        // ── Notification System ──
+        // ── Premium Notification System ──
         (function() {
             const badge = document.getElementById('notifBadge');
             const dropdown = document.getElementById('notifDropdown');
             const list = document.getElementById('notifDropdownList');
+            const loading = document.getElementById('notifLoading');
+            const countPill = document.getElementById('notifCountPill');
+            const bellIcon = document.getElementById('notifBellIcon');
+            const toastContainer = document.getElementById('notifToastContainer');
             let isOpen = false;
+            let lastUnreadCount = 0;
+            let isFirstLoad = true;
 
+            // ── Badge ──
             function updateBadge(count) {
                 if (!badge) return;
                 if (count > 0) {
@@ -346,8 +370,25 @@
                 } else {
                     badge.style.display = 'none';
                 }
+                // Header pill
+                if (countPill) {
+                    if (count > 0) {
+                        countPill.textContent = count + ' new';
+                        countPill.style.display = 'inline';
+                    } else {
+                        countPill.style.display = 'none';
+                    }
+                }
             }
 
+            // ── Bell Ring Animation ──
+            function ringBell() {
+                if (!bellIcon) return;
+                bellIcon.classList.add('bell-ringing');
+                setTimeout(() => bellIcon.classList.remove('bell-ringing'), 1200);
+            }
+
+            // ── Colors ──
             function typeColor(type) {
                 switch(type) {
                     case 'Success': return '#16a34a';
@@ -356,37 +397,156 @@
                     default:        return '#6366f1';
                 }
             }
+            function typeBg(type) {
+                switch(type) {
+                    case 'Success': return 'rgba(22,163,106,0.08)';
+                    case 'Warning': return 'rgba(217,119,6,0.08)';
+                    case 'Error':   return 'rgba(220,38,38,0.08)';
+                    default:        return 'rgba(99,102,241,0.08)';
+                }
+            }
 
+            // ── Toast Popup ──
+            function showToast(notification) {
+                if (!toastContainer) return;
+                const c = typeColor(notification.type);
+                const toast = document.createElement('div');
+                toast.style.cssText = `pointer-events:auto;display:flex;align-items:flex-start;gap:0.65rem;padding:0.85rem 1rem;background:var(--surface);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12),0 2px 4px rgba(0,0,0,0.06);border:1px solid var(--border-light);border-left:4px solid ${c};min-width:320px;max-width:400px;transform:translateX(120%);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s;cursor:pointer;`;
+                toast.innerHTML = `
+                    <div style="width:32px;height:32px;border-radius:10px;background:${typeBg(notification.type)};color:${c};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.8rem;">
+                        <i class="${notification.icon || 'fas fa-bell'}"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:700;font-size:0.8rem;color:var(--text-primary);margin-bottom:2px;">${notification.title || 'New Notification'}</div>
+                        <div style="font-size:0.72rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${notification.message || ''}</div>
+                    </div>
+                    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:0.7rem;padding:2px;flex-shrink:0;">&times;</button>
+                `;
+                toast.onclick = function(e) {
+                    if (e.target.tagName === 'BUTTON') return;
+                    if (notification.redirectUrl) window.location.href = notification.redirectUrl;
+                    else window.location.href = '/Notification/Index';
+                    toast.remove();
+                };
+                toastContainer.appendChild(toast);
+                requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; });
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(120%)';
+                    setTimeout(() => toast.remove(), 400);
+                }, 5000);
+            }
+
+            // ── Render Dropdown Items ──
             function renderItems(notifications) {
                 if (!list) return;
                 if (!notifications || notifications.length === 0) {
-                    list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-tertiary);font-size:0.82rem;"><i class="fas fa-bell-slash" style="font-size:1.5rem;margin-bottom:0.5rem;display:block;"></i>No notifications</div>';
+                    list.innerHTML = `
+                        <div style="text-align:center;padding:2.5rem 1rem;">
+                            <div style="width:56px;height:56px;border-radius:14px;background:rgba(99,102,241,0.06);display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem;">
+                                <i class="fas fa-bell-slash" style="font-size:1.3rem;color:var(--text-tertiary);"></i>
+                            </div>
+                            <div style="font-weight:600;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.2rem;">All caught up!</div>
+                            <div style="font-size:0.72rem;color:var(--text-tertiary);">No new notifications right now</div>
+                        </div>`;
                     return;
                 }
-                list.innerHTML = notifications.map(n => {
-                    const c = typeColor(n.type);
-                    return `<a href="javascript:void(0)" onclick="clickNotif(${n.id}, '${n.redirectUrl || ''}')" style="display:flex;align-items:flex-start;gap:0.7rem;padding:0.75rem 1rem;border-bottom:1px solid var(--border-light);text-decoration:none;background:${n.isRead ? 'transparent' : 'rgba(99,102,241,0.04)'};transition:background 0.15s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='${n.isRead ? 'transparent' : 'rgba(99,102,241,0.04)}'">
-                        <div style="width:32px;height:32px;border-radius:8px;background:${c}12;color:${c};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem;"><i class="${n.icon || 'fas fa-info-circle'}"></i></div>
-                        <div style="flex:1;min-width:0;">
-                            <div style="font-weight:${n.isRead ? '500' : '700'};font-size:0.8rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.title}</div>
-                            <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.message}</div>
-                            <div style="font-size:0.65rem;color:var(--text-tertiary);margin-top:3px;">${n.timeAgo}</div>
-                        </div>
-                        ${!n.isRead ? `<span style="width:7px;height:7px;border-radius:50%;background:${c};flex-shrink:0;margin-top:6px;"></span>` : ''}
-                    </a>`;
-                }).join('');
+
+                // Group: Today / Yesterday / Earlier
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                const yesterday = today - 86400000;
+
+                const groups = { today: [], yesterday: [], earlier: [] };
+                notifications.forEach(n => {
+                    const created = new Date(n.createdAt).getTime();
+                    if (created >= today) groups.today.push(n);
+                    else if (created >= yesterday) groups.yesterday.push(n);
+                    else groups.earlier.push(n);
+                });
+
+                let html = '';
+
+                function renderGroup(label, items) {
+                    if (items.length === 0) return '';
+                    let h = `<div style="padding:0.45rem 1.15rem 0.2rem;font-size:0.6rem;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px;background:var(--bg-secondary);">${label}</div>`;
+                    items.forEach(n => {
+                        const c = typeColor(n.type);
+                        const bg = n.isRead ? 'transparent' : 'rgba(99,102,241,0.03)';
+                        const bl = n.isRead ? '3px solid transparent' : '3px solid ' + c;
+                        h += `<a href="javascript:void(0)" onclick="clickNotif(${n.id}, '${n.redirectUrl || ''}')"
+                            style="display:flex;align-items:flex-start;gap:0.65rem;padding:0.7rem 1.1rem;border-bottom:1px solid var(--border-light);text-decoration:none;background:${bg};border-left:${bl};transition:all 0.2s;"
+                            onmouseenter="this.style.background='var(--bg-hover)';this.style.paddingLeft='1.3rem'"
+                            onmouseleave="this.style.background='${bg}';this.style.paddingLeft='1.1rem'">
+                            <div style="width:34px;height:34px;border-radius:10px;background:${typeBg(n.type)};color:${c};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.78rem;">
+                                <i class="${n.icon || 'fas fa-info-circle'}"></i>
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="display:flex;align-items:center;gap:0.4rem;">
+                                    <span style="font-weight:${n.isRead ? '500' : '700'};font-size:0.8rem;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${n.title}</span>
+                                    ${!n.isRead ? `<span style="width:7px;height:7px;border-radius:50%;background:${c};flex-shrink:0;animation:notifPulse 2s infinite;"></span>` : ''}
+                                </div>
+                                <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.message}</div>
+                                <div style="display:flex;align-items:center;gap:0.5rem;margin-top:3px;">
+                                    <span style="font-size:0.62rem;color:var(--text-tertiary);"><i class="far fa-clock" style="margin-right:2px;"></i>${n.timeAgo}</span>
+                                    <span style="font-size:0.55rem;font-weight:700;color:${c};background:${typeBg(n.type)};padding:1px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.3px;">${n.type}</span>
+                                </div>
+                            </div>
+                        </a>`;
+                    });
+                    return h;
+                }
+
+                html += renderGroup('Today', groups.today);
+                html += renderGroup('Yesterday', groups.yesterday);
+                html += renderGroup('Earlier', groups.earlier);
+
+                list.innerHTML = html;
             }
 
-            async function loadNotifications() {
+            // ── Load Notifications ──
+            async function loadNotifications(showLoading) {
                 try {
+                    if (showLoading && loading) {
+                        loading.style.display = 'block';
+                        if (list) list.style.display = 'none';
+                    }
                     const res = await fetch('/Notification/GetRecent');
-                    if (!res.ok) return;
+                    if (!res.ok) throw new Error('API error');
                     const data = await res.json();
+
+                    if (loading) loading.style.display = 'none';
+                    if (list) list.style.display = 'block';
+
                     updateBadge(data.unreadCount);
                     renderItems(data.notifications);
-                } catch(e) { console.warn('Notif load error', e); }
+
+                    // Ring bell + show toast if new notifications appeared
+                    if (!isFirstLoad && data.unreadCount > lastUnreadCount) {
+                        ringBell();
+                        // Show toast for the newest notification
+                        if (data.notifications && data.notifications.length > 0) {
+                            showToast(data.notifications[0]);
+                        }
+                    }
+                    lastUnreadCount = data.unreadCount;
+                    isFirstLoad = false;
+                } catch(e) {
+                    console.warn('Notification load error:', e);
+                    if (loading) loading.style.display = 'none';
+                    if (list) {
+                        list.style.display = 'block';
+                        list.innerHTML = `
+                            <div style="text-align:center;padding:2rem;color:var(--text-tertiary);">
+                                <i class="fas fa-wifi" style="font-size:1.2rem;margin-bottom:0.5rem;display:block;opacity:0.4;"></i>
+                                <div style="font-size:0.78rem;">Unable to load notifications</div>
+                                <button onclick="loadNotifications(true)" style="margin-top:0.5rem;background:none;border:1px solid var(--border-light);color:#6366f1;font-size:0.72rem;padding:4px 12px;border-radius:6px;cursor:pointer;">Retry</button>
+                            </div>`;
+                    }
+                }
             }
 
+            // ── Toggle Dropdown ──
             window.toggleNotifDropdown = function(e) {
                 e?.stopPropagation();
                 isOpen = !isOpen;
@@ -396,7 +556,7 @@
                         dropdown.style.opacity = '1';
                         dropdown.style.transform = 'translateY(0)';
                     });
-                    loadNotifications();
+                    loadNotifications(true);
                 } else {
                     closeDropdown();
                 }
@@ -406,32 +566,42 @@
                 isOpen = false;
                 if (!dropdown) return;
                 dropdown.style.opacity = '0';
-                dropdown.style.transform = 'translateY(-8px)';
-                setTimeout(() => { dropdown.style.display = 'none'; }, 200);
+                dropdown.style.transform = 'translateY(-10px)';
+                setTimeout(() => { dropdown.style.display = 'none'; }, 250);
             }
 
+            // Close on outside click
             document.addEventListener('click', function(e) {
                 const container = document.getElementById('notifBellContainer');
                 if (container && !container.contains(e.target)) closeDropdown();
             });
 
+            // Close on Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && isOpen) closeDropdown();
+            });
+
+            // ── Click Notification ──
             window.clickNotif = async function(id, url) {
                 await fetch('/Notification/MarkAsRead?id=' + id, { method: 'POST' });
                 closeDropdown();
                 if (url && url.length > 0) window.location.href = url;
-                else loadNotifications();
+                else {
+                    await loadNotifications(false);
+                }
             };
 
+            // ── Mark All Read ──
             window.markAllReadFromBell = async function() {
                 await fetch('/Notification/MarkAllAsRead', { method: 'POST' });
-                loadNotifications();
+                await loadNotifications(false);
             };
 
-            // Initial load
-            loadNotifications();
+            // ── Initial Load ──
+            loadNotifications(false);
 
-            // Poll every 30s as fallback
-            setInterval(loadNotifications, 30000);
+            // ── Poll every 30s ──
+            setInterval(() => loadNotifications(false), 30000);
 
             // ── SignalR Real-time ──
             try {
@@ -441,13 +611,46 @@
                     .build();
 
                 connection.on('ReceiveNotification', function(notif) {
-                    loadNotifications(); // Refresh dropdown + badge
+                    ringBell();
+                    showToast(notif);
+                    loadNotifications(false);
                 });
 
                 connection.start().catch(err => console.warn('SignalR connect error:', err));
             } catch(e) { console.warn('SignalR init error', e); }
+
+            // ── Expose for external use ──
+            window.loadNotifications = loadNotifications;
         })();
         </script>
+
+        <!-- Notification Animations -->
+        <style>
+            @@keyframes notifSpin { to { transform: rotate(360deg); } }
+            @@keyframes notifPulse {
+                0%, 100% { opacity: 1; transform: scale(1); }
+                50% { opacity: 0.4; transform: scale(1.4); }
+            }
+            @@keyframes bellRing {
+                0%   { transform: rotate(0); }
+                10%  { transform: rotate(14deg); }
+                20%  { transform: rotate(-12deg); }
+                30%  { transform: rotate(10deg); }
+                40%  { transform: rotate(-8deg); }
+                50%  { transform: rotate(6deg); }
+                60%  { transform: rotate(-4deg); }
+                70%  { transform: rotate(2deg); }
+                80%  { transform: rotate(0); }
+                100% { transform: rotate(0); }
+            }
+            .bell-ringing {
+                animation: bellRing 1.2s ease-in-out;
+                color: #d4af37 !important;
+            }
+            #notifDropdownList::-webkit-scrollbar { width: 4px; }
+            #notifDropdownList::-webkit-scrollbar-track { background: transparent; }
+            #notifDropdownList::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+        </style>
     }
 </body>
 </html>
