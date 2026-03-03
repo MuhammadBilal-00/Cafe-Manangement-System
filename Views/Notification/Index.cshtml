@@ -20,7 +20,7 @@
 }
 
 <!-- Page Header -->
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+<div class="flex items-center justify-between flex-wrap gap-4 mb-6">
     <div>
         <h1 class="page-title" style="margin:0;">
             <i class="fas fa-bell" style="color:#d4af37;margin-right:0.5rem;"></i>Notifications
@@ -29,7 +29,7 @@
             Real-time updates across your workspace
         </p>
     </div>
-    <div style="display:flex;gap:0.5rem;align-items:center;">
+    <div class="flex flex-wrap gap-2 items-center">
         <a asp-action="Preferences" class="btn btn-outline" style="font-size:0.8rem;">
             <i class="fas fa-sliders" style="margin-right:0.3rem;"></i> Preferences
         </a>
@@ -82,7 +82,7 @@
 </div>
 
 <!-- Charts Row -->
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
     <!-- Read vs Unread Pie -->
     <div class="card">
         <div class="card-header">
@@ -123,10 +123,10 @@
 <!-- Filters -->
 <div class="card mb-5">
     <div class="card-body card-body-compact">
-        <form method="get" asp-action="Index" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:end;">
-            <div style="display:flex;flex-direction:column;gap:0.25rem;">
+        <form method="get" asp-action="Index" class="flex flex-wrap gap-3 items-end">
+            <div class="flex flex-col gap-1 min-w-[120px]">
                 <label class="caption">Status</label>
-                <select name="isRead" class="form-control" style="min-width:130px;">
+                <select name="isRead" class="form-control">
                     <option value="">All</option>
                     @{ var selUnread = filterRead == false ? "selected" : ""; }
                     <option value="false" selected="@selUnread">Unread</option>
@@ -134,9 +134,9 @@
                     <option value="true" selected="@selRead">Read</option>
                 </select>
             </div>
-            <div style="display:flex;flex-direction:column;gap:0.25rem;">
+            <div class="flex flex-col gap-1 min-w-[120px]">
                 <label class="caption">Type</label>
-                <select name="type" class="form-control" style="min-width:130px;">
+                <select name="type" class="form-control">
                     <option value="">All Types</option>
                     @{ var selInfo = filterType == "Info" ? "selected" : ""; }
                     <option value="Info" selected="@selInfo">Info</option>
@@ -148,11 +148,11 @@
                     <option value="Error" selected="@selError">Error</option>
                 </select>
             </div>
-            <div style="display:flex;flex-direction:column;gap:0.25rem;">
+            <div class="flex flex-col gap-1">
                 <label class="caption">From</label>
                 <input type="date" name="from" class="form-control" value="@(filterFrom?.ToString("yyyy-MM-dd"))" />
             </div>
-            <div style="display:flex;flex-direction:column;gap:0.25rem;">
+            <div class="flex flex-col gap-1">
                 <label class="caption">To</label>
                 <input type="date" name="to" class="form-control" value="@(filterTo?.ToString("yyyy-MM-dd"))" />
             </div>
@@ -198,10 +198,10 @@
                 string borderLeft = n.IsRead ? "3px solid transparent" : $"3px solid {typeColor}";
 
                 <div class="notif-row" data-id="@n.Id"
-                     style="display:flex;align-items:flex-start;gap:0.85rem;padding:0.9rem 1.25rem;border-bottom:1px solid var(--border-light);background:@bgColor;border-left:@borderLeft;cursor:pointer;transition:all 0.25s ease;"
+                     style="display:flex;align-items:flex-start;gap:0.85rem;padding:0.9rem 1rem;border-bottom:1px solid var(--border-light);background:@bgColor;border-left:@borderLeft;cursor:pointer;transition:all 0.25s ease;overflow:hidden;"
                      onclick="openNotification(@n.Id, '@(n.RedirectUrl ?? "")')"
-                     onmouseenter="this.style.background='var(--bg-hover)';this.style.paddingLeft='1.5rem'"
-                     onmouseleave="this.style.background='@bgColor';this.style.paddingLeft='1.25rem'">
+                     onmouseenter="this.style.background='var(--bg-hover)'"
+                     onmouseleave="this.style.background='@bgColor'">
 
                     <!-- Icon -->
                     <div style="width:38px;height:38px;border-radius:12px;background:@(typeColor)14;color:@typeColor;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.85rem;box-shadow:0 2px 8px @(typeColor)20;">
@@ -209,14 +209,14 @@
                     </div>
 
                     <!-- Content -->
-                    <div style="flex:1;min-width:0;">
-                        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.15rem;">
-                            <span style="font-weight:@(n.IsRead ? "500" : "700");font-size:0.85rem;color:var(--text-primary);">@n.Title</span>
+                    <div style="flex:1;min-width:0;overflow:hidden;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.15rem;flex-wrap:wrap;">
+                            <span class="truncate" style="font-weight:@(n.IsRead ? "500" : "700");font-size:0.85rem;color:var(--text-primary);">@n.Title</span>
                             @if (!n.IsRead)
                             {
                                 <span style="width:7px;height:7px;border-radius:50%;background:@typeColor;flex-shrink:0;animation:pulse 2s infinite;"></span>
                             }
-                            <span style="margin-left:auto;background:@(typeColor)14;color:@typeColor;font-size:0.6rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;">@n.Type</span>
+                            <span style="margin-left:auto;background:@(typeColor)14;color:@typeColor;font-size:0.6rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;white-space:nowrap;">@n.Type</span>
                         </div>
                         <p style="margin:0;font-size:0.78rem;color:var(--text-secondary);line-height:1.45;@(n.IsRead ? "" : "font-weight:500;")">
                             @(n.Message.Length > 140 ? n.Message.Substring(0, 140) + "..." : n.Message)
@@ -238,7 +238,7 @@
 <!-- Pagination -->
 @if (totalPages > 1)
 {
-    <div style="display:flex;justify-content:center;align-items:center;gap:0.4rem;margin-top:1.25rem;">
+    <div class="flex justify-center items-center flex-wrap gap-2 mt-5">
         @if (page > 1)
         {
             <a asp-action="Index" asp-route-page="@(page - 1)" asp-route-isRead="@filterRead" asp-route-type="@filterType"
