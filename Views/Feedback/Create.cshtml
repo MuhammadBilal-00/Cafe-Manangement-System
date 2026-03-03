@@ -6,106 +6,128 @@
 }
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <title>@ViewData["Title"] - Cafe</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+        theme: {
+        extend: {
+        colors: { accent: '#d4af37', sidebar: '#1e2a3a' },
+        fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        borderRadius: { card: '20px' },
+        }
+        }
+        }
+    </script>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Inter',system-ui,sans-serif;background:#f5f3f0;color:#1a1a2e;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
-        .feedback-card{max-width:440px;width:100%;background:#fff;border-radius:20px;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,0.08);border:1px solid #e8e5e0;}
-        .feedback-card h1{font-size:1.25rem;font-weight:700;text-align:center;margin-bottom:0.25rem;}
-        .feedback-card .subtitle{font-size:0.8rem;color:#6b7280;text-align:center;margin-bottom:1.5rem;}
-        .icon-wrap{width:48px;height:48px;background:linear-gradient(135deg,#d4af37,#b8860b);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 1rem;}
-        .form-label{display:block;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#6b7280;margin-bottom:0.4rem;}
-        .form-control,.form-select{width:100%;padding:0.6rem 0.75rem;border-radius:12px;border:1px solid #e5e7eb;font-size:0.85rem;font-family:inherit;background:#faf9f7;transition:border-color 0.2s,box-shadow 0.2s;}
-        .form-control:focus,.form-select:focus{outline:none;border-color:#d4af37;box-shadow:0 0 0 3px rgba(212,175,55,0.15);}
-        textarea.form-control{resize:vertical;min-height:80px;}
-        .form-group{margin-bottom:1rem;}
-        .stars{display:flex;gap:0.25rem;font-size:1.75rem;cursor:pointer;}
-        .stars button{background:none;border:none;color:#e5e7eb;cursor:pointer;transition:color 0.15s,transform 0.15s;font-size:inherit;padding:0;line-height:1;}
-        .stars button.active{color:#d4af37;}
-        .stars button:hover{transform:scale(1.15);}
-        .btn-submit{width:100%;padding:0.7rem;border:none;border-radius:12px;background:linear-gradient(135deg,#d4af37,#b8860b);color:#fff;font-weight:600;font-size:0.9rem;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;font-family:inherit;}
-        .btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,175,55,0.3);}
+        .stars button {
+        transition: color 0.15s, transform 0.15s;
+        }
+        .stars button.active {
+        color: #d4af37;
+        }
+        .stars button:hover {
+        transform: scale(1.15);
+        }
     </style>
 </head>
-<body>
-    <div class="feedback-card">
-        <div class="icon-wrap">💬</div>
-        <h1>Share Your Experience</h1>
-        <p class="subtitle">Your feedback helps us serve you better.</p>
 
-        <form method="post">
-            @Html.AntiForgeryToken()
+<body class="font-sans bg-[#f5f3f0] text-[#1a1a2e] min-h-screen flex items-center justify-center p-6">
+    <div
+        class="max-w-[440px] w-full bg-white rounded-card p-8 shadow-[0_20px_60px_rgba(0,0,0,0.08)] border border-black/5 transition-shadow duration-300 hover:shadow-[0_24px_64px_rgba(0,0,0,0.1)]">
 
-            @if (orderId.HasValue)
-            {
-                <input type="hidden" name="orderId" value="@orderId.Value" />
-                <input type="hidden" name="source" value="OrderPage" />
-            }
-            else
-            {
-                <input type="hidden" name="source" value="General" />
-            }
+        <div
+            class="w-12 h-12 bg-gradient-to-br from-accent to-[#b8860b] rounded-[14px] flex items-center justify-center text-2xl mx-auto mb-4">
+            💬</div>
+            <h1 class="text-xl font-bold text-center mb-1">Share Your Experience</h1>
+            <p class="text-xs text-gray-500 text-center mb-6">Your feedback helps us serve you better.</p>
 
-            <div class="form-group">
-                <label class="form-label">Rating</label>
-                <input type="hidden" id="rating-input" name="rating" value="5" />
-                <div class="stars" id="star-container">
-                    @for (int i = 1; i <= 5; i++)
-                    {
-                        <button type="button" data-star="@i" class="active">★</button>
-                    }
+            <form method="post" class="space-y-4">
+                @Html.AntiForgeryToken()
+
+                @if (orderId.HasValue)
+                {
+                    <input type="hidden" name="orderId" value="@orderId.Value" />
+                    <input type="hidden" name="source" value="OrderPage" />
+                }
+                else
+                {
+                    <input type="hidden" name="source" value="General" />
+                }
+
+                <div>
+                    <label
+                    class="block text-[0.7rem] font-semibold uppercase tracking-wider text-gray-500 mb-1.5">Rating</label>
+                    <input type="hidden" id="rating-input" name="rating" value="5" />
+                    <div class="stars flex gap-1 text-[1.75rem] cursor-pointer" id="star-container">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            <button type="button" data-star="@i"
+                                    class="active bg-transparent border-none text-gray-200 cursor-pointer leading-none p-0">★</button>
+                        }
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label class="form-label">Category</label>
-                <select name="category" class="form-select">
-                    <option value="Service">Service</option>
-                    <option value="Food">Food</option>
-                    <option value="Drinks">Drinks</option>
-                    <option value="Environment">Environment</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
+                <div>
+                    <label
+                    class="block text-[0.7rem] font-semibold uppercase tracking-wider text-gray-500 mb-1.5">Category</label>
+                    <select name="category"
+                            class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-sans bg-[#faf9f7] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/10">
+                        <option value="Service">Service</option>
+                        <option value="Food">Food</option>
+                        <option value="Drinks">Drinks</option>
+                        <option value="Environment">Environment</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label class="form-label">Branch</label>
-                <select name="branchId" class="form-select">
-                    <option value="">Select branch</option>
-                    @foreach (var b in branches)
-                    {
-                        <option value="@b.Id" selected="@(selectedBranchId == b.Id ? "selected" : null)">@b.Name</option>
-                    }
-                </select>
-            </div>
+                <div>
+                    <label
+                    class="block text-[0.7rem] font-semibold uppercase tracking-wider text-gray-500 mb-1.5">Branch</label>
+                    <select name="branchId"
+                            class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-sans bg-[#faf9f7] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/10">
+                        <option value="">Select branch</option>
+                        @foreach (var b in branches)
+                        {
+                            <option value="@b.Id" selected="@(selectedBranchId == b.Id ? "selected" : null)">@b.Name</option>
+                        }
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label class="form-label">Your Feedback</label>
-                <textarea name="comments" class="form-control" rows="4" placeholder="Tell us what went well or what we can improve..."></textarea>
-            </div>
+                <div>
+                    <label class="block text-[0.7rem] font-semibold uppercase tracking-wider text-gray-500 mb-1.5">Your
+                        Feedback</label>
+                        <textarea name="comments" rows="4" placeholder="Tell us what went well or what we can improve..."
+                                  class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-sans bg-[#faf9f7] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/10 resize-y min-h-[80px]"></textarea>
+                    </div>
 
-            <button type="submit" class="btn-submit">Submit Feedback</button>
-        </form>
-    </div>
+                    <button type="submit"
+                            class="w-full py-3 border-none rounded-xl bg-gradient-to-br from-accent to-[#b8860b] text-white font-semibold text-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(212,175,55,0.3)]">Submit
+                        Feedback</button>
+                    </form>
+                </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const stars = document.querySelectorAll('[data-star]');
-            const ratingInput = document.getElementById('rating-input');
-            stars.forEach(star => {
-                star.addEventListener('click', () => {
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                    const stars = document.querySelectorAll('[data-star]');
+                    const ratingInput = document.getElementById('rating-input');
+                    stars.forEach(star => {
+                    star.addEventListener('click', () => {
                     const value = parseInt(star.getAttribute('data-star'));
                     ratingInput.value = value;
                     stars.forEach(s => {
-                        s.classList.toggle('active', parseInt(s.getAttribute('data-star')) <= value);
+                    s.classList.toggle('active', parseInt(s.getAttribute('data-star')) <= value);
                     });
-                });
-            });
-        });
-    </script>
-</body>
-</html>
+                    });
+                    });
+                    });
+                </script>
+            </body>
+
+        </html>

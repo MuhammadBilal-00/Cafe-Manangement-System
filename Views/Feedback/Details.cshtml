@@ -10,107 +10,113 @@
     <meta charset="utf-8" />
     <title>@ViewData["Title"] - Cafe</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Inter',system-ui,sans-serif;background:#f5f3f0;color:#1a1a2e;min-height:100vh;padding:2rem 1rem;}
-        .container{max-width:640px;margin:0 auto;}
-        .back-link{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:#6b7280;text-decoration:none;margin-bottom:1.5rem;transition:color 0.2s;}
-        .back-link:hover{color:#1a1a2e;}
-        .detail-card{background:#fff;border-radius:20px;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,0.08);border:1px solid #e8e5e0;}
-        .header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1.5rem;}
-        .rating-display{font-size:1.5rem;color:#d4af37;letter-spacing:2px;}
-        .date-text{font-size:0.75rem;color:#6b7280;margin-top:0.25rem;}
-        .badge{display:inline-flex;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.7rem;font-weight:600;}
-        .badge-branch{background:#1e2a3a;color:#fff;}
-        .badge-cat{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;}
-        .section{border-top:1px solid #e8e5e0;padding-top:1rem;margin-top:1rem;}
-        .label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.12em;color:#6b7280;font-weight:600;margin-bottom:0.3rem;}
-        .value{font-size:0.9rem;font-weight:500;color:#1a1a2e;}
-        .comments{font-size:0.9rem;color:#374151;white-space:pre-line;line-height:1.6;}
-        .form-label{display:block;font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#6b7280;margin-bottom:0.3rem;}
-        .form-control,.form-select{width:100%;padding:0.5rem 0.6rem;border-radius:10px;border:1px solid #e5e7eb;font-size:0.8rem;font-family:inherit;background:#faf9f7;}
-        .form-control:focus,.form-select:focus{outline:none;border-color:#d4af37;box-shadow:0 0 0 3px rgba(212,175,55,0.15);}
-        textarea.form-control{resize:vertical;}
-        .btn{display:inline-flex;align-items:center;gap:0.3rem;padding:0.45rem 1rem;border-radius:10px;font-size:0.8rem;font-weight:600;border:none;cursor:pointer;transition:all 0.15s;font-family:inherit;}
-        .btn-save{background:#1e2a3a;color:#fff;}
-        .btn-save:hover{background:#2d3f54;}
-        .resolved-note{font-size:0.75rem;color:#6b7280;margin-top:0.5rem;}
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+        theme: {
+        extend: {
+        colors: { accent: '#d4af37', sidebar: '#1e2a3a' },
+        fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        borderRadius: { card: '20px' },
+        }
+        }
+        }
+    </script>
 </head>
-<body>
-    <div class="container">
-        <a href="@Url.Action("Index", "Feedback")" class="back-link">← Back to Feedback</a>
+<body class="font-sans bg-[#f5f3f0] text-[#1a1a2e] min-h-screen py-8 px-4">
+    <div class="max-w-[640px] mx-auto">
+        <a href="@Url.Action("Index", "Feedback")"
+               class="inline-flex items-center gap-1.5 text-xs text-gray-500 no-underline mb-6 transition-colors duration-200 hover:text-[#1a1a2e]">←
+            Back to Feedback</a>
 
-        <div class="detail-card">
-            <div class="header-row">
-                <div>
-                    <p class="label">Rating</p>
-                    <p class="rating-display">@ratingStars</p>
-                    <p class="date-text">@Model.Date.ToString("dd MMM yyyy HH:mm")</p>
-                </div>
-                <div style="text-align:right;">
-                    @if (Model.Branch != null)
-                    {
-                        <span class="badge badge-branch">@Model.Branch.Name</span>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(Model.Category))
-                    {
-                        <br /><span class="badge badge-cat" style="margin-top:0.4rem;">@Model.Category</span>
-                    }
-                </div>
-            </div>
-
-            <div class="section">
-                <p class="label">Customer</p>
-                <p class="value">@Model.Customer?.Name</p>
-                <p style="font-size:0.8rem;color:#6b7280;">@Model.Customer?.Email</p>
-            </div>
-
-            @if (Model.Order != null)
-            {
-                <div class="section">
-                    <p class="label">Order</p>
-                    <p class="value">Order #@Model.Order.Id</p>
-                </div>
-            }
-
-            <div class="section">
-                <p class="label">Comments</p>
-                <p class="comments">@Model.Comments</p>
-            </div>
-
-            <div class="section">
-                <form method="post" action="@Url.Action("UpdateStatus", "Feedback")" style="display:flex;flex-direction:column;gap:0.75rem;">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@Model.Id" />
-
-                    <div style="display:flex;align-items:center;gap:0.75rem;">
-                        <div style="flex:1;">
-                            <label class="form-label">Status</label>
-                            <select name="status" class="form-select">
-                                <option value="Open" selected="@(Model.Status == FeedbackStatus.Open ? "selected" : null)">Open</option>
-                                <option value="InProgress" selected="@(Model.Status == FeedbackStatus.InProgress ? "selected" : null)">In Progress</option>
-                                <option value="Resolved" selected="@(Model.Status == FeedbackStatus.Resolved ? "selected" : null)">Resolved</option>
-                            </select>
-                        </div>
-                    </div>
-
+            <div
+                class="bg-white rounded-card p-8 shadow-[0_20px_60px_rgba(0,0,0,0.08)] border border-black/5 transition-shadow duration-300 hover:shadow-[0_24px_64px_rgba(0,0,0,0.1)]">
+                <div class="flex justify-between items-start gap-4 mb-6">
                     <div>
-                        <label class="form-label">Staff Note</label>
-                        <textarea name="staffNote" rows="2" class="form-control">@Model.StaffNote</textarea>
+                        <p class="text-[0.65rem] uppercase tracking-[0.12em] text-gray-500 font-semibold mb-1">Rating</p>
+                        <p class="text-2xl text-accent tracking-widest">@ratingStars</p>
+                        <p class="text-xs text-gray-500 mt-1">@Model.Date.ToString("dd MMM yyyy HH:mm")</p>
                     </div>
-
-                    <div style="display:flex;gap:0.5rem;align-items:center;">
-                        <button type="submit" class="btn btn-save">Save</button>
-                        @if (Model.ResolvedAt.HasValue)
+                    <div class="text-right">
+                        @if (Model.Branch != null)
                         {
-                            <p class="resolved-note">Resolved on @Model.ResolvedAt.Value.ToString("dd MMM yyyy HH:mm")</p>
+                            <span
+                            class="inline-flex px-2.5 py-1 rounded-full text-[0.7rem] font-semibold bg-sidebar text-white">@Model.Branch.Name</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Category))
+                        {
+                            <br />
+                    
+                            <span
+                            class="inline-flex px-2.5 py-1 rounded-full text-[0.7rem] font-semibold bg-gray-100 text-gray-700 border border-gray-200 mt-1.5">@Model.Category</span>
                         }
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+                </div>
+
+                <div class="border-t border-[#e8e5e0] pt-4 mt-4">
+                    <p class="text-[0.65rem] uppercase tracking-[0.12em] text-gray-500 font-semibold mb-1">Customer</p>
+                    <p class="text-sm font-medium text-[#1a1a2e]">@Model.Customer?.Name</p>
+                    <p class="text-xs text-gray-500">@Model.Customer?.Email</p>
+                </div>
+
+                @if (Model.Order != null)
+                {
+                    <div class="border-t border-[#e8e5e0] pt-4 mt-4">
+                        <p class="text-[0.65rem] uppercase tracking-[0.12em] text-gray-500 font-semibold mb-1">Order</p>
+                        <p class="text-sm font-medium text-[#1a1a2e]">Order #@Model.Order.Id</p>
+                    </div>
+                }
+
+                <div class="border-t border-[#e8e5e0] pt-4 mt-4">
+                    <p class="text-[0.65rem] uppercase tracking-[0.12em] text-gray-500 font-semibold mb-1">Comments</p>
+                    <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">@Model.Comments</p>
+                </div>
+
+                <div class="border-t border-[#e8e5e0] pt-4 mt-4">
+                    <form method="post" action="@Url.Action("UpdateStatus", "Feedback")" class="flex flex-col gap-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1">
+                                <label
+                                class="block text-[0.65rem] font-semibold uppercase tracking-wider text-gray-500 mb-1">Status</label>
+                                <select name="status"
+                                        class="w-full px-2.5 py-2 rounded-[10px] border border-gray-200 text-xs font-sans bg-[#faf9f7] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/15">
+                                    <option value="Open"
+                                            selected="@(Model.Status == FeedbackStatus.Open ? "selected" : null)">Open</option>
+                                    <option value="InProgress"
+                                            selected="@(Model.Status == FeedbackStatus.InProgress ? "selected" : null)">In
+                                        Progress</option>
+                                        <option value="Resolved"
+                                                selected="@(Model.Status == FeedbackStatus.Resolved ? "selected" : null)">Resolved
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="block text-[0.65rem] font-semibold uppercase tracking-wider text-gray-500 mb-1">Staff
+                                    Note</label>
+                                    <textarea name="staffNote" rows="2"
+                                              class="w-full px-2.5 py-2 rounded-[10px] border border-gray-200 text-xs font-sans bg-[#faf9f7] resize-y transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/15">@Model.StaffNote</textarea>
+                                </div>
+
+                                <div class="flex gap-2 items-center">
+                                    <button type="submit"
+                                            class="inline-flex items-center gap-1 px-4 py-2 rounded-[10px] text-xs font-semibold border-none cursor-pointer bg-sidebar text-white transition-all duration-150 hover:bg-[#2d3f54]">Save</button>
+                                    @if (Model.ResolvedAt.HasValue)
+                                    {
+                                        <p class="text-xs text-gray-500">Resolved on @Model.ResolvedAt.Value.ToString("dd MMM yyyy HH:mm")</p>
+                                    }
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </body>
+
+        </html>

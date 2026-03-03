@@ -43,14 +43,16 @@
             </div>
             <div class="form-group" style="margin:0;">
                 <label class="form-label">Search</label>
-                <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Search items..." />
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control"
+                       placeholder="Search items..." />
             </div>
             <div class="flex items-center gap-3">
                 <button type="submit" class="btn btn-primary btn-sm w-full">
                     <i class="fas fa-filter"></i> Filter
                 </button>
                 <label class="flex items-center gap-2 text-sm whitespace-nowrap" style="color:var(--text-secondary);">
-                    <input type="checkbox" name="showInactive" value="true" @(ViewBag.ShowInactive ? "checked" : "") style="accent-color:var(--accent);" />
+                    <input type="checkbox" name="showInactive" value="true" @(ViewBag.ShowInactive ? "checked" : "")
+                           style="accent-color:var(--accent);" />
                     Inactive
                 </label>
             </div>
@@ -61,12 +63,14 @@
 <!-- KPI Cards -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(212,175,55,0.10);color:#d4af37;"><i class="fas fa-utensils"></i></div>
+        <div class="kpi-icon" style="background:rgba(212,175,55,0.10);color:#d4af37;"><i class="fas fa-utensils"></i>
+        </div>
         <div class="kpi-label">Total Items</div>
         <div class="kpi-value">@Model.Count()</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(34,197,94,0.10);color:#22c55e;"><i class="fas fa-check-circle"></i></div>
+        <div class="kpi-icon" style="background:rgba(34,197,94,0.10);color:#22c55e;"><i class="fas fa-check-circle"></i>
+        </div>
         <div class="kpi-label">Available</div>
         <div class="kpi-value">@Model.Count(m => m.Availability)</div>
     </div>
@@ -88,14 +92,15 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         @foreach (var item in Model)
         {
-            <div class="card" style="overflow:hidden;transition:box-shadow .2s;">
+            <div class="card overflow-hidden transition-shadow duration-200">
                 @if (!string.IsNullOrEmpty(item.ImageUrl))
                 {
                     <img src="@item.ImageUrl" alt="@item.Name" style="width:100%;height:180px;object-fit:cover;" />
                 }
                 else
                 {
-                    <div style="width:100%;height:180px;background:var(--bg-body);display:flex;align-items:center;justify-content:center;">
+                    <div
+                        style="width:100%;height:180px;background:var(--bg-body);display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-image" style="font-size:40px;color:var(--text-tertiary);"></i>
                     </div>
                 }
@@ -106,67 +111,92 @@
                         <span class="font-bold" style="color:var(--accent);font-size:15px;">$@item.Price</span>
                     </div>
 
-                    <p class="text-sm mb-3" style="color:var(--text-secondary);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">@item.Description</p>
+                    <p class="text-sm mb-3"
+                           style="color:var(--text-secondary);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                        @item.Description</p>
 
-                    <div class="flex flex-wrap gap-1 mb-3">
-                        @if (item.IsVegetarian) { <span class="badge badge-success" style="font-size:10px;">Vegetarian</span> }
-                        @if (item.IsVegan) { <span class="badge badge-success" style="font-size:10px;">Vegan</span> }
-                        @if (item.IsGlutenFree) { <span class="badge badge-warning" style="font-size:10px;">GF</span> }
-                        @if (item.IsSpicy) { <span class="badge badge-danger" style="font-size:10px;">Spicy</span> }
-                        @if (item.IsFeatured) { <span class="badge badge-accent" style="font-size:10px;">Featured</span> }
-                    </div>
-
-                    <div class="flex justify-between items-center text-xs" style="color:var(--text-tertiary);">
-                        <span><i class="fas fa-store"></i> @item.Branch?.Name</span>
-                        <span><i class="fas fa-clock"></i> @item.PreparationTime min</span>
-                    </div>
-
-                    <div class="divider" style="margin:12px 0;"></div>
-
-                    <div class="flex items-center justify-between">
-                        <div>
-                            @if (item.AverageRating.HasValue)
+                        <div class="flex flex-wrap gap-1 mb-3">
+                            @if (item.IsVegetarian)
                             {
-                                @for (int i = 1; i <= 5; i++)
+                                <span class="badge badge-success" style="font-size:10px;">Vegetarian</span>
+                            }
+                            @if (item.IsVegan)
+                            {
+                                <span class="badge badge-success" style="font-size:10px;">Vegan</span>
+                            }
+                            @if (item.IsGlutenFree)
+                            {
+                                <span class="badge badge-warning" style="font-size:10px;">GF</span>
+                            }
+                            @if (item.IsSpicy)
+                            {
+                                <span class="badge badge-danger" style="font-size:10px;">Spicy</span>
+                            }
+                            @if (item.IsFeatured)
+                            {
+                                <span class="badge badge-accent" style="font-size:10px;">Featured</span>
+                            }
+                        </div>
+
+                        <div class="flex justify-between items-center text-xs" style="color:var(--text-tertiary);">
+                            <span><i class="fas fa-store"></i> @item.Branch?.Name</span>
+                            <span><i class="fas fa-clock"></i> @item.PreparationTime min</span>
+                        </div>
+
+                        <div class="divider" style="margin:12px 0;"></div>
+
+                        <div class="flex items-center justify-between">
+                            <div>
+                                @if (item.AverageRating.HasValue)
                                 {
-                                    <i class="fas fa-star" style="font-size:11px;color:@(i <= Math.Round(item.AverageRating.Value) ? "#d4af37" : "#e5e7eb");"></i>
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="fas fa-star"
+                                           style="font-size:11px;color:@(i <= Math.Round(item.AverageRating.Value) ? "#d4af37" : "#e5e7eb");"></i>
+                                    }
+                                    <span class="text-xs"
+                                          style="color:var(--text-tertiary);margin-left:4px;">(@item.TotalRatings)</span>
                                 }
-                                <span class="text-xs" style="color:var(--text-tertiary);margin-left:4px;">(@item.TotalRatings)</span>
-                            }
-                            else
-                            {
-                                <span class="text-xs" style="color:var(--text-tertiary);">No ratings</span>
-                            }
-                        </div>
-                        <div class="flex gap-2">
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-ghost btn-sm" title="View"><i class="fas fa-eye"></i></a>
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-secondary btn-sm" title="Edit"><i class="fas fa-pen"></i></a>
-                            <a asp-action="ManageIngredients" asp-route-id="@item.Id" class="btn btn-ghost btn-sm" title="Ingredients"><i class="fas fa-list"></i></a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm" title="Delete"><i class="fas fa-trash"></i></a>
-                        </div>
-                    </div>
-                </div>
+                                else
+                                {
+                                    <span class="text-xs" style="color:var(--text-tertiary);">No ratings</span>
+                                }
+                            </div>
+                            <div class="flex gap-2">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-ghost btn-sm" title="View"><i
+                                    class="fas fa-eye"></i></a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-secondary btn-sm" title="Edit"><i
+                                        class="fas fa-pen"></i></a>
+                                        <a asp-action="ManageIngredients" asp-route-id="@item.Id" class="btn btn-ghost btn-sm"
+                                           title="Ingredients"><i class="fas fa-list"></i></a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm" title="Delete"><i
+                                            class="fas fa-trash"></i></a>
+                                        </div>
+                                    </div>
+                                </div>
 
-                @if (!item.Availability)
-                {
-                    <div style="background:rgba(239,68,68,0.08);color:#dc2626;text-align:center;padding:6px;font-size:12px;font-weight:600;">
-                        <i class="fas fa-times-circle"></i> Not Available
+                                @if (!item.Availability)
+                                {
+                                    <div
+                                        style="background:rgba(239,68,68,0.08);color:#dc2626;text-align:center;padding:6px;font-size:12px;font-weight:600;">
+                                        <i class="fas fa-times-circle"></i> Not Available
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
                 }
-            </div>
-        }
-    </div>
-}
 else
-{
-    <div class="card">
-        <div class="card-body">
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="fas fa-utensils"></i></div>
-                <p class="empty-state-title">No menu items found</p>
-                <p class="empty-state-text">Try adjusting your filters or add your first item.</p>
-                <a asp-action="Create" class="btn btn-primary" style="margin-top:16px;"><i class="fas fa-plus"></i> Add First Item</a>
-            </div>
-        </div>
-    </div>
-}
+                {
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="fas fa-utensils"></i></div>
+                                <p class="empty-state-title">No menu items found</p>
+                                <p class="empty-state-text">Try adjusting your filters or add your first item.</p>
+                                <a asp-action="Create" class="btn btn-primary" style="margin-top:16px;"><i class="fas fa-plus"></i> Add
+                                    First Item</a>
+                                </div>
+                            </div>
+                        </div>
+                    }

@@ -13,112 +13,171 @@
         </div>
     </div>
     <div class="flex items-center gap-3">
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary btn-sm"><i class="fas fa-pen"></i> Edit</a>
-        <a asp-action="ManageIngredients" asp-route-id="@Model.Id" class="btn btn-ghost btn-sm"><i class="fas fa-list"></i> Ingredients</a>
-    </div>
-</div>
-
-<!-- Header Card -->
-<div class="card mb-5" style="overflow:hidden;">
-    <div class="flex flex-col md:flex-row">
-        @if (!string.IsNullOrEmpty(Model.ImageUrl))
-        {
-            <img src="@Model.ImageUrl" alt="@Model.Name" style="width:100%;max-width:280px;height:200px;object-fit:cover;" />
-        }
-        else
-        {
-            <div style="width:100%;max-width:280px;height:200px;background:var(--bg-body);display:flex;align-items:center;justify-content:center;">
-                <i class="fas fa-image" style="font-size:48px;color:var(--text-tertiary);"></i>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary btn-sm"><i class="fas fa-pen"></i>
+            Edit</a>
+            <a asp-action="ManageIngredients" asp-route-id="@Model.Id" class="btn btn-ghost btn-sm"><i
+                class="fas fa-list"></i> Ingredients</a>
             </div>
-        }
-        <div class="card-body flex-1">
-            <div class="flex items-start justify-between mb-3">
-                <div>
-                    <h2 style="font-size:1.3rem;font-weight:700;color:var(--text-primary);">@Model.Name</h2>
-                    <p class="text-sm" style="color:var(--text-tertiary);">@Model.Category?.Name &middot; @Model.Branch?.Name</p>
+        </div>
+
+        <!-- Header Card -->
+        <div class="card mb-5 overflow-hidden">
+            <div class="flex flex-col md:flex-row">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" alt="@Model.Name"
+                         style="width:100%;max-width:280px;height:200px;object-fit:cover;" />
+                }
+                else
+                {
+                    <div
+                        style="width:100%;max-width:280px;height:200px;background:var(--bg-body);display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-image" style="font-size:48px;color:var(--text-tertiary);"></i>
+                    </div>
+                }
+                <div class="card-body flex-1">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h2 style="font-size:1.3rem;font-weight:700;color:var(--text-primary);">@Model.Name</h2>
+                            <p class="text-sm" style="color:var(--text-tertiary);">@Model.Category?.Name &middot;
+                                @Model.Branch?.Name</p>
+                            </div>
+                            <span style="font-size:1.4rem;font-weight:700;color:var(--accent);">$@Model.Price</span>
+                        </div>
+                        <p class="text-sm mb-3" style="color:var(--text-secondary);">@Model.Description</p>
+                        <div class="flex flex-wrap gap-2">
+                            @if (Model.Availability)
+                            {
+                                <span class="badge badge-success">Available</span>
+                            }
+                            else
+                            {
+
+                                <span
+                                class="badge badge-danger">Unavailable</span>
+                            }
+                            @if (Model.IsVegetarian)
+                            {
+                                <span class="badge badge-success">Vegetarian</span>
+                            }
+                            @if (Model.IsVegan)
+                            {
+                                <span class="badge badge-success">Vegan</span>
+                            }
+                            @if (Model.IsGlutenFree)
+                            {
+                                <span class="badge badge-warning">GF</span>
+                            }
+                            @if (Model.IsDairyFree)
+                            {
+                                <span class="badge badge-info">Dairy Free</span>
+                            }
+                            @if (Model.IsSpicy)
+                            {
+                                <span class="badge badge-danger">Spicy @(Model.SpiceLevel.HasValue ?
+                                                        $"({Model.SpiceLevel}/5)" : "")</span>
+                                }
+                                @if (Model.IsFeatured)
+                                {
+                                    <span class="badge badge-accent">Featured</span>
+                                }
+                                @if (Model.IsSpecial)
+                                {
+                                    <span class="badge badge-accent">Special</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <span style="font-size:1.4rem;font-weight:700;color:var(--accent);">$@Model.Price</span>
-            </div>
-            <p class="text-sm mb-3" style="color:var(--text-secondary);">@Model.Description</p>
-            <div class="flex flex-wrap gap-2">
-                @if (Model.Availability) { <span class="badge badge-success">Available</span> } else { <span class="badge badge-danger">Unavailable</span> }
-                @if (Model.IsVegetarian) { <span class="badge badge-success">Vegetarian</span> }
-                @if (Model.IsVegan) { <span class="badge badge-success">Vegan</span> }
-                @if (Model.IsGlutenFree) { <span class="badge badge-warning">GF</span> }
-                @if (Model.IsDairyFree) { <span class="badge badge-info">Dairy Free</span> }
-                @if (Model.IsSpicy) { <span class="badge badge-danger">Spicy @(Model.SpiceLevel.HasValue ? $"({Model.SpiceLevel}/5)" : "")</span> }
-                @if (Model.IsFeatured) { <span class="badge badge-accent">Featured</span> }
-                @if (Model.IsSpecial) { <span class="badge badge-accent">Special</span> }
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Details Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-    <!-- Pricing -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="section-title"><i class="fas fa-dollar-sign" style="color:var(--accent);margin-right:8px;"></i>Pricing</h3>
-        </div>
-        <div class="card-body space-y-3">
-            <div><span class="caption">Selling Price</span><p class="font-bold" style="color:var(--accent);font-size:18px;">$@Model.Price</p></div>
-            <div><span class="caption">Cost Price</span><p style="color:var(--text-secondary);">$@Model.CostPrice</p></div>
-            @if (Model.OriginalPrice.HasValue)
-            {
-                <div><span class="caption">Original Price</span><p style="color:var(--text-secondary);">$@Model.OriginalPrice</p></div>
-            }
-            <div><span class="caption">Prep Time</span><p style="color:var(--text-secondary);">@Model.PreparationTime min</p></div>
-        </div>
-    </div>
+                <!-- Details Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                    <!-- Pricing -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="section-title"><i class="fas fa-dollar-sign"
+                                                             style="color:var(--accent);margin-right:8px;"></i>Pricing</h3>
+                            </div>
+                            <div class="card-body space-y-3">
+                                <div><span class="caption">Selling Price</span>
+                                    <p class="font-bold" style="color:var(--accent);font-size:18px;">$@Model.Price</p>
+                                </div>
+                                <div><span class="caption">Cost Price</span>
+                                    <p style="color:var(--text-secondary);">$@Model.CostPrice</p>
+                                </div>
+                                @if (Model.OriginalPrice.HasValue)
+                                {
+                                    <div><span class="caption">Original Price</span>
+                                        <p style="color:var(--text-secondary);">$@Model.OriginalPrice</p>
+                                    </div>
+                                }
+                                <div><span class="caption">Prep Time</span>
+                                    <p style="color:var(--text-secondary);">@Model.PreparationTime min</p>
+                                </div>
+                            </div>
+                        </div>
 
-    <!-- Meta -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="section-title"><i class="fas fa-info-circle" style="color:var(--accent);margin-right:8px;"></i>Details</h3>
-        </div>
-        <div class="card-body space-y-3">
-            <div><span class="caption">Created</span><p style="color:var(--text-secondary);">@Model.CreatedDate.ToString("MMM dd, yyyy")</p></div>
-            @if (Model.LastUpdated.HasValue)
-            {
-                <div><span class="caption">Last Updated</span><p style="color:var(--text-secondary);">@Model.LastUpdated.Value.ToString("MMM dd, yyyy")</p></div>
-            }
-            @if (!string.IsNullOrWhiteSpace(Model.Tags))
-            {
-                <div><span class="caption">Tags</span><p style="color:var(--text-secondary);">@Model.Tags</p></div>
-            }
-            @if (Model.AverageRating.HasValue)
-            {
-                <div>
-                    <span class="caption">Rating</span>
-                    <p>
-                        @for (int i = 1; i <= 5; i++)
-                        {
-                            <i class="fas fa-star" style="color:@(i <= Math.Round(Model.AverageRating.Value) ? "#d4af37" : "#e5e7eb");"></i>
-                        }
-                        <span class="text-sm" style="color:var(--text-tertiary);margin-left:6px;">(@Model.TotalRatings ratings)</span>
-                    </p>
-                </div>
-            }
-        </div>
-    </div>
-</div>
+                        <!-- Meta -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="section-title"><i class="fas fa-info-circle"
+                                                                 style="color:var(--accent);margin-right:8px;"></i>Details</h3>
+                                </div>
+                                <div class="card-body space-y-3">
+                                    <div><span class="caption">Created</span>
+                                        <p style="color:var(--text-secondary);">@Model.CreatedDate.ToString("MMM dd, yyyy")</p>
+                                    </div>
+                                    @if (Model.LastUpdated.HasValue)
+                                    {
+                                        <div><span class="caption">Last Updated</span>
+                                            <p style="color:var(--text-secondary);">@Model.LastUpdated.Value.ToString("MMM dd, yyyy")</p>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(Model.Tags))
+                                    {
+                                        <div><span class="caption">Tags</span>
+                                            <p style="color:var(--text-secondary);">@Model.Tags</p>
+                                        </div>
+                                    }
+                                    @if (Model.AverageRating.HasValue)
+                                    {
+                                        <div>
+                                            <span class="caption">Rating</span>
+                                            <p>
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    <i class="fas fa-star"
+                                                       style="color:@(i <= Math.Round(Model.AverageRating.Value) ? "#d4af37" : "#e5e7eb");"></i>
+                                                }
+                                                <span class="text-sm" style="color:var(--text-tertiary);margin-left:6px;">(@Model.TotalRatings
+                                                    ratings)</span>
+                                                </p>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
 
-@if (!string.IsNullOrWhiteSpace(Model.LongDescription))
-{
-    <div class="card mb-5">
-        <div class="card-header"><h3 class="section-title">Detailed Description</h3></div>
-        <div class="card-body"><p style="color:var(--text-secondary);line-height:1.7;">@Model.LongDescription</p></div>
-    </div>
-}
+                            @if (!string.IsNullOrWhiteSpace(Model.LongDescription))
+                            {
+                                <div class="card mb-5">
+                                    <div class="card-header">
+                                        <h3 class="section-title">Detailed Description</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <p style="color:var(--text-secondary);line-height:1.7;">@Model.LongDescription</p>
+                                    </div>
+                                </div>
+                            }
 
-<!-- Actions -->
-<div class="card">
-    <div class="card-body">
-        <div class="flex justify-end gap-3">
-            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary"><i class="fas fa-pen"></i> Edit</a>
-            <a asp-action="ManageIngredients" asp-route-id="@Model.Id" class="btn btn-ghost"><i class="fas fa-list"></i> Ingredients</a>
-            <a asp-action="Index" class="btn btn-ghost">Back to List</a>
-        </div>
-    </div>
-</div>
+                            <!-- Actions -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="flex justify-end gap-3">
+                                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary"><i class="fas fa-pen"></i> Edit</a>
+                                        <a asp-action="ManageIngredients" asp-route-id="@Model.Id" class="btn btn-ghost"><i class="fas fa-list"></i>
+                                            Ingredients</a>
+                                            <a asp-action="Index" class="btn btn-ghost">Back to List</a>
+                                        </div>
+                                    </div>
+                                </div>

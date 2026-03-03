@@ -3,7 +3,7 @@
     ViewData["Title"] = "Base Salary History";
 }
 
-<div style="max-width:800px; margin:0 auto;">
+<div class="max-w-[800px] mx-auto">
     <!-- Header -->
     <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
         <a asp-controller="Salary" asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
@@ -11,7 +11,7 @@
     </div>
 
     <!-- Staff Info -->
-    <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card mb-6">
         <div class="card-body">
             <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem;">
                 <div><span class="caption">Employee</span><p class="body-text" style="font-weight:600; margin:0.25rem 0 0;">@Model.Staff.User?.Name</p></div>
@@ -23,7 +23,7 @@
     </div>
 
     <!-- Update Base Salary -->
-    <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card mb-6">
         <div class="card-header"><h3 style="margin:0; font-weight:600;">Update Base Salary</h3></div>
         <div class="card-body">
             <div style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
@@ -45,7 +45,7 @@
     <!-- History Table -->
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-weight:600;">Salary History</h3></div>
-        <div class="card-body" style="padding:0;">
+        <div class="card-body card-body-flush">
             <div style="overflow-x:auto;">
                 <table class="premium-table">
                     <thead>

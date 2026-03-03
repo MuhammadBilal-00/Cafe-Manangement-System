@@ -3,7 +3,7 @@
     ViewData["Title"] = "Edit Salary Policy";
 }
 
-<div style="max-width:720px; margin:0 auto;">
+<div class="max-w-[720px] mx-auto">
     <!-- Header -->
     <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
         <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
@@ -11,8 +11,8 @@
     </div>
 
     <!-- Warning -->
-    <div class="card" style="margin-bottom:1.5rem; border-left:4px solid #f59e0b; background:rgba(245,158,11,0.04);">
-        <div class="card-body" style="padding:0.75rem 1rem;">
+    <div class="card card-accent-warning mb-6 bg-[rgba(245,158,11,0.04)]">
+        <div class="card-body card-body-compact">
             <p class="caption" style="margin:0; color:#92400e;">
                 <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>
                 If this policy has been used in finalized salary records, changes may be restricted. Consider creating a new policy instead.

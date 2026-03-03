@@ -22,7 +22,8 @@
 </div>
 
 <!-- Status Tabs -->
-<div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1.5rem;border-bottom:1px solid var(--border-light);padding-bottom:0.75rem;">
+<div
+    style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1.5rem;border-bottom:1px solid var(--border-light);padding-bottom:0.75rem;">
     <button class="tab-btn active" data-status="all-orders">All</button>
     <button class="tab-btn" data-status="pending-orders">Pending</button>
     <button class="tab-btn" data-status="preparing-orders">Preparing</button>
@@ -32,8 +33,8 @@
 </div>
 
 <!-- Filters -->
-<div class="card" style="margin-bottom:1.5rem;">
-    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:end;">
+<div class="card mb-6">
+    <div class="card-body flex flex-wrap gap-4 items-end">
         <div class="form-group" style="flex:1;min-width:200px;margin:0;">
             <label class="form-label">Search</label>
             <input id="search" type="text" placeholder="Search orders..." class="form-control" />
@@ -70,18 +71,21 @@
             <tbody id="ordersTable"></tbody>
         </table>
     </div>
-    <div style="padding:1rem 1.5rem;border-top:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center;">
+    <div
+        style="padding:1rem 1.5rem;border-top:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center;">
         <span id="orderCount" class="caption">Showing 0 orders</span>
         <div id="pagination" style="display:flex;gap:0.25rem;"></div>
     </div>
 </div>
 
 <!-- View Order Modal -->
-<div id="viewOrderModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem;">
-    <div class="card" style="max-width:700px;width:100%;max-height:90vh;overflow-y:auto;">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-weight:700;">Order Details</span>
-            <button onclick="closeModal('viewOrderModal')" style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--text-tertiary);">&times;</button>
+<div id="viewOrderModal"
+     style="position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem;">
+    <div class="card max-w-[700px] w-full max-h-[90vh] overflow-y-auto">
+        <div class="card-header flex justify-between items-center">
+            <span class="font-bold">Order Details</span>
+            <button onclick="closeModal('viewOrderModal')"
+                    style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--text-tertiary);">&times;</button>
         </div>
         <div class="card-body">
             <div id="orderDetails"></div>
@@ -93,13 +97,15 @@
 </div>
 
 <!-- Create Order Modal -->
-<div id="createOrderModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem;">
-    <div class="card" style="max-width:800px;width:100%;max-height:90vh;overflow-y:auto;">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-weight:700;">Create New Order</span>
-            <button onclick="closeModal('createOrderModal')" style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--text-tertiary);">&times;</button>
+<div id="createOrderModal"
+     style="position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem;">
+    <div class="card max-w-[800px] w-full max-h-[90vh] overflow-y-auto">
+        <div class="card-header flex justify-between items-center">
+            <span class="font-bold">Create New Order</span>
+            <button onclick="closeModal('createOrderModal')"
+                    style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--text-tertiary);">&times;</button>
         </div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="card-body flex flex-col gap-4">
             <!-- Branch -->
             <div class="form-group" style="margin:0;">
                 <label class="form-label">Branch *</label>
@@ -112,490 +118,504 @@
             <div class="form-group" style="margin:0;">
                 <label class="form-label">Customer *</label>
                 <div style="position:relative;">
-                    <input id="customerSearch" type="text" placeholder="Start typing customer name, email or phone..." class="form-control" autocomplete="off" />
+                    <input id="customerSearch" type="text" placeholder="Start typing customer name, email or phone..."
+                           class="form-control" autocomplete="off" />
                     <input id="customerId" type="hidden" value="" />
-                    <div id="customerResults" class="hidden" style="position:absolute;z-index:10;width:100%;background:#fff;border:1px solid var(--border-light);border-radius:0 0 12px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.1);max-height:200px;overflow-y:auto;"></div>
+                    <div id="customerResults" class="hidden"
+                         style="position:absolute;z-index:10;width:100%;background:#fff;border:1px solid var(--border-light);border-radius:0 0 12px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.1);max-height:200px;overflow-y:auto;">
+                    </div>
                 </div>
-                <div id="selectedCustomer" class="hidden" style="margin-top:0.5rem;padding:0.5rem 0.75rem;background:var(--accent-light);border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
-                    <span id="selectedCustomerName" style="font-size:0.85rem;font-weight:600;color:var(--accent);"></span>
-                    <button onclick="clearCustomer()" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:0.8rem;">
+                <div id="selectedCustomer" class="hidden"
+                     style="margin-top:0.5rem;padding:0.5rem 0.75rem;background:var(--accent-light);border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
+                    <span id="selectedCustomerName"
+                          style="font-size:0.85rem;font-weight:600;color:var(--accent);"></span>
+                    <button onclick="clearCustomer()"
+                            style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:0.8rem;">
                         <i class="fas fa-times"></i> Clear
                     </button>
                 </div>
-                <button id="quickCreateBtn" onclick="showQuickCreate()" class="hidden" style="margin-top:0.25rem;background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;">
+                <button id="quickCreateBtn" onclick="showQuickCreate()" class="hidden"
+                        style="margin-top:0.25rem;background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;">
                     <i class="fas fa-plus-circle"></i> Create new customer
                 </button>
             </div>
 
             <!-- Quick Create Customer -->
-            <div id="quickCreateSection" class="hidden" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:1rem;">
-                <h4 style="font-size:0.85rem;font-weight:700;color:#16a34a;margin-bottom:0.75rem;"><i class="fas fa-user-plus" style="margin-right:0.3rem;"></i> Quick Create Customer</h4>
-                <div class="form-row">
-                    <div class="form-group" style="margin:0;">
-                        <input id="newCustName" type="text" placeholder="Full Name *" class="form-control" />
+            <div id="quickCreateSection" class="hidden"
+                 style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:1rem;">
+                <h4 style="font-size:0.85rem;font-weight:700;color:#16a34a;margin-bottom:0.75rem;"><i
+                    class="fas fa-user-plus" style="margin-right:0.3rem;"></i> Quick Create Customer</h4>
+                    <div class="form-row">
+                        <div class="form-group" style="margin:0;">
+                            <input id="newCustName" type="text" placeholder="Full Name *" class="form-control" />
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <input id="newCustPhone" type="text" placeholder="Phone *" class="form-control" />
+                        </div>
                     </div>
-                    <div class="form-group" style="margin:0;">
-                        <input id="newCustPhone" type="text" placeholder="Phone *" class="form-control" />
+                    <div class="form-group" style="margin:0.5rem 0 0;">
+                        <input id="newCustEmail" type="text" placeholder="Email (optional)" class="form-control" />
                     </div>
-                </div>
-                <div class="form-group" style="margin:0.5rem 0 0;">
-                    <input id="newCustEmail" type="text" placeholder="Email (optional)" class="form-control" />
-                </div>
-                <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
-                    <button onclick="quickCreateCustomer()" class="btn btn-primary btn-sm"><i class="fas fa-check"></i> Create & Select</button>
-                    <button onclick="hideQuickCreate()" class="btn btn-secondary btn-sm">Cancel</button>
-                </div>
-            </div>
+                    <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+                        <button onclick="quickCreateCustomer()" class="btn btn-primary btn-sm"><i class="fas fa-check"></i>
+                            Create & Select</button>
+                            <button onclick="hideQuickCreate()" class="btn btn-secondary btn-sm">Cancel</button>
+                        </div>
+                    </div>
 
-            <!-- Menu Item Selection -->
-            <div style="border-top:1px solid var(--border-light);padding-top:1rem;">
-                <label class="form-label">Order Items *</label>
-                <div style="display:flex;gap:0.5rem;">
-                    <select id="menuItemSelect" class="form-select" style="flex:1;">
-                        <option value="">Select Menu Item</option>
-                    </select>
-                    <input id="itemQuantity" type="number" min="1" value="1" class="form-control" style="width:80px;" placeholder="Qty" />
-                    <button onclick="addOrderItem()" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus"></i> Add
+                    <!-- Menu Item Selection -->
+                    <div style="border-top:1px solid var(--border-light);padding-top:1rem;">
+                        <label class="form-label">Order Items *</label>
+                        <div style="display:flex;gap:0.5rem;">
+                            <select id="menuItemSelect" class="form-select" style="flex:1;">
+                                <option value="">Select Menu Item</option>
+                            </select>
+                            <input id="itemQuantity" type="number" min="1" value="1" class="form-control" style="width:80px;"
+                                   placeholder="Qty" />
+                            <button onclick="addOrderItem()" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Order Items Table -->
+                    <div id="orderItemsContainer" class="hidden">
+                        <table class="premium-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th style="text-align:center;">Qty</th>
+                                    <th style="text-align:right;">Price</th>
+                                    <th style="text-align:right;">Subtotal</th>
+                                    <th style="text-align:center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderItemsBody"></tbody>
+                            <tfoot>
+                                <tr style="background:var(--bg-body);">
+                                    <td colspan="3" style="text-align:right;font-weight:700;padding:0.75rem 1rem;">Total:</td>
+                                    <td id="orderTotal"
+                                        style="text-align:right;font-weight:700;color:#16a34a;padding:0.75rem 1rem;">$0.00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="form-group" style="margin:0;">
+                        <label class="form-label">Order Notes</label>
+                        <textarea id="orderNotes" placeholder="Optional notes..." class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div
+                    style="padding:1rem 1.5rem;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:0.75rem;">
+                    <button class="btn btn-secondary" onclick="closeModal('createOrderModal')">Cancel</button>
+                    <button id="saveOrderBtn" class="btn btn-primary" onclick="createOrder()">
+                        <i class="fas fa-save"></i> Create Order
                     </button>
                 </div>
             </div>
-
-            <!-- Order Items Table -->
-            <div id="orderItemsContainer" class="hidden">
-                <table class="premium-table">
-                    <thead>
-                        <tr>
-                            <th>Item</th>
-                            <th style="text-align:center;">Qty</th>
-                            <th style="text-align:right;">Price</th>
-                            <th style="text-align:right;">Subtotal</th>
-                            <th style="text-align:center;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="orderItemsBody"></tbody>
-                    <tfoot>
-                        <tr style="background:var(--bg-body);">
-                            <td colspan="3" style="text-align:right;font-weight:700;padding:0.75rem 1rem;">Total:</td>
-                            <td id="orderTotal" style="text-align:right;font-weight:700;color:#16a34a;padding:0.75rem 1rem;">$0.00</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
-            <!-- Notes -->
-            <div class="form-group" style="margin:0;">
-                <label class="form-label">Order Notes</label>
-                <textarea id="orderNotes" placeholder="Optional notes..." class="form-control" rows="2"></textarea>
-            </div>
         </div>
-        <div style="padding:1rem 1.5rem;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:0.75rem;">
-            <button class="btn btn-secondary" onclick="closeModal('createOrderModal')">Cancel</button>
-            <button id="saveOrderBtn" class="btn btn-primary" onclick="createOrder()">
-                <i class="fas fa-save"></i> Create Order
-            </button>
-        </div>
-    </div>
-</div>
 
-@section Scripts {
-    <script>
-        let currentStatus = "all-orders";
-        let currentPage = 1;
-        let orderItems = [];
-        let menuItemsCache = [];
-        let customerSearchTimeout = null;
+        @section Scripts {
+            <script>
+                    let currentStatus = "all-orders";
+                    let currentPage = 1;
+                    let orderItems = [];
+                    let menuItemsCache = [];
+                    let customerSearchTimeout = null;
 
-        document.addEventListener("DOMContentLoaded", function () {
-            loadBranches();
-            loadOrders();
+                    document.addEventListener("DOMContentLoaded", function () {
+                        loadBranches();
+                        loadOrders();
 
-            document.querySelectorAll(".tab-btn").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-                    btn.classList.add("active");
-                    currentStatus = btn.dataset.status;
-                    loadOrders();
-                });
-            });
+                        document.querySelectorAll(".tab-btn").forEach(btn => {
+                            btn.addEventListener("click", () => {
+                                document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+                                btn.classList.add("active");
+                                currentStatus = btn.dataset.status;
+                                loadOrders();
+                            });
+                        });
 
-            document.getElementById("branchSelect").addEventListener("change", function () {
-                const branchId = this.value;
-                if (branchId) loadMenuItems(branchId);
-                else {
-                    document.getElementById("menuItemSelect").innerHTML = '<option value="">Select Menu Item</option>';
-                    menuItemsCache = [];
-                }
-            });
+                        document.getElementById("branchSelect").addEventListener("change", function () {
+                            const branchId = this.value;
+                            if (branchId) loadMenuItems(branchId);
+                            else {
+                                document.getElementById("menuItemSelect").innerHTML = '<option value="">Select Menu Item</option>';
+                                menuItemsCache = [];
+                            }
+                        });
 
-            const searchInput = document.getElementById("customerSearch");
-            searchInput.addEventListener("input", function () {
-                clearTimeout(customerSearchTimeout);
-                const term = this.value.trim();
-                if (term.length < 2) {
-                    hideCustomerResults();
-                    document.getElementById("quickCreateBtn").classList.add("hidden");
-                    return;
-                }
-                customerSearchTimeout = setTimeout(() => searchCustomers(term), 300);
-            });
-            searchInput.addEventListener("blur", () => setTimeout(hideCustomerResults, 200));
-            searchInput.addEventListener("focus", function () {
-                if (this.value.trim().length >= 2) searchCustomers(this.value.trim());
-            });
+                        const searchInput = document.getElementById("customerSearch");
+                        searchInput.addEventListener("input", function () {
+                            clearTimeout(customerSearchTimeout);
+                            const term = this.value.trim();
+                            if (term.length < 2) {
+                                hideCustomerResults();
+                                document.getElementById("quickCreateBtn").classList.add("hidden");
+                                return;
+                            }
+                            customerSearchTimeout = setTimeout(() => searchCustomers(term), 300);
+                        });
+                        searchInput.addEventListener("blur", () => setTimeout(hideCustomerResults, 200));
+                        searchInput.addEventListener("focus", function () {
+                            if (this.value.trim().length >= 2) searchCustomers(this.value.trim());
+                        });
 
-            document.getElementById("search").addEventListener("input", loadOrders);
-            document.getElementById("branchFilter").addEventListener("change", loadOrders);
-            document.getElementById("dateFilter").addEventListener("change", loadOrders);
-            document.getElementById("createOrderBtn").addEventListener("click", () => {
-                resetCreateForm();
-                openModal('createOrderModal');
-            });
-        });
+                        document.getElementById("search").addEventListener("input", loadOrders);
+                        document.getElementById("branchFilter").addEventListener("change", loadOrders);
+                        document.getElementById("dateFilter").addEventListener("change", loadOrders);
+                        document.getElementById("createOrderBtn").addEventListener("click", () => {
+                            resetCreateForm();
+                            openModal('createOrderModal');
+                        });
+                    });
 
-        function searchCustomers(term) {
-            fetch(`/Order/SearchCustomers?term=${encodeURIComponent(term)}`)
-                .then(r => r.json())
-                .then(data => {
-                    const container = document.getElementById("customerResults");
-                    container.innerHTML = "";
-                    if (data.length === 0) {
-                        container.innerHTML = '<div style="padding:0.75rem;font-size:0.85rem;color:var(--text-tertiary);">No customers found</div>';
-                        document.getElementById("quickCreateBtn").classList.remove("hidden");
-                    } else {
+                    function searchCustomers(term) {
+                        fetch(`/Order/SearchCustomers?term=${encodeURIComponent(term)}`)
+                            .then(r => r.json())
+                            .then(data => {
+                                const container = document.getElementById("customerResults");
+                                container.innerHTML = "";
+                                if (data.length === 0) {
+                                    container.innerHTML = '<div style="padding:0.75rem;font-size:0.85rem;color:var(--text-tertiary);">No customers found</div>';
+                                    document.getElementById("quickCreateBtn").classList.remove("hidden");
+                                } else {
+                                    document.getElementById("quickCreateBtn").classList.add("hidden");
+                                    data.forEach(c => {
+                                        const div = document.createElement("div");
+                                        div.className = "px-3 py-2 cursor-pointer border-b border-[var(--border-light)] text-sm transition-colors duration-150 hover:bg-[var(--accent-light)]";
+                                        div.innerHTML = `<span style="font-weight:600;">${escapeHtml(c.name)}</span> <span style="color:var(--text-tertiary);">- ${escapeHtml(c.email || '')} / ${escapeHtml(c.phone || '')}</span>`;
+                                        div.onclick = () => selectCustomer(c);
+                                        container.appendChild(div);
+                                    });
+                                }
+                                container.classList.remove("hidden");
+                            });
+                    }
+
+                    function selectCustomer(customer) {
+                        document.getElementById("customerId").value = customer.id;
+                        document.getElementById("customerSearch").value = customer.name;
+                        document.getElementById("customerSearch").classList.add("hidden");
+                        document.getElementById("selectedCustomer").classList.remove("hidden");
+                        document.getElementById("selectedCustomerName").textContent =
+                            `${customer.name} (${customer.email || ''} / ${customer.phone || ''})`;
+                        hideCustomerResults();
                         document.getElementById("quickCreateBtn").classList.add("hidden");
-                        data.forEach(c => {
-                            const div = document.createElement("div");
-                            div.style.cssText = "padding:0.5rem 0.75rem;cursor:pointer;border-bottom:1px solid var(--border-light);font-size:0.85rem;transition:background 0.15s;";
-                            div.onmouseover = () => div.style.background = 'var(--accent-light)';
-                            div.onmouseout = () => div.style.background = '';
-                            div.innerHTML = `<span style="font-weight:600;">${escapeHtml(c.name)}</span> <span style="color:var(--text-tertiary);">- ${escapeHtml(c.email || '')} / ${escapeHtml(c.phone || '')}</span>`;
-                            div.onclick = () => selectCustomer(c);
-                            container.appendChild(div);
+                    }
+
+                    function clearCustomer() {
+                        document.getElementById("customerId").value = "";
+                        document.getElementById("customerSearch").value = "";
+                        document.getElementById("customerSearch").classList.remove("hidden");
+                        document.getElementById("selectedCustomer").classList.add("hidden");
+                        document.getElementById("customerSearch").focus();
+                    }
+
+                    function hideCustomerResults() {
+                        document.getElementById("customerResults").classList.add("hidden");
+                    }
+
+                    function showQuickCreate() {
+                        const name = document.getElementById("customerSearch").value.trim();
+                        document.getElementById("newCustName").value = name;
+                        document.getElementById("quickCreateSection").classList.remove("hidden");
+                        document.getElementById("quickCreateBtn").classList.add("hidden");
+                    }
+
+                    function hideQuickCreate() {
+                        document.getElementById("quickCreateSection").classList.add("hidden");
+                    }
+
+                    function quickCreateCustomer() {
+                        const name = document.getElementById("newCustName").value.trim();
+                        const phone = document.getElementById("newCustPhone").value.trim();
+                        const email = document.getElementById("newCustEmail").value.trim();
+                        if (!name || !phone) { ActionCard.warning('Missing Information', 'Name and Phone are required.'); return; }
+                        fetch("/Order/QuickCreateCustomer", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
+                            body: JSON.stringify({ name, phone, email: email || null })
+                        }).then(r => r.json()).then(res => {
+                            if (res.success) {
+                                selectCustomer({ id: res.id, name: res.name, email: email, phone: phone });
+                                hideQuickCreate();
+                            } else ActionCard.error('Error', res.message);
                         });
                     }
-                    container.classList.remove("hidden");
-                });
-        }
 
-        function selectCustomer(customer) {
-            document.getElementById("customerId").value = customer.id;
-            document.getElementById("customerSearch").value = customer.name;
-            document.getElementById("customerSearch").classList.add("hidden");
-            document.getElementById("selectedCustomer").classList.remove("hidden");
-            document.getElementById("selectedCustomerName").textContent =
-                `${customer.name} (${customer.email || ''} / ${customer.phone || ''})`;
-            hideCustomerResults();
-            document.getElementById("quickCreateBtn").classList.add("hidden");
-        }
-
-        function clearCustomer() {
-            document.getElementById("customerId").value = "";
-            document.getElementById("customerSearch").value = "";
-            document.getElementById("customerSearch").classList.remove("hidden");
-            document.getElementById("selectedCustomer").classList.add("hidden");
-            document.getElementById("customerSearch").focus();
-        }
-
-        function hideCustomerResults() {
-            document.getElementById("customerResults").classList.add("hidden");
-        }
-
-        function showQuickCreate() {
-            const name = document.getElementById("customerSearch").value.trim();
-            document.getElementById("newCustName").value = name;
-            document.getElementById("quickCreateSection").classList.remove("hidden");
-            document.getElementById("quickCreateBtn").classList.add("hidden");
-        }
-
-        function hideQuickCreate() {
-            document.getElementById("quickCreateSection").classList.add("hidden");
-        }
-
-        function quickCreateCustomer() {
-            const name = document.getElementById("newCustName").value.trim();
-            const phone = document.getElementById("newCustPhone").value.trim();
-            const email = document.getElementById("newCustEmail").value.trim();
-            if (!name || !phone) { ActionCard.warning('Missing Information', 'Name and Phone are required.'); return; }
-            fetch("/Order/QuickCreateCustomer", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                body: JSON.stringify({ name, phone, email: email || null })
-            }).then(r => r.json()).then(res => {
-                if (res.success) {
-                    selectCustomer({ id: res.id, name: res.name, email: email, phone: phone });
-                    hideQuickCreate();
-                } else ActionCard.error('Error', res.message);
-            });
-        }
-
-        function addOrderItem() {
-            const select = document.getElementById("menuItemSelect");
-            const menuItemId = parseInt(select.value);
-            const quantity = parseInt(document.getElementById("itemQuantity").value);
-            if (!menuItemId) { ActionCard.warning('Missing Item', 'Please select a menu item.'); return; }
-            if (!quantity || quantity < 1) { ActionCard.warning('Invalid Quantity', 'Quantity must be at least 1.'); return; }
-            const menuItem = menuItemsCache.find(m => m.id === menuItemId);
-            if (!menuItem) return;
-            const existingIdx = orderItems.findIndex(i => i.menuItemId === menuItemId);
-            if (existingIdx >= 0) orderItems[existingIdx].quantity += quantity;
-            else orderItems.push({ menuItemId: menuItem.id, name: menuItem.name, price: menuItem.price, quantity: quantity });
-            renderOrderItems();
-            select.value = "";
-            document.getElementById("itemQuantity").value = 1;
-        }
-
-        function removeOrderItem(index) { orderItems.splice(index, 1); renderOrderItems(); }
-
-        function updateItemQuantity(index, newQty) {
-            if (newQty < 1) { removeOrderItem(index); return; }
-            orderItems[index].quantity = newQty;
-            renderOrderItems();
-        }
-
-        function renderOrderItems() {
-            const container = document.getElementById("orderItemsContainer");
-            const tbody = document.getElementById("orderItemsBody");
-            tbody.innerHTML = "";
-            if (orderItems.length === 0) { container.classList.add("hidden"); return; }
-            container.classList.remove("hidden");
-            let total = 0;
-            orderItems.forEach((item, idx) => {
-                const subtotal = item.price * item.quantity;
-                total += subtotal;
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="padding:0.6rem 1rem;">${escapeHtml(item.name)}</td>
-                        <td style="text-align:center;padding:0.6rem 0.5rem;">
-                            <input type="number" value="${item.quantity}" min="1"
-                                   class="form-control" style="width:60px;display:inline-block;text-align:center;padding:0.3rem;"
-                                   onchange="updateItemQuantity(${idx}, parseInt(this.value))">
-                        </td>
-                        <td style="text-align:right;padding:0.6rem 1rem;">$${item.price.toFixed(2)}</td>
-                        <td style="text-align:right;padding:0.6rem 1rem;font-weight:600;">$${subtotal.toFixed(2)}</td>
-                        <td style="text-align:center;padding:0.6rem 0.5rem;">
-                            <button onclick="removeOrderItem(${idx})" class="btn btn-ghost btn-sm" style="color:#dc2626;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>`;
-            });
-            document.getElementById("orderTotal").textContent = `$${total.toFixed(2)}`;
-        }
-
-        function resetCreateForm() {
-            orderItems = [];
-            renderOrderItems();
-            clearCustomer();
-            document.getElementById("branchSelect").value = "";
-            document.getElementById("menuItemSelect").innerHTML = '<option value="">Select Menu Item</option>';
-            document.getElementById("orderNotes").value = "";
-            document.getElementById("itemQuantity").value = 1;
-            hideQuickCreate();
-            menuItemsCache = [];
-        }
-
-        function loadBranches() {
-            fetch("/Order/GetBranches").then(r => r.json()).then(data => {
-                const branchFilter = document.getElementById("branchFilter");
-                const createBranch = document.getElementById("branchSelect");
-                data.forEach(b => {
-                    branchFilter.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
-                    createBranch.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
-                });
-            });
-        }
-
-        function loadMenuItems(branchId) {
-            fetch(`/Order/GetMenuItems?branchId=${branchId}`)
-                .then(r => r.json())
-                .then(data => {
-                    menuItemsCache = data;
-                    const select = document.getElementById("menuItemSelect");
-                    select.innerHTML = '<option value="">Select Menu Item</option>';
-                    data.forEach(m => {
-                        select.innerHTML += `<option value="${m.id}">${escapeHtml(m.name)} (${escapeHtml(m.category)}) - $${m.price.toFixed(2)}</option>`;
-                    });
-                });
-        }
-
-        function loadOrders(page = 1) {
-            currentPage = page;
-            const search = document.getElementById("search").value;
-            const branchId = document.getElementById("branchFilter").value;
-            const date = document.getElementById("dateFilter").value;
-            fetch(`/Order/GetOrders?status=${currentStatus}&search=${encodeURIComponent(search)}&branchId=${branchId}&orderDate=${date}&page=${page}`)
-                .then(r => r.json()).then(data => {
-                    const tbody = document.getElementById("ordersTable");
-                    tbody.innerHTML = "";
-                    if (data.orders.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="8" style="padding:2rem;text-align:center;color:var(--text-tertiary);">No orders found</td></tr>';
+                    function addOrderItem() {
+                        const select = document.getElementById("menuItemSelect");
+                        const menuItemId = parseInt(select.value);
+                        const quantity = parseInt(document.getElementById("itemQuantity").value);
+                        if (!menuItemId) { ActionCard.warning('Missing Item', 'Please select a menu item.'); return; }
+                        if (!quantity || quantity < 1) { ActionCard.warning('Invalid Quantity', 'Quantity must be at least 1.'); return; }
+                        const menuItem = menuItemsCache.find(m => m.id === menuItemId);
+                        if (!menuItem) return;
+                        const existingIdx = orderItems.findIndex(i => i.menuItemId === menuItemId);
+                        if (existingIdx >= 0) orderItems[existingIdx].quantity += quantity;
+                        else orderItems.push({ menuItemId: menuItem.id, name: menuItem.name, price: menuItem.price, quantity: quantity });
+                        renderOrderItems();
+                        select.value = "";
+                        document.getElementById("itemQuantity").value = 1;
                     }
-                    data.orders.forEach(o => {
-                        const statusBadge = getStatusBadge(o.status);
-                        tbody.innerHTML += `
-                            <tr>
-                                <td style="font-weight:600;">${escapeHtml(o.orderNumber)}</td>
-                                <td>${escapeHtml(o.customerName)}</td>
-                                <td>${escapeHtml(o.branchName)}</td>
-                                <td>${o.orderDate}</td>
-                                <td style="text-align:center;">${o.itemCount}</td>
-                                <td style="font-weight:600;">$${o.totalAmount.toFixed(2)}</td>
-                                <td>${statusBadge}</td>
-                                <td style="white-space:nowrap;">
-                                    <button onclick="viewOrder(${o.id})" class="btn btn-ghost btn-sm">View</button>
-                                    ${o.status !== 'Completed' && o.status !== 'Cancelled' ? `
-                                        <button onclick="updateOrderStatus(${o.id}, 'Completed')" class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;">Done</button>
-                                        <button onclick="cancelOrder(${o.id})" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">Cancel</button>
-                                    ` : ''}
-                                </td>
-                            </tr>`;
-                    });
-                    document.getElementById("orderCount").innerText = `Showing ${data.orders.length} of ${data.totalCount} orders`;
-                    const pag = document.getElementById("pagination");
-                    pag.innerHTML = "";
-                    for (let i = 1; i <= data.totalPages; i++) {
-                        const active = i === data.currentPage;
-                        pag.innerHTML += `<button onclick="loadOrders(${i})" class="btn btn-sm ${active ? 'btn-primary' : 'btn-ghost'}" style="min-width:2rem;">${i}</button>`;
+
+                    function removeOrderItem(index) { orderItems.splice(index, 1); renderOrderItems(); }
+
+                    function updateItemQuantity(index, newQty) {
+                        if (newQty < 1) { removeOrderItem(index); return; }
+                        orderItems[index].quantity = newQty;
+                        renderOrderItems();
                     }
-                });
+
+                    function renderOrderItems() {
+                        const container = document.getElementById("orderItemsContainer");
+                        const tbody = document.getElementById("orderItemsBody");
+                        tbody.innerHTML = "";
+                        if (orderItems.length === 0) { container.classList.add("hidden"); return; }
+                        container.classList.remove("hidden");
+                        let total = 0;
+                        orderItems.forEach((item, idx) => {
+                            const subtotal = item.price * item.quantity;
+                            total += subtotal;
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td style="padding:0.6rem 1rem;">${escapeHtml(item.name)}</td>
+                                    <td style="text-align:center;padding:0.6rem 0.5rem;">
+                                        <input type="number" value="${item.quantity}" min="1"
+                                               class="form-control" style="width:60px;display:inline-block;text-align:center;padding:0.3rem;"
+                                               onchange="updateItemQuantity(${idx}, parseInt(this.value))">
+                                    </td>
+                                    <td style="text-align:right;padding:0.6rem 1rem;">$${item.price.toFixed(2)}</td>
+                                    <td style="text-align:right;padding:0.6rem 1rem;font-weight:600;">$${subtotal.toFixed(2)}</td>
+                                    <td style="text-align:center;padding:0.6rem 0.5rem;">
+                                        <button onclick="removeOrderItem(${idx})" class="btn btn-ghost btn-sm" style="color:#dc2626;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>`;
+                        });
+                        document.getElementById("orderTotal").textContent = `$${total.toFixed(2)}`;
+                    }
+
+                    function resetCreateForm() {
+                        orderItems = [];
+                        renderOrderItems();
+                        clearCustomer();
+                        document.getElementById("branchSelect").value = "";
+                        document.getElementById("menuItemSelect").innerHTML = '<option value="">Select Menu Item</option>';
+                        document.getElementById("orderNotes").value = "";
+                        document.getElementById("itemQuantity").value = 1;
+                        hideQuickCreate();
+                        menuItemsCache = [];
+                    }
+
+                    function loadBranches() {
+                        fetch("/Order/GetBranches").then(r => r.json()).then(data => {
+                            const branchFilter = document.getElementById("branchFilter");
+                            const createBranch = document.getElementById("branchSelect");
+                            data.forEach(b => {
+                                branchFilter.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
+                                createBranch.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
+                            });
+                        });
+                    }
+
+                    function loadMenuItems(branchId) {
+                        fetch(`/Order/GetMenuItems?branchId=${branchId}`)
+                            .then(r => r.json())
+                            .then(data => {
+                                menuItemsCache = data;
+                                const select = document.getElementById("menuItemSelect");
+                                select.innerHTML = '<option value="">Select Menu Item</option>';
+                                data.forEach(m => {
+                                    select.innerHTML += `<option value="${m.id}">${escapeHtml(m.name)} (${escapeHtml(m.category)}) - $${m.price.toFixed(2)}</option>`;
+                                });
+                            });
+                    }
+
+                    function loadOrders(page = 1) {
+                        currentPage = page;
+                        const search = document.getElementById("search").value;
+                        const branchId = document.getElementById("branchFilter").value;
+                        const date = document.getElementById("dateFilter").value;
+                        fetch(`/Order/GetOrders?status=${currentStatus}&search=${encodeURIComponent(search)}&branchId=${branchId}&orderDate=${date}&page=${page}`)
+                            .then(r => r.json()).then(data => {
+                                const tbody = document.getElementById("ordersTable");
+                                tbody.innerHTML = "";
+                                if (data.orders.length === 0) {
+                                    tbody.innerHTML = '<tr><td colspan="8" style="padding:2rem;text-align:center;color:var(--text-tertiary);">No orders found</td></tr>';
+                                }
+                                data.orders.forEach(o => {
+                                    const statusBadge = getStatusBadge(o.status);
+                                    tbody.innerHTML += `
+                                        <tr>
+                                            <td style="font-weight:600;">${escapeHtml(o.orderNumber)}</td>
+                                            <td>${escapeHtml(o.customerName)}</td>
+                                            <td>${escapeHtml(o.branchName)}</td>
+                                            <td>${o.orderDate}</td>
+                                            <td style="text-align:center;">${o.itemCount}</td>
+                                            <td style="font-weight:600;">$${o.totalAmount.toFixed(2)}</td>
+                                            <td>${statusBadge}</td>
+                                            <td style="white-space:nowrap;">
+                                                <button onclick="viewOrder(${o.id})" class="btn btn-ghost btn-sm">View</button>
+                                                ${o.status !== 'Completed' && o.status !== 'Cancelled' ? `
+                                                    <button onclick="updateOrderStatus(${o.id}, 'Completed')" class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;">Done</button>
+                                                    <button onclick="cancelOrder(${o.id})" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">Cancel</button>
+                                                ` : ''}
+                                            </td>
+                                        </tr>`;
+                                });
+                                document.getElementById("orderCount").innerText = `Showing ${data.orders.length} of ${data.totalCount} orders`;
+                                const pag = document.getElementById("pagination");
+                                pag.innerHTML = "";
+                                for (let i = 1; i <= data.totalPages; i++) {
+                                    const active = i === data.currentPage;
+                                    pag.innerHTML += `<button onclick="loadOrders(${i})" class="btn btn-sm ${active ? 'btn-primary' : 'btn-ghost'}" style="min-width:2rem;">${i}</button>`;
+                                }
+                            });
+                    }
+
+                    function getStatusBadge(status) {
+                        const classes = {
+                            'Pending': 'badge badge-warning',
+                            'Preparing': 'badge badge-info',
+                            'Ready': 'badge badge-accent',
+                            'Completed': 'badge badge-success',
+                            'Cancelled': 'badge badge-danger'
+                        };
+                        const cls = classes[status] || 'badge badge-neutral';
+                        return `<span class="${cls}">${status}</span>`;
+                    }
+
+                    function viewOrder(id) {
+                        fetch(`/Order/GetOrderDetails/${id}`).then(r => r.json()).then(o => {
+                            const details = document.getElementById("orderDetails");
+                            let itemsHtml = '';
+                            if (o.items && o.items.length > 0) {
+                                itemsHtml = `<table class="premium-table" style="margin-top:0.75rem;">
+                                    <thead><tr><th>Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Price</th><th style="text-align:right;">Subtotal</th></tr></thead><tbody>`;
+                                o.items.forEach(i => {
+                                    itemsHtml += `<tr>
+                                        <td>${escapeHtml(i.name)}</td>
+                                        <td style="text-align:center;">${i.quantity}</td>
+                                        <td style="text-align:right;">$${i.unitPrice.toFixed(2)}</td>
+                                        <td style="text-align:right;font-weight:600;">$${i.subtotal.toFixed(2)}</td>
+                                    </tr>`;
+                                });
+                                itemsHtml += `</tbody></table>`;
+                            }
+                            details.innerHTML = `
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                                    <p><strong>Order #:</strong> ${escapeHtml(o.orderNumber)}</p>
+                                    <p><strong>Status:</strong> ${getStatusBadge(o.status)}</p>
+                                    <p><strong>Customer:</strong> ${escapeHtml(o.customer.name)}</p>
+                                    <p><strong>Phone:</strong> ${escapeHtml(o.customer.phone || 'N/A')}</p>
+                                    <p><strong>Branch:</strong> ${escapeHtml(o.branch)}</p>
+                                    <p><strong>Date:</strong> ${o.orderDate}</p>
+                                </div>
+                                <div style="margin-top:1rem;"><strong>Items:</strong>${itemsHtml}</div>
+                                <div style="margin-top:0.75rem;text-align:right;font-size:1.1rem;font-weight:700;color:var(--accent);">Total: $${o.totalAmount.toFixed(2)}</div>
+                                ${o.notes ? `<p style="margin-top:0.5rem;color:var(--text-tertiary);font-size:0.85rem;"><strong>Notes:</strong> ${escapeHtml(o.notes)}</p>` : ''}
+                            `;
+                            openModal('viewOrderModal');
+                        });
+                    }
+
+                    function createOrder() {
+                        const customerId = document.getElementById("customerId").value;
+                        const branchId = document.getElementById("branchSelect").value;
+                        if (!customerId) { ActionCard.warning('Missing Customer', 'Please select a customer.'); return; }
+                        if (!branchId) { ActionCard.warning('Missing Branch', 'Please select a branch.'); return; }
+                        if (orderItems.length === 0) { ActionCard.warning('No Items', 'Please add at least one item to the order.'); return; }
+                        const request = {
+                            customerId: parseInt(customerId),
+                            branchId: parseInt(branchId),
+                            notes: document.getElementById("orderNotes").value,
+                            items: orderItems.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity }))
+                        };
+                        document.getElementById("saveOrderBtn").disabled = true;
+                        document.getElementById("saveOrderBtn").textContent = "Creating...";
+                        fetch("/Order/CreateOrder", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
+                            body: JSON.stringify(request)
+                        }).then(r => r.json()).then(res => {
+                            document.getElementById("saveOrderBtn").disabled = false;
+                            document.getElementById("saveOrderBtn").innerHTML = '<i class="fas fa-save"></i> Create Order';
+                            if (res.success) {
+                                closeModal('createOrderModal');
+                                loadOrders();
+                                ActionCard.success('Order Created', `Order ${res.orderNumber} has been created successfully.`, { autoDismiss: 3000 });
+                            } else ActionCard.error('Order Failed', res.message);
+                        }).catch(() => {
+                            document.getElementById("saveOrderBtn").disabled = false;
+                            document.getElementById("saveOrderBtn").innerHTML = '<i class="fas fa-save"></i> Create Order';
+                        });
+                    }
+
+                    async function updateOrderStatus(id, status) {
+                        const ok = await ActionCard.confirm('Update Status', `Are you sure you want to mark this order as ${status}?`, { okText: 'Yes, Update' });
+                        if (!ok) return;
+                        fetch("/Order/UpdateOrderStatus", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
+                            body: JSON.stringify({ orderId: id, newStatus: status })
+                        }).then(r => r.json()).then(res => {
+                            if (res.success) { loadOrders(); ActionCard.success('Status Updated', `Order status changed to ${status}.`, { autoDismiss: 2500 }); }
+                            else ActionCard.error('Error', res.message);
+                        });
+                    }
+
+                    async function cancelOrder(id) {
+                        const reason = await ActionCard.prompt('Cancel Order', 'Please provide a reason for cancellation:', { placeholder: 'Reason...', okText: 'Cancel Order' });
+                        if (reason === null) return;
+                        fetch("/Order/CancelOrder", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
+                            body: JSON.stringify({ orderId: id, reason: reason || "Cancelled by staff" })
+                        }).then(r => r.json()).then(res => {
+                            if (res.success) { loadOrders(); ActionCard.success('Order Cancelled', 'The order has been cancelled.', { autoDismiss: 2500 }); }
+                            else ActionCard.error('Error', res.message);
+                        });
+                    }
+
+                    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+                    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+                    function getToken() { return document.querySelector('[name="__RequestVerificationToken"]').value; }
+                    function escapeHtml(text) {
+                        if (!text) return '';
+                        const div = document.createElement('div');
+                        div.appendChild(document.createTextNode(text));
+                        return div.innerHTML;
+                    }
+            </script>
         }
 
-        function getStatusBadge(status) {
-            const classes = {
-                'Pending': 'badge badge-warning',
-                'Preparing': 'badge badge-info',
-                'Ready': 'badge badge-accent',
-                'Completed': 'badge badge-success',
-                'Cancelled': 'badge badge-danger'
-            };
-            const cls = classes[status] || 'badge badge-neutral';
-            return `<span class="${cls}">${status}</span>`;
-        }
-
-        function viewOrder(id) {
-            fetch(`/Order/GetOrderDetails/${id}`).then(r => r.json()).then(o => {
-                const details = document.getElementById("orderDetails");
-                let itemsHtml = '';
-                if (o.items && o.items.length > 0) {
-                    itemsHtml = `<table class="premium-table" style="margin-top:0.75rem;">
-                        <thead><tr><th>Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Price</th><th style="text-align:right;">Subtotal</th></tr></thead><tbody>`;
-                    o.items.forEach(i => {
-                        itemsHtml += `<tr>
-                            <td>${escapeHtml(i.name)}</td>
-                            <td style="text-align:center;">${i.quantity}</td>
-                            <td style="text-align:right;">$${i.unitPrice.toFixed(2)}</td>
-                            <td style="text-align:right;font-weight:600;">$${i.subtotal.toFixed(2)}</td>
-                        </tr>`;
-                    });
-                    itemsHtml += `</tbody></table>`;
+        @section Styles {
+            <style>
+                .tab-btn {
+                    padding: 0.4rem 0.9rem;
+                    border-radius: 8px;
+                    border: 1px solid var(--border-light);
+                    background: var(--bg-surface);
+                    color: var(--text-secondary);
+                    font-size: 0.8rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s;
                 }
-                details.innerHTML = `
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-                        <p><strong>Order #:</strong> ${escapeHtml(o.orderNumber)}</p>
-                        <p><strong>Status:</strong> ${getStatusBadge(o.status)}</p>
-                        <p><strong>Customer:</strong> ${escapeHtml(o.customer.name)}</p>
-                        <p><strong>Phone:</strong> ${escapeHtml(o.customer.phone || 'N/A')}</p>
-                        <p><strong>Branch:</strong> ${escapeHtml(o.branch)}</p>
-                        <p><strong>Date:</strong> ${o.orderDate}</p>
-                    </div>
-                    <div style="margin-top:1rem;"><strong>Items:</strong>${itemsHtml}</div>
-                    <div style="margin-top:0.75rem;text-align:right;font-size:1.1rem;font-weight:700;color:var(--accent);">Total: $${o.totalAmount.toFixed(2)}</div>
-                    ${o.notes ? `<p style="margin-top:0.5rem;color:var(--text-tertiary);font-size:0.85rem;"><strong>Notes:</strong> ${escapeHtml(o.notes)}</p>` : ''}
-                `;
-                openModal('viewOrderModal');
-            });
-        }
+                .tab-btn:hover {
+                    background: var(--bg-body);
+                }
 
-        function createOrder() {
-            const customerId = document.getElementById("customerId").value;
-            const branchId = document.getElementById("branchSelect").value;
-            if (!customerId) { ActionCard.warning('Missing Customer', 'Please select a customer.'); return; }
-            if (!branchId) { ActionCard.warning('Missing Branch', 'Please select a branch.'); return; }
-            if (orderItems.length === 0) { ActionCard.warning('No Items', 'Please add at least one item to the order.'); return; }
-            const request = {
-                customerId: parseInt(customerId),
-                branchId: parseInt(branchId),
-                notes: document.getElementById("orderNotes").value,
-                items: orderItems.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity }))
-            };
-            document.getElementById("saveOrderBtn").disabled = true;
-            document.getElementById("saveOrderBtn").textContent = "Creating...";
-            fetch("/Order/CreateOrder", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                body: JSON.stringify(request)
-            }).then(r => r.json()).then(res => {
-                document.getElementById("saveOrderBtn").disabled = false;
-                document.getElementById("saveOrderBtn").innerHTML = '<i class="fas fa-save"></i> Create Order';
-                if (res.success) {
-                    closeModal('createOrderModal');
-                    loadOrders();
-                    ActionCard.success('Order Created', `Order ${res.orderNumber} has been created successfully.`, { autoDismiss: 3000 });
-                } else ActionCard.error('Order Failed', res.message);
-            }).catch(() => {
-                document.getElementById("saveOrderBtn").disabled = false;
-                document.getElementById("saveOrderBtn").innerHTML = '<i class="fas fa-save"></i> Create Order';
-            });
+                .tab-btn.active {
+                    background: var(--accent);
+                    color: #fff;
+                    border-color: var(--accent);
+                }
+            </style>
         }
-
-        async function updateOrderStatus(id, status) {
-            const ok = await ActionCard.confirm('Update Status', `Are you sure you want to mark this order as ${status}?`, { okText: 'Yes, Update' });
-            if (!ok) return;
-            fetch("/Order/UpdateOrderStatus", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                body: JSON.stringify({ orderId: id, newStatus: status })
-            }).then(r => r.json()).then(res => {
-                if (res.success) { loadOrders(); ActionCard.success('Status Updated', `Order status changed to ${status}.`, { autoDismiss: 2500 }); }
-                else ActionCard.error('Error', res.message);
-            });
-        }
-
-        async function cancelOrder(id) {
-            const reason = await ActionCard.prompt('Cancel Order', 'Please provide a reason for cancellation:', { placeholder: 'Reason...', okText: 'Cancel Order' });
-            if (reason === null) return;
-            fetch("/Order/CancelOrder", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                body: JSON.stringify({ orderId: id, reason: reason || "Cancelled by staff" })
-            }).then(r => r.json()).then(res => {
-                if (res.success) { loadOrders(); ActionCard.success('Order Cancelled', 'The order has been cancelled.', { autoDismiss: 2500 }); }
-                else ActionCard.error('Error', res.message);
-            });
-        }
-
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function getToken() { return document.querySelector('[name="__RequestVerificationToken"]').value; }
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.appendChild(document.createTextNode(text));
-            return div.innerHTML;
-        }
-    </script>
-}
-
-@section Styles {
-<style>
-    .tab-btn {
-        padding: 0.4rem 0.9rem;
-        border-radius: 8px;
-        border: 1px solid var(--border-light);
-        background: var(--bg-surface);
-        color: var(--text-secondary);
-        font-size: 0.8rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .tab-btn:hover { background: var(--bg-body); }
-    .tab-btn.active {
-        background: var(--accent);
-        color: #fff;
-        border-color: var(--accent);
-    }
-</style>
-}

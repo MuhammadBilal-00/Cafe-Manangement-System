@@ -26,8 +26,8 @@
 </div>
 
 <!-- Filters -->
-<form method="get" class="card" style="margin-bottom:1.5rem;">
-    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:end;">
+<form method="get" class="card mb-6">
+    <div class="card-body flex flex-wrap gap-4 items-end">
         <div class="form-group" style="min-width:140px;margin:0;">
             <label class="form-label">From</label>
             <input type="date" name="from" value="@from.ToString("yyyy-MM-dd")" class="form-control" />
@@ -225,7 +225,7 @@
 
 <!-- Orders Detail Table -->
 <div class="card">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="card-header flex justify-between items-center">
         <span>Orders Detail</span>
         <span class="caption">@Model.Orders.Count order(s)</span>
     </div>

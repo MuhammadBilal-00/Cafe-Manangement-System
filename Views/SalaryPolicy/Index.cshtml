@@ -12,7 +12,7 @@
 <!-- Active Policy Highlight -->
 @if (Model.ActivePolicy != null)
 {
-    <div class="card" style="margin-bottom:1.5rem; border-left:4px solid var(--accent);">
+    <div class="card card-accent mb-6">
         <div class="card-body">
             <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
                 <i class="fas fa-check-circle" style="color:#22c55e; font-size:1.25rem;"></i>
@@ -46,8 +46,8 @@
 }
 else
 {
-    <div class="card" style="margin-bottom:1.5rem; border-left:4px solid #f59e0b; background:rgba(245,158,11,0.04);">
-        <div class="card-body" style="padding:1rem 1.25rem;">
+    <div class="card card-accent-warning mb-6 bg-[rgba(245,158,11,0.04)]">
+        <div class="card-body card-body-compact">
             <p class="body-text" style="margin:0; color:#92400e;">
                 <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>
                 No active policy. Create and activate one before generating salaries.
@@ -58,7 +58,7 @@ else
 
 <!-- Policies Table -->
 <div class="card">
-    <div class="card-body" style="padding:0;">
+    <div class="card-body card-body-flush">
         <div style="overflow-x:auto;">
             <table class="premium-table">
                 <thead>

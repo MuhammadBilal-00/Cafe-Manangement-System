@@ -12,53 +12,67 @@
     </div>
 </div>
 
-<div class="card" style="max-width:640px;overflow:hidden;">
-    <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:24px 28px;color:#fff;">
+<div class="card max-w-[640px] overflow-hidden">
+    <div class="bg-gradient-to-br from-red-600 to-red-700 px-7 py-6 text-white">
         <div class="flex items-center gap-4">
-            <div style="width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;">
-                <i class="fas fa-triangle-exclamation" style="font-size:20px;"></i>
+            <div class="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center">
+                <i class="fas fa-triangle-exclamation text-xl"></i>
             </div>
             <div>
                 <h2 style="font-size:1.15rem;font-weight:700;">Confirm Deletion</h2>
-                <p style="color:rgba(255,255,255,0.75);font-size:13px;">Items used in orders will be marked unavailable instead.</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="card-body">
-        <div class="space-y-4 mb-5">
-            <div><span class="caption">Item Name</span><p class="font-semibold" style="color:var(--text-primary);font-size:16px;">@Model.Name</p></div>
-            <div class="form-row" style="gap:20px;">
-                <div><span class="caption">Category</span><p style="color:var(--text-secondary);">@Model.Category?.Name</p></div>
-                <div><span class="caption">Branch</span><p style="color:var(--text-secondary);">@Model.Branch?.Name</p></div>
-            </div>
-            <div class="form-row" style="gap:20px;">
-                <div><span class="caption">Price</span><p class="font-medium" style="color:var(--accent);">$@Model.Price.ToString("F2")</p></div>
-                <div>
-                    <span class="caption">Status</span>
-                    <p>@(Model.Availability ? Html.Raw("<span class='badge badge-success'>Available</span>") : Html.Raw("<span class='badge badge-danger'>Unavailable</span>"))</p>
+                <p style="color:rgba(255,255,255,0.75);font-size:13px;">Items used in orders will be marked unavailable
+                    instead.</p>
                 </div>
             </div>
-            @if (!string.IsNullOrEmpty(Model.Description))
-            {
-                <div><span class="caption">Description</span><p class="text-sm" style="color:var(--text-secondary);">@Model.Description</p></div>
-            }
         </div>
 
-        @if (!string.IsNullOrEmpty(Model.ImageUrl))
-        {
-            <img src="@Model.ImageUrl" alt="@Model.Name" style="width:180px;height:120px;object-fit:cover;border-radius:var(--radius-card);margin-bottom:20px;" onerror="this.style.display='none'" />
-        }
+        <div class="card-body">
+            <div class="space-y-4 mb-5">
+                <div><span class="caption">Item Name</span>
+                    <p class="font-semibold" style="color:var(--text-primary);font-size:16px;">@Model.Name</p>
+                </div>
+                <div class="form-row" style="gap:20px;">
+                    <div><span class="caption">Category</span>
+                        <p style="color:var(--text-secondary);">@Model.Category?.Name</p>
+                    </div>
+                    <div><span class="caption">Branch</span>
+                        <p style="color:var(--text-secondary);">@Model.Branch?.Name</p>
+                    </div>
+                </div>
+                <div class="form-row" style="gap:20px;">
+                    <div><span class="caption">Price</span>
+                        <p class="font-medium" style="color:var(--accent);">$@Model.Price.ToString("F2")</p>
+                    </div>
+                    <div>
+                        <span class="caption">Status</span>
+                        <p>@(Model.Availability ? Html.Raw("<span class='badge badge-success'>Available</span>") :
+                        Html.Raw("<span class='badge badge-danger'>Unavailable</span>"))</p>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div><span class="caption">Description</span>
+                            <p class="text-sm" style="color:var(--text-secondary);">@Model.Description</p>
+                        </div>
+                    }
+                </div>
 
-        <div class="divider"></div>
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" alt="@Model.Name"
+                         style="width:180px;height:120px;object-fit:cover;border-radius:var(--radius-card);margin-bottom:20px;"
+                         onerror="this.style.display='none'" />
+                }
 
-        <form asp-action="Delete" method="post">
-            @Html.AntiForgeryToken()
-            <input type="hidden" asp-for="Id" />
-            <div class="flex justify-end gap-3">
-                <a asp-action="Index" class="btn btn-ghost">Cancel</a>
-                <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete Item</button>
+                <div class="divider"></div>
+
+                <form asp-action="Delete" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <div class="flex justify-end gap-3">
+                        <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+                        <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete Item</button>
+                    </div>
+                </form>
             </div>
-        </form>
-    </div>
-</div>
+        </div>

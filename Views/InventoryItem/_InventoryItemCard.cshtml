@@ -6,60 +6,77 @@
     else stockStatus = "normal";
 
     var statusLabel = stockStatus == "critical" ? "Out of Stock" : stockStatus == "low" ? "Low Stock" : "In Stock";
-    var badgeClass = stockStatus == "critical" ? "badge badge-danger" : stockStatus == "low" ? "badge badge-warning" : "badge badge-success";
+    var badgeClass = stockStatus == "critical" ? "badge badge-danger" : stockStatus == "low" ? "badge badge-warning" :
+"badge badge-success";
 }
 
 <div class="inventory-card card" style="height:100%;display:flex;flex-direction:column;"
      data-name="@Model.Name.ToLower()" data-stock-status="@stockStatus">
-    <div class="card-body" style="flex:1;display:flex;flex-direction:column;padding:1rem;">
+    <div class="card-body flex-1 flex flex-col p-4">
         <!-- Header -->
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-bottom:0.75rem;">
+        <div
+            style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-bottom:0.75rem;">
             <div style="min-width:0;">
-                <h4 style="font-weight:600;font-size:0.9rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@Model.Name</h4>
-                <p class="caption" style="margin-top:0.15rem;"><i class="fas fa-building" style="font-size:0.6rem;margin-right:0.25rem;"></i> @Model.Branch?.Name</p>
-            </div>
-            <span class="@badgeClass" style="white-space:nowrap;">@statusLabel</span>
-        </div>
+                <h4
+                    style="font-weight:600;font-size:0.9rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    @Model.Name</h4>
+                    <p class="caption" style="margin-top:0.15rem;"><i class="fas fa-building"
+                                                                          style="font-size:0.6rem;margin-right:0.25rem;"></i> @Model.Branch?.Name</p>
+                    </div>
+                    <span class="@badgeClass" style="white-space:nowrap;">@statusLabel</span>
+                </div>
 
-        <!-- Metrics -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.75rem;">
-            <div style="text-align:center;padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
-                <span class="caption" style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;">Qty</span>
-                <p style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">@Model.Quantity.ToString("0.##")</p>
-            </div>
-            <div style="text-align:center;padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
-                <span class="caption" style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;">Unit</span>
-                <p style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">@Model.Unit</p>
-            </div>
-            <div style="text-align:center;padding:0.5rem;background:var(--accent-light);border-radius:10px;border:1px solid rgba(212,175,55,0.2);">
-                <span class="caption" style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);">Value</span>
-                <p style="font-weight:600;font-size:0.85rem;color:var(--accent);">$@((Model.Quantity * Model.UnitPrice).ToString("N2"))</p>
-            </div>
-        </div>
+                <!-- Metrics -->
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.75rem;">
+                    <div
+                        style="text-align:center;padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
+                        <span class="caption"
+                              style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;">Qty</span>
+                        <p style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">@Model.Quantity.ToString("0.##")
+                        </p>
+                    </div>
+                    <div
+                        style="text-align:center;padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
+                        <span class="caption"
+                              style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;">Unit</span>
+                        <p style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">@Model.Unit</p>
+                    </div>
+                    <div
+                        style="text-align:center;padding:0.5rem;background:var(--accent-light);border-radius:10px;border:1px solid rgba(212,175,55,0.2);">
+                        <span class="caption"
+                              style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);">Value</span>
+                        <p style="font-weight:600;font-size:0.85rem;color:var(--accent);">$@((Model.Quantity *
+                                                Model.UnitPrice).ToString("N2"))</p>
+                        </div>
+                    </div>
 
-        <!-- Reorder / Price -->
-        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-tertiary);margin-bottom:0.75rem;">
-            <span>Reorder at <strong style="color:var(--text-primary);">@Model.ReorderLevel.ToString("0.##")</strong></span>
-            <span>Price: <strong style="color:var(--text-primary);">$@Model.UnitPrice.ToString("N2")</strong></span>
-        </div>
+                    <!-- Reorder / Price -->
+                    <div
+                        style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-tertiary);margin-bottom:0.75rem;">
+                        <span>Reorder at <strong
+                            style="color:var(--text-primary);">@Model.ReorderLevel.ToString("0.##")</strong></span>
+                            <span>Price: <strong style="color:var(--text-primary);">$@Model.UnitPrice.ToString("N2")</strong></span>
+                        </div>
 
-        <div class="divider" style="margin:0;"></div>
+                        <div class="divider" style="margin:0;"></div>
 
-        <!-- Actions -->
-        <div style="margin-top:auto;padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center;">
-            <button type="button"
-                    onclick="openRestockModal('@Model.Id', '@Model.Name.Replace("'", "\\'")', '@Model.Unit')"
-                    class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;">
-                <i class="fas fa-plus"></i> Restock
-            </button>
-            <div style="display:flex;gap:0.4rem;">
-                <a href="@Url.Action("Edit", "InventoryItem", new { id = Model.Id })" class="btn btn-ghost btn-sm" title="Edit">
-                    <i class="fas fa-edit"></i>
-                </a>
-                <a href="@Url.Action("Delete", "InventoryItem", new { id = Model.Id })" class="btn btn-ghost btn-sm" style="color:#dc2626;" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+                        <!-- Actions -->
+                        <div style="margin-top:auto;padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center;">
+                            <button type="button"
+                                    onclick="openRestockModal('@Model.Id', '@Model.Name.Replace("'", "\\'")', '@Model.Unit')"
+                                    class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;">
+                                <i class="fas fa-plus"></i> Restock
+                            </button>
+                            <div style="display:flex;gap:0.4rem;">
+                                <a href="@Url.Action("Edit", "InventoryItem", new { id = Model.Id })" class="btn btn-ghost btn-sm"
+                                       title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="@Url.Action("Delete", "InventoryItem", new { id = Model.Id })" class="btn btn-ghost btn-sm"
+                                       style="color:#dc2626;" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>

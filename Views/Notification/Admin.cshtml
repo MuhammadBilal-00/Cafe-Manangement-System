@@ -40,8 +40,8 @@
 </div>
 
 <!-- KPI Cards Row 1: Notifications -->
-<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:1rem;margin-bottom:1rem;">
-    <div class="card" style="padding:1.25rem;position:relative;overflow:hidden;border-left:4px solid #6366f1;">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div class="card card-accent-info p-5 relative overflow-hidden">
         <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-bell" style="color:#6366f1;font-size:1rem;"></i>
         </div>
@@ -51,7 +51,7 @@
             <span style="color:#16a34a;">@notifRead read</span> · <span style="color:#ef4444;">@notifUnread unread</span>
         </div>
     </div>
-    <div class="card" style="padding:1.25rem;position:relative;overflow:hidden;border-left:4px solid #16a34a;">
+    <div class="card card-accent-success p-5 relative overflow-hidden">
         <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:rgba(22,163,106,0.1);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-envelope-circle-check" style="color:#16a34a;font-size:1rem;"></i>
         </div>
@@ -59,7 +59,7 @@
         <div style="font-size:1.75rem;font-weight:800;color:#16a34a;line-height:1;">@emailSent</div>
         <div class="caption" style="margin-top:0.35rem;">of @emailTotal total emails</div>
     </div>
-    <div class="card" style="padding:1.25rem;position:relative;overflow:hidden;border-left:4px solid #d97706;">
+    <div class="card card-accent-warning p-5 relative overflow-hidden">
         <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:rgba(217,119,6,0.1);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-clock-rotate-left" style="color:#d97706;font-size:1rem;"></i>
         </div>
@@ -80,7 +80,7 @@
                 <i class="fas fa-chart-pie" style="color:#6366f1;margin-right:0.35rem;"></i>Email Delivery
             </h3>
         </div>
-        <div class="card-body" style="position:relative;height:200px;">
+        <div class="card-body relative h-[200px]">
             <canvas id="emailPieChart"></canvas>
         </div>
     </div>
@@ -92,7 +92,7 @@
                 <i class="fas fa-chart-pie" style="color:#f59e0b;margin-right:0.35rem;"></i>Notification Types
             </h3>
         </div>
-        <div class="card-body" style="position:relative;height:200px;">
+        <div class="card-body relative h-[200px]">
             <canvas id="typePieChart"></canvas>
         </div>
     </div>
@@ -104,7 +104,7 @@
                 <i class="fas fa-chart-pie" style="color:#10b981;margin-right:0.35rem;"></i>Target Audience
             </h3>
         </div>
-        <div class="card-body" style="position:relative;height:200px;">
+        <div class="card-body relative h-[200px]">
             <canvas id="targetPieChart"></canvas>
         </div>
     </div>
@@ -116,7 +116,7 @@
                 <i class="fas fa-chart-area" style="color:#ec4899;margin-right:0.35rem;"></i>Email Volume (7d)
             </h3>
         </div>
-        <div class="card-body" style="position:relative;height:200px;">
+        <div class="card-body relative h-[200px]">
             <canvas id="emailTrendChart"></canvas>
         </div>
     </div>
@@ -227,7 +227,7 @@
                 <i class="fas fa-inbox" style="color:#3b82f6;margin-right:0.4rem;"></i>Recent Email Queue
             </h3>
         </div>
-        <div class="card-body" style="padding:0;">
+        <div class="card-body card-body-flush">
             @if (!recentEmails.Any())
             {
                 <div style="text-align:center;padding:3rem 1rem;">

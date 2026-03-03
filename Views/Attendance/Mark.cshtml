@@ -3,7 +3,7 @@
     ViewData["Title"] = "Mark Attendance";
 }
 
-<div style="max-width:720px; margin:0 auto;">
+<div class="max-w-[720px] mx-auto">
     <!-- Header -->
     <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
         <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
@@ -11,8 +11,8 @@
     </div>
 
     <!-- Info Banner -->
-    <div class="card" style="border-left:4px solid var(--accent); margin-bottom:1.5rem;">
-        <div class="card-body" style="padding:1rem 1.25rem;">
+    <div class="card card-accent mb-6">
+        <div class="card-body card-body-compact">
             <p class="caption" style="margin:0;">
                 <i class="fas fa-info-circle" style="color:var(--accent); margin-right:0.5rem;"></i>
                 Status is <strong>automatically calculated</strong> from check-in/check-out times:

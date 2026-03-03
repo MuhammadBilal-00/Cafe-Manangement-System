@@ -16,10 +16,12 @@
             <i class="fas fa-user-circle" style="color:var(--accent);margin-right:0.5rem;"></i>
             Profile Information
         </div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:1.25rem;">
+        <div class="card-body flex flex-col gap-5">
             <!-- Avatar -->
-            <div style="display:flex;align-items:center;gap:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-light);">
-                <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#b8860b);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.25rem;">
+            <div
+                style="display:flex;align-items:center;gap:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-light);">
+                <div
+                    style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#b8860b);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.25rem;">
                     @(Model.Name?.Length > 0 ? Model.Name[0].ToString().ToUpper() : "?")
                 </div>
                 <div>
@@ -38,24 +40,26 @@
             </div>
             <div>
                 <span class="caption" style="text-transform:uppercase;letter-spacing:0.08em;">Member Since</span>
-                <p style="font-weight:500;color:var(--text-primary);margin-top:0.15rem;">@Model.CreatedDate.ToString("MMMM dd, yyyy")</p>
+                <p style="font-weight:500;color:var(--text-primary);margin-top:0.15rem;">
+                    @Model.CreatedDate.ToString("MMMM dd, yyyy")</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-link" style="color:var(--accent);margin-right:0.5rem;"></i>
+                Quick Links
+            </div>
+            <div class="card-body flex flex-col gap-3">
+                <a asp-controller="User" asp-action="Settings" class="btn btn-secondary"
+                       style="justify-content:flex-start;">
+                    <i class="fas fa-cog"></i> Account Settings
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-secondary" style="justify-content:flex-start;">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
             </div>
         </div>
     </div>
-
-    <!-- Quick Links -->
-    <div class="card">
-        <div class="card-header">
-            <i class="fas fa-link" style="color:var(--accent);margin-right:0.5rem;"></i>
-            Quick Links
-        </div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:0.75rem;">
-            <a asp-controller="User" asp-action="Settings" class="btn btn-secondary" style="justify-content:flex-start;">
-                <i class="fas fa-cog"></i> Account Settings
-            </a>
-            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary" style="justify-content:flex-start;">
-                <i class="fas fa-home"></i> Dashboard
-            </a>
-        </div>
-    </div>
-</div>

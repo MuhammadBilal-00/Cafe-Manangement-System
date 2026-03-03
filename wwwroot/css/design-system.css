@@ -523,17 +523,40 @@ body {
   padding: 28px;
 }
 
-/* ── Cards ─────────────────────────────────────────────────── */
+/* ── Cards — Premium Design ────────────────────────────────── */
 .card {
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-xs);
-  transition: box-shadow var(--transition-base);
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.03);
+  transition: box-shadow var(--transition-slow), transform var(--transition-slow), border-color var(--transition-slow);
+  position: relative;
 }
 
-.card-hover:hover {
-  box-shadow: var(--shadow-md);
+.card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.07);
+}
+
+.card-hover:hover,
+a.card:hover,
+form.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.07), 0 12px 32px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+}
+
+.card-interactive {
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.07), 0 12px 32px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+}
+
+.card-interactive:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.03);
 }
 
 .card-header {
@@ -541,10 +564,23 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+}
+
+.card-header + .card-body {
+  padding-top: 16px;
 }
 
 .card-body {
-  padding: 20px 24px;
+  padding: 24px;
+}
+
+.card-body-flush {
+  padding: 0;
+}
+
+.card-body-compact {
+  padding: 16px 24px;
 }
 
 .card-footer {
@@ -552,56 +588,125 @@ body {
   border-top: 1px solid var(--border-light);
 }
 
-/* ── KPI Stat Cards ────────────────────────────────────────── */
+/* Card accent variants */
+.card-accent {
+  border-left: 4px solid var(--accent);
+}
+
+.card-accent-info {
+  border-left: 4px solid var(--info);
+}
+
+.card-accent-success {
+  border-left: 4px solid var(--success);
+}
+
+.card-accent-warning {
+  border-left: 4px solid var(--warning);
+  background: rgba(245,158,11,0.02);
+}
+
+.card-accent-danger {
+  border-left: 4px solid var(--danger);
+  background: rgba(239,68,68,0.02);
+}
+
+/* Dark card variant */
+.card-dark {
+  background: linear-gradient(135deg, #1e2a3a 0%, #2d3f54 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #e2e8f0;
+}
+
+.card-dark .card-header {
+  border-color: rgba(255,255,255,0.08);
+}
+
+.card-dark .section-title,
+.card-dark .card-header h3,
+.card-dark h3 {
+  color: #f1f5f9;
+}
+
+.card-dark .form-label,
+.card-dark label {
+  color: #cbd5e1;
+}
+
+/* ── KPI Stat Cards — Premium ──────────────────────────────── */
 .kpi-card {
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  padding: 22px 24px;
-  transition: all var(--transition-base);
+  border: 1px solid rgba(0,0,0,0.05);
+  padding: 24px;
+  transition: all var(--transition-slow);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.03);
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.15), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-slow);
 }
 
 .kpi-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.07), 0 12px 32px rgba(0,0,0,0.05);
+  transform: translateY(-3px);
+  border-color: rgba(0,0,0,0.08);
+}
+
+.kpi-card:hover::before {
+  opacity: 1;
 }
 
 .kpi-icon {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  transition: transform var(--transition-slow);
+}
+
+.kpi-card:hover .kpi-icon {
+  transform: scale(1.05);
 }
 
 .kpi-label {
   font-size: var(--text-sm);
   color: var(--text-tertiary);
   font-weight: 500;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
 }
 
 .kpi-value {
-  font-size: 1.75rem;
+  font-size: 1.875rem;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   line-height: 1.1;
 }
 
 .kpi-change {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: var(--text-xs);
   font-weight: 600;
-  margin-top: 8px;
-  padding: 2px 8px;
+  margin-top: 10px;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
 }
 

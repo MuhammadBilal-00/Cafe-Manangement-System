@@ -7,24 +7,32 @@
     <meta charset="utf-8" />
     <title>@ViewData["Title"] - Cafe</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Inter',system-ui,sans-serif;background:#f5f3f0;color:#1a1a2e;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
-        .thanks-card{max-width:400px;width:100%;background:#fff;border-radius:20px;padding:2.5rem 2rem;box-shadow:0 20px 60px rgba(0,0,0,0.08);border:1px solid #e8e5e0;text-align:center;}
-        .icon-wrap{width:56px;height:56px;background:#dcfce7;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin:0 auto 1.25rem;}
-        h1{font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;}
-        p{font-size:0.85rem;color:#6b7280;line-height:1.6;margin-bottom:1.5rem;}
-        .btn-home{display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.5rem;border-radius:12px;background:#1e2a3a;color:#fff;text-decoration:none;font-size:0.85rem;font-weight:600;transition:all 0.15s;}
-        .btn-home:hover{background:#2d3f54;transform:translateY(-1px);}
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+        theme: {
+        extend: {
+        colors: { accent: '#d4af37', sidebar: '#1e2a3a' },
+        fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        borderRadius: { card: '20px' },
+        }
+        }
+        }
+    </script>
 </head>
-<body>
-    <div class="thanks-card">
-        <div class="icon-wrap">✅</div>
-        <h1>Thank You!</h1>
-        <p>We've received your feedback and will use it to improve our service. Your opinion matters to us.</p>
-        <a href="@Url.Action("Index", "Home")" class="btn-home">Back to Home</a>
-    </div>
-</body>
-</html>
+<body class="font-sans bg-[#f5f3f0] text-[#1a1a2e] min-h-screen flex items-center justify-center p-6">
+    <div
+        class="max-w-[400px] w-full bg-white rounded-card px-8 py-10 shadow-[0_20px_60px_rgba(0,0,0,0.08)] border border-black/5 text-center transition-shadow duration-300 hover:shadow-[0_24px_64px_rgba(0,0,0,0.1)]">
+        <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-5">✅</div>
+        <h1 class="text-xl font-bold mb-2">Thank You!</h1>
+        <p class="text-sm text-gray-500 leading-relaxed mb-6">We've received your feedback and will use it to improve
+            our service. Your opinion matters to us.</p>
+            <a href="@Url.Action("Index", "Home")"
+                   class="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-sidebar text-white text-sm font-semibold no-underline transition-all duration-200 hover:bg-[#2d3f54] hover:-translate-y-0.5">Back
+                to Home</a>
+            </div>
+        </body>
+
+    </html>

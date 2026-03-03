@@ -20,8 +20,8 @@
 <!-- Active Policy Info -->
 @if (Model.ActivePolicy != null)
 {
-    <div class="card" style="border-left:4px solid var(--accent); margin-bottom:1.5rem;">
-        <div class="card-body" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+    <div class="card card-accent mb-6">
+        <div class="card-body flex items-center justify-between flex-wrap gap-4">
             <div style="display:flex; align-items:center; gap:0.75rem;">
                 <div class="kpi-icon" style="background:rgba(212,175,55,0.1); color:var(--accent); width:40px; height:40px; font-size:1rem;"><i class="fas fa-file-contract"></i></div>
                 <div>
@@ -42,8 +42,8 @@
 }
 else if (isOwner)
 {
-    <div class="card" style="border-left:4px solid #f59e0b; margin-bottom:1.5rem;">
-        <div class="card-body" style="padding:1rem 1.25rem;">
+    <div class="card card-accent-warning mb-6">
+        <div class="card-body card-body-compact">
             <p class="caption" style="margin:0;"><i class="fas fa-exclamation-triangle" style="color:#f59e0b; margin-right:0.5rem;"></i> No active salary policy found. <a asp-controller="SalaryPolicy" asp-action="Create" style="color:var(--accent); text-decoration:underline; font-weight:600;">Create one</a> before generating salaries.</p>
         </div>
     </div>
@@ -76,7 +76,7 @@ else if (isOwner)
 </div>
 
 <!-- Filters -->
-<div class="card" style="margin-bottom:1.5rem;">
+<div class="card mb-6">
     <div class="card-body">
         <form method="get" class="form-row" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
             <div class="form-group">
@@ -133,7 +133,7 @@ else if (isOwner)
 
 <!-- Salary Table -->
 <div class="card">
-    <div class="card-body" style="padding:0;">
+    <div class="card-body card-body-flush">
         <div style="overflow-x:auto;">
             <table class="premium-table">
                 <thead>
@@ -238,7 +238,7 @@ else if (isOwner)
 }
 
 <!-- Quick Actions -->
-<div class="card" style="margin-top:2rem; background:var(--sidebar-bg); border:none;">
+<div class="card card-dark mt-8 border-none">
     <div class="card-body">
         <h3 style="color:#fff; font-weight:600; margin-bottom:1rem;">Quick Actions</h3>
         <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
@@ -270,9 +270,9 @@ else if (isOwner)
 
 <!-- Salary Detail Modal -->
 <div id="salaryDetailModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-    <div class="card" style="width:100%; max-width:720px; max-height:90vh; overflow-y:auto; margin:1rem;">
-        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0; font-weight:600;"><i class="fas fa-user-circle" style="margin-right:0.5rem; color:var(--accent);"></i> Salary Details</h3>
+    <div class="card w-full max-w-[720px] max-h-[90vh] overflow-y-auto m-4">
+        <div class="card-header flex justify-between items-center">
+            <h3 class="m-0 font-semibold"><i class="fas fa-user-circle" style="margin-right:0.5rem; color:var(--accent);"></i> Salary Details</h3>
             <button onclick="closeSalaryModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-tertiary);">&times;</button>
         </div>
         <div class="card-body">
@@ -286,9 +286,9 @@ else if (isOwner)
 
 <!-- Add Adjustment Modal -->
 <div id="adjustSalaryModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-    <div class="card" style="width:100%; max-width:480px; margin:1rem;">
-        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0; font-weight:600;"><i class="fas fa-plus-circle" style="margin-right:0.5rem; color:#ea580c;"></i> Add Adjustment</h3>
+    <div class="card w-full max-w-[480px] m-4">
+        <div class="card-header flex justify-between items-center">
+            <h3 class="m-0 font-semibold"><i class="fas fa-plus-circle" style="margin-right:0.5rem; color:#ea580c;"></i> Add Adjustment</h3>
             <button onclick="closeAdjustModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-tertiary);">&times;</button>
         </div>
         <div class="card-body">

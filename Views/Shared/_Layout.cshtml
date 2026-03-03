@@ -21,7 +21,19 @@
                         sidebar: '#1e2a3a',
                     },
                     fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                    borderRadius: { card: '16px' }
+                    borderRadius: { card: '16px', 'card-lg': '20px' },
+                    boxShadow: {
+                        'card': '0 1px 3px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.03)',
+                        'card-hover': '0 4px 12px rgba(0,0,0,0.07), 0 12px 32px rgba(0,0,0,0.06)',
+                        'card-elevated': '0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)',
+                        'card-premium': '0 20px 60px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04)',
+                    },
+                    transitionDuration: {
+                        '350': '350ms',
+                    },
+                    transitionTimingFunction: {
+                        'premium': 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    },
                 }
             }
         }

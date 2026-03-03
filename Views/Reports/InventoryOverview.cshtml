@@ -21,126 +21,134 @@
         <h1 class="page-title" style="margin:0;">Inventory Overview</h1>
         <p class="body-text" style="margin-top:0.25rem;">Stock levels, values and health across all branches.</p>
     </div>
-    <a asp-action="Index" asp-controller="Reports" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Reports</a>
-</div>
+    <a asp-action="Index" asp-controller="Reports" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i>
+        Reports</a>
+    </div>
 
-<!-- Filter -->
-<form method="get" class="card" style="margin-bottom:1.5rem;">
-    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:end;">
-        <div class="form-group" style="min-width:180px;margin:0;">
-            <label class="form-label">Branch</label>
-            <select name="branchId" class="form-select">
-                <option value="">All branches</option>
-                @foreach (var b in branches)
-                {
-                    <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option>
-                }
-            </select>
+    <!-- Filter -->
+    <form method="get" class="card mb-6">
+        <div class="card-body flex flex-wrap gap-4 items-end">
+            <div class="form-group" style="min-width:180px;margin:0;">
+                <label class="form-label">Branch</label>
+                <select name="branchId" class="form-select">
+                    <option value="">All branches</option>
+                    @foreach (var b in branches)
+                    {
+                        <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Apply</button>
+            <a asp-action="InventoryOverview" class="btn btn-ghost btn-sm">Reset</a>
         </div>
-        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Apply</button>
-        <a asp-action="InventoryOverview" class="btn btn-ghost btn-sm">Reset</a>
-    </div>
-</form>
+    </form>
 
-<!-- KPI Cards -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-dollar-sign"></i></div>
-        <div class="kpi-label">Inventory Value</div>
-        <div class="kpi-value">@FormatCurrency(Model.TotalInventoryValue)</div>
+    <!-- KPI Cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-dollar-sign"></i></div>
+            <div class="kpi-label">Inventory Value</div>
+            <div class="kpi-value">@FormatCurrency(Model.TotalInventoryValue)</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-boxes"></i></div>
+            <div class="kpi-label">Total Items</div>
+            <div class="kpi-value">@Model.TotalItems</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="kpi-label">Low Stock</div>
+            <div class="kpi-value" style="color:#d97706;">@Model.LowStockItems</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-ban"></i></div>
+            <div class="kpi-label">Out of Stock</div>
+            <div class="kpi-value" style="color:#dc2626;">@Model.OutOfStockItems</div>
+        </div>
     </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-boxes"></i></div>
-        <div class="kpi-label">Total Items</div>
-        <div class="kpi-value">@Model.TotalItems</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-exclamation-triangle"></i></div>
-        <div class="kpi-label">Low Stock</div>
-        <div class="kpi-value" style="color:#d97706;">@Model.LowStockItems</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-ban"></i></div>
-        <div class="kpi-label">Out of Stock</div>
-        <div class="kpi-value" style="color:#dc2626;">@Model.OutOfStockItems</div>
-    </div>
-</div>
 
-<!-- Branch Inventory Cards -->
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;">
-    @if (branchRows.Any())
-    {
-        @foreach (var b in branchRows)
+    <!-- Branch Inventory Cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;">
+        @if (branchRows.Any())
         {
-            int valuePct = (int)Math.Round(b.TotalValue / maxValue * 100m);
-            int lowPct = (int)Math.Round(b.LowStockRate);
-            int outPct = (int)Math.Round(b.OutOfStockRate);
+            @foreach (var b in branchRows)
+            {
+                int valuePct = (int)Math.Round(b.TotalValue / maxValue * 100m);
+                int lowPct = (int)Math.Round(b.LowStockRate);
+                int outPct = (int)Math.Round(b.OutOfStockRate);
 
-            <div class="card">
-                <div class="card-body">
-                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.75rem;">
-                        <div>
-                            <span class="badge badge-success" style="font-size:0.6rem;margin-bottom:0.4rem;">Branch</span>
-                            <h3 style="font-weight:700;font-size:0.95rem;margin:0;">@b.BranchName</h3>
-                            @if (!string.IsNullOrWhiteSpace(b.Location))
-                            {
-                                <span class="caption">@b.Location</span>
-                            }
+                <div class="card">
+                    <div class="card-body">
+                        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.75rem;">
+                            <div>
+                                <span class="badge badge-success" style="font-size:0.6rem;margin-bottom:0.4rem;">Branch</span>
+                                <h3 style="font-weight:700;font-size:0.95rem;margin:0;">@b.BranchName</h3>
+                                @if (!string.IsNullOrWhiteSpace(b.Location))
+                                {
+                                    <span class="caption">@b.Location</span>
+                                }
+                            </div>
+                            <div
+                                style="width:36px;height:36px;border-radius:10px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-warehouse"></i>
+                            </div>
                         </div>
-                        <div style="width:36px;height:36px;border-radius:10px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;">
-                            <i class="fas fa-warehouse"></i>
-                        </div>
-                    </div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
-                        <div style="padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
-                            <div class="caption">Value</div>
-                            <div style="font-weight:700;font-size:0.85rem;">@FormatCurrency(b.TotalValue)</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
+                            <div
+                                style="padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
+                                <div class="caption">Value</div>
+                                <div style="font-weight:700;font-size:0.85rem;">@FormatCurrency(b.TotalValue)</div>
+                            </div>
+                            <div
+                                style="padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
+                                <div class="caption">Items</div>
+                                <div style="font-weight:700;font-size:0.85rem;">@b.ItemCount</div>
+                            </div>
                         </div>
-                        <div style="padding:0.5rem;background:var(--bg-body);border-radius:10px;border:1px solid var(--border-light);">
-                            <div class="caption">Items</div>
-                            <div style="font-weight:700;font-size:0.85rem;">@b.ItemCount</div>
-                        </div>
-                    </div>
 
-                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
-                        <div>
-                            <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.15rem;">
-                                <span style="color:var(--text-tertiary);">Value share</span>
-                                <span style="font-weight:600;">@valuePct%</span>
+                        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                            <div>
+                                <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.15rem;">
+                                    <span style="color:var(--text-tertiary);">Value share</span>
+                                    <span style="font-weight:600;">@valuePct%</span>
+                                </div>
+                                <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
+                                    <div
+                                        style="height:100%;width:@(valuePct)%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:3px;">
+                                    </div>
+                                </div>
                             </div>
-                            <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
-                                <div style="height:100%;width:@(valuePct)%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:3px;"></div>
+                            <div>
+                                <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.15rem;">
+                                    <span style="color:var(--text-tertiary);">Low stock</span>
+                                    <span style="font-weight:600;color:#d97706;">@b.LowStockCount (@lowPct%)</span>
+                                </div>
+                                <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
+                                    <div style="height:100%;width:@(lowPct)%;background:#f59e0b;border-radius:3px;"></div>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.15rem;">
-                                <span style="color:var(--text-tertiary);">Low stock</span>
-                                <span style="font-weight:600;color:#d97706;">@b.LowStockCount (@lowPct%)</span>
-                            </div>
-                            <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
-                                <div style="height:100%;width:@(lowPct)%;background:#f59e0b;border-radius:3px;"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.15rem;">
-                                <span style="color:var(--text-tertiary);">Out of stock</span>
-                                <span style="font-weight:600;color:#dc2626;">@b.OutOfStockCount (@outPct%)</span>
-                            </div>
-                            <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
-                                <div style="height:100%;width:@(outPct)%;background:#ef4444;border-radius:3px;"></div>
+                            <div>
+                                <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.15rem;">
+                                    <span style="color:var(--text-tertiary);">Out of stock</span>
+                                    <span style="font-weight:600;color:#dc2626;">@b.OutOfStockCount (@outPct%)</span>
+                                </div>
+                                <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
+                                    <div style="height:100%;width:@(outPct)%;background:#ef4444;border-radius:3px;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            }
+        }
+        else
+        {
+            <div class="card col-span-full p-12 text-center">
+                <div style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:0.5rem;"><i class="fas fa-boxes"></i>
+                </div>
+                <p class="body-text">No inventory items found.</p>
             </div>
         }
-    }
-    else
-    {
-        <div class="card" style="grid-column:1/-1;padding:3rem;text-align:center;">
-            <div style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:0.5rem;"><i class="fas fa-boxes"></i></div>
-            <p class="body-text">No inventory items found.</p>
-        </div>
-    }
-</div>
+    </div>

@@ -60,8 +60,8 @@
 </div>
 
 <!-- Filters -->
-<form method="get" class="card" style="margin-bottom:1.5rem;">
-    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:end;">
+<form method="get" class="card mb-6">
+    <div class="card-body flex flex-wrap gap-4 items-end">
         <div class="form-group" style="flex:1;min-width:180px;margin:0;">
             <label class="form-label">Search</label>
             <input type="text" name="search" value="@searchTerm" placeholder="Name, description, tags..." class="form-control" />
@@ -118,7 +118,7 @@
 <div id="grid-view" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-bottom:2rem;">
     @foreach (var item in Model)
     {
-        <div class="card" style="overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="card overflow-hidden transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)]">
             <!-- Image Header -->
             <div style="height:100px;background:linear-gradient(135deg,var(--sidebar-bg),#2d3e50);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:2rem;">
                 @if (item.IsSpicy)
@@ -142,7 +142,7 @@
                     <i class="fas fa-utensils"></i>
                 }
             </div>
-            <div class="card-body" style="padding:1rem;">
+            <div class="card-body card-body-compact">
                 <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.25rem;">
                     <h3 style="font-weight:700;font-size:0.95rem;color:var(--text-primary);margin:0;">@item.Name</h3>
                     <span style="font-weight:700;color:#16a34a;font-size:0.95rem;white-space:nowrap;">$@item.Price.ToString("F2")</span>
@@ -192,7 +192,7 @@
     }
     @if (!Model.Any())
     {
-        <div class="card" style="grid-column:1/-1;padding:3rem;text-align:center;">
+        <div class="card col-span-full p-12 text-center">
             <div style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:0.75rem;"><i class="fas fa-utensils"></i></div>
             <h3 style="font-weight:600;color:var(--text-secondary);margin-bottom:0.25rem;">No Menu Items Found</h3>
             <p class="body-text">Try adjusting your filters or create a new menu item.</p>
@@ -201,7 +201,7 @@
 </div>
 
 <!-- List View (hidden by default) -->
-<div id="list-view" class="card" style="display:none;margin-bottom:2rem;">
+<div id="list-view" class="card hidden mb-8">
     <div style="overflow-x:auto;">
         <table class="premium-table">
             <thead>
@@ -266,7 +266,7 @@
 @if (Context.Session.GetString("UserRole") == "Owner")
 {
     <!-- Quick Actions Panel -->
-    <div class="card" style="background:linear-gradient(135deg,#1e2a3a 0%,#2d3e50 100%);color:#fff;">
+    <div class="card card-dark">
         <div class="card-body">
             <h3 style="font-weight:700;font-size:1rem;margin-bottom:1rem;color:var(--accent);">Quick Actions</h3>
             <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">

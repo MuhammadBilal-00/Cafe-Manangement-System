@@ -12,7 +12,7 @@
     </div>
 </div>
 
-<div class="card" style="max-width:920px;">
+<div class="card max-w-[920px]">
     <div class="card-body">
         <form asp-action="Edit">
             <input type="hidden" asp-for="Id" />
@@ -20,170 +20,182 @@
             <div asp-validation-summary="ModelOnly" class="form-error" style="margin-bottom:20px;"></div>
 
             <!-- Basic Info -->
-            <h3 class="section-title mb-4"><i class="fas fa-info-circle" style="color:var(--accent);margin-right:8px;"></i>Basic Information</h3>
+            <h3 class="section-title mb-4"><i class="fas fa-info-circle"
+                                                  style="color:var(--accent);margin-right:8px;"></i>Basic Information</h3>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label asp-for="Name" class="form-label">Name *</label>
-                    <input asp-for="Name" class="form-control" />
-                    <span asp-validation-for="Name" class="form-error"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="CategoryId" class="form-label">Category *</label>
-                    <select asp-for="CategoryId" asp-items="ViewBag.Categories" class="form-select">
-                        <option value="">Select Category</option>
-                    </select>
-                    <span asp-validation-for="CategoryId" class="form-error"></span>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label asp-for="BranchId" class="form-label">Branch *</label>
-                    <select asp-for="BranchId" asp-items="ViewBag.Branches" class="form-select">
-                        <option value="">Select Branch</option>
-                    </select>
-                    <span asp-validation-for="BranchId" class="form-error"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="ImageUrl" class="form-label">Image URL</label>
-                    <input asp-for="ImageUrl" class="form-control" />
-                    <span asp-validation-for="ImageUrl" class="form-error"></span>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Description" class="form-label">Short Description</label>
-                <textarea asp-for="Description" class="form-control" rows="2"></textarea>
-                <span asp-validation-for="Description" class="form-error"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="LongDescription" class="form-label">Detailed Description</label>
-                <textarea asp-for="LongDescription" class="form-control" rows="3"></textarea>
-                <span asp-validation-for="LongDescription" class="form-error"></span>
-            </div>
-
-            <div class="divider"></div>
-
-            <!-- Pricing -->
-            <h3 class="section-title mb-4"><i class="fas fa-dollar-sign" style="color:var(--accent);margin-right:8px;"></i>Pricing</h3>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label asp-for="Price" class="form-label">Selling Price *</label>
-                    <input asp-for="Price" type="number" step="0.01" class="form-control" />
-                    <span asp-validation-for="Price" class="form-error"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="CostPrice" class="form-label">Cost Price</label>
-                    <input asp-for="CostPrice" type="number" step="0.01" class="form-control" />
-                    <span asp-validation-for="CostPrice" class="form-error"></span>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label asp-for="OriginalPrice" class="form-label">Original Price</label>
-                    <input asp-for="OriginalPrice" type="number" step="0.01" class="form-control" />
-                    <span asp-validation-for="OriginalPrice" class="form-error"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="PreparationTime" class="form-label">Prep Time (min)</label>
-                    <input asp-for="PreparationTime" class="form-control" />
-                    <span asp-validation-for="PreparationTime" class="form-error"></span>
-                </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <!-- Dietary -->
-            <h3 class="section-title mb-4"><i class="fas fa-leaf" style="color:var(--accent);margin-right:8px;"></i>Dietary & Settings</h3>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-                <label class="flex items-center gap-2 p-3 rounded-lg" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);cursor:pointer;">
-                    <input asp-for="IsVegetarian" style="accent-color:#22c55e;" />
-                    <span class="text-sm font-medium">Vegetarian</span>
-                </label>
-                <label class="flex items-center gap-2 p-3 rounded-lg" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);cursor:pointer;">
-                    <input asp-for="IsVegan" style="accent-color:#22c55e;" />
-                    <span class="text-sm font-medium">Vegan</span>
-                </label>
-                <label class="flex items-center gap-2 p-3 rounded-lg" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);cursor:pointer;">
-                    <input asp-for="IsGlutenFree" style="accent-color:#f59e0b;" />
-                    <span class="text-sm font-medium">Gluten Free</span>
-                </label>
-                <label class="flex items-center gap-2 p-3 rounded-lg" style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);cursor:pointer;">
-                    <input asp-for="IsDairyFree" style="accent-color:#0ea5e9;" />
-                    <span class="text-sm font-medium">Dairy Free</span>
-                </label>
-                <label class="flex items-center gap-2 p-3 rounded-lg" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);cursor:pointer;">
-                    <input asp-for="IsNutFree" style="accent-color:#a855f7;" />
-                    <span class="text-sm font-medium">Nut Free</span>
-                </label>
-                <label class="flex items-center gap-2 p-3 rounded-lg" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);cursor:pointer;">
-                    <input asp-for="IsSpicy" id="IsSpicyCheck" style="accent-color:#ef4444;" />
-                    <span class="text-sm font-medium">Spicy</span>
-                </label>
-            </div>
-
-            <div id="spiceLevelRow" style="display:none;">
                 <div class="form-row">
                     <div class="form-group">
-                        <label asp-for="SpiceLevel" class="form-label">Spice Level</label>
-                        <select asp-for="SpiceLevel" asp-items="ViewBag.SpiceLevels" class="form-select">
-                            <option value="">Select Spice Level</option>
+                        <label asp-for="Name" class="form-label">Name *</label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="form-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="CategoryId" class="form-label">Category *</label>
+                        <select asp-for="CategoryId" asp-items="ViewBag.Categories" class="form-select">
+                            <option value="">Select Category</option>
                         </select>
-                        <span asp-validation-for="SpiceLevel" class="form-error"></span>
+                        <span asp-validation-for="CategoryId" class="form-error"></span>
                     </div>
                 </div>
-            </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label asp-for="Tags" class="form-label">Tags</label>
-                    <input asp-for="Tags" class="form-control" placeholder="comma,separated,tags" />
-                    <span asp-validation-for="Tags" class="form-error"></span>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="BranchId" class="form-label">Branch *</label>
+                        <select asp-for="BranchId" asp-items="ViewBag.Branches" class="form-select">
+                            <option value="">Select Branch</option>
+                        </select>
+                        <span asp-validation-for="BranchId" class="form-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="ImageUrl" class="form-label">Image URL</label>
+                        <input asp-for="ImageUrl" class="form-control" />
+                        <span asp-validation-for="ImageUrl" class="form-error"></span>
+                    </div>
                 </div>
+
                 <div class="form-group">
-                    <label asp-for="DisplayOrder" class="form-label">Display Order</label>
-                    <input asp-for="DisplayOrder" type="number" min="0" class="form-control" />
+                    <label asp-for="Description" class="form-label">Short Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="Description" class="form-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="LongDescription" class="form-label">Detailed Description</label>
+                    <textarea asp-for="LongDescription" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="LongDescription" class="form-error"></span>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Pricing -->
+                <h3 class="section-title mb-4"><i class="fas fa-dollar-sign"
+                                                      style="color:var(--accent);margin-right:8px;"></i>Pricing</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label asp-for="Price" class="form-label">Selling Price *</label>
+                            <input asp-for="Price" type="number" step="0.01" class="form-control" />
+                            <span asp-validation-for="Price" class="form-error"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="CostPrice" class="form-label">Cost Price</label>
+                            <input asp-for="CostPrice" type="number" step="0.01" class="form-control" />
+                            <span asp-validation-for="CostPrice" class="form-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label asp-for="OriginalPrice" class="form-label">Original Price</label>
+                            <input asp-for="OriginalPrice" type="number" step="0.01" class="form-control" />
+                            <span asp-validation-for="OriginalPrice" class="form-error"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="PreparationTime" class="form-label">Prep Time (min)</label>
+                            <input asp-for="PreparationTime" class="form-control" />
+                            <span asp-validation-for="PreparationTime" class="form-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Dietary -->
+                    <h3 class="section-title mb-4"><i class="fas fa-leaf"
+                                                          style="color:var(--accent);margin-right:8px;"></i>Dietary & Settings</h3>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+                            <label class="flex items-center gap-2 p-3 rounded-lg"
+                                   style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);cursor:pointer;">
+                                <input asp-for="IsVegetarian" style="accent-color:#22c55e;" />
+                                <span class="text-sm font-medium">Vegetarian</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 rounded-lg"
+                                   style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);cursor:pointer;">
+                                <input asp-for="IsVegan" style="accent-color:#22c55e;" />
+                                <span class="text-sm font-medium">Vegan</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 rounded-lg"
+                                   style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);cursor:pointer;">
+                                <input asp-for="IsGlutenFree" style="accent-color:#f59e0b;" />
+                                <span class="text-sm font-medium">Gluten Free</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 rounded-lg"
+                                   style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);cursor:pointer;">
+                                <input asp-for="IsDairyFree" style="accent-color:#0ea5e9;" />
+                                <span class="text-sm font-medium">Dairy Free</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 rounded-lg"
+                                   style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);cursor:pointer;">
+                                <input asp-for="IsNutFree" style="accent-color:#a855f7;" />
+                                <span class="text-sm font-medium">Nut Free</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 rounded-lg"
+                                   style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);cursor:pointer;">
+                                <input asp-for="IsSpicy" id="IsSpicyCheck" style="accent-color:#ef4444;" />
+                                <span class="text-sm font-medium">Spicy</span>
+                            </label>
+                        </div>
+
+                        <div id="spiceLevelRow" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label asp-for="SpiceLevel" class="form-label">Spice Level</label>
+                                    <select asp-for="SpiceLevel" asp-items="ViewBag.SpiceLevels" class="form-select">
+                                        <option value="">Select Spice Level</option>
+                                    </select>
+                                    <span asp-validation-for="SpiceLevel" class="form-error"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label asp-for="Tags" class="form-label">Tags</label>
+                                <input asp-for="Tags" class="form-control" placeholder="comma,separated,tags" />
+                                <span asp-validation-for="Tags" class="form-error"></span>
+                            </div>
+                            <div class="form-group">
+                                <label asp-for="DisplayOrder" class="form-label">Display Order</label>
+                                <input asp-for="DisplayOrder" type="number" min="0" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                            <label class="flex items-center gap-2 p-3 rounded-lg"
+                                   style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);cursor:pointer;">
+                                <input asp-for="Availability" style="accent-color:#22c55e;" />
+                                <span class="text-sm font-medium">Available</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 rounded-lg"
+                                   style="background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.12);cursor:pointer;">
+                                <input asp-for="IsFeatured" style="accent-color:#d4af37;" />
+                                <span class="text-sm font-medium">Featured</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 rounded-lg"
+                                   style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);cursor:pointer;">
+                                <input asp-for="IsSpecial" style="accent-color:#a855f7;" />
+                                <span class="text-sm font-medium">Daily Special</span>
+                            </label>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <div class="flex justify-end gap-3">
+                            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Save Changes</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                <label class="flex items-center gap-2 p-3 rounded-lg" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);cursor:pointer;">
-                    <input asp-for="Availability" style="accent-color:#22c55e;" />
-                    <span class="text-sm font-medium">Available</span>
-                </label>
-                <label class="flex items-center gap-2 p-3 rounded-lg" style="background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.12);cursor:pointer;">
-                    <input asp-for="IsFeatured" style="accent-color:#d4af37;" />
-                    <span class="text-sm font-medium">Featured</span>
-                </label>
-                <label class="flex items-center gap-2 p-3 rounded-lg" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);cursor:pointer;">
-                    <input asp-for="IsSpecial" style="accent-color:#a855f7;" />
-                    <span class="text-sm font-medium">Daily Special</span>
-                </label>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="flex justify-end gap-3">
-                <a asp-action="Index" class="btn btn-ghost">Cancel</a>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Save Changes</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const spicy = document.getElementById('IsSpicyCheck');
-            const row = document.getElementById('spiceLevelRow');
-            function toggle() { row.style.display = spicy.checked ? '' : 'none'; }
-            spicy.addEventListener('change', toggle);
-            toggle();
-        });
-    </script>
-}
+            @section Scripts {
+                <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const spicy = document.getElementById('IsSpicyCheck');
+                            const row = document.getElementById('spiceLevelRow');
+                            function toggle() { row.style.display = spicy.checked ? '' : 'none'; }
+                            spicy.addEventListener('change', toggle);
+                            toggle();
+                        });
+                </script>
+            }

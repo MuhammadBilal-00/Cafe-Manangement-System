@@ -4,7 +4,7 @@
     ViewData["Title"] = "Notification Preferences";
 }
 
-<div style="max-width:640px;margin:0 auto;">
+<div class="max-w-[640px] mx-auto">
     <div style="margin-bottom:1.5rem;">
         <h1 class="page-title" style="margin:0;">Notification Preferences</h1>
         <p class="body-text" style="margin-top:0.25rem;">Choose how and what notifications you receive</p>
@@ -12,7 +12,7 @@
 
     <form method="post" asp-action="SavePreferences">
         <!-- Delivery Channels -->
-        <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card mb-5">
             <div class="card-header">
                 <h3 class="section-title"><i class="fas fa-paper-plane" style="color:#6366f1;margin-right:0.5rem;"></i>Delivery Channels</h3>
             </div>
@@ -43,7 +43,7 @@
         </div>
 
         <!-- Notification Categories -->
-        <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card mb-5">
             <div class="card-header">
                 <h3 class="section-title"><i class="fas fa-sliders" style="color:#d4af37;margin-right:0.5rem;"></i>Categories</h3>
             </div>

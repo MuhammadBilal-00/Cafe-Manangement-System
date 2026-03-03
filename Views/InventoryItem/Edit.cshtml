@@ -15,7 +15,7 @@
     </a>
 </div>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
+<div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
     <!-- Form -->
     <div class="card">
         <div class="card-header">Item Details</div>
@@ -86,11 +86,11 @@
     </div>
 
     <!-- Current Snapshot -->
-    <div class="card" style="background:linear-gradient(135deg,#1e2a3a,#2d3f54);color:#fff;border:none;align-self:start;">
-        <div class="card-header" style="border-color:rgba(255,255,255,0.1);color:#fff;">
+    <div class="card card-dark border-none self-start">
+        <div class="card-header border-white/10 text-white">
             <i class="fas fa-camera" style="margin-right:0.4rem;"></i> Current Snapshot
         </div>
-        <div class="card-body" style="color:#fff;">
+        <div class="card-body text-white">
             <div style="margin-bottom:1rem;">
                 <span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.5);">Inventory Card</span>
                 <h3 style="font-weight:700;font-size:1.1rem;margin-top:0.2rem;">@Model.Name</h3>

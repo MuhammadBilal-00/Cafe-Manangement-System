@@ -34,7 +34,7 @@
 </div>
 
 <!-- KPI Cards -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">
+<div class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-6">
     <div class="kpi-card">
         <div class="kpi-icon" style="background:var(--accent-light);color:var(--accent);">
             <i class="fas fa-boxes"></i>
@@ -66,8 +66,7 @@
 </div>
 
 <!-- Stock Health Bar -->
-<div class="card" style="margin-bottom:1.5rem;">
-    <div class="card-body" style="padding:0.75rem 1.25rem;">
+<div class="card mb-6">
         <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-tertiary);margin-bottom:0.3rem;">
             <span>Stock Health</span>
             <span>@healthy% OK</span>
@@ -79,8 +78,8 @@
 </div>
 
 <!-- Controls -->
-<div class="card" style="margin-bottom:1.5rem;">
-    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:end;">
+<div class="card mb-6">
+    <div class="card-body flex flex-wrap gap-4 items-end">
         <!-- Search -->
         <div class="form-group" style="flex:1;min-width:200px;margin:0;">
             <label class="form-label">Search</label>
@@ -124,8 +123,8 @@
             var branchValue = items.Sum(i => i.Quantity * i.UnitPrice);
 
             <div class="branch-section" data-branch-id="@branch?.Id" style="margin-bottom:2rem;">
-                <div class="card" style="margin-bottom:1rem;">
-                    <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+                <div class="card mb-4">
+                    <div class="card-body flex justify-between items-center flex-wrap gap-4">
                         <div>
                             <h3 class="section-title" style="margin:0;">
                                 <i class="fas fa-building" style="color:var(--accent);margin-right:0.4rem;"></i>

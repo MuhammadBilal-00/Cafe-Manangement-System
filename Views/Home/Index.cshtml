@@ -247,7 +247,7 @@
             <a asp-controller="Notification" asp-action="Index" class="text-xs font-medium" style="color:var(--accent);">View all</a>
         </div>
     </div>
-    <div class="card-body" style="padding:0;">
+    <div class="card-body card-body-flush">
         @{
             var recentNotifs = ViewBag.RecentNotifications as IEnumerable<Cafe.Services.NotificationDto>;
         }
@@ -291,8 +291,8 @@
                     };
                     var isUnread = !notif.IsRead;
                     <a href="@(notif.RedirectUrl ?? "/Notification")"
-                       style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.85rem 1.25rem; border-bottom:1px solid var(--border-light); text-decoration:none; transition:background 0.15s; position:relative; @(isUnread ? "background:rgba(212,175,55,0.03);" : "")"
-                       onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='@(isUnread ? "rgba(212,175,55,0.03)" : "transparent")'">
+                       class="flex items-start gap-3 px-5 py-3 border-b border-[var(--border-light)] no-underline transition-colors duration-150 relative hover:bg-[var(--bg-secondary)]"
+                       style="@(isUnread ? "background:rgba(212,175,55,0.03);" : "")">
                         @if (isUnread)
                         {
                             <span style="position:absolute; left:6px; top:50%; transform:translateY(-50%); width:5px; height:5px; border-radius:50%; background:@typeColor;"></span>
@@ -375,7 +375,7 @@
             <h3 class="section-title">Recent Orders</h3>
             <a asp-controller="Order" asp-action="Index" class="text-xs font-medium" style="color:var(--accent);">View all</a>
         </div>
-        <div class="card-body" style="padding-top:8px;">
+        <div class="card-body pt-2">
             @if (ViewBag.RecentOrders != null && ((IEnumerable<dynamic>)ViewBag.RecentOrders).Any())
             {
                 <table class="premium-table">

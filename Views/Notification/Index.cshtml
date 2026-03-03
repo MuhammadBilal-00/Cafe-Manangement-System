@@ -46,38 +46,38 @@
 </div>
 
 <!-- KPI Cards -->
-<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:1rem;margin-bottom:1.5rem;">
-    <div class="card" style="padding:1.25rem;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-bell" style="color:#6366f1;font-size:1rem;"></i>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="card p-5 relative overflow-hidden">
+        <div class="absolute -top-2 -right-2 w-[52px] h-[52px] rounded-full bg-indigo-500/10 flex items-center justify-center">
+            <i class="fas fa-bell text-indigo-500 text-base"></i>
         </div>
-        <div class="caption" style="margin-bottom:0.3rem;">Total</div>
-        <div style="font-size:1.75rem;font-weight:800;color:#6366f1;line-height:1;">@totalCount</div>
-        <div class="caption" style="margin-top:0.35rem;">notifications</div>
+        <div class="caption mb-1">Total</div>
+        <div class="text-[1.75rem] font-extrabold text-indigo-500 leading-none">@totalCount</div>
+        <div class="caption mt-1.5">notifications</div>
     </div>
-    <div class="card" style="padding:1.25rem;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-envelope" style="color:#ef4444;font-size:1rem;"></i>
+    <div class="card p-5 relative overflow-hidden">
+        <div class="absolute -top-2 -right-2 w-[52px] h-[52px] rounded-full bg-red-500/10 flex items-center justify-center">
+            <i class="fas fa-envelope text-red-500 text-base"></i>
         </div>
-        <div class="caption" style="margin-bottom:0.3rem;">Unread</div>
-        <div style="font-size:1.75rem;font-weight:800;color:#ef4444;line-height:1;">@unreadCount</div>
-        <div class="caption" style="margin-top:0.35rem;">need attention</div>
+        <div class="caption mb-1">Unread</div>
+        <div class="text-[1.75rem] font-extrabold text-red-500 leading-none">@unreadCount</div>
+        <div class="caption mt-1.5">need attention</div>
     </div>
-    <div class="card" style="padding:1.25rem;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:rgba(22,163,106,0.1);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-check-circle" style="color:#16a34a;font-size:1rem;"></i>
+    <div class="card p-5 relative overflow-hidden">
+        <div class="absolute -top-2 -right-2 w-[52px] h-[52px] rounded-full bg-green-600/10 flex items-center justify-center">
+            <i class="fas fa-check-circle text-green-600 text-base"></i>
         </div>
-        <div class="caption" style="margin-bottom:0.3rem;">Read</div>
-        <div style="font-size:1.75rem;font-weight:800;color:#16a34a;line-height:1;">@readCount</div>
-        <div class="caption" style="margin-top:0.35rem;">reviewed</div>
+        <div class="caption mb-1">Read</div>
+        <div class="text-[1.75rem] font-extrabold text-green-600 leading-none">@readCount</div>
+        <div class="caption mt-1.5">reviewed</div>
     </div>
-    <div class="card" style="padding:1.25rem;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:rgba(212,175,55,0.1);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-tags" style="color:#d4af37;font-size:1rem;"></i>
+    <div class="card p-5 relative overflow-hidden">
+        <div class="absolute -top-2 -right-2 w-[52px] h-[52px] rounded-full bg-[#d4af37]/10 flex items-center justify-center">
+            <i class="fas fa-tags text-[#d4af37] text-base"></i>
         </div>
-        <div class="caption" style="margin-bottom:0.3rem;">Types</div>
-        <div style="font-size:1.75rem;font-weight:800;color:#d4af37;line-height:1;">@typeLabels.Length</div>
-        <div class="caption" style="margin-top:0.35rem;">categories</div>
+        <div class="caption mb-1">Types</div>
+        <div class="text-[1.75rem] font-extrabold text-[#d4af37] leading-none">@typeLabels.Length</div>
+        <div class="caption mt-1.5">categories</div>
     </div>
 </div>
 
@@ -90,7 +90,7 @@
                 <i class="fas fa-chart-pie" style="color:#6366f1;margin-right:0.4rem;"></i>Read vs Unread
             </h3>
         </div>
-        <div class="card-body" style="position:relative;height:220px;">
+        <div class="card-body relative h-[220px]">
             <canvas id="readPieChart"></canvas>
         </div>
     </div>
@@ -102,7 +102,7 @@
                 <i class="fas fa-chart-pie" style="color:#f59e0b;margin-right:0.4rem;"></i>By Type
             </h3>
         </div>
-        <div class="card-body" style="position:relative;height:220px;">
+        <div class="card-body relative h-[220px]">
             <canvas id="typePieChart"></canvas>
         </div>
     </div>
@@ -114,15 +114,15 @@
                 <i class="fas fa-chart-line" style="color:#10b981;margin-right:0.4rem;"></i>7-Day Trend
             </h3>
         </div>
-        <div class="card-body" style="position:relative;height:220px;">
+        <div class="card-body relative h-[220px]">
             <canvas id="trendChart"></canvas>
         </div>
     </div>
 </div>
 
 <!-- Filters -->
-<div class="card" style="margin-bottom:1.25rem;">
-    <div class="card-body" style="padding:1rem 1.25rem;">
+<div class="card mb-5">
+    <div class="card-body card-body-compact">
         <form method="get" asp-action="Index" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:end;">
             <div style="display:flex;flex-direction:column;gap:0.25rem;">
                 <label class="caption">Status</label>
@@ -166,13 +166,13 @@
 
 <!-- Notification List -->
 <div class="card">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div class="card-header flex items-center justify-between">
         <h3 class="section-title" style="font-size:0.85rem;">
             <i class="fas fa-stream" style="color:#6366f1;margin-right:0.4rem;"></i>Activity Feed
         </h3>
         <span class="caption">Page @(page) of @totalPages</span>
     </div>
-    <div class="card-body" style="padding:0;">
+    <div class="card-body card-body-flush">
         @if (!notifications.Any())
         {
             <div style="text-align:center;padding:3.5rem 1rem;">
