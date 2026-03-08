@@ -12,60 +12,122 @@
     </div>
 </div>
 
-<div class="card max-w-[820px]">
-    <div class="card-header">
-        <h3 class="section-title"><i class="fas fa-store text-accent mr-2"></i> Branch Information</h3>
-    </div>
-    <div class="card-body">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="form-error" style="margin-bottom:20px;"></div>
+<div style="max-width:960px;margin:0 auto;">
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem;align-items:start;">
+        <!-- Main Form Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="section-title"><i class="fas fa-store text-accent mr-2"></i> Branch Information</h3>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create">
+                    <div asp-validation-summary="ModelOnly" class="form-error" style="margin-bottom:20px;"></div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label asp-for="Name" class="form-label"></label>
-                    <input asp-for="Name" class="form-control" placeholder="Enter branch name" />
-                    <span asp-validation-for="Name" class="form-error"></span>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label asp-for="Name" class="form-label"></label>
+                            <input asp-for="Name" class="form-control" placeholder="Enter branch name" />
+                            <span asp-validation-for="Name" class="form-error"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Location" class="form-label"></label>
+                            <input asp-for="Location" class="form-control" placeholder="Enter location" />
+                            <span asp-validation-for="Location" class="form-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label asp-for="ContactInfo" class="form-label"></label>
+                            <input asp-for="ContactInfo" class="form-control" placeholder="Phone or email" />
+                            <span asp-validation-for="ContactInfo" class="form-error"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="ManagerId" class="form-label">Manager</label>
+                            <select asp-for="ManagerId" asp-items="ViewBag.Managers" class="form-select">
+                                <option value="">Select a Manager</option>
+                            </select>
+                            <span asp-validation-for="ManagerId" class="form-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="OpeningHours" class="form-label"></label>
+                        <textarea asp-for="OpeningHours" class="form-control" rows="3" placeholder="e.g., Mon-Fri: 8AM-10PM, Sat-Sun: 9AM-11PM"></textarea>
+                        <span asp-validation-for="OpeningHours" class="form-error"></span>
+                    </div>
+
+                    <div class="form-group" style="flex-direction:row;align-items:center;gap:10px;">
+                        <input asp-for="IsActive" style="width:18px;height:18px;accent-color:var(--accent);" />
+                        <label asp-for="IsActive" class="form-label" style="margin:0;">Active Branch</label>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="flex justify-end gap-3">
+                        <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Create Branch</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Side Info Panel -->
+        <div style="display:flex;flex-direction:column;gap:1.25rem;">
+            <div class="card">
+                <div class="card-body" style="padding:1.25rem;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+                        <div style="width:32px;height:32px;border-radius:10px;background:rgba(212,175,55,0.1);color:#d4af37;display:flex;align-items:center;justify-content:center;font-size:0.85rem;">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <span style="font-weight:700;font-size:0.85rem;">Quick Tips</span>
+                    </div>
+                    <ul style="list-style:none;padding:0;display:flex;flex-direction:column;gap:0.5rem;">
+                        <li style="display:flex;align-items:flex-start;gap:0.5rem;font-size:0.78rem;color:var(--text-secondary);">
+                            <i class="fas fa-check-circle" style="color:#22c55e;margin-top:2px;flex-shrink:0;"></i>
+                            Choose a unique, descriptive name for easy identification.
+                        </li>
+                        <li style="display:flex;align-items:flex-start;gap:0.5rem;font-size:0.78rem;color:var(--text-secondary);">
+                            <i class="fas fa-check-circle" style="color:#22c55e;margin-top:2px;flex-shrink:0;"></i>
+                            Include the full street address in the location field.
+                        </li>
+                        <li style="display:flex;align-items:flex-start;gap:0.5rem;font-size:0.78rem;color:var(--text-secondary);">
+                            <i class="fas fa-check-circle" style="color:#22c55e;margin-top:2px;flex-shrink:0;"></i>
+                            Assign a manager to enable branch-level operations.
+                        </li>
+                        <li style="display:flex;align-items:flex-start;gap:0.5rem;font-size:0.78rem;color:var(--text-secondary);">
+                            <i class="fas fa-check-circle" style="color:#22c55e;margin-top:2px;flex-shrink:0;"></i>
+                            Specify opening hours to help with scheduling.
+                        </li>
+                    </ul>
                 </div>
-                <div class="form-group">
-                    <label asp-for="Location" class="form-label"></label>
-                    <input asp-for="Location" class="form-control" placeholder="Enter location" />
-                    <span asp-validation-for="Location" class="form-error"></span>
+            </div>
+
+            <div class="card">
+                <div class="card-body" style="padding:1.25rem;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+                        <div style="width:32px;height:32px;border-radius:10px;background:rgba(99,102,241,0.1);color:#6366f1;display:flex;align-items:center;justify-content:center;font-size:0.85rem;">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <span style="font-weight:700;font-size:0.85rem;">What Happens Next?</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;flex-shrink:0;">1</span>
+                            <span style="font-size:0.75rem;color:var(--text-secondary);">Branch is created and listed</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;flex-shrink:0;">2</span>
+                            <span style="font-size:0.75rem;color:var(--text-secondary);">Add menu items and inventory</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;flex-shrink:0;">3</span>
+                            <span style="font-size:0.75rem;color:var(--text-secondary);">Assign staff and start operations</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label asp-for="ContactInfo" class="form-label"></label>
-                    <input asp-for="ContactInfo" class="form-control" placeholder="Phone or email" />
-                    <span asp-validation-for="ContactInfo" class="form-error"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="ManagerId" class="form-label">Manager</label>
-                    <select asp-for="ManagerId" asp-items="ViewBag.Managers" class="form-select">
-                        <option value="">Select a Manager</option>
-                    </select>
-                    <span asp-validation-for="ManagerId" class="form-error"></span>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="OpeningHours" class="form-label"></label>
-                <textarea asp-for="OpeningHours" class="form-control" rows="3" placeholder="e.g., Mon-Fri: 8AM-10PM, Sat-Sun: 9AM-11PM"></textarea>
-                <span asp-validation-for="OpeningHours" class="form-error"></span>
-            </div>
-
-            <div class="form-group" style="flex-direction:row;align-items:center;gap:10px;">
-                <input asp-for="IsActive" style="width:18px;height:18px;accent-color:var(--accent);" />
-                <label asp-for="IsActive" class="form-label" style="margin:0;">Active Branch</label>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="flex justify-end gap-3">
-                <a asp-action="Index" class="btn btn-ghost">Cancel</a>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Create Branch</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 

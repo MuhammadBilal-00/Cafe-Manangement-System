@@ -633,6 +633,18 @@ form.card:hover {
   color: #cbd5e1;
 }
 
+.card-dark .btn-secondary {
+  background: rgba(255,255,255,0.12);
+  color: #e2e8f0;
+  border-color: rgba(255,255,255,0.20);
+}
+
+.card-dark .btn-secondary:hover {
+  background: rgba(255,255,255,0.20);
+  border-color: rgba(255,255,255,0.30);
+  color: #ffffff;
+}
+
 /* ── KPI Stat Cards — Premium ──────────────────────────────── */
 .kpi-card {
   background: var(--bg-surface);

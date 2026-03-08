@@ -68,6 +68,53 @@
         </div>
     </div>
 
+    @if (branches.Any())
+    {
+        <!-- Charts Row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+            <!-- Revenue Bar Chart -->
+            <div class="card min-w-0">
+                <div class="card-header">
+                    <h3 class="section-title"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:0.5rem;"></i>Revenue by Branch</h3>
+                </div>
+                <div class="card-body relative h-[340px]">
+                    <canvas id="branchRevenueChart"></canvas>
+                </div>
+            </div>
+            <!-- Orders Doughnut Chart -->
+            <div class="card min-w-0">
+                <div class="card-header">
+                    <h3 class="section-title"><i class="fas fa-chart-pie" style="color:var(--accent);margin-right:0.5rem;"></i>Orders Distribution</h3>
+                </div>
+                <div class="card-body relative h-[340px]">
+                    <canvas id="branchOrdersChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completion & Feedback Row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+            <!-- Completion Rate Chart -->
+            <div class="card min-w-0">
+                <div class="card-header">
+                    <h3 class="section-title"><i class="fas fa-bullseye" style="color:#10b981;margin-right:0.5rem;"></i>Completion Rate by Branch</h3>
+                </div>
+                <div class="card-body relative h-[300px]">
+                    <canvas id="branchCompletionChart"></canvas>
+                </div>
+            </div>
+            <!-- Feedback Rating Chart -->
+            <div class="card min-w-0">
+                <div class="card-header">
+                    <h3 class="section-title"><i class="fas fa-star" style="color:#f59e0b;margin-right:0.5rem;"></i>Feedback Ratings</h3>
+                </div>
+                <div class="card-body relative h-[300px]">
+                    <canvas id="branchFeedbackChart"></canvas>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Branch Cards Grid -->
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;">
         @if (branches.Any())
@@ -157,3 +204,135 @@
             </div>
         }
     </div>
+
+@section Scripts {
+<script>
+@if (branches.Any())
+{
+    <text>
+    (function() {
+        const palette = ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6','#f97316','#06b6d4','#84cc16','#e11d48'];
+        const branchNames = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branches.Select(b => b.BranchName).ToArray()));
+        const revenues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branches.Select(b => Math.Round(b.Revenue, 2)).ToArray()));
+        const orders = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branches.Select(b => b.TotalOrders).ToArray()));
+        const completions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branches.Select(b => Math.Round(b.CompletionRate, 1)).ToArray()));
+        const feedbacks = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branches.Select(b => Math.Round(b.AvgFeedbackRating, 1)).ToArray()));
+        const colors = branchNames.map((_, i) => palette[i % palette.length]);
+
+        // Revenue Bar Chart
+        const revCtx = document.getElementById('branchRevenueChart')?.getContext('2d');
+        if (revCtx) {
+            new Chart(revCtx, {
+                type: 'bar',
+                data: {
+                    labels: branchNames,
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: revenues,
+                        backgroundColor: colors.map(c => c + 'cc'),
+                        borderColor: colors,
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => '$' + ctx.raw.toLocaleString() } }
+                    },
+                    scales: {
+                        x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }
+                    }
+                }
+            });
+        }
+
+        // Orders Doughnut Chart
+        const ordCtx = document.getElementById('branchOrdersChart')?.getContext('2d');
+        if (ordCtx) {
+            new Chart(ordCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: branchNames,
+                    datasets: [{
+                        data: orders,
+                        backgroundColor: colors.map(c => c + 'cc'),
+                        borderColor: colors,
+                        borderWidth: 2,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '55%',
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 }, padding: 12 } },
+                        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + ' orders' } }
+                    }
+                }
+            });
+        }
+
+        // Completion Rate Horizontal Bar
+        const compCtx = document.getElementById('branchCompletionChart')?.getContext('2d');
+        if (compCtx) {
+            new Chart(compCtx, {
+                type: 'bar',
+                data: {
+                    labels: branchNames,
+                    datasets: [{
+                        label: 'Completion %',
+                        data: completions,
+                        backgroundColor: completions.map(v => v >= 80 ? 'rgba(16,185,129,0.7)' : v >= 50 ? 'rgba(245,158,11,0.7)' : 'rgba(239,68,68,0.7)'),
+                        borderColor: completions.map(v => v >= 80 ? '#10b981' : v >= 50 ? '#f59e0b' : '#ef4444'),
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => ctx.raw + '%' } }
+                    },
+                    scales: {
+                        x: { max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                        y: { ticks: { font: { size: 11 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Feedback Rating Polar Area
+        const fbCtx = document.getElementById('branchFeedbackChart')?.getContext('2d');
+        if (fbCtx) {
+            new Chart(fbCtx, {
+                type: 'polarArea',
+                data: {
+                    labels: branchNames,
+                    datasets: [{
+                        data: feedbacks,
+                        backgroundColor: colors.map(c => c + '80'),
+                        borderColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        r: { max: 5, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } }
+                    },
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } },
+                        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + '/5' } }
+                    }
+                }
+            });
+        }
+    })();
+    </text>
+}
+</script>
+}

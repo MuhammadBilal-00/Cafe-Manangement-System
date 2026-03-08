@@ -68,6 +68,53 @@
         </div>
     </div>
 
+    @if (branchRows.Any())
+    {
+        <!-- Charts Row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+            <!-- Value Distribution Bar Chart -->
+            <div class="card min-w-0">
+                <div class="card-header">
+                    <h3 class="section-title"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:0.5rem;"></i>Inventory Value by Branch</h3>
+                </div>
+                <div class="card-body relative h-[340px]">
+                    <canvas id="invValueChart"></canvas>
+                </div>
+            </div>
+            <!-- Stock Health Doughnut -->
+            <div class="card min-w-0">
+                <div class="card-header">
+                    <h3 class="section-title"><i class="fas fa-chart-pie" style="color:var(--accent);margin-right:0.5rem;"></i>Overall Stock Health</h3>
+                </div>
+                <div class="card-body relative h-[340px]">
+                    <canvas id="stockHealthChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Alerts Row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+            <!-- Items per Branch -->
+            <div class="card min-w-0">
+                <div class="card-header">
+                    <h3 class="section-title"><i class="fas fa-boxes-stacked" style="color:#2563eb;margin-right:0.5rem;"></i>Items per Branch</h3>
+                </div>
+                <div class="card-body relative h-[300px]">
+                    <canvas id="invItemsChart"></canvas>
+                </div>
+            </div>
+            <!-- Low/Out of Stock by Branch -->
+            <div class="card min-w-0">
+                <div class="card-header">
+                    <h3 class="section-title"><i class="fas fa-triangle-exclamation" style="color:#dc2626;margin-right:0.5rem;"></i>Stock Alerts by Branch</h3>
+                </div>
+                <div class="card-body relative h-[300px]">
+                    <canvas id="stockAlertsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Branch Inventory Cards -->
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;">
         @if (branchRows.Any())
@@ -152,3 +199,129 @@
             </div>
         }
     </div>
+
+@section Scripts {
+<script>
+@if (branchRows.Any())
+{
+    <text>
+    (function() {
+        const palette = ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6','#f97316','#06b6d4','#84cc16','#e11d48'];
+        const branchNames = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branchRows.Select(b => b.BranchName).ToArray()));
+        const values = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branchRows.Select(b => Math.Round(b.TotalValue, 2)).ToArray()));
+        const itemCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branchRows.Select(b => b.ItemCount).ToArray()));
+        const lowStocks = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branchRows.Select(b => b.LowStockCount).ToArray()));
+        const outStocks = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branchRows.Select(b => b.OutOfStockCount).ToArray()));
+        const colors = branchNames.map((_, i) => palette[i % palette.length]);
+
+        // Global stock health totals
+        const totalItems = @Model.TotalItems;
+        const totalLow = @Model.LowStockItems;
+        const totalOut = @Model.OutOfStockItems;
+        const totalHealthy = totalItems - totalLow - totalOut;
+
+        // Inventory Value Bar Chart
+        const valCtx = document.getElementById('invValueChart')?.getContext('2d');
+        if (valCtx) {
+            new Chart(valCtx, {
+                type: 'bar',
+                data: {
+                    labels: branchNames,
+                    datasets: [{
+                        label: 'Value ($)',
+                        data: values,
+                        backgroundColor: colors.map(c => c + 'cc'),
+                        borderColor: colors,
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => '$' + ctx.raw.toLocaleString() } } },
+                    scales: {
+                        x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }
+                    }
+                }
+            });
+        }
+
+        // Stock Health Doughnut
+        const healthCtx = document.getElementById('stockHealthChart')?.getContext('2d');
+        if (healthCtx) {
+            new Chart(healthCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Healthy', 'Low Stock', 'Out of Stock'],
+                    datasets: [{
+                        data: [totalHealthy, totalLow, totalOut],
+                        backgroundColor: ['rgba(16,185,129,0.75)', 'rgba(245,158,11,0.75)', 'rgba(239,68,68,0.75)'],
+                        borderColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 2,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '55%',
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 }, padding: 12 } },
+                        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + ' items' } }
+                    }
+                }
+            });
+        }
+
+        // Items per Branch Pie
+        const itemsCtx = document.getElementById('invItemsChart')?.getContext('2d');
+        if (itemsCtx) {
+            new Chart(itemsCtx, {
+                type: 'pie',
+                data: {
+                    labels: branchNames,
+                    datasets: [{
+                        data: itemCounts,
+                        backgroundColor: colors.map(c => c + 'bb'),
+                        borderColor: colors,
+                        borderWidth: 2,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } },
+                        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + ' items' } }
+                    }
+                }
+            });
+        }
+
+        // Stock Alerts Grouped Bar
+        const alertCtx = document.getElementById('stockAlertsChart')?.getContext('2d');
+        if (alertCtx) {
+            new Chart(alertCtx, {
+                type: 'bar',
+                data: {
+                    labels: branchNames,
+                    datasets: [
+                        { label: 'Low Stock', data: lowStocks, backgroundColor: 'rgba(245,158,11,0.7)', borderColor: '#f59e0b', borderWidth: 1, borderRadius: 4 },
+                        { label: 'Out of Stock', data: outStocks, backgroundColor: 'rgba(239,68,68,0.7)', borderColor: '#ef4444', borderWidth: 1, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+                    scales: {
+                        x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
+                        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.04)' } }
+                    }
+                }
+            });
+        }
+    })();
+    </text>
+}
+</script>
+}

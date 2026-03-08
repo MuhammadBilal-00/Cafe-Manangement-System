@@ -81,101 +81,36 @@
 
 <!-- Charts Row -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
-    <!-- Daily Revenue -->
-    <div class="card">
-        <div class="card-header">Revenue by Day</div>
-        <div class="card-body">
-            @if (daily.Any())
-            {
-                decimal maxRev = daily.Max(d => (decimal)d.Revenue);
-                if (maxRev <= 0) { maxRev = 1; }
-                @foreach (var d in daily)
-                {
-                    decimal r = (decimal)d.Revenue;
-                    int pct = (int)Math.Round(r / maxRev * 100m);
-                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">
-                        <span style="width:60px;font-size:0.72rem;color:var(--text-tertiary);">@(((DateTime)d.Date).ToString("dd MMM"))</span>
-                        <div style="flex:1;height:8px;background:var(--bg-body);border-radius:4px;overflow:hidden;">
-                            <div style="height:100%;width:@(pct)%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:4px;"></div>
-                        </div>
-                        <span style="width:64px;text-align:right;font-size:0.72rem;font-weight:600;">@FormatCurrency(r)</span>
-                    </div>
-                }
-            }
-            else
-            {
-                <p class="caption">No data for this range.</p>
-            }
+    <!-- Daily Revenue Line Chart -->
+    <div class="card min-w-0">
+        <div class="card-header">
+            <h3 class="section-title"><i class="fas fa-chart-line" style="color:var(--accent);margin-right:0.5rem;"></i>Revenue Trend</h3>
+        </div>
+        <div class="card-body relative h-[340px]">
+            <canvas id="dailyRevenueChart"></canvas>
         </div>
     </div>
 
-    <!-- Branch Revenue -->
-    <div class="card">
-        <div class="card-header">Revenue by Branch</div>
-        <div class="card-body">
-            @if (branchRevenue.Any())
-            {
-                decimal maxBR = branchRevenue.Max(b => (decimal)b.Revenue);
-                if (maxBR <= 0) { maxBR = 1; }
-                @foreach (var b in branchRevenue)
-                {
-                    decimal r = (decimal)b.Revenue;
-                    int pct = (int)Math.Round(r / maxBR * 100m);
-                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">
-                        <span style="width:90px;font-size:0.72rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@(((Cafe.Models.Branch)b.Branch).Name)</span>
-                        <div style="flex:1;height:8px;background:var(--bg-body);border-radius:4px;overflow:hidden;">
-                            <div style="height:100%;width:@(pct)%;background:linear-gradient(90deg,#ec4899,#8b5cf6);border-radius:4px;"></div>
-                        </div>
-                        <span style="width:64px;text-align:right;font-size:0.72rem;font-weight:600;">@FormatCurrency(r)</span>
-                    </div>
-                }
-            }
-            else
-            {
-                <p class="caption">No branch data for this range.</p>
-            }
+    <!-- Branch Revenue Bar Chart -->
+    <div class="card min-w-0">
+        <div class="card-header">
+            <h3 class="section-title"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:0.5rem;"></i>Revenue by Branch</h3>
+        </div>
+        <div class="card-body relative h-[340px]">
+            <canvas id="branchRevenueBarChart"></canvas>
         </div>
     </div>
 </div>
 
 <!-- Status + Top Items Row -->
 <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.25rem;margin-bottom:1.5rem;">
-    <!-- Status Breakdown -->
-    <div class="card">
-        <div class="card-header">Orders by Status</div>
-        <div class="card-body">
-            @if (statusBreakdown.Any())
-            {
-                int totalSt = statusBreakdown.Sum(s => (int)s.Count);
-                if (totalSt == 0) { totalSt = 1; }
-                @foreach (var s in statusBreakdown)
-                {
-                    int cnt = (int)s.Count;
-                    int share = (int)Math.Round(cnt / (decimal)totalSt * 100m);
-                    string badgeCls = ((string)s.Status) switch
-                    {
-                        "Completed" => "badge-success",
-                        "Pending" => "badge-warning",
-                        "Preparing" => "badge-info",
-                        "Ready" => "badge-accent",
-                        "Cancelled" => "badge-danger",
-                        _ => "badge-neutral"
-                    };
-                    <div style="margin-bottom:0.6rem;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.2rem;">
-                            <span class="badge @badgeCls">@s.Status</span>
-                            <span class="caption">@cnt orders · @share%</span>
-                        </div>
-                        <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
-                            <div style="height:100%;width:@(share)%;background:linear-gradient(90deg,#ec4899,#8b5cf6);border-radius:3px;"></div>
-                        </div>
-                    </div>
-                }
-            }
-            else
-            {
-                <p class="caption">No orders for this range.</p>
-            }
+    <!-- Status Breakdown Doughnut -->
+    <div class="card min-w-0">
+        <div class="card-header">
+            <h3 class="section-title"><i class="fas fa-chart-pie" style="color:var(--accent);margin-right:0.5rem;"></i>Orders by Status</h3>
+        </div>
+        <div class="card-body relative h-[320px]">
+            <canvas id="statusDoughnutChart"></canvas>
         </div>
     </div>
 
@@ -273,3 +208,127 @@
         </table>
     </div>
 </div>
+
+@section Scripts {
+<script>
+(function() {
+    const palette = ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6','#f97316','#06b6d4'];
+
+    // Daily Revenue Line Chart
+    @if (daily.Any())
+    {
+        <text>
+        const dailyLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(daily.Select(d => ((DateTime)d.Date).ToString("dd MMM")).ToArray()));
+        const dailyData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(daily.Select(d => Math.Round((decimal)d.Revenue, 2)).ToArray()));
+
+        const dailyCtx = document.getElementById('dailyRevenueChart')?.getContext('2d');
+        if (dailyCtx) {
+            new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: dailyLabels,
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: dailyData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16,185,129,0.08)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => '$' + ctx.raw.toLocaleString() } }
+                    },
+                    scales: {
+                        x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }
+                    }
+                }
+            });
+        }
+        </text>
+    }
+
+    // Branch Revenue Bar Chart
+    @if (branchRevenue.Any())
+    {
+        <text>
+        const brNames = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branchRevenue.Select(b => ((Cafe.Models.Branch)b.Branch).Name).ToArray()));
+        const brRevs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branchRevenue.Select(b => Math.Round((decimal)b.Revenue, 2)).ToArray()));
+        const brColors = brNames.map((_, i) => palette[i % palette.length]);
+
+        const brCtx = document.getElementById('branchRevenueBarChart')?.getContext('2d');
+        if (brCtx) {
+            new Chart(brCtx, {
+                type: 'bar',
+                data: {
+                    labels: brNames,
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: brRevs,
+                        backgroundColor: brColors.map(c => c + 'cc'),
+                        borderColor: brColors,
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => '$' + ctx.raw.toLocaleString() } } },
+                    scales: {
+                        x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }
+                    }
+                }
+            });
+        }
+        </text>
+    }
+
+    // Status Breakdown Doughnut
+    @if (statusBreakdown.Any())
+    {
+        <text>
+        const statusLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(statusBreakdown.Select(s => (string)s.Status).ToArray()));
+        const statusCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(statusBreakdown.Select(s => (int)s.Count).ToArray()));
+        const statusColorMap = { 'Completed': '#22c55e', 'Pending': '#f59e0b', 'Preparing': '#6366f1', 'Ready': '#d4af37', 'Cancelled': '#ef4444' };
+        const sColors = statusLabels.map(s => statusColorMap[s] || '#9ca3af');
+
+        const stCtx = document.getElementById('statusDoughnutChart')?.getContext('2d');
+        if (stCtx) {
+            new Chart(stCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusCounts,
+                        backgroundColor: sColors.map(c => c + 'cc'),
+                        borderColor: sColors,
+                        borderWidth: 2,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '55%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } },
+                        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + ' orders' } }
+                    }
+                }
+            });
+        }
+        </text>
+    }
+})();
+</script>
+}

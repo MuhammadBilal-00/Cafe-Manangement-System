@@ -17,9 +17,11 @@ namespace Cafe.Models
 
             [Required]
             [StringLength(20)]
+            [Display(Name = "Contact Info")]
             public string ContactInfo { get; set; } = string.Empty;
 
             [StringLength(100)]
+            [Display(Name = "Opening Hours")]
             public string? OpeningHours { get; set; }
 
             public int? ManagerId { get; set; }
