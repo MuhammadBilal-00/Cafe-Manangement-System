@@ -1,0 +1,78 @@
+@model Cafe.Models.Supplier
+@{
+    ViewData["Title"] = "Add Supplier";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+}
+
+<div class="max-w-[720px] mx-auto">
+    <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+        <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title" style="margin:0;">Add Supplier</h1>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Supplier Name *</label>
+                        <input asp-for="Name" class="form-control" placeholder="e.g. Ali Traders" required />
+                        <span asp-validation-for="Name" class="caption" style="color:#dc2626;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Branch *</label>
+                        <select asp-for="BranchId" class="form-select" required>
+                            <option value="">Select Branch</option>
+                            @foreach (var b in branches)
+                            {
+                                <option value="@b.Id">@b.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Contact Person</label>
+                        <input asp-for="ContactPerson" class="form-control" placeholder="Primary contact name" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input asp-for="Phone" class="form-control" placeholder="+92 300 1234567" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="supplier@example.com" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
+                            <input asp-for="IsActive" type="checkbox" style="width:auto;" checked />
+                            Active
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Address</label>
+                    <textarea asp-for="Address" rows="2" class="form-control" placeholder="Supplier address..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea asp-for="Notes" rows="2" class="form-control" placeholder="Additional notes, payment terms, etc."></textarea>
+                </div>
+
+                <div class="divider"></div>
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:0.5rem;"></i> Save Supplier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

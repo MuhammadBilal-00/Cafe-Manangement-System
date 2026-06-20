@@ -1,0 +1,160 @@
+@model IEnumerable<Cafe.Models.Supplier>
+@{
+    ViewData["Title"] = "Suppliers";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+    var activeOnly = (bool)(ViewBag.ActiveOnly ?? true);
+    var total = Model.Count();
+    var active = Model.Count(s => s.IsActive);
+}
+
+<!-- Page Header -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Suppliers</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Manage inventory suppliers and purchase contacts</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> Add Supplier</a>
+</div>
+
+<!-- KPI Cards -->
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:2rem;">
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-truck"></i></div>
+        <div class="kpi-label">Total Suppliers</div>
+        <div class="kpi-value">@total</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-check-circle"></i></div>
+        <div class="kpi-label">Active</div>
+        <div class="kpi-value" style="color:#16a34a;">@active</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(239,68,68,0.1); color:#dc2626;"><i class="fas fa-pause-circle"></i></div>
+        <div class="kpi-label">Inactive</div>
+        <div class="kpi-value" style="color:#dc2626;">@(total - active)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(212,175,55,0.1); color:var(--accent);"><i class="fas fa-boxes"></i></div>
+        <div class="kpi-label">Items Linked</div>
+        <div class="kpi-value">@Model.Sum(s => s.InventoryItems.Count)</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-6">
+    <div class="card-body">
+        <form method="get" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Branch</label>
+                <select name="branchId" class="form-select">
+                    <option value="">All Branches</option>
+                    @foreach (var b in branches)
+                    {
+                        <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0; display:flex; align-items:flex-end; gap:0.5rem;">
+                <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; padding:0.4rem 0; font-size:0.85rem;">
+                    <input type="checkbox" name="activeOnly" value="true" checked="@activeOnly" />
+                    Active only
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter" style="margin-right:0.5rem;"></i> Filter</button>
+        </form>
+    </div>
+</div>
+
+<!-- Suppliers Table -->
+<div class="card">
+    <div class="card-body card-body-flush">
+        <div style="overflow-x:auto;">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Supplier</th>
+                        <th>Contact</th>
+                        <th>Phone / Email</th>
+                        <th>Branch</th>
+                        <th style="text-align:center;">Items</th>
+                        <th style="text-align:center;">Purchases</th>
+                        <th style="text-align:center;">Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fas fa-truck"></i>
+                                    <h3>No suppliers found</h3>
+                                    <p>Add your first supplier to start linking inventory items.</p>
+                                    <a asp-action="Create" class="btn btn-primary btn-sm">Add Supplier</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var s in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div style="font-weight:600;">@s.Name</div>
+                                @if (!string.IsNullOrEmpty(s.Address))
+                                {
+                                    <div class="caption" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="@s.Address">@s.Address</div>
+                                }
+                            </td>
+                            <td>@(s.ContactPerson ?? "—")</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(s.Phone))
+                                {
+                                    <div><i class="fas fa-phone" style="font-size:0.7rem; margin-right:0.3rem; color:var(--text-tertiary);"></i>@s.Phone</div>
+                                }
+                                @if (!string.IsNullOrEmpty(s.Email))
+                                {
+                                    <div class="caption"><i class="fas fa-envelope" style="font-size:0.7rem; margin-right:0.3rem;"></i>@s.Email</div>
+                                }
+                                @if (string.IsNullOrEmpty(s.Phone) && string.IsNullOrEmpty(s.Email))
+                                {
+                                    <span class="caption">—</span>
+                                }
+                            </td>
+                            <td class="caption">@s.Branch?.Name</td>
+                            <td style="text-align:center;">
+                                <span style="font-weight:600;">@s.InventoryItems.Count</span>
+                            </td>
+                            <td style="text-align:center;">
+                                <span style="font-weight:600;">@s.Purchases.Count</span>
+                            </td>
+                            <td style="text-align:center;">
+                                @if (s.IsActive)
+                                {
+                                    <span class="badge badge-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-neutral">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <div style="display:flex; gap:0.4rem;">
+                                    <a asp-action="Details" asp-route-id="@s.Id" class="btn btn-ghost btn-sm" title="Details"><i class="fas fa-eye"></i></a>
+                                    <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-ghost btn-sm" title="Edit"><i class="fas fa-edit"></i></a>
+                                    <form asp-action="ToggleActive" asp-route-id="@s.Id" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-ghost btn-sm" title="@(s.IsActive ? "Deactivate" : "Activate")">
+                                            <i class="fas @(s.IsActive ? "fa-pause" : "fa-play")"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

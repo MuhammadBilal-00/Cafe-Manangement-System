@@ -51,7 +51,10 @@ namespace Cafe.Services
             decimal hourlyRate = dailyRate / policy.StandardDailyHours;
 
             // ── Deductions (from policy factors) ──
-            decimal absenceDeduction = stats.DaysAbsent * dailyRate * policy.AbsenceDeductionFactor;
+            // Sick Leave and Casual Leave are unpaid leave — deduct like absence
+            // Paid Leave and Holiday are NOT deducted (already paid)
+            int unpaidLeaveDays = stats.DaysSickLeave + stats.DaysCasualLeave;
+            decimal absenceDeduction = (stats.DaysAbsent + unpaidLeaveDays) * dailyRate * policy.AbsenceDeductionFactor;
             decimal halfDayDeduction = stats.DaysHalfDay * dailyRate * policy.HalfDayDeductionFactor;
 
             int latePenaltyUnits = policy.LatePenaltyThreshold > 0

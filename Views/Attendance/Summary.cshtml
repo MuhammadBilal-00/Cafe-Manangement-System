@@ -65,7 +65,12 @@
                         <th style="text-align:center;">Absent</th>
                         <th style="text-align:center;">Late</th>
                         <th style="text-align:center;">Half-Day</th>
-                        <th style="text-align:center;">Overtime</th>
+                        <th style="text-align:center;">Paid Leave</th>
+                        <th style="text-align:center;">Sick Leave</th>
+                        <th style="text-align:center;">Casual Leave</th>
+                        <th style="text-align:center;">Holiday</th>
+                        <th style="text-align:center;">WFH</th>
+                        <th style="text-align:center;">Overtime (h)</th>
                         <th style="text-align:center;">Attendance %</th>
                     </tr>
                 </thead>
@@ -73,7 +78,7 @@
                     @if (!Model.Summaries.Any())
                     {
                         <tr>
-                            <td colspan="10">
+                            <td colspan="15">
                                 <div class="empty-state">
                                     <i class="fas fa-chart-bar"></i>
                                     <h3>No summary data available</h3>
@@ -92,10 +97,15 @@
                             <td class="caption">@s.Role</td>
                             <td style="text-align:center;">@s.TotalWorkingDays</td>
                             <td style="text-align:center; color:#16a34a; font-weight:600;">@s.DaysPresent</td>
-                            <td style="text-align:center; color:#dc2626; font-weight:600;">@s.DaysAbsent</td>
-                            <td style="text-align:center; color:#ca8a04; font-weight:600;">@s.DaysLate</td>
-                            <td style="text-align:center; color:#ea580c; font-weight:600;">@s.DaysHalfDay</td>
-                            <td style="text-align:center; @(s.TotalOvertimeHours > 0 ? "color:var(--accent); font-weight:600;" : "color:var(--text-tertiary);")">@(s.TotalOvertimeHours > 0 ? $"{s.TotalOvertimeHours:F1}h" : "-")</td>
+                            <td style="text-align:center; color:@(s.DaysAbsent > 0 ? "#dc2626" : "var(--text-tertiary)"); font-weight:600;">@s.DaysAbsent</td>
+                            <td style="text-align:center; color:@(s.DaysLate > 0 ? "#ca8a04" : "var(--text-tertiary)"); font-weight:600;">@s.DaysLate</td>
+                            <td style="text-align:center; color:@(s.DaysHalfDay > 0 ? "#ea580c" : "var(--text-tertiary)"); font-weight:600;">@s.DaysHalfDay</td>
+                            <td style="text-align:center; color:@(s.DaysPaidLeave > 0 ? "#9333ea" : "var(--text-tertiary)");">@(s.DaysPaidLeave > 0 ? s.DaysPaidLeave.ToString() : "—")</td>
+                            <td style="text-align:center; color:@(s.DaysSickLeave > 0 ? "#dc2626" : "var(--text-tertiary)");">@(s.DaysSickLeave > 0 ? s.DaysSickLeave.ToString() : "—")</td>
+                            <td style="text-align:center; color:@(s.DaysCasualLeave > 0 ? "#dc2626" : "var(--text-tertiary)");">@(s.DaysCasualLeave > 0 ? s.DaysCasualLeave.ToString() : "—")</td>
+                            <td style="text-align:center; color:@(s.DaysHoliday > 0 ? "#10b981" : "var(--text-tertiary)");">@(s.DaysHoliday > 0 ? s.DaysHoliday.ToString() : "—")</td>
+                            <td style="text-align:center; color:@(s.DaysWFH > 0 ? "#3b82f6" : "var(--text-tertiary)");">@(s.DaysWFH > 0 ? s.DaysWFH.ToString() : "—")</td>
+                            <td style="text-align:center; @(s.TotalOvertimeHours > 0 ? "color:var(--accent); font-weight:600;" : "color:var(--text-tertiary);")">@(s.TotalOvertimeHours > 0 ? $"{s.TotalOvertimeHours:F1}h" : "—")</td>
                             <td style="text-align:center; font-weight:700; color:@pctColor;">@s.AttendancePercentage%</td>
                         </tr>
                     }

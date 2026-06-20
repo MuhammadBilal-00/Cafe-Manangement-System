@@ -13,13 +13,29 @@ namespace Cafe.Services
         const int LateThresholdMinutes = 15;
         static readonly TimeSpan DefaultShiftStart = new(9, 0, 0);
 
+        // ── Valid Statuses ──
+        static readonly string[] AllStatuses = new[]
+        {
+            "Present", "Late", "Half-Day", "Absent",
+            "Paid Leave", "Sick Leave", "Casual Leave",
+            "Holiday", "Work From Home", "Overtime"
+        };
+
+        // Statuses where the employee is considered "on leave" (paid, no absence deduction)
+        static readonly string[] PaidLeaveStatuses = new[] { "Paid Leave", "Holiday" };
+
+        // Statuses that count as "present" for attendance percentage
+        static readonly string[] PresentStatuses = new[] { "Present", "Late", "Half-Day", "Work From Home", "Paid Leave", "Holiday", "Overtime" };
+
         // ── Core Operations ──
         Task<Attendance> MarkAttendanceAsync(int staffId, int branchId, DateTime date,
-            TimeSpan? clockIn, TimeSpan? clockOut, string? notes, int? markedById);
+            TimeSpan? clockIn, TimeSpan? clockOut, string? notes, int? markedById,
+            string? manualStatus = null);
 
         Task<Attendance?> ClockOutAsync(int staffId, DateTime date, TimeSpan clockOut);
 
-        Task<Attendance?> UpdateAttendanceAsync(int id, TimeSpan? clockIn, TimeSpan? clockOut, string? notes);
+        Task<Attendance?> UpdateAttendanceAsync(int id, TimeSpan? clockIn, TimeSpan? clockOut, string? notes,
+            string? manualStatus = null);
 
         Task<bool> HasAttendanceAsync(int staffId, DateTime date);
 
@@ -49,6 +65,12 @@ namespace Cafe.Services
         public int DaysAbsent { get; set; }
         public int DaysLate { get; set; }
         public int DaysHalfDay { get; set; }
+        public int DaysPaidLeave { get; set; }
+        public int DaysSickLeave { get; set; }
+        public int DaysCasualLeave { get; set; }
+        public int DaysHoliday { get; set; }
+        public int DaysWFH { get; set; }
+        public int DaysOvertime { get; set; }
         public decimal TotalOvertimeHours { get; set; }
         public decimal AttendancePercentage { get; set; }
     }

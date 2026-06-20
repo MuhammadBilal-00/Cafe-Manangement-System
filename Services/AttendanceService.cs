@@ -23,22 +23,46 @@ namespace Cafe.Services
         // 
 
         public async Task<Attendance> MarkAttendanceAsync(int staffId, int branchId, DateTime date,
-            TimeSpan? clockIn, TimeSpan? clockOut, string? notes, int? markedById)
+            TimeSpan? clockIn, TimeSpan? clockOut, string? notes, int? markedById,
+            string? manualStatus = null)
         {
             if (await HasAttendanceAsync(staffId, date))
                 throw new InvalidOperationException("Attendance already marked for this staff member on this date.");
 
-            var shiftStart = await GetShiftStartForStaff(staffId, date);
-            var (status, totalHours, overtimeHours, lateMinutes) =
-                CalculateAttendanceFields(clockIn, clockOut, shiftStart);
+            string status;
+            decimal totalHours = 0m, overtimeHours = 0m;
+            int lateMinutes = 0;
 
-            // If no times provided at all  Absent
-            if (!clockIn.HasValue && !clockOut.HasValue)
+            // Manual status overrides auto-calculation (used for leave types, holidays, WFH)
+            if (!string.IsNullOrWhiteSpace(manualStatus) && IsLeaveOrSpecialStatus(manualStatus))
             {
-                status = "Absent";
-                totalHours = 0;
-                overtimeHours = 0;
-                lateMinutes = 0;
+                status = manualStatus;
+                // WFH still tracks hours if times provided
+                if (manualStatus == "Work From Home" && clockIn.HasValue && clockOut.HasValue)
+                {
+                    totalHours = Math.Max(0, Math.Round((decimal)(clockOut.Value - clockIn.Value).TotalHours, 2));
+                    overtimeHours = totalHours > IAttendanceService.StandardDailyHours
+                        ? Math.Round(totalHours - IAttendanceService.StandardDailyHours, 2)
+                        : 0m;
+                }
+            }
+            else
+            {
+                var shiftStart = await GetShiftStartForStaff(staffId, date);
+                (status, totalHours, overtimeHours, lateMinutes) =
+                    CalculateAttendanceFields(clockIn, clockOut, shiftStart);
+
+                if (!clockIn.HasValue && !clockOut.HasValue)
+                {
+                    status = "Absent";
+                    totalHours = 0;
+                    overtimeHours = 0;
+                    lateMinutes = 0;
+                }
+
+                // Allow manual override for non-leave statuses too (e.g. marking "Overtime" explicitly)
+                if (!string.IsNullOrWhiteSpace(manualStatus) && manualStatus == "Overtime" && overtimeHours > 0)
+                    status = "Overtime";
             }
 
             var attendance = new Attendance
@@ -61,6 +85,9 @@ namespace Cafe.Services
             await _context.SaveChangesAsync();
             return attendance;
         }
+
+        private static bool IsLeaveOrSpecialStatus(string status)
+            => status is "Paid Leave" or "Sick Leave" or "Casual Leave" or "Holiday" or "Work From Home";
 
         public async Task<Attendance?> ClockOutAsync(int staffId, DateTime date, TimeSpan clockOut)
         {
@@ -85,7 +112,8 @@ namespace Cafe.Services
             return record;
         }
 
-        public async Task<Attendance?> UpdateAttendanceAsync(int id, TimeSpan? clockIn, TimeSpan? clockOut, string? notes)
+        public async Task<Attendance?> UpdateAttendanceAsync(int id, TimeSpan? clockIn, TimeSpan? clockOut, string? notes,
+            string? manualStatus = null)
         {
             var record = await _context.Attendances.FindAsync(id);
             if (record == null) return null;
@@ -95,7 +123,22 @@ namespace Cafe.Services
             record.Notes = notes;
             record.UpdatedAt = DateTime.Now;
 
-            if (!clockIn.HasValue && !clockOut.HasValue)
+            if (!string.IsNullOrWhiteSpace(manualStatus) && IsLeaveOrSpecialStatus(manualStatus))
+            {
+                record.Status = manualStatus;
+                record.TotalHours = 0;
+                record.OvertimeHours = 0;
+                record.LateMinutes = 0;
+
+                if (manualStatus == "Work From Home" && clockIn.HasValue && clockOut.HasValue)
+                {
+                    record.TotalHours = Math.Max(0, Math.Round((decimal)(clockOut.Value - clockIn.Value).TotalHours, 2));
+                    record.OvertimeHours = record.TotalHours > IAttendanceService.StandardDailyHours
+                        ? Math.Round(record.TotalHours - IAttendanceService.StandardDailyHours, 2)
+                        : 0m;
+                }
+            }
+            else if (!clockIn.HasValue && !clockOut.HasValue)
             {
                 record.Status = "Absent";
                 record.TotalHours = 0;
@@ -172,6 +215,11 @@ namespace Cafe.Services
                     DaysAbsent = stats.DaysAbsent,
                     DaysLate = stats.DaysLate,
                     DaysHalfDay = stats.DaysHalfDay,
+                    DaysPaidLeave = stats.DaysPaidLeave,
+                    DaysSickLeave = stats.DaysSickLeave,
+                    DaysCasualLeave = stats.DaysCasualLeave,
+                    DaysHoliday = stats.DaysHoliday,
+                    DaysWFH = stats.DaysWFH,
                     TotalOvertimeHours = stats.TotalOvertimeHours,
                     AttendancePercentage = stats.AttendancePercentage
                 });
@@ -198,18 +246,29 @@ namespace Cafe.Services
                 .Where(a => a.StaffId == staffId && a.Date >= startDate && a.Date < endDate)
                 .ToListAsync();
 
-            int daysPresent = records.Count(r => r.Status == "Present");
-            int daysLate = records.Count(r => r.Status == "Late");
-            int daysHalfDay = records.Count(r => r.Status == "Half-Day");
-            int daysAbsent = records.Count(r => r.Status == "Absent");
+            int daysPresent  = records.Count(r => r.Status == "Present");
+            int daysLate     = records.Count(r => r.Status == "Late");
+            int daysHalfDay  = records.Count(r => r.Status == "Half-Day");
+            int daysAbsent   = records.Count(r => r.Status == "Absent");
+            int daysPaidLeave   = records.Count(r => r.Status == "Paid Leave");
+            int daysSickLeave   = records.Count(r => r.Status == "Sick Leave");
+            int daysCasualLeave = records.Count(r => r.Status == "Casual Leave");
+            int daysHoliday     = records.Count(r => r.Status == "Holiday");
+            int daysWFH         = records.Count(r => r.Status == "Work From Home");
+            int daysOvertimeStatus = records.Count(r => r.Status == "Overtime");
 
-            int unmarkedWorkingDays = totalWorkingDays - records.Count;
+            // Only truly unaccounted working days count as absent
+            int accountedDays = records.Count;
+            int unmarkedWorkingDays = totalWorkingDays - accountedDays;
             if (unmarkedWorkingDays > 0)
                 daysAbsent += unmarkedWorkingDays;
 
             decimal totalOvertimeHours = records.Sum(r => r.OvertimeHours);
 
-            decimal effectiveDays = daysPresent + daysLate + (daysHalfDay * 0.5m);
+            // Effective presence: Present + Late + HalfDay(0.5) + WFH + PaidLeave + Holiday + Overtime
+            decimal effectiveDays = daysPresent + daysLate + (daysHalfDay * 0.5m)
+                + daysWFH + daysPaidLeave + daysHoliday + daysOvertimeStatus;
+
             decimal percentage = totalWorkingDays > 0
                 ? Math.Round((effectiveDays / totalWorkingDays) * 100, 2)
                 : 0;
@@ -221,6 +280,12 @@ namespace Cafe.Services
                 DaysAbsent = daysAbsent,
                 DaysLate = daysLate,
                 DaysHalfDay = daysHalfDay,
+                DaysPaidLeave = daysPaidLeave,
+                DaysSickLeave = daysSickLeave,
+                DaysCasualLeave = daysCasualLeave,
+                DaysHoliday = daysHoliday,
+                DaysWFH = daysWFH,
+                DaysOvertime = daysOvertimeStatus,
                 TotalOvertimeHours = totalOvertimeHours,
                 AttendancePercentage = percentage
             };

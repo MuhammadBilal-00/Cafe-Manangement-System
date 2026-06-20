@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -14,26 +14,43 @@ namespace Cafe.Models
         public string Name { get; set; } = null!;
 
         [Required]
-        public int Quantity { get; set; }    // int in DB
+        public int Quantity { get; set; }
 
         [Required]
         [StringLength(20)]
         public string Unit { get; set; } = null!;
 
         [Required]
-        public int BranchId { get; set; }    // int in DB
+        public int BranchId { get; set; }
 
         [Required]
-        public int ReorderLevel { get; set; }    // int in DB
+        public int ReorderLevel { get; set; }
 
-        public DateTime LastUpdated { get; set; } = DateTime.Now; // datetime2
+        public int MinimumStock { get; set; } = 0;
+
+        [StringLength(100)]
+        public string? StorageLocation { get; set; }
+
+        [StringLength(50)]
+        public string? Category { get; set; }
+
+        public DateTime LastUpdated { get; set; } = DateTime.Now;
+        public DateTime? LastRestockedDate { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(10,2)")]
-        public decimal UnitPrice { get; set; }    // decimal(10,2)
+        public decimal UnitPrice { get; set; }
+
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal? SellingCost { get; set; }
+
+        public int? SupplierId { get; set; }
 
         [ForeignKey("BranchId")]
         public Branch Branch { get; set; } = null!;
+
+        [ForeignKey("SupplierId")]
+        public Supplier? Supplier { get; set; }
 
         public ICollection<Purchase> Purchases { get; set; } = new List<Purchase>();
     }

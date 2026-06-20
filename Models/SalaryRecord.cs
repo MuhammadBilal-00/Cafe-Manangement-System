@@ -99,6 +99,16 @@ namespace Cafe.Models
 
         public DateTime? PaidDate { get; set; }
 
+        // Payment Details
+        [StringLength(30)]
+        public string? PaymentMethod { get; set; }   // Cash, Bank Transfer, Mobile Wallet, Cheque
+
+        [StringLength(100)]
+        public string? PaymentReference { get; set; } // Transaction ID / Cheque No.
+
+        [StringLength(300)]
+        public string? PaymentNotes { get; set; }
+
         public int? FinalizedById { get; set; }
         public DateTime? FinalizedAt { get; set; }
         public int? UnlockedById { get; set; }

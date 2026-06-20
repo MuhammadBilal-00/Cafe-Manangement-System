@@ -130,5 +130,24 @@ namespace Cafe.Controllers
 
             return await query.OrderBy(s => s.User.Name).ToListAsync();
         }
+
+        /// <summary>
+        /// Returns active suppliers the current user is allowed to see.
+        /// Owner → all active suppliers. Manager → suppliers for their branch.
+        /// </summary>
+        protected async Task<List<Supplier>> GetAccessibleSuppliers()
+        {
+            var role = GetCurrentUserRole();
+            var query = _context.Suppliers.Include(s => s.Branch).Where(s => s.IsActive);
+
+            if (role == "BranchManager")
+            {
+                var branchId = HttpContext.Session.GetManagedBranchId();
+                if (branchId.HasValue)
+                    query = query.Where(s => s.BranchId == branchId.Value);
+            }
+
+            return await query.OrderBy(s => s.Name).ToListAsync();
+        }
     }
 }

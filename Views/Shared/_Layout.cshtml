@@ -128,6 +128,10 @@
                         <span class="sidebar-link-icon"><i class="fas fa-boxes-stacked"></i></span>
                         <span class="sidebar-link-text">Inventory</span>
                     </a>
+                    <a asp-controller="Supplier" asp-action="Index" class="sidebar-link" data-nav="Supplier">
+                        <span class="sidebar-link-icon"><i class="fas fa-truck"></i></span>
+                        <span class="sidebar-link-text">Suppliers</span>
+                    </a>
                 }
 
                 @if (userRole != "Customer")

@@ -338,9 +338,32 @@ namespace Cafe.Controllers
         //  PAYMENT
         // ================================================================
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        // GET: Salary/MarkPaid/5 — show payment details form
         public async Task<IActionResult> MarkPaid(int id)
+        {
+            var record = await _salaryService.GetSalaryRecordAsync(id);
+            if (record == null) return NotFound();
+
+            var userRole = GetCurrentUserRole();
+            if (userRole == "BranchManager")
+            {
+                var managedBranchId = HttpContext.Session.GetManagedBranchId();
+                if (!managedBranchId.HasValue || record.BranchId != managedBranchId.Value)
+                    return AccessDenied();
+            }
+
+            if (record.Status != "Finalized")
+            {
+                SetErrorMessage("Salary must be Finalized before marking as paid.");
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(record);
+        }
+
+        [HttpPost, ActionName("MarkPaid")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkPaidConfirm(int id, string paymentMethod, string? paymentReference, string? paymentNotes)
         {
             var record = await _salaryService.GetSalaryRecordAsync(id);
             if (record == null) return NotFound();
@@ -355,7 +378,24 @@ namespace Cafe.Controllers
 
             var success = await _salaryService.MarkAsPaidAsync(id);
             if (success)
-                SetSuccessMessage("Salary marked as paid!");
+            {
+                // Store payment details
+                record.PaymentMethod    = paymentMethod;
+                record.PaymentReference = paymentReference;
+                record.PaymentNotes     = paymentNotes;
+                await _context.SaveChangesAsync();
+
+                await _notificationService.CreateNotificationAsync(
+                    "Salary Paid",
+                    $"Salary for {record.Staff?.User?.Name ?? $"Staff #{record.StaffId}"} has been marked as paid via {paymentMethod}.",
+                    "Success", NotificationCategory.Financial,
+                    branchId: record.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/Salary/Index",
+                    icon: "fas fa-money-bill-check");
+
+                SetSuccessMessage($"Salary marked as paid via {paymentMethod}!");
+            }
             else
                 SetErrorMessage("Failed to mark salary as paid. Salary must be finalized first.");
 

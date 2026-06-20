@@ -73,6 +73,22 @@ namespace Cafe.Controllers
 
             var allRecords = await query.ToListAsync();
 
+            // Today's snapshot for dashboard KPIs
+            var todayQuery = _context.Attendances
+                .Where(a => a.Date == DateTime.Today);
+            var todayBranchId = branchId;
+            if (userRole == "BranchManager")
+                todayBranchId = HttpContext.Session.GetManagedBranchId();
+            if (todayBranchId.HasValue)
+                todayQuery = todayQuery.Where(a => a.BranchId == todayBranchId.Value);
+
+            var todayRecords = await todayQuery.ToListAsync();
+            var totalActiveStaff = await _context.Staff
+                .Where(s => s.IsActive && (!todayBranchId.HasValue || s.BranchId == todayBranchId.Value))
+                .CountAsync();
+
+            var leaveStatuses = new[] { "Paid Leave", "Sick Leave", "Casual Leave", "Holiday" };
+
             var vm = new AttendanceIndexViewModel
             {
                 Records = records,
@@ -90,7 +106,19 @@ namespace Cafe.Controllers
                 TotalPresent = allRecords.Count(r => r.Status == "Present"),
                 TotalAbsent = allRecords.Count(r => r.Status == "Absent"),
                 TotalLate = allRecords.Count(r => r.Status == "Late"),
-                TotalHalfDay = allRecords.Count(r => r.Status == "Half-Day")
+                TotalHalfDay = allRecords.Count(r => r.Status == "Half-Day"),
+                TotalPaidLeave = allRecords.Count(r => r.Status == "Paid Leave"),
+                TotalSickLeave = allRecords.Count(r => r.Status == "Sick Leave"),
+                TotalCasualLeave = allRecords.Count(r => r.Status == "Casual Leave"),
+                TotalHoliday = allRecords.Count(r => r.Status == "Holiday"),
+                TotalWFH = allRecords.Count(r => r.Status == "Work From Home"),
+                TotalOvertime = allRecords.Count(r => r.Status == "Overtime"),
+                // Today's snapshot
+                TodayTotalStaff = totalActiveStaff,
+                TodayCheckedIn = todayRecords.Count(r => r.Status is "Present" or "Late" or "Work From Home" or "Overtime"),
+                TodayLate = todayRecords.Count(r => r.Status == "Late"),
+                TodayOnLeave = todayRecords.Count(r => leaveStatuses.Contains(r.Status)),
+                TodayAbsent = Math.Max(0, totalActiveStaff - todayRecords.Count)
             };
 
             return View(vm);
@@ -130,7 +158,8 @@ namespace Cafe.Controllers
                 await _attendanceService.MarkAttendanceAsync(
                     model.StaffId, staff.BranchId, model.Date,
                     model.CheckInTime, model.CheckOutTime,
-                    model.Notes, GetCurrentUserId());
+                    model.Notes, GetCurrentUserId(),
+                    model.ManualStatus);
 
                 // Notification: attendance marked
                 await _notificationService.CreateNotificationAsync(
@@ -142,7 +171,7 @@ namespace Cafe.Controllers
                     redirectUrl: "/Attendance/Index",
                     icon: "fas fa-calendar-check");
 
-                SetSuccessMessage("Attendance marked successfully! Status auto-calculated.");
+                SetSuccessMessage("Attendance marked successfully!");
                 return RedirectToAction(nameof(Index));
             }
             catch (InvalidOperationException ex)
@@ -304,7 +333,8 @@ namespace Cafe.Controllers
                 {
                     StaffId = s.Id,
                     StaffName = s.User?.Name ?? "Unknown",
-                    Status = existing?.Status ?? "Present",
+                    Status = existing?.Status ?? "Auto",
+                    ExistingStatus = existing?.Status,
                     CheckInTime = existing?.CheckInTime,
                     CheckOutTime = existing?.CheckOutTime,
                     LateMinutes = existing?.LateMinutes ?? 0,
@@ -322,7 +352,7 @@ namespace Cafe.Controllers
             });
         }
 
-        // POST: Attendance/BulkMark (auto-calculates status from times)
+        // POST: Attendance/BulkMark
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireManagerOrOwner]
@@ -338,7 +368,8 @@ namespace Cafe.Controllers
                     await _attendanceService.MarkAttendanceAsync(
                         entry.StaffId, model.BranchId, model.Date,
                         entry.CheckInTime, entry.CheckOutTime,
-                        entry.Notes, GetCurrentUserId());
+                        entry.Notes, GetCurrentUserId(),
+                        entry.ManualStatus);
                     marked++;
                 }
                 catch (InvalidOperationException)
@@ -390,14 +421,14 @@ namespace Cafe.Controllers
             return View(model);
         }
 
-        // POST: Attendance/Edit/5 (auto-recalculates status)
+        // POST: Attendance/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireManagerOrOwner]
         public async Task<IActionResult> Edit(int id, AttendanceMarkViewModel model)
         {
             var result = await _attendanceService.UpdateAttendanceAsync(
-                id, model.CheckInTime, model.CheckOutTime, model.Notes);
+                id, model.CheckInTime, model.CheckOutTime, model.Notes, model.ManualStatus);
 
             if (result == null)
             {

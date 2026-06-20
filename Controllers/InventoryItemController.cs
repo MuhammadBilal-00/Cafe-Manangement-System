@@ -80,6 +80,7 @@ namespace Cafe.Controllers
         public async Task<IActionResult> Create()
         {
             ViewBag.Branches = await GetAccessibleBranches();
+            ViewBag.Suppliers = await GetAccessibleSuppliers();
             return View();
         }
 
@@ -95,6 +96,7 @@ namespace Cafe.Controllers
             // Remove navigation property validation errors (not bound from form)
             ModelState.Remove("Branch");
             ModelState.Remove("Purchases");
+            ModelState.Remove("Supplier");
 
             if (ModelState.IsValid)
             {
@@ -117,6 +119,7 @@ namespace Cafe.Controllers
             }
 
             ViewBag.Branches = await GetAccessibleBranches();
+            ViewBag.Suppliers = await GetAccessibleSuppliers();
             return View(inventoryItem);
         }
 
@@ -125,11 +128,12 @@ namespace Cafe.Controllers
         {
             if (id == null) return NotFound();
 
-            var inventoryItem = await _context.InventoryItems.FindAsync(id);
+            var inventoryItem = await _context.InventoryItems.Include(i => i.Supplier).FirstOrDefaultAsync(i => i.Id == id);
             if (inventoryItem == null) return NotFound();
             if (!CanAccessItem(inventoryItem)) return AccessDenied();
 
             ViewBag.Branches = await GetAccessibleBranches();
+            ViewBag.Suppliers = await GetAccessibleSuppliers();
             return View(inventoryItem);
         }
 
@@ -144,6 +148,7 @@ namespace Cafe.Controllers
             // Remove navigation property validation errors (not bound from form)
             ModelState.Remove("Branch");
             ModelState.Remove("Purchases");
+            ModelState.Remove("Supplier");
 
             if (ModelState.IsValid)
             {
@@ -165,6 +170,7 @@ namespace Cafe.Controllers
             }
 
             ViewBag.Branches = await GetAccessibleBranches();
+            ViewBag.Suppliers = await GetAccessibleSuppliers();
             return View(inventoryItem);
         }
 

@@ -37,6 +37,7 @@ namespace Cafe.Data
         public DbSet<Purchase> Purchases { get; set; }
         public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
         public DbSet<InventoryRecipeMapping> InventoryRecipeMappings { get; set; }
+        public DbSet<Supplier> Suppliers { get; set; }
 
         // Feedback & Reports
         public DbSet<Feedback> Feedbacks { get; set; }
@@ -96,6 +97,10 @@ namespace Cafe.Data
 
             modelBuilder.Entity<InventoryItem>()
                 .Property(i => i.UnitPrice)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<InventoryItem>()
+                .Property(i => i.SellingCost)
                 .HasPrecision(10, 2);
 
             modelBuilder.Entity<InventoryItem>()
@@ -531,6 +536,37 @@ namespace Cafe.Data
                 .HasOne(e => e.CreatedBy)
                 .WithMany()
                 .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Supplier relationships
+            modelBuilder.Entity<Supplier>()
+                .HasOne(s => s.Branch)
+                .WithMany()
+                .HasForeignKey(s => s.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InventoryItem>()
+                .HasOne(i => i.Supplier)
+                .WithMany(s => s.InventoryItems)
+                .HasForeignKey(i => i.SupplierId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Purchase>()
+                .HasOne(p => p.Supplier)
+                .WithMany(s => s.Purchases)
+                .HasForeignKey(p => p.SupplierId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Purchase>()
+                .HasOne(p => p.Branch)
+                .WithMany()
+                .HasForeignKey(p => p.BranchId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Purchase>()
+                .HasOne(p => p.CreatedBy)
+                .WithMany()
+                .HasForeignKey(p => p.CreatedById)
                 .OnDelete(DeleteBehavior.NoAction);
         }
 

@@ -1,0 +1,163 @@
+@model Cafe.Models.Supplier
+@{
+    ViewData["Title"] = $"Supplier — {Model.Name}";
+    var lastPurchase = Model.Purchases.OrderByDescending(p => p.DatePurchased).FirstOrDefault();
+}
+
+<div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem; flex-wrap:wrap;">
+    <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+    <h1 class="page-title" style="margin:0;">@Model.Name</h1>
+    @if (Model.IsActive)
+    {
+        <span class="badge badge-success">Active</span>
+    }
+    else
+    {
+        <span class="badge badge-neutral">Inactive</span>
+    }
+    <div style="margin-left:auto; display:flex; gap:0.5rem;">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary btn-sm"><i class="fas fa-edit" style="margin-right:0.3rem;"></i> Edit</a>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2rem;" class="responsive-grid">
+    <!-- Contact Info -->
+    <div class="card">
+        <div class="card-body">
+            <h3 style="font-weight:600; margin-bottom:1rem; font-size:0.9rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-tertiary);">Contact Information</h3>
+            <dl style="display:grid; grid-template-columns:auto 1fr; gap:0.5rem 1rem; font-size:0.875rem;">
+                <dt style="color:var(--text-tertiary);">Branch</dt>
+                <dd>@Model.Branch?.Name</dd>
+                <dt style="color:var(--text-tertiary);">Contact</dt>
+                <dd>@(Model.ContactPerson ?? "—")</dd>
+                <dt style="color:var(--text-tertiary);">Phone</dt>
+                <dd>@(Model.Phone ?? "—")</dd>
+                <dt style="color:var(--text-tertiary);">Email</dt>
+                <dd>@(Model.Email ?? "—")</dd>
+                <dt style="color:var(--text-tertiary);">Address</dt>
+                <dd>@(Model.Address ?? "—")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Purchase Stats -->
+    <div class="card">
+        <div class="card-body">
+            <h3 style="font-weight:600; margin-bottom:1rem; font-size:0.9rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-tertiary);">Purchase History</h3>
+            <dl style="display:grid; grid-template-columns:auto 1fr; gap:0.5rem 1rem; font-size:0.875rem;">
+                <dt style="color:var(--text-tertiary);">Total Purchases</dt>
+                <dd style="font-weight:600;">@Model.Purchases.Count</dd>
+                <dt style="color:var(--text-tertiary);">Total Spent</dt>
+                <dd style="font-weight:600; color:var(--accent);">Rs. @Model.Purchases.Sum(p => p.TotalCost).ToString("N0")</dd>
+                <dt style="color:var(--text-tertiary);">Last Purchase</dt>
+                <dd>@(lastPurchase?.DatePurchased.ToString("dd MMM yyyy") ?? "—")</dd>
+                <dt style="color:var(--text-tertiary);">Items Supplied</dt>
+                <dd>@Model.InventoryItems.Count</dd>
+                <dt style="color:var(--text-tertiary);">Added On</dt>
+                <dd>@Model.CreatedAt.ToString("dd MMM yyyy")</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Notes))
+{
+    <div class="card mb-6">
+        <div class="card-body">
+            <h3 style="font-weight:600; margin-bottom:0.5rem;">Notes</h3>
+            <p class="body-text">@Model.Notes</p>
+        </div>
+    </div>
+}
+
+<!-- Linked Inventory Items -->
+<div class="card mb-6">
+    <div class="card-body card-body-flush">
+        <div style="padding:1rem 1.5rem 0; font-weight:600; font-size:0.9rem;">Linked Inventory Items (@Model.InventoryItems.Count)</div>
+        <div style="overflow-x:auto;">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Unit</th>
+                        <th style="text-align:center;">In Stock</th>
+                        <th style="text-align:center;">Reorder Level</th>
+                        <th>Unit Price</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.InventoryItems.Any())
+                    {
+                        <tr><td colspan="6"><div class="empty-state" style="padding:2rem;"><i class="fas fa-box-open"></i><p>No items linked yet.</p></div></td></tr>
+                    }
+                    @foreach (var item in Model.InventoryItems.OrderBy(i => i.Name))
+                    {
+                        var stockOk = item.Quantity > item.ReorderLevel;
+                        <tr>
+                            <td style="font-weight:500;">@item.Name</td>
+                            <td class="caption">@item.Unit</td>
+                            <td style="text-align:center; font-weight:600; color:@(stockOk ? "#16a34a" : "#dc2626");">@item.Quantity</td>
+                            <td style="text-align:center; color:var(--text-tertiary);">@item.ReorderLevel</td>
+                            <td>Rs. @item.UnitPrice.ToString("N2")</td>
+                            <td>
+                                @if (item.Quantity == 0)
+                                {
+                                    <span class="badge badge-danger">Out of Stock</span>
+                                }
+                                else if (!stockOk)
+                                {
+                                    <span class="badge badge-warning">Low Stock</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-success">OK</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Purchases -->
+<div class="card">
+    <div class="card-body card-body-flush">
+        <div style="padding:1rem 1.5rem 0; font-weight:600; font-size:0.9rem;">Recent Purchases</div>
+        <div style="overflow-x:auto;">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Item</th>
+                        <th style="text-align:center;">Qty</th>
+                        <th>Total Cost</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Purchases.Any())
+                    {
+                        <tr><td colspan="6"><div class="empty-state" style="padding:2rem;"><p>No purchases recorded yet.</p></div></td></tr>
+                    }
+                    @foreach (var p in Model.Purchases.OrderByDescending(p => p.DatePurchased).Take(20))
+                    {
+                        <tr>
+                            <td>@p.DatePurchased.ToString("dd MMM yyyy")</td>
+                            <td>@p.Item?.Name</td>
+                            <td style="text-align:center; font-weight:600;">@p.QuantityPurchased</td>
+                            <td>Rs. @p.TotalCost.ToString("N0")</td>
+                            <td>
+                                <span class="badge @(p.Status == "Received" ? "badge-success" : p.Status == "Pending" ? "badge-warning" : "badge-neutral")">@p.Status</span>
+                            </td>
+                            <td class="caption">@(p.Notes ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

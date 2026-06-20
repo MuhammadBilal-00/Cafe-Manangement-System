@@ -14,8 +14,7 @@
     <div class="card-body card-body-compact">
         <p class="caption" style="margin:0;">
             <i class="fas fa-info-circle" style="color:var(--accent); margin-right:0.5rem;"></i>
-            Status is <strong>auto-calculated</strong> from check-in/check-out times.
-            Leave both times empty to mark as Absent.
+            Enter clock-in/out for auto-calculation, or select a leave/special status. Leave both times empty + select a status for leave types.
         </p>
     </div>
 </div>
@@ -54,10 +53,11 @@
                 <table class="premium-table">
                     <thead>
                         <tr>
-                            <th>Staff</th>
-                            <th>Check In</th>
-                            <th>Check Out</th>
-                            <th>Notes</th>
+                            <th style="min-width:130px;">Staff</th>
+                            <th style="min-width:110px;">Check In</th>
+                            <th style="min-width:110px;">Check Out</th>
+                            <th style="min-width:170px;">Status Override</th>
+                            <th style="min-width:140px;">Remarks</th>
                             <th>State</th>
                         </tr>
                     </thead>
@@ -65,7 +65,7 @@
                         @for (int i = 0; i < Model.Entries.Count; i++)
                         {
                             var entry = Model.Entries[i];
-                            <tr style="@(entry.AlreadyMarked ? "opacity:0.5;" : "")">
+                            <tr style="@(entry.AlreadyMarked ? "opacity:0.55;" : "")">
                                 <td style="font-weight:500;">
                                     @entry.StaffName
                                     <input type="hidden" name="Entries[@i].StaffId" value="@entry.StaffId" />
@@ -73,18 +73,60 @@
                                     <input type="hidden" name="Entries[@i].AlreadyMarked" value="@entry.AlreadyMarked" />
                                 </td>
                                 <td>
-                                    <input type="time" name="Entries[@i].CheckInTime" value="@entry.CheckInTime?.ToString(@"hh\:mm")" class="form-control" style="width:120px;" @(entry.AlreadyMarked ? "disabled" : "") />
+                                    <input type="time" name="Entries[@i].CheckInTime"
+                                           value="@entry.CheckInTime?.ToString(@"hh\:mm")"
+                                           class="form-control" style="width:110px;"
+                                           @(entry.AlreadyMarked ? "disabled" : "") />
                                 </td>
                                 <td>
-                                    <input type="time" name="Entries[@i].CheckOutTime" value="@entry.CheckOutTime?.ToString(@"hh\:mm")" class="form-control" style="width:120px;" @(entry.AlreadyMarked ? "disabled" : "") />
+                                    <input type="time" name="Entries[@i].CheckOutTime"
+                                           value="@entry.CheckOutTime?.ToString(@"hh\:mm")"
+                                           class="form-control" style="width:110px;"
+                                           @(entry.AlreadyMarked ? "disabled" : "") />
                                 </td>
                                 <td>
-                                    <input type="text" name="Entries[@i].Notes" value="@entry.Notes" class="form-control" style="width:160px;" placeholder="Notes..." @(entry.AlreadyMarked ? "disabled" : "") />
+                                    @if (!entry.AlreadyMarked)
+                                    {
+                                        <select name="Entries[@i].ManualStatus" class="form-select form-select-sm">
+                                            <option value="">Auto (from times)</option>
+                                            <optgroup label="Leave (Paid)">
+                                                <option value="Paid Leave">Paid Leave</option>
+                                                <option value="Holiday">Holiday</option>
+                                            </optgroup>
+                                            <optgroup label="Leave (Unpaid)">
+                                                <option value="Sick Leave">Sick Leave</option>
+                                                <option value="Casual Leave">Casual Leave</option>
+                                            </optgroup>
+                                            <optgroup label="Remote">
+                                                <option value="Work From Home">Work From Home</option>
+                                            </optgroup>
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <span>—</span>
+                                    }
+                                </td>
+                                <td>
+                                    <input type="text" name="Entries[@i].Notes"
+                                           value="@entry.Notes"
+                                           class="form-control" style="width:140px;"
+                                           placeholder="Remarks..."
+                                           @(entry.AlreadyMarked ? "disabled" : "") />
                                 </td>
                                 <td>
                                     @if (entry.AlreadyMarked)
                                     {
-                                        <span class="badge badge-success">@entry.Status</span>
+                                        var badgeClass = entry.ExistingStatus switch
+                                        {
+                                            "Present"        => "badge badge-success",
+                                            "Late"           => "badge badge-warning",
+                                            "Absent"         => "badge badge-danger",
+                                            "Half-Day"       => "badge badge-info",
+                                            "Work From Home" => "badge badge-info",
+                                            _                => "badge badge-neutral"
+                                        };
+                                        <span class="@badgeClass">@(entry.ExistingStatus ?? entry.Status)</span>
                                     }
                                     else
                                     {

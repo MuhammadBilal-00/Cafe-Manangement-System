@@ -1,0 +1,79 @@
+@model Cafe.Models.Supplier
+@{
+    ViewData["Title"] = "Edit Supplier";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+}
+
+<div class="max-w-[720px] mx-auto">
+    <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+        <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title" style="margin:0;">Edit Supplier</h1>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CreatedAt" />
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Supplier Name *</label>
+                        <input asp-for="Name" class="form-control" required />
+                        <span asp-validation-for="Name" class="caption" style="color:#dc2626;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Branch *</label>
+                        <select asp-for="BranchId" class="form-select" required>
+                            @foreach (var b in branches)
+                            {
+                                <option value="@b.Id" selected="@(b.Id == Model.BranchId)">@b.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Contact Person</label>
+                        <input asp-for="ContactPerson" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input asp-for="Phone" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input asp-for="Email" type="email" class="form-control" />
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:flex-end;">
+                        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                            <input asp-for="IsActive" type="checkbox" style="width:auto;" />
+                            Active
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Address</label>
+                    <textarea asp-for="Address" rows="2" class="form-control"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea asp-for="Notes" rows="2" class="form-control"></textarea>
+                </div>
+
+                <div class="divider"></div>
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:0.5rem;"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
