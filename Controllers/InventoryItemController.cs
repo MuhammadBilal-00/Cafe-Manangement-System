@@ -114,6 +114,33 @@ namespace Cafe.Controllers
                     redirectUrl: "/InventoryItem/Index",
                     icon: "fas fa-boxes-stacked");
 
+                // Check initial stock level
+                if (inventoryItem.Quantity >= 0)
+                {
+                    if (inventoryItem.MinimumStock > 0 && inventoryItem.Quantity < inventoryItem.MinimumStock)
+                    {
+                        await _notificationService.CreateNotificationAsync(
+                            "Critical Stock Level",
+                            $"\"{inventoryItem.Name}\" was added with critically low stock: {inventoryItem.Quantity} units (minimum: {inventoryItem.MinimumStock}).",
+                            "Error", NotificationCategory.Inventory,
+                            branchId: inventoryItem.BranchId,
+                            createdBy: GetCurrentUserId(),
+                            redirectUrl: "/InventoryItem/LowStock",
+                            icon: "fas fa-triangle-exclamation");
+                    }
+                    else if (inventoryItem.Quantity <= inventoryItem.ReorderLevel)
+                    {
+                        await _notificationService.CreateNotificationAsync(
+                            "Low Stock Alert",
+                            $"\"{inventoryItem.Name}\" was added with low stock: {inventoryItem.Quantity} units (reorder level: {inventoryItem.ReorderLevel}).",
+                            "Warning", NotificationCategory.Inventory,
+                            branchId: inventoryItem.BranchId,
+                            createdBy: GetCurrentUserId(),
+                            redirectUrl: "/InventoryItem/LowStock",
+                            icon: "fas fa-triangle-exclamation");
+                    }
+                }
+
                 TempData["Success"] = "Inventory item created successfully!";
                 return RedirectToAction(nameof(Index));
             }
@@ -157,6 +184,33 @@ namespace Cafe.Controllers
                     inventoryItem.LastUpdated = DateTime.Now;
                     _context.Update(inventoryItem);
                     await _context.SaveChangesAsync();
+
+                    // Check stock level after edit
+                    if (inventoryItem.Quantity >= 0)
+                    {
+                        if (inventoryItem.MinimumStock > 0 && inventoryItem.Quantity < inventoryItem.MinimumStock)
+                        {
+                            await _notificationService.CreateNotificationAsync(
+                                "Critical Stock Level",
+                                $"\"{inventoryItem.Name}\" is critically low at {inventoryItem.Quantity} units (minimum: {inventoryItem.MinimumStock}).",
+                                "Error", NotificationCategory.Inventory,
+                                branchId: inventoryItem.BranchId,
+                                createdBy: GetCurrentUserId(),
+                                redirectUrl: "/InventoryItem/LowStock",
+                                icon: "fas fa-triangle-exclamation");
+                        }
+                        else if (inventoryItem.Quantity <= inventoryItem.ReorderLevel)
+                        {
+                            await _notificationService.CreateNotificationAsync(
+                                "Low Stock Alert",
+                                $"\"{inventoryItem.Name}\" is at {inventoryItem.Quantity} units (reorder level: {inventoryItem.ReorderLevel}).",
+                                "Warning", NotificationCategory.Inventory,
+                                branchId: inventoryItem.BranchId,
+                                createdBy: GetCurrentUserId(),
+                                redirectUrl: "/InventoryItem/LowStock",
+                                icon: "fas fa-triangle-exclamation");
+                        }
+                    }
 
                     TempData["Success"] = "Inventory item updated successfully!";
                 }
@@ -235,16 +289,30 @@ namespace Cafe.Controllers
             await _context.SaveChangesAsync();
 
             // Check low stock after restock
-            if (inventoryItem.Quantity <= inventoryItem.ReorderLevel)
+            if (inventoryItem.Quantity >= 0)
             {
-                await _notificationService.CreateNotificationAsync(
-                    "Low Stock Alert",
-                    $"\"{inventoryItem.Name}\" is at {inventoryItem.Quantity} units (reorder level: {inventoryItem.ReorderLevel}).",
-                    "Warning", NotificationCategory.Inventory,
-                    branchId: inventoryItem.BranchId,
-                    createdBy: GetCurrentUserId(),
-                    redirectUrl: "/InventoryItem/LowStock",
-                    icon: "fas fa-triangle-exclamation");
+                if (inventoryItem.MinimumStock > 0 && inventoryItem.Quantity < inventoryItem.MinimumStock)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        "Critical Stock Level",
+                        $"\"{inventoryItem.Name}\" is critically low at {inventoryItem.Quantity} units (minimum: {inventoryItem.MinimumStock}).",
+                        "Error", NotificationCategory.Inventory,
+                        branchId: inventoryItem.BranchId,
+                        createdBy: GetCurrentUserId(),
+                        redirectUrl: "/InventoryItem/LowStock",
+                        icon: "fas fa-triangle-exclamation");
+                }
+                else if (inventoryItem.Quantity <= inventoryItem.ReorderLevel)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        "Low Stock Alert",
+                        $"\"{inventoryItem.Name}\" is at {inventoryItem.Quantity} units (reorder level: {inventoryItem.ReorderLevel}).",
+                        "Warning", NotificationCategory.Inventory,
+                        branchId: inventoryItem.BranchId,
+                        createdBy: GetCurrentUserId(),
+                        redirectUrl: "/InventoryItem/LowStock",
+                        icon: "fas fa-triangle-exclamation");
+                }
             }
 
             return Json(new { success = true });

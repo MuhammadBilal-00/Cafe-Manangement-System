@@ -45,6 +45,30 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
+    <style>
+/* ── Skeleton Loader ── */
+.skeleton-pulse {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-wave 1.5s infinite;
+    border-radius: 6px;
+}
+@@keyframes skeleton-wave {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+.skeleton-loading .skeleton-pulse {
+    animation-play-state: running;
+}
+
+/* ── Status Badges for all 10 attendance statuses ── */
+.badge-paid-leave   { background:rgba(212,175,55,0.15); color:#92400e; border:1px solid rgba(212,175,55,0.3); }
+.badge-sick-leave   { background:rgba(239,68,68,0.1);   color:#991b1b; border:1px solid rgba(239,68,68,0.2); }
+.badge-casual-leave { background:rgba(249,115,22,0.1);  color:#9a3412; border:1px solid rgba(249,115,22,0.2); }
+.badge-wfh          { background:rgba(99,102,241,0.12); color:#3730a3; border:1px solid rgba(99,102,241,0.2); }
+.badge-holiday      { background:rgba(16,185,129,0.12); color:#065f46; border:1px solid rgba(16,185,129,0.2); }
+.badge-overtime     { background:rgba(234,179,8,0.12);  color:#713f12; border:1px solid rgba(234,179,8,0.2); }
+</style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
@@ -131,6 +155,10 @@
                     <a asp-controller="Supplier" asp-action="Index" class="sidebar-link" data-nav="Supplier">
                         <span class="sidebar-link-icon"><i class="fas fa-truck"></i></span>
                         <span class="sidebar-link-text">Suppliers</span>
+                    </a>
+                    <a asp-controller="Purchase" asp-action="Index" class="sidebar-link" data-nav="Purchase">
+                        <span class="sidebar-link-icon"><i class="fas fa-shopping-cart"></i></span>
+                        <span class="sidebar-link-text">Purchases</span>
                     </a>
                 }
 
@@ -354,6 +382,133 @@
                 }
             });
         })();
+
+        // ── Submit Spinner — disable buttons and show spinner on form submit ──
+        (function() {
+            document.addEventListener('submit', function(e) {
+                const form = e.target;
+                // Skip forms with data-no-spinner attribute
+                if (form.hasAttribute('data-no-spinner')) return;
+                // Skip forms handled by data-confirm (they use ActionCard)
+                // Actually we let them through since ActionCard calls form.submit() directly
+                const btns = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                btns.forEach(function(btn) {
+                    btn.disabled = true;
+                    const originalContent = btn.innerHTML;
+                    btn.setAttribute('data-original', originalContent);
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:0.4rem;"></i>' + (btn.textContent.trim() || 'Saving...');
+                });
+                // Re-enable after 8s fallback (in case server errors don't redirect)
+                setTimeout(function() {
+                    btns.forEach(function(btn) {
+                        btn.disabled = false;
+                        const orig = btn.getAttribute('data-original');
+                        if (orig) btn.innerHTML = orig;
+                    });
+                }, 8000);
+            });
+        })();
+
+        // ── Inline Validation — real-time feedback on required fields ──
+        (function() {
+            document.addEventListener('DOMContentLoaded', function() {
+                // Add validation on blur for required inputs
+                document.querySelectorAll('input[required], select[required], textarea[required]').forEach(function(el) {
+                    el.addEventListener('blur', function() {
+                        if (!el.value.trim()) {
+                            el.style.borderColor = '#ef4444';
+                            el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                        } else {
+                            el.style.borderColor = '#22c55e';
+                            el.style.boxShadow = '0 0 0 3px rgba(34,197,94,0.1)';
+                        }
+                    });
+                    el.addEventListener('input', function() {
+                        if (el.value.trim()) {
+                            el.style.borderColor = '#22c55e';
+                            el.style.boxShadow = '0 0 0 3px rgba(34,197,94,0.1)';
+                        }
+                    });
+                });
+                // Email format validation
+                document.querySelectorAll('input[type="email"]').forEach(function(el) {
+                    el.addEventListener('blur', function() {
+                        const emailRe = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                        if (el.value && !emailRe.test(el.value)) {
+                            el.style.borderColor = '#ef4444';
+                            el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                        }
+                    });
+                });
+                // Number range validation
+                document.querySelectorAll('input[type="number"]').forEach(function(el) {
+                    el.addEventListener('blur', function() {
+                        const min = el.getAttribute('min');
+                        const max = el.getAttribute('max');
+                        let invalid = false;
+                        if (min !== null && parseFloat(el.value) < parseFloat(min)) invalid = true;
+                        if (max !== null && parseFloat(el.value) > parseFloat(max)) invalid = true;
+                        if (invalid && el.value !== '') {
+                            el.style.borderColor = '#ef4444';
+                            el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                        }
+                    });
+                });
+            });
+        })();
+
+        // ── Keyboard Shortcuts ──
+        (function() {
+            document.addEventListener('keydown', function(e) {
+                // Skip if typing in an input/textarea/select
+                const tag = document.activeElement && document.activeElement.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+                // N = click first "New" / "Add" / "Create" / primary action btn in header
+                if (e.key === 'n' || e.key === 'N') {
+                    const primaryBtn = document.querySelector('.btn-primary[href], a.btn-primary');
+                    if (primaryBtn) { e.preventDefault(); primaryBtn.click(); }
+                }
+                // Escape = click Cancel link/button
+                if (e.key === 'Escape') {
+                    const cancelBtn = document.querySelector('a.btn-secondary[href*="Index"], a.btn[href*="Index"]');
+                    if (cancelBtn) { e.preventDefault(); cancelBtn.click(); }
+                }
+                // / = focus search input if present
+                if (e.key === '/') {
+                    const searchInput = document.querySelector('input[type="search"], input[placeholder*="Search"], input[placeholder*="search"]');
+                    if (searchInput) { e.preventDefault(); searchInput.focus(); }
+                }
+                // ? = show keyboard shortcuts help
+                if (e.key === '?') {
+                    e.preventDefault();
+                    if (window.ActionCard) {
+                        ActionCard.info('Keyboard Shortcuts',
+                            '<div style="text-align:left;font-size:0.875rem;line-height:2;">' +
+                            '<b>N</b> — New / Add record<br>' +
+                            '<b>Esc</b> — Cancel / Back<br>' +
+                            '<b>/</b> — Focus search<br>' +
+                            '<b>?</b> — Show this help' +
+                            '</div>'
+                        );
+                    }
+                }
+            });
+        })();
+
+        // ── Skeleton Loader Utility ──
+        window.Skeleton = {
+            show: function(containerSelector) {
+                const el = document.querySelector(containerSelector);
+                if (!el) return;
+                el.classList.add('skeleton-loading');
+            },
+            hide: function(containerSelector) {
+                const el = document.querySelector(containerSelector);
+                if (!el) return;
+                el.classList.remove('skeleton-loading');
+            }
+        };
     </script>
 
     <!-- SignalR -->

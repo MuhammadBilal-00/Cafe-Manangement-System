@@ -56,6 +56,7 @@
         </div>
         <div class="kpi-label">Today's Orders</div>
         <div class="kpi-value">@ViewBag.TodayOrders</div>
+        <canvas id="orderSparkline" height="40" style="margin-top:0.5rem; opacity:0.7;"></canvas>
         <div class="kpi-change neutral">
             <i class="fas fa-clock"></i> @ViewBag.PendingOrders pending
         </div>
@@ -68,6 +69,7 @@
         </div>
         <div class="kpi-label">Total Orders</div>
         <div class="kpi-value">@ViewBag.TotalOrders</div>
+        <canvas id="totalOrderSparkline" height="40" style="margin-top:0.5rem; opacity:0.7;"></canvas>
         <div class="kpi-change up">
             <i class="fas fa-check-circle"></i> @ViewBag.CompletedOrders completed
         </div>
@@ -563,5 +565,28 @@
                 }
             });
         });
+
+        // KPI Sparklines
+        (function() {
+            const sparkLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.SparkLabels ?? new List<string>()));
+            const orderData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.OrderSparkData ?? new List<int>()));
+            const attendanceData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.AttendanceSparkData ?? new List<int>()));
+
+            function makeSparkline(id, data, color) {
+                const canvas = document.getElementById(id);
+                if (!canvas || !data.length) return;
+                new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: sparkLabels,
+                        datasets: [{ data: data, borderColor: color, borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: color + '22', tension: 0.4 }]
+                    },
+                    options: { animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, elements: { line: { borderCapStyle: 'round' } } }
+                });
+            }
+            makeSparkline('orderSparkline', orderData, '#d4af37');
+            makeSparkline('totalOrderSparkline', orderData, '#3b82f6');
+            makeSparkline('attendanceSparkline', attendanceData, '#22c55e');
+        })();
     </script>
 }

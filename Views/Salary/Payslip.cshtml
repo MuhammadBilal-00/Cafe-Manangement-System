@@ -145,7 +145,33 @@
             @if (r.PaidDate.HasValue)
             {
                 <div style="background:rgba(34,197,94,0.08); border-radius:var(--radius-card); padding:1rem; margin-top:0.75rem;">
-                    <p class="caption" style="margin:0;"><i class="fas fa-check-circle" style="color:#16a34a; margin-right:0.5rem;"></i> Paid on @r.PaidDate.Value.ToString("dd MMM yyyy")</p>
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+                        <p class="caption" style="margin:0;">
+                            <i class="fas fa-check-circle" style="color:#16a34a; margin-right:0.5rem;"></i>
+                            Paid on @r.PaidDate.Value.ToString("dd MMM yyyy")
+                        </p>
+                        @if (!string.IsNullOrEmpty(r.PaymentMethod))
+                        {
+                            var pmIcon = r.PaymentMethod switch {
+                                "Cash"          => "fa-money-bill-wave",
+                                "Bank Transfer" => "fa-university",
+                                "Mobile Wallet" => "fa-mobile-alt",
+                                "Cheque"        => "fa-file-alt",
+                                _               => "fa-credit-card"
+                            };
+                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                <span class="caption"><i class="fas @pmIcon" style="color:#16a34a; margin-right:0.25rem;"></i>@r.PaymentMethod</span>
+                                @if (!string.IsNullOrEmpty(r.PaymentReference))
+                                {
+                                    <span class="caption" style="background:rgba(0,0,0,0.06); padding:2px 8px; border-radius:4px;">@r.PaymentReference</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                    @if (!string.IsNullOrEmpty(r.PaymentNotes))
+                    {
+                        <p class="caption" style="margin:0.5rem 0 0; color:#6b7280;"><i class="fas fa-sticky-note" style="margin-right:0.25rem;"></i>@r.PaymentNotes</p>
+                    }
                 </div>
             }
         </div>
@@ -176,15 +202,30 @@
                             {
                                 var sBadge = a.Status switch
                                 {
-                                    "Present" => "badge badge-success",
-                                    "Absent" => "badge badge-danger",
-                                    "Late" => "badge badge-warning",
-                                    "Half-Day" => "badge badge-info",
-                                    _ => "badge badge-neutral"
+                                    "Present"        => "badge badge-success",
+                                    "Absent"         => "badge badge-danger",
+                                    "Late"           => "badge badge-warning",
+                                    "Half-Day"       => "badge badge-info",
+                                    "Paid Leave"     => "badge",
+                                    "Sick Leave"     => "badge badge-warning",
+                                    "Casual Leave"   => "badge badge-warning",
+                                    "Holiday"        => "badge badge-success",
+                                    "Work From Home" => "badge badge-info",
+                                    "Overtime"       => "badge badge-success",
+                                    _                => "badge badge-neutral"
                                 };
                                 <tr>
                                     <td>@a.Date.ToString("dd MMM (ddd)")</td>
-                                    <td><span class="@sBadge">@a.Status</span></td>
+                                    <td>
+                                        @if (a.Status == "Paid Leave")
+                                        {
+                                            <span class="@sBadge" style="background:rgba(212,175,55,0.15); color:#92400e; border:1px solid rgba(212,175,55,0.3);">@a.Status</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="@sBadge">@a.Status</span>
+                                        }
+                                    </td>
                                     <td class="caption">@(a.CheckInTime?.ToString(@"hh\:mm") ?? "-")</td>
                                     <td class="caption">@(a.CheckOutTime?.ToString(@"hh\:mm") ?? "-")</td>
                                     <td class="caption">@(a.TotalHours > 0 ? $"{a.TotalHours:F1}h" : "-")</td>

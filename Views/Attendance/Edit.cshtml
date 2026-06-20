@@ -5,6 +5,10 @@
     var staffName = (string)ViewBag.StaffName;
     var totalHours = (decimal)ViewBag.TotalHours;
     var overtimeHours = (decimal)ViewBag.OvertimeHours;
+
+    var leaveStatuses = new[] { "Paid Leave", "Sick Leave", "Casual Leave", "Holiday", "Work From Home" };
+    var isManualMode = leaveStatuses.Contains(Model.Status);
+    var noTimes = !Model.CheckInTime.HasValue && !Model.CheckOutTime.HasValue;
 }
 
 <div class="max-w-[720px] mx-auto">
@@ -32,14 +36,27 @@
                         @{
                             var sBadge = Model.Status switch
                             {
-                                "Present" => "badge badge-success",
-                                "Absent" => "badge badge-danger",
-                                "Late" => "badge badge-warning",
-                                "Half-Day" => "badge badge-info",
-                                _ => "badge badge-neutral"
+                                "Present"        => "badge badge-success",
+                                "Absent"         => "badge badge-danger",
+                                "Late"           => "badge badge-warning",
+                                "Half-Day"       => "badge badge-info",
+                                "Sick Leave"     => "badge badge-warning",
+                                "Casual Leave"   => "badge badge-warning",
+                                "Holiday"        => "badge badge-success",
+                                "Work From Home" => "badge badge-info",
+                                "Overtime"       => "badge badge-success",
+                                _                => "badge badge-neutral"
                             };
+                            var isPaidLeave = Model.Status == "Paid Leave";
                         }
-                        <span class="@sBadge">@Model.Status</span>
+                        @if (isPaidLeave)
+                        {
+                            <span class="badge" style="background:rgba(212,175,55,0.15); color:#92400e; border:1px solid rgba(212,175,55,0.3);">@Model.Status</span>
+                        }
+                        else
+                        {
+                            <span class="@sBadge">@Model.Status</span>
+                        }
                     </p>
                 </div>
                 <div>
@@ -50,13 +67,12 @@
         </div>
     </div>
 
-    <!-- Warning -->
+    <!-- Info Message -->
     <div class="card card-accent-warning mb-6">
         <div class="card-body card-body-compact">
             <p class="caption" style="margin:0;">
                 <i class="fas fa-info-circle" style="color:#f59e0b; margin-right:0.5rem;"></i>
-                Status will be <strong>auto-recalculated</strong> when you save.
-                Change check-in/check-out times and the system will determine the correct status.
+                In Auto mode, status is <strong>recalculated from times</strong>. In Manual mode, your <strong>selected status is saved directly</strong>.
             </p>
         </div>
     </div>
@@ -66,26 +82,106 @@
             <form asp-action="Edit" asp-route-id="@attendanceId" method="post">
                 @Html.AntiForgeryToken()
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Check In Time</label>
-                        <input type="time" name="CheckInTime" value="@Model.CheckInTime?.ToString(@"hh\:mm")" class="form-control" />
+                <!-- Hidden input for manual status — set by JS -->
+                <input type="hidden" name="ManualStatus" id="manualStatusHidden" value="@(isManualMode ? Model.Status : "")" />
+
+                <!-- Mode Toggle -->
+                <div class="form-group">
+                    <label class="form-label">Attendance Type</label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                        <label id="lbl-auto" style="cursor:pointer; border:2px solid @(isManualMode ? "var(--border-light)" : "var(--accent)"); border-radius:0.5rem; padding:0.75rem 1rem; display:flex; align-items:flex-start; gap:0.75rem; background:@(isManualMode ? "" : "rgba(212,175,55,0.05)");">
+                            <input type="radio" name="_statusMode" value="auto" @(isManualMode ? "" : "checked") onchange="toggleEditMode(this)" style="margin-top:0.2rem; accent-color:var(--accent);" />
+                            <span>
+                                <i class="fas fa-magic" style="color:var(--accent);"></i>
+                                <strong style="display:block; font-size:0.85rem; margin-bottom:0.15rem;">Auto-Calculate</strong>
+                                <span class="caption">Status derived from clock-in/out times</span>
+                            </span>
+                        </label>
+                        <label id="lbl-manual" style="cursor:pointer; border:2px solid @(isManualMode ? "var(--accent)" : "var(--border-light)"); border-radius:0.5rem; padding:0.75rem 1rem; display:flex; align-items:flex-start; gap:0.75rem; background:@(isManualMode ? "rgba(147,51,234,0.05)" : "");">
+                            <input type="radio" name="_statusMode" value="manual" @(isManualMode ? "checked" : "") onchange="toggleEditMode(this)" style="margin-top:0.2rem; accent-color:var(--accent);" />
+                            <span>
+                                <i class="fas fa-hand-pointer" style="color:#9333ea;"></i>
+                                <strong style="display:block; font-size:0.85rem; margin-bottom:0.15rem;">Manual Override</strong>
+                                <span class="caption">Leave, Holiday, WFH etc.</span>
+                            </span>
+                        </label>
                     </div>
+                </div>
+
+                <!-- Auto-calculate panel -->
+                <div id="panel-auto" style="display:@(isManualMode ? "none" : "");">
+                    <div class="card card-accent mb-4">
+                        <div class="card-body card-body-compact">
+                            <p class="caption" style="margin:0;">
+                                <i class="fas fa-info-circle" style="color:var(--accent); margin-right:0.5rem;"></i>
+                                <strong>Present</strong> (8+h) &bull; <strong>Late</strong> (check-in &gt;15 min after shift) &bull;
+                                <strong>Half-Day</strong> (4–8h) &bull; <strong>Absent</strong> (&lt;4h or no times)
+                                @if (!isManualMode && noTimes)
+                                {
+                                    <br /><span style="color:#f59e0b;"><i class="fas fa-exclamation-triangle" style="margin-right:0.25rem;"></i>No times recorded yet — add times or switch to manual.</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Check-In Time</label>
+                            <input type="time" name="CheckInTime" id="autoCheckIn" value="@Model.CheckInTime?.ToString(@"hh\:mm")" class="form-control" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Check-Out Time</label>
+                            <input type="time" name="CheckOutTime" id="autoCheckOut" value="@Model.CheckOutTime?.ToString(@"hh\:mm")" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual status panel -->
+                <div id="panel-manual" style="display:@(isManualMode ? "" : "none");">
                     <div class="form-group">
-                        <label class="form-label">Check Out Time</label>
-                        <input type="time" name="CheckOutTime" value="@Model.CheckOutTime?.ToString(@"hh\:mm")" class="form-control" />
+                        <label class="form-label">Select Status *</label>
+                        <select id="manualStatusSelect" class="form-select" onchange="onManualStatusChange(this)">
+                            <option value="">-- Choose a status --</option>
+                            <optgroup label="Leave (Paid - no salary deduction)">
+                                <option value="Paid Leave"    selected="@(Model.Status == "Paid Leave"                  ? "selected" : null)">Paid Leave</option>
+                                <option value="Holiday"       selected="@(Model.Status == "Holiday"                    ? "selected" : null)">Holiday (public / company)</option>
+                            </optgroup>
+                            <optgroup label="Leave (Unpaid - deducted from salary)">
+                                <option value="Sick Leave"    selected="@(Model.Status == "Sick Leave"                  ? "selected" : null)">Sick Leave</option>
+                                <option value="Casual Leave"  selected="@(Model.Status == "Casual Leave"                ? "selected" : null)">Casual Leave</option>
+                            </optgroup>
+                            <optgroup label="Remote / Extended">
+                                <option value="Work From Home" selected="@(Model.Status == "Work From Home"             ? "selected" : null)">Work From Home</option>
+                            </optgroup>
+                            <optgroup label="Clock-based (prefer Auto-Calculate mode)">
+                                <option value="Present"   selected="@(Model.Status == "Present"  && isManualMode ? "selected" : null)">Present</option>
+                                <option value="Late"      selected="@(Model.Status == "Late"     && isManualMode ? "selected" : null)">Late</option>
+                                <option value="Half-Day"  selected="@(Model.Status == "Half-Day" && isManualMode ? "selected" : null)">Half-Day</option>
+                                <option value="Absent"    selected="@(Model.Status == "Absent"   && isManualMode ? "selected" : null)">Absent</option>
+                                <option value="Overtime"  selected="@(Model.Status == "Overtime" && isManualMode ? "selected" : null)">Overtime</option>
+                            </optgroup>
+                        </select>
+                        <p class="caption" style="margin-top:0.4rem; color:var(--text-tertiary);">
+                            For clock-based statuses (Present/Late etc), prefer Auto-Calculate mode.
+                        </p>
+                    </div>
+                    <div id="wfhTimes" style="display:@(Model.Status == "Work From Home" ? "" : "none");">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Check-In Time (WFH)</label>
+                                <input type="time" name="CheckInTime" id="wfhCheckIn" value="@Model.CheckInTime?.ToString(@"hh\:mm")" class="form-control" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Check-Out Time (WFH)</label>
+                                <input type="time" name="CheckOutTime" id="wfhCheckOut" value="@Model.CheckOutTime?.ToString(@"hh\:mm")" class="form-control" />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Notes</label>
-                    <textarea name="Notes" rows="3" class="form-control">@Model.Notes</textarea>
+                    <textarea name="Notes" rows="3" class="form-control" placeholder="Optional remarks or reason...">@Model.Notes</textarea>
                 </div>
-
-                <p class="caption">
-                    <i class="fas fa-lightbulb" style="color:var(--accent); margin-right:0.25rem;"></i>
-                    Clear both times to mark as Absent.
-                </p>
 
                 <div class="divider"></div>
 
@@ -97,3 +193,31 @@
         </div>
     </div>
 </div>
+
+<script>
+    function toggleEditMode(radio) {
+        const isManual = radio.value === 'manual';
+        document.getElementById('panel-auto').style.display   = isManual ? 'none' : '';
+        document.getElementById('panel-manual').style.display = isManual ? ''     : 'none';
+        document.getElementById('lbl-auto').style.borderColor   = isManual ? 'var(--border-light)' : 'var(--accent)';
+        document.getElementById('lbl-manual').style.borderColor = isManual ? 'var(--accent)'       : 'var(--border-light)';
+        document.getElementById('lbl-auto').style.background    = isManual ? '' : 'rgba(212,175,55,0.05)';
+        document.getElementById('lbl-manual').style.background  = isManual ? 'rgba(147,51,234,0.05)' : '';
+
+        if (!isManual) {
+            // Clear manual status hidden input when switching to auto
+            document.getElementById('manualStatusHidden').value = '';
+            // Clear WFH times visibility
+            document.getElementById('wfhTimes').style.display = 'none';
+        } else {
+            // Sync hidden input from dropdown when switching to manual
+            var sel = document.getElementById('manualStatusSelect').value;
+            document.getElementById('manualStatusHidden').value = sel;
+        }
+    }
+
+    function onManualStatusChange(select) {
+        document.getElementById('manualStatusHidden').value = select.value;
+        document.getElementById('wfhTimes').style.display = select.value === 'Work From Home' ? '' : 'none';
+    }
+</script>

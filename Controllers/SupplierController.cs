@@ -36,8 +36,6 @@ namespace Cafe.Controllers
 
             var query = _context.Suppliers
                 .Include(s => s.Branch)
-                .Include(s => s.InventoryItems)
-                .Include(s => s.Purchases)
                 .AsQueryable();
 
             if (effectiveBranchId.HasValue)
@@ -48,6 +46,21 @@ namespace Cafe.Controllers
 
             var suppliers = await query.OrderBy(s => s.Name).ToListAsync();
 
+            // Efficient aggregate counts — avoids N+1 loading
+            var supplierIds = suppliers.Select(s => s.Id).ToList();
+            var itemCounts = await _context.InventoryItems
+                .Where(i => i.SupplierId.HasValue && supplierIds.Contains(i.SupplierId.Value))
+                .GroupBy(i => i.SupplierId!.Value)
+                .Select(g => new { SupplierId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.SupplierId, x => x.Count);
+            var purchaseCounts = await _context.Purchases
+                .Where(p => p.SupplierId.HasValue && supplierIds.Contains(p.SupplierId.Value))
+                .GroupBy(p => p.SupplierId!.Value)
+                .Select(g => new { SupplierId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.SupplierId, x => x.Count);
+
+            ViewBag.ItemCounts = itemCounts;
+            ViewBag.PurchaseCounts = purchaseCounts;
             ViewBag.Branches = await GetAccessibleBranches();
             ViewBag.SelectedBranchId = effectiveBranchId;
             ViewBag.ActiveOnly = activeOnly ?? true;

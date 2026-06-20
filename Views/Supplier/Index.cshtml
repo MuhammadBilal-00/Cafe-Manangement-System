@@ -87,12 +87,12 @@
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="8">
-                                <div class="empty-state">
-                                    <i class="fas fa-truck"></i>
-                                    <h3>No suppliers found</h3>
-                                    <p>Add your first supplier to start linking inventory items.</p>
-                                    <a asp-action="Create" class="btn btn-primary btn-sm">Add Supplier</a>
+                            <td colspan="7" style="text-align:center; padding:3rem 1rem;">
+                                <div>
+                                    <i class="fas fa-truck" style="font-size:2.5rem; color:var(--border-light); margin-bottom:1rem; display:block;"></i>
+                                    <p style="font-weight:600; margin:0 0 0.25rem; color:var(--text-secondary);">No suppliers found</p>
+                                    <p class="caption" style="margin:0 0 1rem;">Add your first supplier to start tracking inventory sources.</p>
+                                    <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> Add Supplier</a>
                                 </div>
                             </td>
                         </tr>
@@ -124,10 +124,10 @@
                             </td>
                             <td class="caption">@s.Branch?.Name</td>
                             <td style="text-align:center;">
-                                <span style="font-weight:600;">@s.InventoryItems.Count</span>
+                                <span style="font-weight:600;">@((ViewBag.ItemCounts as Dictionary<int,int>)?.GetValueOrDefault(s.Id, 0) ?? s.InventoryItems?.Count ?? 0)</span>
                             </td>
                             <td style="text-align:center;">
-                                <span style="font-weight:600;">@s.Purchases.Count</span>
+                                <span style="font-weight:600;">@((ViewBag.PurchaseCounts as Dictionary<int,int>)?.GetValueOrDefault(s.Id, 0) ?? s.Purchases?.Count ?? 0)</span>
                             </td>
                             <td style="text-align:center;">
                                 @if (s.IsActive)

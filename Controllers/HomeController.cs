@@ -91,6 +91,33 @@ namespace Cafe.Controllers
                 chartData.Add(match?.Revenue ?? 0m);
             }
 
+            // 7-day sparkline data for KPI cards
+            var sevenDaysAgo = DateTime.Today.AddDays(-6);
+            var orderSparkline = await orderQuery
+                .Where(o => o.OrderDate.Date >= sevenDaysAgo)
+                .GroupBy(o => o.OrderDate.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .OrderBy(g => g.Date)
+                .ToListAsync();
+
+            var sparkLabels = Enumerable.Range(0, 7).Select(i => DateTime.Today.AddDays(-6 + i)).ToList();
+            var orderSparkData = sparkLabels.Select(d => orderSparkline.FirstOrDefault(x => x.Date == d)?.Count ?? 0).ToList();
+
+            // Staff attendance sparkline (last 7 days present count)
+            var attendanceSparkline = await _context.Attendances
+                .Where(a => a.Date >= sevenDaysAgo &&
+                            (scopedBranchId == null || a.BranchId == scopedBranchId) &&
+                            (a.Status == "Present" || a.Status == "Late" || a.Status == "Work From Home" || a.Status == "Overtime"))
+                .GroupBy(a => a.Date.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .OrderBy(g => g.Date)
+                .ToListAsync();
+            var attendanceSparkData = sparkLabels.Select(d => attendanceSparkline.FirstOrDefault(x => x.Date == d)?.Count ?? 0).ToList();
+
+            ViewBag.OrderSparkData = orderSparkData;
+            ViewBag.AttendanceSparkData = attendanceSparkData;
+            ViewBag.SparkLabels = sparkLabels.Select(d => d.ToString("ddd")).ToList();
+
             // Low stock alerts scoped
             var lowStockItems = await inventoryQuery
                 .Include(i => i.Branch)
