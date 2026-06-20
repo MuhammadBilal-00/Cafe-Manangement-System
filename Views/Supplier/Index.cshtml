@@ -37,7 +37,11 @@
     <div class="kpi-card">
         <div class="kpi-icon" style="background:rgba(212,175,55,0.1); color:var(--accent);"><i class="fas fa-boxes"></i></div>
         <div class="kpi-label">Items Linked</div>
-        <div class="kpi-value">@Model.Sum(s => s.InventoryItems.Count)</div>
+        @{
+            var itemCountDict = ViewBag.ItemCounts as Dictionary<int, int>;
+            var totalLinked = itemCountDict != null ? itemCountDict.Values.Sum() : 0;
+        }
+        <div class="kpi-value">@totalLinked</div>
     </div>
 </div>
 

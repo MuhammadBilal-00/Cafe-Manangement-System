@@ -132,22 +132,39 @@ namespace Cafe.Controllers
         }
 
         /// <summary>
-        /// Returns active suppliers the current user is allowed to see.
-        /// Owner → all active suppliers. Manager → suppliers for their branch.
+        /// Returns active suppliers visible to the current user.
+        /// Pass includeInactiveSupplierId to also include a specific inactive supplier that is
+        /// already linked to the entity being edited — prevents silently nulling the FK on save.
         /// </summary>
-        protected async Task<List<Supplier>> GetAccessibleSuppliers()
+        protected async Task<List<Supplier>> GetAccessibleSuppliers(int? includeInactiveSupplierId = null)
         {
             var role = GetCurrentUserRole();
-            var query = _context.Suppliers.Include(s => s.Branch).Where(s => s.IsActive);
+            var query = _context.Suppliers
+                .Include(s => s.Branch)
+                .Where(s => s.IsActive || (includeInactiveSupplierId.HasValue && s.Id == includeInactiveSupplierId.Value));
 
             if (role == "BranchManager")
             {
                 var branchId = HttpContext.Session.GetManagedBranchId();
                 if (branchId.HasValue)
-                    query = query.Where(s => s.BranchId == branchId.Value);
+                    query = query.Where(s =>
+                        s.BranchId == branchId.Value ||
+                        (includeInactiveSupplierId.HasValue && s.Id == includeInactiveSupplierId.Value));
             }
 
             return await query.OrderBy(s => s.Name).ToListAsync();
+        }
+
+        /// <summary>
+        /// Returns the effective branch ID for the current user.
+        /// BranchManager → their managed branch (request param ignored).
+        /// Owner/other → the requested branch ID (null = all branches).
+        /// </summary>
+        protected int? GetEffectiveBranchId(int? requestedBranchId)
+        {
+            if (GetCurrentUserRole() == "BranchManager")
+                return HttpContext.Session.GetManagedBranchId();
+            return requestedBranchId;
         }
     }
 }

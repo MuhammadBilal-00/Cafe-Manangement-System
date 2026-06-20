@@ -60,8 +60,8 @@ namespace Cafe.Services
                     lateMinutes = 0;
                 }
 
-                // Allow manual override for non-leave statuses too (e.g. marking "Overtime" explicitly)
-                if (!string.IsNullOrWhiteSpace(manualStatus) && manualStatus == "Overtime" && overtimeHours > 0)
+                // Explicit "Overtime" override: accept the manager's intent regardless of calculated hours.
+                if (!string.IsNullOrWhiteSpace(manualStatus) && manualStatus == "Overtime")
                     status = "Overtime";
             }
 
@@ -140,7 +140,10 @@ namespace Cafe.Services
             }
             else if (!clockIn.HasValue && !clockOut.HasValue)
             {
-                record.Status = "Absent";
+                // No times provided — apply manual override if set, otherwise mark Absent.
+                record.Status = (!string.IsNullOrWhiteSpace(manualStatus) && manualStatus == "Overtime")
+                    ? "Overtime"
+                    : "Absent";
                 record.TotalHours = 0;
                 record.OvertimeHours = 0;
                 record.LateMinutes = 0;
@@ -151,7 +154,10 @@ namespace Cafe.Services
                 var (status, totalHours, overtimeHours, lateMinutes) =
                     CalculateAttendanceFields(clockIn, clockOut, shiftStart);
 
-                record.Status = status;
+                // Explicit "Overtime" override: respect the manager's intent regardless of calculated hours.
+                record.Status = (!string.IsNullOrWhiteSpace(manualStatus) && manualStatus == "Overtime")
+                    ? "Overtime"
+                    : status;
                 record.TotalHours = totalHours;
                 record.OvertimeHours = overtimeHours;
                 record.LateMinutes = lateMinutes;

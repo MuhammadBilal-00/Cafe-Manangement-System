@@ -21,14 +21,6 @@ namespace Cafe.Controllers
             _notificationService = notificationService;
         }
 
-        private int? GetEffectiveBranchId(int? requestedBranchId)
-        {
-            var role = GetCurrentUserRole();
-            if (role == "BranchManager")
-                return HttpContext.Session.GetManagedBranchId();
-            return requestedBranchId;
-        }
-
         // GET: Supplier
         public async Task<IActionResult> Index(int? branchId, bool? activeOnly)
         {

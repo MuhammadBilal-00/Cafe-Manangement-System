@@ -18,15 +18,6 @@ namespace Cafe.Controllers
             _notificationService = notificationService;
         }
 
-        // Helper: get the branch this user is scoped to (null = all branches for Owner)
-        private int? GetEffectiveBranchId(int? requestedBranchId)
-        {
-            var role = GetCurrentUserRole();
-            if (role == "BranchManager")
-                return HttpContext.Session.GetManagedBranchId();
-            return requestedBranchId; // Owner can pick any
-        }
-
         // Helper: verify the item belongs to an accessible branch
         private bool CanAccessItem(InventoryItem item)
         {
@@ -160,7 +151,8 @@ namespace Cafe.Controllers
             if (!CanAccessItem(inventoryItem)) return AccessDenied();
 
             ViewBag.Branches = await GetAccessibleBranches();
-            ViewBag.Suppliers = await GetAccessibleSuppliers();
+            // Include the existing supplier even if inactive, so the dropdown preserves the link.
+            ViewBag.Suppliers = await GetAccessibleSuppliers(inventoryItem.SupplierId);
             return View(inventoryItem);
         }
 
@@ -284,6 +276,9 @@ namespace Cafe.Controllers
                 return Json(new { success = false, message = "Access denied" });
 
             int add = (int)Math.Round(quantity, MidpointRounding.AwayFromZero);
+            if (add <= 0)
+                return Json(new { success = false, message = "Restock quantity must be greater than zero." });
+
             inventoryItem.Quantity += add;
             inventoryItem.LastUpdated = DateTime.Now;
             await _context.SaveChangesAsync();

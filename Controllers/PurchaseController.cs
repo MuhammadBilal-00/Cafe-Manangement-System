@@ -13,6 +13,16 @@ namespace Cafe.Controllers
     {
         private readonly INotificationService _notificationService;
 
+        // Valid state-machine transitions: key = current status, value = allowed next statuses.
+        // Cancelled is terminal — no transitions out.
+        private static readonly Dictionary<string, string[]> AllowedTransitions = new()
+        {
+            ["Pending"]   = ["Approved", "Cancelled"],
+            ["Approved"]  = ["Received", "Cancelled"],
+            ["Received"]  = ["Cancelled"],
+            ["Cancelled"] = []
+        };
+
         public PurchaseController(ApplicationDbContext context, INotificationService notificationService) : base(context)
         {
             _notificationService = notificationService;
@@ -21,8 +31,7 @@ namespace Cafe.Controllers
         // GET: Purchase/Index
         public async Task<IActionResult> Index(int? branchId, string? status)
         {
-            var role = GetCurrentUserRole();
-            int? effectiveBranchId = role == "BranchManager" ? HttpContext.Session.GetManagedBranchId() : branchId;
+            int? effectiveBranchId = GetEffectiveBranchId(branchId);
 
             var query = _context.Purchases
                 .Include(p => p.Item)
@@ -40,11 +49,16 @@ namespace Cafe.Controllers
 
             var purchases = await query.OrderByDescending(p => p.CreatedAt).Take(100).ToListAsync();
 
-            // Status counts for KPI cards
-            ViewBag.PendingCount = await _context.Purchases.CountAsync(p => p.Status == "Pending");
-            ViewBag.ApprovedCount = await _context.Purchases.CountAsync(p => p.Status == "Approved");
-            ViewBag.ReceivedCount = await _context.Purchases.CountAsync(p => p.Status == "Received");
-            ViewBag.CancelledCount = await _context.Purchases.CountAsync(p => p.Status == "Cancelled");
+            // Single aggregated query for KPI status counts — more efficient and consistent than 4 separate COUNT calls.
+            var statusCounts = await _context.Purchases
+                .GroupBy(p => p.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Status, x => x.Count);
+
+            ViewBag.PendingCount   = statusCounts.GetValueOrDefault("Pending", 0);
+            ViewBag.ApprovedCount  = statusCounts.GetValueOrDefault("Approved", 0);
+            ViewBag.ReceivedCount  = statusCounts.GetValueOrDefault("Received", 0);
+            ViewBag.CancelledCount = statusCounts.GetValueOrDefault("Cancelled", 0);
             ViewBag.Branches = await GetAccessibleBranches();
             ViewBag.SelectedBranchId = effectiveBranchId;
             ViewBag.SelectedStatus = status;
@@ -67,11 +81,26 @@ namespace Cafe.Controllers
 
             if (purchase == null) return NotFound();
 
+            // Branch-access guard: BranchManagers may only update their own branch's purchases.
+            var purchaseBranchId = purchase.BranchId ?? purchase.Item?.BranchId;
+            if (purchaseBranchId.HasValue && !CanAccessBranch(purchaseBranchId.Value))
+                return AccessDenied();
+            if (!purchaseBranchId.HasValue && GetCurrentUserRole() == "BranchManager")
+                return AccessDenied(); // unscoped purchase — only Owner can modify
+
             var oldStatus = purchase.Status;
+
+            // State-machine guard: reject transitions not in the allowed map.
+            if (!AllowedTransitions.TryGetValue(oldStatus, out var allowed) || !allowed.Contains(newStatus))
+            {
+                SetErrorMessage($"Cannot transition a {oldStatus} purchase to {newStatus}.");
+                return RedirectToAction(nameof(Index));
+            }
+
             purchase.Status = newStatus;
 
-            // If marking as Received, update inventory quantity
-            if (newStatus == "Received" && oldStatus != "Received")
+            // Approved → Received: credit inventory.
+            if (newStatus == "Received")
             {
                 var item = purchase.Item;
                 if (item != null)
@@ -80,7 +109,8 @@ namespace Cafe.Controllers
                     item.LastUpdated = DateTime.Now;
                 }
             }
-            // If un-receiving (e.g., Received → Cancelled), reverse the quantity
+
+            // Received → Cancelled: reverse the inventory credit.
             if (oldStatus == "Received" && newStatus == "Cancelled")
             {
                 var item = purchase.Item;
@@ -98,7 +128,7 @@ namespace Cafe.Controllers
                 $"Purchase of {purchase.QuantityPurchased} {purchase.Item?.Name ?? "item"} changed from {oldStatus} to {newStatus}.",
                 newStatus == "Cancelled" ? "Warning" : "Info",
                 NotificationCategory.Inventory,
-                branchId: purchase.BranchId ?? purchase.Item?.BranchId,
+                branchId: purchaseBranchId,
                 createdBy: GetCurrentUserId(),
                 redirectUrl: "/Purchase/Index",
                 icon: "fas fa-shopping-cart");
@@ -113,8 +143,7 @@ namespace Cafe.Controllers
             ViewBag.Branches = await GetAccessibleBranches();
             ViewBag.Suppliers = await GetAccessibleSuppliers();
 
-            var role = GetCurrentUserRole();
-            int? scopedBranchId = role == "BranchManager" ? HttpContext.Session.GetManagedBranchId() : null;
+            int? scopedBranchId = GetEffectiveBranchId(null);
             var itemQuery = _context.InventoryItems.Include(i => i.Branch).AsQueryable();
             if (scopedBranchId.HasValue) itemQuery = itemQuery.Where(i => i.BranchId == scopedBranchId.Value);
             ViewBag.Items = await itemQuery.OrderBy(i => i.Name).ToListAsync();
@@ -149,7 +178,7 @@ namespace Cafe.Controllers
             {
                 _context.Purchases.Add(purchase);
 
-                // If status is Received immediately, update inventory
+                // If created directly as Received, credit inventory immediately.
                 if (purchase.Status == "Received")
                 {
                     var item = await _context.InventoryItems.FindAsync(purchase.ItemId);
@@ -167,8 +196,7 @@ namespace Cafe.Controllers
 
             ViewBag.Branches = await GetAccessibleBranches();
             ViewBag.Suppliers = await GetAccessibleSuppliers();
-            var role = GetCurrentUserRole();
-            int? scopedBranchId = role == "BranchManager" ? HttpContext.Session.GetManagedBranchId() : null;
+            int? scopedBranchId = GetEffectiveBranchId(null);
             var itemQuery = _context.InventoryItems.Include(i => i.Branch).AsQueryable();
             if (scopedBranchId.HasValue) itemQuery = itemQuery.Where(i => i.BranchId == scopedBranchId.Value);
             ViewBag.Items = await itemQuery.OrderBy(i => i.Name).ToListAsync();
