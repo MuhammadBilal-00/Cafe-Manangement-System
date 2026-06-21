@@ -1240,6 +1240,14 @@ form.card:hover {
   --shadow-xl: 0 20px 60px rgba(0,0,0,0.6);
 }
 
+[data-theme="dark"] .top-header {
+  background: rgba(15,23,42,0.88);
+}
+
+[data-theme="dark"] .header-icon-btn .badge-dot {
+  border-color: var(--bg-surface);
+}
+
 [data-theme="dark"] .skeleton-pulse {
   background: linear-gradient(90deg, #1e293b 25%, #2a3a4e 50%, #1e293b 75%);
   background-size: 200% 100%;
