@@ -50,7 +50,7 @@ else if (isOwner)
 }
 
 <!-- KPI Cards -->
-<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.25rem; margin-bottom:2rem;">
+<div class="mb-6" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.25rem;">
     <div class="kpi-card">
         <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-money-bill-wave"></i></div>
         <div class="kpi-label">Total Base Salary</div>
@@ -156,11 +156,11 @@ else if (isOwner)
                     @if (!Model.Records.Any())
                     {
                         <tr>
-                            <td colspan="12" style="text-align:center; padding:3rem 1rem;">
-                                <div>
-                                    <i class="fas fa-wallet" style="font-size:2.5rem; color:var(--border-light); margin-bottom:1rem; display:block;"></i>
-                                    <p style="font-weight:600; margin:0 0 0.25rem; color:var(--text-secondary);">No salary records for this period</p>
-                                    <p class="caption" style="margin:0 0 1rem;">Generate salaries for @monthName to get started.</p>
+                            <td colspan="12">
+                                <div class="empty-state">
+                                    <i class="fas fa-wallet"></i>
+                                    <h3>No salary records for this period</h3>
+                                    <p>Generate salaries for @monthName to get started.</p>
                                     <a asp-action="Generate" class="btn btn-primary btn-sm"><i class="fas fa-calculator" style="margin-right:0.4rem;"></i> Generate Salaries</a>
                                 </div>
                             </td>

@@ -40,6 +40,7 @@
                                 "Absent"         => "badge badge-danger",
                                 "Late"           => "badge badge-warning",
                                 "Half-Day"       => "badge badge-info",
+                                "Paid Leave"     => "badge badge-paid-leave",
                                 "Sick Leave"     => "badge badge-warning",
                                 "Casual Leave"   => "badge badge-warning",
                                 "Holiday"        => "badge badge-success",
@@ -47,16 +48,8 @@
                                 "Overtime"       => "badge badge-success",
                                 _                => "badge badge-neutral"
                             };
-                            var isPaidLeave = Model.Status == "Paid Leave";
                         }
-                        @if (isPaidLeave)
-                        {
-                            <span class="badge" style="background:rgba(212,175,55,0.15); color:#92400e; border:1px solid rgba(212,175,55,0.3);">@Model.Status</span>
-                        }
-                        else
-                        {
-                            <span class="@sBadge">@Model.Status</span>
-                        }
+                        <span class="@sBadge">@Model.Status</span>
                     </p>
                 </div>
                 <div>

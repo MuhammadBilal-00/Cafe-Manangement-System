@@ -29,7 +29,7 @@
 </div>
 
 <!-- KPI Cards -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem;">
+<div class="mb-6" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;">
     @foreach (var (label, count, color, icon, s) in new[] {
         ("Pending",   (int)(ViewBag.PendingCount ?? 0),   "#f59e0b", "fa-clock",        "Pending"),
         ("Approved",  (int)(ViewBag.ApprovedCount ?? 0),  "#3b82f6", "fa-thumbs-up",    "Approved"),
@@ -100,11 +100,13 @@
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="9" style="text-align:center;padding:3rem 1rem;">
-                                <i class="fas fa-shopping-cart" style="font-size:2.5rem;color:var(--border-light);margin-bottom:1rem;display:block;"></i>
-                                <p style="font-weight:600;margin:0 0 0.25rem;color:var(--text-secondary);">No purchase orders found</p>
-                                <p class="caption" style="margin:0 0 1rem;">Create your first purchase order to start tracking.</p>
-                                <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus" style="margin-right:0.4rem;"></i>New Purchase</a>
+                            <td colspan="9">
+                                <div class="empty-state">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    <h3>No purchase orders found</h3>
+                                    <p>Create your first purchase order to start tracking.</p>
+                                    <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus" style="margin-right:0.4rem;"></i>New Purchase</a>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -127,13 +129,13 @@
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@p.Id" />
                                             <input type="hidden" name="newStatus" value="Approved" />
-                                            <button type="submit" class="btn btn-sm" style="background:#3b82f6;color:#fff;padding:0.25rem 0.6rem;">Approve</button>
+                                            <button type="submit" class="btn btn-sm btn-primary">Approve</button>
                                         </form>
                                         <form asp-action="UpdateStatus" method="post" style="display:inline;" data-confirm="Cancel this purchase order?">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@p.Id" />
                                             <input type="hidden" name="newStatus" value="Cancelled" />
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#ef4444;">Cancel</button>
+                                            <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
                                         </form>
                                     }
                                     @if (p.Status == "Approved")
@@ -148,7 +150,7 @@
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@p.Id" />
                                             <input type="hidden" name="newStatus" value="Cancelled" />
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#ef4444;">Cancel</button>
+                                            <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
                                         </form>
                                     }
                                     @if (p.Status == "Received")
