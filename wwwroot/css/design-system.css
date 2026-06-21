@@ -63,6 +63,7 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
+  --radius-card: 16px;
   --radius-full: 9999px;
 
   /* Transitions */
@@ -1209,3 +1210,41 @@ form.card:hover {
 /* Override Tailwind defaults for our system */
 .hidden { display: none !important; }
 .bg-body { background-color: var(--bg-body) !important; }
+
+/* ── Dark Theme ────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg-body: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-surface-hover: #243447;
+  --bg-surface-alt: #162032;
+  --bg-inset: #0d1117;
+
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+
+  --border: #2d3f50;
+  --border-light: #1e3040;
+
+  --success-light: rgba(34,197,94,0.15);
+  --warning-light: rgba(245,158,11,0.15);
+  --danger-light: rgba(239,68,68,0.15);
+  --info-light: rgba(99,102,241,0.15);
+  --accent-light: rgba(212,175,55,0.15);
+  --accent-lighter: rgba(212,175,55,0.08);
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.5);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+[data-theme="dark"] .skeleton-pulse {
+  background: linear-gradient(90deg, #1e293b 25%, #2a3a4e 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+
+[data-theme="dark"] .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}

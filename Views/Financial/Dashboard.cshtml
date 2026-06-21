@@ -3,19 +3,45 @@
     ViewData["Title"] = "Financial Dashboard";
     var monthName = new DateTime(Model.Year, Model.Month, 1).ToString("MMMM yyyy");
     var profitPositive = Model.NetProfit >= 0;
+
+    var trendLabels = Model.MonthlyTrends.Select(t => t.MonthName + " " + t.Year).ToArray();
+    var trendRev    = Model.MonthlyTrends.Select(t => (double)t.Revenue).ToArray();
+    var trendExp    = Model.MonthlyTrends.Select(t => (double)t.TotalExpenses).ToArray();
+
+    var catLabels   = Model.ExpensesByCategory.OrderByDescending(c => c.Amount).Select(c => c.Category).ToArray();
+    var catAmounts  = Model.ExpensesByCategory.OrderByDescending(c => c.Amount).Select(c => (double)c.Amount).ToArray();
+
+    var brLabels    = Model.BranchSummaries.Select(b => b.BranchName).ToArray();
+    var brRev       = Model.BranchSummaries.Select(b => (double)b.Revenue).ToArray();
+    var brExp       = Model.BranchSummaries.Select(b => (double)(b.SalaryExpense + b.OtherExpenses)).ToArray();
+    var brProfit    = Model.BranchSummaries.Select(b => (double)b.NetProfit).ToArray();
+}
+
+@section Styles {
+<style>
+.fin-hero { background: #16213e; border-radius: 22px; padding: 1.75rem; position: relative; overflow: hidden; margin-bottom: 1.5rem; }
+.fin-hero::after { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(212,175,55,0.18) 0%, transparent 70%); pointer-events: none; }
+.fin-kpi { display: flex; flex-direction: column; gap: 4px; }
+.fin-kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #64748b; }
+.fin-kpi-val { font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.fin-divider { width: 1px; background: rgba(255,255,255,0.08); align-self: stretch; margin: 0 0.5rem; }
+</style>
 }
 
 <!-- Header -->
-<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
-    <h1 class="page-title" style="margin:0;"><i class="fas fa-chart-line" style="color:var(--accent); margin-right:0.5rem;"></i> Financial Dashboard</h1>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;"><i class="fas fa-chart-pie" style="color:var(--accent);margin-right:0.5rem;"></i>Financial Dashboard</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Profit, expenses and trends — @monthName</p>
+    </div>
     <a asp-action="Expenses" class="btn btn-primary"><i class="fas fa-receipt" style="margin-right:0.5rem;"></i> Manage Expenses</a>
 </div>
 
 <!-- Filters -->
 <div class="card mb-6">
     <div class="card-body card-body-compact">
-        <form method="get" style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:1rem;">
-            <div style="flex:1; min-width:150px;">
+        <form method="get" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:1rem;">
+            <div style="flex:1;min-width:150px;">
                 <label class="form-label">Branch</label>
                 <select name="branchId" class="form-select">
                     <option value="">All Branches</option>
@@ -43,117 +69,81 @@
     </div>
 </div>
 
-<!-- KPIs -->
-<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:1.5rem;">
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#22c55e;"><i class="fas fa-coins"></i></div>
-        <span class="kpi-label">Total Revenue</span>
-        <span class="kpi-value" style="color:#22c55e;">Rs. @Model.TotalRevenue.ToString("N0")</span>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-users"></i></div>
-        <span class="kpi-label">Salary Expense</span>
-        <span class="kpi-value" style="color:#3b82f6;">Rs. @Model.TotalSalaryExpense.ToString("N0")</span>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(249,115,22,0.1); color:#f97316;"><i class="fas fa-receipt"></i></div>
-        <span class="kpi-label">Other Expenses</span>
-        <span class="kpi-value" style="color:#f97316;">Rs. @Model.TotalOtherExpenses.ToString("N0")</span>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:@(profitPositive ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)"); color:@(profitPositive ? "#22c55e" : "#ef4444");"><i class="fas fa-chart-line"></i></div>
-        <span class="kpi-label">Net Profit</span>
-        <span class="kpi-value" style="color:@(profitPositive ? "#22c55e" : "#ef4444");">Rs. @Model.NetProfit.ToString("N0")</span>
+<!-- Dark KPI Hero -->
+<div class="fin-hero">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1.5rem;position:relative;z-index:1;">
+        <div class="fin-kpi">
+            <span class="fin-kpi-label"><i class="fas fa-coins" style="color:#22c55e;margin-right:4px;"></i>Total Revenue</span>
+            <span class="fin-kpi-val" style="color:#22c55e;">Rs. @Model.TotalRevenue.ToString("N0")</span>
+            <span style="font-size:11px;color:#475569;">@monthName</span>
+        </div>
+        <div class="fin-divider"></div>
+        <div class="fin-kpi">
+            <span class="fin-kpi-label"><i class="fas fa-users" style="color:#3b82f6;margin-right:4px;"></i>Salary Expense</span>
+            <span class="fin-kpi-val" style="color:#3b82f6;">Rs. @Model.TotalSalaryExpense.ToString("N0")</span>
+            <span style="font-size:11px;color:#475569;">Staff payroll</span>
+        </div>
+        <div class="fin-divider"></div>
+        <div class="fin-kpi">
+            <span class="fin-kpi-label"><i class="fas fa-receipt" style="color:#f97316;margin-right:4px;"></i>Other Expenses</span>
+            <span class="fin-kpi-val" style="color:#f97316;">Rs. @Model.TotalOtherExpenses.ToString("N0")</span>
+            <span style="font-size:11px;color:#475569;">Ops & overhead</span>
+        </div>
+        <div class="fin-divider"></div>
+        <div class="fin-kpi">
+            <span class="fin-kpi-label"><i class="fas @(profitPositive ? "fa-arrow-trend-up" : "fa-arrow-trend-down")" style="color:@(profitPositive ? "#22c55e" : "#ef4444");margin-right:4px;"></i>Net Profit</span>
+            <span class="fin-kpi-val" style="color:@(profitPositive ? "#22c55e" : "#ef4444");">Rs. @Model.NetProfit.ToString("N0")</span>
+            <span style="font-size:11px;color:@(profitPositive ? "#22c55e" : "#ef4444");">@(profitPositive ? "Profitable" : "Loss")</span>
+        </div>
     </div>
 </div>
 
-<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(400px,1fr)); gap:1.5rem; margin-bottom:1.5rem;">
-    <!-- Branch Performance -->
-    @if (Model.BranchSummaries.Any())
-    {
-        <div class="card">
-            <div class="card-header">
-                <h3 style="margin:0; font-weight:600;"><i class="fas fa-store" style="margin-right:0.5rem; color:var(--accent);"></i> Branch Performance — @monthName</h3>
-            </div>
-            <div class="card-body card-body-flush">
-                <div style="overflow-x:auto;">
-                    <table class="premium-table">
-                        <thead>
-                            <tr>
-                                <th>Branch</th>
-                                <th style="text-align:right;">Revenue</th>
-                                <th style="text-align:right;">Expenses</th>
-                                <th style="text-align:right;">Profit</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var bs in Model.BranchSummaries)
-                            {
-                                <tr>
-                                    <td>
-                                        <span style="font-weight:600;">@bs.BranchName</span>
-                                        <br /><span class="caption">@bs.TotalOrders orders</span>
-                                    </td>
-                                    <td style="text-align:right; color:#22c55e; font-weight:600;">Rs. @bs.Revenue.ToString("N0")</td>
-                                    <td style="text-align:right; color:#ef4444;">Rs. @((bs.SalaryExpense + bs.OtherExpenses).ToString("N0"))</td>
-                                    <td style="text-align:right; font-weight:700; color:@(bs.NetProfit >= 0 ? "#22c55e" : "#ef4444");">
-                                        Rs. @bs.NetProfit.ToString("N0")
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<!-- Monthly Trend Chart -->
+@if (Model.MonthlyTrends.Any())
+{
+    <div class="card mb-6">
+        <div class="card-header">
+            <h3 class="section-title"><i class="fas fa-chart-line" style="color:var(--accent);margin-right:0.5rem;"></i>Revenue vs Expenses — Last 12 Months</h3>
         </div>
-    }
+        <div class="card-body" style="height:300px;position:relative;">
+            <canvas id="monthlyTrendChart"></canvas>
+        </div>
+    </div>
+}
 
-    <!-- Expense Category Breakdown -->
+<!-- Expense Donut + Branch P&L -->
+<div style="display:grid;grid-template-columns:1fr 1.6fr;gap:1.5rem;margin-bottom:1.5rem;">
     @if (Model.ExpensesByCategory.Any())
     {
         <div class="card">
             <div class="card-header">
-                <h3 style="margin:0; font-weight:600;"><i class="fas fa-tags" style="margin-right:0.5rem; color:var(--accent);"></i> Expense Breakdown — @monthName</h3>
+                <h3 class="section-title"><i class="fas fa-tags" style="color:var(--accent);margin-right:0.5rem;"></i>Expense Breakdown</h3>
             </div>
-            <div class="card-body">
-                @{
-                    var maxAmount = Model.ExpensesByCategory.Max(c => c.Amount);
-                    var categoryColors = new Dictionary<string, string>
-                    {
-                        {"Utilities", "#eab308"},
-                        {"Maintenance", "#3b82f6"},
-                        {"Supplies", "#22c55e"},
-                        {"Rent", "#8b5cf6"},
-                        {"Bills", "#ef4444"},
-                        {"Marketing", "#ec4899"},
-                        {"General", "#6b7280"}
-                    };
-                }
-                @foreach (var c in Model.ExpensesByCategory.OrderByDescending(x => x.Amount))
-                {
-                    var pct = maxAmount == 0 ? 0 : (int)(c.Amount / maxAmount * 100);
-                    var barColor = categoryColors.GetValueOrDefault(c.Category, "#6b7280");
-                    <div style="margin-bottom:0.75rem;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-                            <span class="body-text" style="font-weight:600;">@c.Category (@c.Count)</span>
-                            <span class="caption">Rs. @c.Amount.ToString("N0")</span>
-                        </div>
-                        <div style="width:100%; background:var(--border-light); border-radius:999px; height:6px;">
-                            <div style="width:@(pct)%; background:@barColor; height:6px; border-radius:999px; transition:width 0.3s;"></div>
-                        </div>
-                    </div>
-                }
+            <div class="card-body" style="height:280px;position:relative;">
+                <canvas id="expenseCategoryChart"></canvas>
+            </div>
+        </div>
+    }
+
+    @if (Model.BranchSummaries.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h3 class="section-title"><i class="fas fa-store" style="color:var(--accent);margin-right:0.5rem;"></i>Branch P&amp;L — @monthName</h3>
+            </div>
+            <div class="card-body" style="height:280px;position:relative;">
+                <canvas id="branchPLChart"></canvas>
             </div>
         </div>
     }
 </div>
 
-<!-- Monthly Trends -->
+<!-- Monthly Trends Table -->
 @if (Model.MonthlyTrends.Any())
 {
     <div class="card">
         <div class="card-header">
-            <h3 style="margin:0; font-weight:600;"><i class="fas fa-chart-bar" style="margin-right:0.5rem; color:var(--accent);"></i> Monthly Trends (Last 12 Months)</h3>
+            <h3 class="section-title"><i class="fas fa-calendar" style="color:var(--accent);margin-right:0.5rem;"></i>Monthly Summary</h3>
         </div>
         <div class="card-body card-body-flush">
             <div style="overflow-x:auto;">
@@ -173,16 +163,10 @@
                             var margin = t.Revenue != 0 ? (t.Profit / t.Revenue * 100) : 0;
                             <tr>
                                 <td style="font-weight:600;">@t.MonthName @t.Year</td>
-                                <td style="text-align:right; color:#22c55e;">Rs. @t.Revenue.ToString("N0")</td>
-                                <td style="text-align:right; color:#ef4444;">Rs. @t.TotalExpenses.ToString("N0")</td>
-                                <td style="text-align:right; font-weight:700; color:@(t.Profit >= 0 ? "#22c55e" : "#ef4444");">
-                                    Rs. @t.Profit.ToString("N0")
-                                </td>
-                                <td style="text-align:right;">
-                                    <span class="badge @(margin >= 0 ? "badge-success" : "badge-danger")">
-                                        @margin.ToString("F1")%
-                                    </span>
-                                </td>
+                                <td style="text-align:right;color:#22c55e;">Rs. @t.Revenue.ToString("N0")</td>
+                                <td style="text-align:right;color:#ef4444;">Rs. @t.TotalExpenses.ToString("N0")</td>
+                                <td style="text-align:right;font-weight:700;color:@(t.Profit >= 0 ? "#22c55e" : "#ef4444");">Rs. @t.Profit.ToString("N0")</td>
+                                <td style="text-align:right;"><span class="badge @(margin >= 0 ? "badge-success" : "badge-danger")">@margin.ToString("F1")%</span></td>
                             </tr>
                         }
                     </tbody>
@@ -190,4 +174,153 @@
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+<script>
+(function() {
+    const tip = {
+        backgroundColor: 'rgba(15,23,42,0.96)',
+        titleColor: '#64748b',
+        bodyColor: '#f1f5f9',
+        bodyFont: { weight: '700', size: 12 },
+        padding: 12,
+        cornerRadius: 10,
+        borderColor: 'rgba(255,255,255,0.06)',
+        borderWidth: 1
+    };
+
+    @if (Model.MonthlyTrends.Any())
+    {
+        <text>
+        (function() {
+            const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(trendLabels));
+            const revData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(trendRev));
+            const expData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(trendExp));
+
+            const ctx = document.getElementById('monthlyTrendChart')?.getContext('2d');
+            if (!ctx) return;
+
+            const revGrad = ctx.createLinearGradient(0, 0, 0, 300);
+            revGrad.addColorStop(0, 'rgba(34,197,94,0.28)');
+            revGrad.addColorStop(1, 'rgba(34,197,94,0)');
+
+            const expGrad = ctx.createLinearGradient(0, 0, 0, 300);
+            expGrad.addColorStop(0, 'rgba(239,68,68,0.18)');
+            expGrad.addColorStop(1, 'rgba(239,68,68,0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: revData,
+                            borderColor: '#22c55e',
+                            backgroundColor: revGrad,
+                            fill: true,
+                            tension: 0.42,
+                            borderWidth: 2.5,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#22c55e',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Expenses',
+                            data: expData,
+                            borderColor: '#ef4444',
+                            backgroundColor: expGrad,
+                            fill: true,
+                            tension: 0.42,
+                            borderWidth: 2,
+                            borderDash: [5, 4],
+                            pointRadius: 3,
+                            pointBackgroundColor: '#ef4444',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: { ...tip, displayColors: true, callbacks: { label: c => ' ' + c.dataset.label + ': Rs. ' + c.raw.toLocaleString() } },
+                        legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 }, padding: 16 } }
+                    },
+                    scales: {
+                        x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { callback: v => 'Rs. ' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }
+                    }
+                }
+            });
+        })();
+        </text>
+    }
+
+    @if (Model.ExpensesByCategory.Any())
+    {
+        <text>
+        (function() {
+            const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(catLabels));
+            const data   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(catAmounts));
+            const colorMap = { Utilities:'#eab308', Maintenance:'#3b82f6', Supplies:'#22c55e', Rent:'#8b5cf6', Bills:'#ef4444', Marketing:'#ec4899', General:'#6b7280' };
+            const colors = labels.map(l => colorMap[l] || '#9ca3af');
+
+            new Chart(document.getElementById('expenseCategoryChart'), {
+                type: 'doughnut',
+                data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: 'var(--bg-surface)', borderWidth: 3, hoverOffset: 10 }] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    plugins: {
+                        tooltip: { ...tip, callbacks: { label: c => ' ' + c.label + ': Rs. ' + c.raw.toLocaleString() } },
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 }, padding: 10 } }
+                    }
+                }
+            });
+        })();
+        </text>
+    }
+
+    @if (Model.BranchSummaries.Any())
+    {
+        <text>
+        (function() {
+            const labels  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(brLabels));
+            const revData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(brRev));
+            const expData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(brExp));
+
+            new Chart(document.getElementById('branchPLChart'), {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Revenue',  data: revData, backgroundColor: 'rgba(34,197,94,0.75)',  borderRadius: 6 },
+                        { label: 'Expenses', data: expData, backgroundColor: 'rgba(239,68,68,0.65)', borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: { ...tip, displayColors: true, callbacks: { label: c => ' ' + c.dataset.label + ': Rs. ' + c.raw.toLocaleString() } },
+                        legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 }, padding: 16 } }
+                    },
+                    scales: {
+                        x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+                        y: { ticks: { callback: v => 'Rs. ' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }
+                    }
+                }
+            });
+        })();
+        </text>
+    }
+})();
+</script>
 }

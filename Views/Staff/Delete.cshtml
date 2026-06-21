@@ -74,7 +74,8 @@
 
         <div class="divider"></div>
 
-        <form asp-action="Delete">
+        <form asp-action="Delete" method="post">
+            @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
             <div class="flex justify-end gap-3">
                 <a asp-action="Index" class="btn btn-ghost">Cancel</a>
