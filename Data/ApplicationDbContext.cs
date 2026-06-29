@@ -853,7 +853,7 @@ namespace Cafe.Data
             // Attendance check constraint
             modelBuilder.Entity<Attendance>()
                 .ToTable(t => t.HasCheckConstraint("CK_Attendance_Status",
-                    "[Status] IN ('Present','Absent','Late','Half-Day')"));
+                    "[Status] IN ('Present','Absent','Late','Half-Day','Paid Leave','Sick Leave','Casual Leave','Holiday','Work From Home','Overtime')"));
 
             // SalaryRecord check constraints
             modelBuilder.Entity<SalaryRecord>()

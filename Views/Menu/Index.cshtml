@@ -120,26 +120,26 @@
     {
         <div class="card overflow-hidden transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)]">
             <!-- Image Header -->
-            <div style="height:100px;background:linear-gradient(135deg,var(--sidebar-bg),#2d3e50);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:2rem;">
-                @if (item.IsSpicy)
+            <div style="height:140px;overflow:hidden;position:relative;background:linear-gradient(135deg,var(--sidebar-bg),#2d3e50);">
+                @if (!string.IsNullOrEmpty(item.ImageUrl))
                 {
-                    <i class="fas fa-pepper-hot"></i>
-                }
-                else if (item.Category?.Name?.Contains("Coffee") == true)
-                {
-                    <i class="fas fa-coffee"></i>
-                }
-                else if (item.Category?.Name?.Contains("Tea") == true)
-                {
-                    <i class="fas fa-mug-hot"></i>
-                }
-                else if (item.Category?.Name?.Contains("Pastry") == true || item.Category?.Name?.Contains("Cake") == true || item.Category?.Name?.Contains("Dessert") == true)
-                {
-                    <i class="fas fa-birthday-cake"></i>
+                    <img src="@item.ImageUrl" alt="@item.Name"
+                         style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" />
+                    @if (item.IsFeatured)
+                    {
+                        <span style="position:absolute;top:8px;right:8px;background:var(--accent);color:#000;font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;">Featured</span>
+                    }
                 }
                 else
                 {
-                    <i class="fas fa-utensils"></i>
+                    <div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:2.5rem;">
+                        @if (item.IsSpicy) { <i class="fas fa-pepper-hot"></i> }
+                        else if (item.Category?.Name?.Contains("Coffee") == true) { <i class="fas fa-coffee"></i> }
+                        else if (item.Category?.Name?.Contains("Tea") == true) { <i class="fas fa-mug-hot"></i> }
+                        else if (item.Category?.Name?.Contains("Smoothie") == true) { <i class="fas fa-blender"></i> }
+                        else if (item.Category?.Name?.Contains("Dessert") == true) { <i class="fas fa-birthday-cake"></i> }
+                        else { <i class="fas fa-utensils"></i> }
+                    </div>
                 }
             </div>
             <div class="card-body card-body-compact">

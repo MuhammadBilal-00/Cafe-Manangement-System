@@ -11,6 +11,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
+// AJAX/JSON POST actions ([FromBody]) send the antiforgery token via this header
+// instead of a form field — without naming it here, [ValidateAntiForgeryToken]
+// only ever checks form data and silently rejects every JSON request that carries
+// the token in a header (e.g. Order/Salary create & status-update endpoints).
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "RequestVerificationToken";
+});
+
 // Register audit interceptor as scoped (needs IHttpContextAccessor per-request)
 builder.Services.AddScoped<AuditSaveChangesInterceptor>();
 

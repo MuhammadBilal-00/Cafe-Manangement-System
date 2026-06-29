@@ -43,7 +43,7 @@ namespace Cafe.Migrations
                         column: x => x.StaffId,
                         principalTable: "Staff",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_Attendances_Users_MarkedById",
                         column: x => x.MarkedById,
@@ -84,7 +84,7 @@ namespace Cafe.Migrations
                         column: x => x.BranchId,
                         principalTable: "Branches",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_Expenses_Users_ApprovedById",
                         column: x => x.ApprovedById,
@@ -140,7 +140,7 @@ namespace Cafe.Migrations
                         column: x => x.StaffId,
                         principalTable: "Staff",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_SalaryRecords_Users_GeneratedById",
                         column: x => x.GeneratedById,

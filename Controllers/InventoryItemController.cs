@@ -12,10 +12,12 @@ namespace Cafe.Controllers
     public class InventoryItemController : BaseController
     {
         private readonly INotificationService _notificationService;
+        private readonly IInventoryService _inventoryService;
 
-        public InventoryItemController(ApplicationDbContext context, INotificationService notificationService) : base(context)
+        public InventoryItemController(ApplicationDbContext context, INotificationService notificationService, IInventoryService inventoryService) : base(context)
         {
             _notificationService = notificationService;
+            _inventoryService = inventoryService;
         }
 
         // Helper: verify the item belongs to an accessible branch
@@ -275,39 +277,39 @@ namespace Cafe.Controllers
             if (!CanAccessItem(inventoryItem))
                 return Json(new { success = false, message = "Access denied" });
 
-            int add = (int)Math.Round(quantity, MidpointRounding.AwayFromZero);
-            if (add <= 0)
+            if (quantity <= 0)
                 return Json(new { success = false, message = "Restock quantity must be greater than zero." });
 
-            inventoryItem.Quantity += add;
-            inventoryItem.LastUpdated = DateTime.Now;
-            await _context.SaveChangesAsync();
+            var performedBy = HttpContext.Session.GetUserName() ?? "System";
+            var restocked = await _inventoryService.StockIn(id, quantity, "Restock", performedBy);
+            if (!restocked)
+                return Json(new { success = false, message = "Restock failed." });
 
-            // Check low stock after restock
-            if (inventoryItem.Quantity >= 0)
+            // The service updates the row via direct SQL, so refresh this tracked
+            // instance before reading Quantity for the low-stock checks below.
+            await _context.Entry(inventoryItem).ReloadAsync();
+
+            if (inventoryItem.MinimumStock > 0 && inventoryItem.Quantity < inventoryItem.MinimumStock)
             {
-                if (inventoryItem.MinimumStock > 0 && inventoryItem.Quantity < inventoryItem.MinimumStock)
-                {
-                    await _notificationService.CreateNotificationAsync(
-                        "Critical Stock Level",
-                        $"\"{inventoryItem.Name}\" is critically low at {inventoryItem.Quantity} units (minimum: {inventoryItem.MinimumStock}).",
-                        "Error", NotificationCategory.Inventory,
-                        branchId: inventoryItem.BranchId,
-                        createdBy: GetCurrentUserId(),
-                        redirectUrl: "/InventoryItem/LowStock",
-                        icon: "fas fa-triangle-exclamation");
-                }
-                else if (inventoryItem.Quantity <= inventoryItem.ReorderLevel)
-                {
-                    await _notificationService.CreateNotificationAsync(
-                        "Low Stock Alert",
-                        $"\"{inventoryItem.Name}\" is at {inventoryItem.Quantity} units (reorder level: {inventoryItem.ReorderLevel}).",
-                        "Warning", NotificationCategory.Inventory,
-                        branchId: inventoryItem.BranchId,
-                        createdBy: GetCurrentUserId(),
-                        redirectUrl: "/InventoryItem/LowStock",
-                        icon: "fas fa-triangle-exclamation");
-                }
+                await _notificationService.CreateNotificationAsync(
+                    "Critical Stock Level",
+                    $"\"{inventoryItem.Name}\" is critically low at {inventoryItem.Quantity} units (minimum: {inventoryItem.MinimumStock}).",
+                    "Error", NotificationCategory.Inventory,
+                    branchId: inventoryItem.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/InventoryItem/LowStock",
+                    icon: "fas fa-triangle-exclamation");
+            }
+            else if (inventoryItem.Quantity <= inventoryItem.ReorderLevel)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    "Low Stock Alert",
+                    $"\"{inventoryItem.Name}\" is at {inventoryItem.Quantity} units (reorder level: {inventoryItem.ReorderLevel}).",
+                    "Warning", NotificationCategory.Inventory,
+                    branchId: inventoryItem.BranchId,
+                    createdBy: GetCurrentUserId(),
+                    redirectUrl: "/InventoryItem/LowStock",
+                    icon: "fas fa-triangle-exclamation");
             }
 
             return Json(new { success = true });
@@ -357,9 +359,14 @@ namespace Cafe.Controllers
                 return Json(new { success = false, message = "Access denied" });
 
             int qty = (int)Math.Round(newQuantity, MidpointRounding.AwayFromZero);
-            inventoryItem.Quantity = qty;
-            inventoryItem.LastUpdated = DateTime.Now;
-            await _context.SaveChangesAsync();
+            if (qty < 0)
+                return Json(new { success = false, message = "Quantity cannot be negative." });
+
+            var performedBy = HttpContext.Session.GetUserName() ?? "System";
+            var adjusted = await _inventoryService.AdjustStockAsync(id, qty, reason, performedBy);
+            if (!adjusted)
+                return Json(new { success = false, message = "Stock adjustment failed." });
+
             return Json(new { success = true });
         }
 

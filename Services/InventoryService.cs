@@ -8,6 +8,7 @@ namespace Cafe.Services
     {
         Task<bool> StockIn(int inventoryItemId, decimal quantity, string? notes, string performedBy);
         Task<bool> StockOut(int inventoryItemId, decimal quantity, string transactionType, string? notes, string performedBy);
+        Task<bool> AdjustStockAsync(int inventoryItemId, int newQuantity, string? reason, string performedBy);
         Task<bool> DeductInventoryForOrder(int orderId, int branchId, string performedBy);
         Task<bool> CheckInventoryAvailability(int menuItemId, int quantity, int branchId);
         Task UpdateInventoryStatus(int inventoryItemId);
@@ -28,19 +29,25 @@ namespace Cafe.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var item = await _context.InventoryItems.FindAsync(inventoryItemId);
-                if (item == null || quantity <= 0)
+                if (quantity <= 0)
                     return false;
 
-                // Quantity is int in the model; keep a decimal copy for the transaction log
-                var quantityBefore = (decimal)item.Quantity;
-
-                // Add decimal quantity to int quantity with rounding
                 int add = (int)Math.Round(quantity, MidpointRounding.AwayFromZero);
-                item.Quantity += add;
-                item.LastUpdated = DateTime.Now;
 
+                // Atomic increment at the DB level — see StockOut for why a read-then-write
+                // here would lose updates under concurrent stock-ins on the same item.
+                int rows = await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"UPDATE InventoryItems SET Quantity = Quantity + {add}, LastUpdated = GETDATE() WHERE Id = {inventoryItemId}");
+
+                if (rows == 0)
+                {
+                    await transaction.RollbackAsync();
+                    return false; // item not found
+                }
+
+                var item = await _context.InventoryItems.AsNoTracking().FirstAsync(i => i.Id == inventoryItemId);
                 var quantityAfter = (decimal)item.Quantity;
+                var quantityBefore = quantityAfter - add;
 
                 // Create transaction record
                 var inventoryTransaction = new InventoryTransaction
@@ -75,22 +82,30 @@ namespace Cafe.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var item = await _context.InventoryItems.FindAsync(inventoryItemId);
-                if (item == null || quantity <= 0)
+                if (quantity <= 0)
                     return false;
 
                 // Convert decimal quantity to int for comparison and updating
                 int qtyToRemove = (int)Math.Round(quantity, MidpointRounding.AwayFromZero);
 
-                if (item.Quantity < qtyToRemove)
-                    return false;
+                // Atomic conditional decrement: the availability check and the deduction
+                // happen in one UPDATE statement, evaluated against the row's *current*
+                // committed value. Two concurrent StockOut/order calls can no longer both
+                // read "5 in stock" in memory, both pass an availability check, and both
+                // deduct — only as many callers as there is real stock will get rows=1;
+                // the rest correctly fail instead of driving Quantity negative.
+                int rows = await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"UPDATE InventoryItems SET Quantity = Quantity - {qtyToRemove}, LastUpdated = GETDATE() WHERE Id = {inventoryItemId} AND Quantity >= {qtyToRemove}");
 
-                var quantityBefore = (decimal)item.Quantity;
+                if (rows == 0)
+                {
+                    await transaction.RollbackAsync();
+                    return false; // not found or insufficient stock
+                }
 
-                item.Quantity -= qtyToRemove;
-                item.LastUpdated = DateTime.Now;
-
+                var item = await _context.InventoryItems.AsNoTracking().FirstAsync(i => i.Id == inventoryItemId);
                 var quantityAfter = (decimal)item.Quantity;
+                var quantityBefore = quantityAfter + qtyToRemove;
 
                 // Create transaction record
                 var inventoryTransaction = new InventoryTransaction
@@ -120,6 +135,55 @@ namespace Cafe.Services
             }
         }
 
+        public async Task<bool> AdjustStockAsync(int inventoryItemId, int newQuantity, string? reason, string performedBy)
+        {
+            // Manual stock-count correction: sets an absolute value, so unlike
+            // StockIn/StockOut there's no lost-update race to guard against — last write
+            // wins is the expected behavior when a manager re-counts and overrides.
+            // The one thing that must never happen is a negative resulting quantity.
+            if (newQuantity < 0)
+                return false;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var item = await _context.InventoryItems.FindAsync(inventoryItemId);
+                if (item == null)
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+
+                var quantityBefore = (decimal)item.Quantity;
+                item.Quantity = newQuantity;
+                item.LastUpdated = DateTime.Now;
+                var quantityAfter = (decimal)newQuantity;
+
+                _context.InventoryTransactions.Add(new InventoryTransaction
+                {
+                    InventoryItemId = inventoryItemId,
+                    TransactionType = "Manual Adjustment",
+                    Quantity = Math.Abs(quantityAfter - quantityBefore),
+                    QuantityBefore = quantityBefore,
+                    QuantityAfter = quantityAfter,
+                    Notes = reason,
+                    BranchId = item.BranchId,
+                    PerformedBy = performedBy,
+                    TransactionDate = DateTime.Now
+                });
+
+                await UpdateInventoryStatus(inventoryItemId);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+        }
+
         public async Task<bool> DeductInventoryForOrder(int orderId, int branchId, string performedBy)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -136,7 +200,6 @@ namespace Cafe.Services
                 foreach (var orderItem in order.OrderItems)
                 {
                     var recipeMappings = await _context.InventoryRecipeMappings
-                        .Include(rm => rm.InventoryItem)
                         .Where(rm => rm.MenuItemId == orderItem.MenuItemId
                                   && rm.InventoryItem.BranchId == branchId)
                         .ToListAsync();
@@ -147,20 +210,22 @@ namespace Cafe.Services
                         var requiredQuantityDecimal = mapping.QuantityRequired * orderItem.Quantity;
                         int requiredQuantity = (int)Math.Round(requiredQuantityDecimal, MidpointRounding.AwayFromZero);
 
-                        var item = mapping.InventoryItem;
+                        // Atomic conditional decrement (see StockOut) — two orders placed at
+                        // the same instant can no longer both pass a stale in-memory stock
+                        // check and both succeed when only one has enough stock to cover.
+                        int rows = await _context.Database.ExecuteSqlInterpolatedAsync(
+                            $"UPDATE InventoryItems SET Quantity = Quantity - {requiredQuantity}, LastUpdated = GETDATE() WHERE Id = {mapping.InventoryItemId} AND Quantity >= {requiredQuantity}");
 
-                        if (item.Quantity < requiredQuantity)
+                        if (rows == 0)
                         {
                             await transaction.RollbackAsync();
                             return false;
                         }
 
-                        var quantityBefore = (decimal)item.Quantity;
-
-                        item.Quantity -= requiredQuantity;
-                        item.LastUpdated = DateTime.Now;
-
+                        var item = await _context.InventoryItems.AsNoTracking()
+                            .FirstAsync(i => i.Id == mapping.InventoryItemId);
                         var quantityAfter = (decimal)item.Quantity;
+                        var quantityBefore = quantityAfter + requiredQuantity;
 
                         // Create transaction record
                         var inventoryTransaction = new InventoryTransaction
@@ -221,7 +286,7 @@ namespace Cafe.Services
             if (item == null)
                 return;
 
-            // Currently no Status field on InventoryItem � nothing to update here now.
+            // Currently no Status field on InventoryItem � nothing to update here now.
             // Left as a hook in case you add a Status column/property later.
         }
 

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Cafe.Attributes;
 using Cafe.Data;
 using Cafe.Helpers;
@@ -12,6 +13,8 @@ namespace Cafe.Controllers
     public class PurchaseController : BaseController
     {
         private readonly INotificationService _notificationService;
+        private readonly IInventoryService _inventoryService;
+        private readonly IMemoryCache _cache;
 
         // Valid state-machine transitions: key = current status, value = allowed next statuses.
         // Cancelled is terminal — no transitions out.
@@ -23,9 +26,11 @@ namespace Cafe.Controllers
             ["Cancelled"] = []
         };
 
-        public PurchaseController(ApplicationDbContext context, INotificationService notificationService) : base(context)
+        public PurchaseController(ApplicationDbContext context, INotificationService notificationService, IInventoryService inventoryService, IMemoryCache cache) : base(context)
         {
             _notificationService = notificationService;
+            _inventoryService = inventoryService;
+            _cache = cache;
         }
 
         // GET: Purchase/Index
@@ -98,30 +103,28 @@ namespace Cafe.Controllers
             }
 
             purchase.Status = newStatus;
-
-            // Approved → Received: credit inventory.
-            if (newStatus == "Received")
-            {
-                var item = purchase.Item;
-                if (item != null)
-                {
-                    item.Quantity += purchase.QuantityPurchased;
-                    item.LastUpdated = DateTime.Now;
-                }
-            }
-
-            // Received → Cancelled: reverse the inventory credit.
-            if (oldStatus == "Received" && newStatus == "Cancelled")
-            {
-                var item = purchase.Item;
-                if (item != null)
-                {
-                    item.Quantity = Math.Max(0, item.Quantity - purchase.QuantityPurchased);
-                    item.LastUpdated = DateTime.Now;
-                }
-            }
-
             await _context.SaveChangesAsync();
+
+            var performedBy = HttpContext.Session.GetUserName() ?? "System";
+            string? stockWarning = null;
+
+            // Approved → Received: credit inventory (atomic, audit-logged).
+            if (newStatus == "Received" && purchase.Item != null)
+            {
+                await _inventoryService.StockIn(purchase.ItemId, purchase.QuantityPurchased,
+                    $"Purchase #{purchase.Id} received", performedBy);
+            }
+
+            // Received → Cancelled: reverse the inventory credit. If some of that stock was
+            // already consumed (e.g. used in orders since it was received), there isn't
+            // enough left to reverse — surface that clearly instead of silently clamping to 0.
+            if (oldStatus == "Received" && newStatus == "Cancelled" && purchase.Item != null)
+            {
+                var reversed = await _inventoryService.StockOut(purchase.ItemId, purchase.QuantityPurchased,
+                    "Purchase Cancelled", $"Reversal of Purchase #{purchase.Id}", performedBy);
+                if (!reversed)
+                    stockWarning = " Warning: could not fully reverse stock — some of it has already been used.";
+            }
 
             await _notificationService.CreateNotificationAsync(
                 "Purchase Status Updated",
@@ -133,7 +136,7 @@ namespace Cafe.Controllers
                 redirectUrl: "/Purchase/Index",
                 icon: "fas fa-shopping-cart");
 
-            SetSuccessMessage($"Purchase marked as {newStatus}.");
+            SetSuccessMessage($"Purchase marked as {newStatus}.{stockWarning}");
             return RedirectToAction(nameof(Index));
         }
 
@@ -176,20 +179,27 @@ namespace Cafe.Controllers
 
             if (ModelState.IsValid)
             {
+                // Double-click / back-button-resubmit guard: an identical purchase from the
+                // same user within a short window is treated as a duplicate, not a new order.
+                var dedupeKey = $"purchase-create:{purchase.CreatedById}:{purchase.ItemId}:{purchase.QuantityPurchased}:{purchase.TotalCost}:{purchase.SupplierId}";
+                if (_cache.TryGetValue(dedupeKey, out _))
+                {
+                    SetErrorMessage("This purchase was already submitted moments ago.");
+                    return RedirectToAction(nameof(Index));
+                }
+                _cache.Set(dedupeKey, true, TimeSpan.FromSeconds(15));
+
                 _context.Purchases.Add(purchase);
+                await _context.SaveChangesAsync();
 
                 // If created directly as Received, credit inventory immediately.
                 if (purchase.Status == "Received")
                 {
-                    var item = await _context.InventoryItems.FindAsync(purchase.ItemId);
-                    if (item != null)
-                    {
-                        item.Quantity += purchase.QuantityPurchased;
-                        item.LastUpdated = DateTime.Now;
-                    }
+                    var performedBy = HttpContext.Session.GetUserName() ?? "System";
+                    await _inventoryService.StockIn(purchase.ItemId, purchase.QuantityPurchased,
+                        $"Purchase #{purchase.Id} received", performedBy);
                 }
 
-                await _context.SaveChangesAsync();
                 SetSuccessMessage("Purchase order created.");
                 return RedirectToAction(nameof(Index));
             }

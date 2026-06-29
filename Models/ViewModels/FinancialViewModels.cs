@@ -12,6 +12,7 @@ namespace Cafe.Models.ViewModels
 
         // Summary Cards
         public decimal TotalRevenue { get; set; }
+        public decimal TotalCostOfGoodsSold { get; set; }
         public decimal TotalSalaryExpense { get; set; }
         public decimal TotalOtherExpenses { get; set; }
         public decimal NetProfit { get; set; }
@@ -27,6 +28,7 @@ namespace Cafe.Models.ViewModels
         public int BranchId { get; set; }
         public string BranchName { get; set; } = string.Empty;
         public decimal Revenue { get; set; }
+        public decimal CostOfGoodsSold { get; set; }
         public decimal SalaryExpense { get; set; }
         public decimal OtherExpenses { get; set; }
         public decimal NetProfit { get; set; }
@@ -46,6 +48,7 @@ namespace Cafe.Models.ViewModels
         public int Month { get; set; }
         public string MonthName { get; set; } = string.Empty;
         public decimal Revenue { get; set; }
+        public decimal CostOfGoodsSold { get; set; }
         public decimal TotalExpenses { get; set; }
         public decimal Profit { get; set; }
     }

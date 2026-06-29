@@ -44,12 +44,9 @@ namespace Cafe.Migrations
                 type: "int",
                 nullable: true);
 
-            migrationBuilder.AddColumn<string>(
-                name: "Category",
-                table: "InventoryItems",
-                type: "nvarchar(50)",
-                maxLength: 50,
-                nullable: true);
+            migrationBuilder.Sql(@"
+IF COL_LENGTH('InventoryItems', 'Category') IS NULL
+    ALTER TABLE [InventoryItems] ADD [Category] nvarchar(50) NULL;");
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "LastRestockedDate",

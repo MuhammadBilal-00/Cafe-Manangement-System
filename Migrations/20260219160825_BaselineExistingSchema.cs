@@ -51,102 +51,47 @@ namespace Cafe.Migrations
                 nullable: false,
                 defaultValue: 0);
 
-            migrationBuilder.CreateTable(
-                name: "InventoryRecipeMappings",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MenuItemId = table.Column<int>(type: "int", nullable: false),
-                    InventoryItemId = table.Column<int>(type: "int", nullable: false),
-                    QuantityRequired = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
-                    Unit = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_InventoryRecipeMappings", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_InventoryRecipeMappings_InventoryItems_InventoryItemId",
-                        column: x => x.InventoryItemId,
-                        principalTable: "InventoryItems",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_InventoryRecipeMappings_MenuItems_MenuItemId",
-                        column: x => x.MenuItemId,
-                        principalTable: "MenuItems",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+            // Tables already created by InventoryManagementModule — skip if they exist
+            migrationBuilder.Sql(@"
+IF OBJECT_ID('InventoryRecipeMappings') IS NULL
+BEGIN
+    CREATE TABLE [InventoryRecipeMappings] (
+        [Id] int NOT NULL IDENTITY,
+        [MenuItemId] int NOT NULL,
+        [InventoryItemId] int NOT NULL,
+        [QuantityRequired] decimal(10,2) NOT NULL,
+        [Unit] nvarchar(20) NOT NULL,
+        CONSTRAINT [PK_InventoryRecipeMappings] PRIMARY KEY ([Id])
+    );
+    CREATE INDEX [IX_InventoryRecipeMappings_InventoryItemId] ON [InventoryRecipeMappings] ([InventoryItemId]);
+    CREATE INDEX [IX_InventoryRecipeMappings_MenuItemId] ON [InventoryRecipeMappings] ([MenuItemId]);
+END");
 
-            migrationBuilder.CreateTable(
-                name: "InventoryTransactions",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    InventoryItemId = table.Column<int>(type: "int", nullable: false),
-                    TransactionType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    Quantity = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
-                    QuantityBefore = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
-                    QuantityAfter = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
-                    BranchId = table.Column<int>(type: "int", nullable: false),
-                    OrderId = table.Column<int>(type: "int", nullable: true),
-                    PerformedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_InventoryTransactions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_InventoryTransactions_Branches_BranchId",
-                        column: x => x.BranchId,
-                        principalTable: "Branches",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_InventoryTransactions_InventoryItems_InventoryItemId",
-                        column: x => x.InventoryItemId,
-                        principalTable: "InventoryItems",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_InventoryTransactions_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "Id");
-                });
+            migrationBuilder.Sql(@"
+IF OBJECT_ID('InventoryTransactions') IS NULL
+BEGIN
+    CREATE TABLE [InventoryTransactions] (
+        [Id] int NOT NULL IDENTITY,
+        [InventoryItemId] int NOT NULL,
+        [TransactionType] nvarchar(20) NOT NULL,
+        [Quantity] decimal(10,2) NOT NULL,
+        [QuantityBefore] decimal(10,2) NOT NULL,
+        [QuantityAfter] decimal(10,2) NOT NULL,
+        [Notes] nvarchar(500) NULL,
+        [TransactionDate] datetime2 NOT NULL DEFAULT GETDATE(),
+        [BranchId] int NOT NULL,
+        [OrderId] int NULL,
+        [PerformedBy] nvarchar(100) NULL,
+        CONSTRAINT [PK_InventoryTransactions] PRIMARY KEY ([Id])
+    );
+    CREATE INDEX [IX_InventoryTransactions_BranchId] ON [InventoryTransactions] ([BranchId]);
+    CREATE INDEX [IX_InventoryTransactions_InventoryItemId] ON [InventoryTransactions] ([InventoryItemId]);
+    CREATE INDEX [IX_InventoryTransactions_OrderId] ON [InventoryTransactions] ([OrderId]);
+END");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Feedbacks_OrderId",
-                table: "Feedbacks",
-                column: "OrderId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InventoryRecipeMappings_InventoryItemId",
-                table: "InventoryRecipeMappings",
-                column: "InventoryItemId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InventoryRecipeMappings_MenuItemId",
-                table: "InventoryRecipeMappings",
-                column: "MenuItemId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InventoryTransactions_BranchId",
-                table: "InventoryTransactions",
-                column: "BranchId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InventoryTransactions_InventoryItemId",
-                table: "InventoryTransactions",
-                column: "InventoryItemId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InventoryTransactions_OrderId",
-                table: "InventoryTransactions",
-                column: "OrderId");
+            migrationBuilder.Sql(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_Feedbacks_OrderId' AND object_id=OBJECT_ID('Feedbacks'))
+    CREATE INDEX [IX_Feedbacks_OrderId] ON [Feedbacks] ([OrderId]);");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Feedbacks_Orders_OrderId",

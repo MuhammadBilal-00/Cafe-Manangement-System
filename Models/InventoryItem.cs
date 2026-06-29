@@ -14,6 +14,7 @@ namespace Cafe.Models
         public string Name { get; set; } = null!;
 
         [Required]
+        [Range(0, int.MaxValue, ErrorMessage = "Quantity cannot be negative.")]
         public int Quantity { get; set; }
 
         [Required]
@@ -24,8 +25,10 @@ namespace Cafe.Models
         public int BranchId { get; set; }
 
         [Required]
+        [Range(0, int.MaxValue, ErrorMessage = "Reorder level cannot be negative.")]
         public int ReorderLevel { get; set; }
 
+        [Range(0, int.MaxValue, ErrorMessage = "Minimum stock cannot be negative.")]
         public int MinimumStock { get; set; } = 0;
 
         [StringLength(100)]

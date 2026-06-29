@@ -1,7 +1,5 @@
 ﻿// Services/AuthService.cs
 using Cafe.Models;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Cafe.Data;
 
@@ -18,10 +16,7 @@ namespace Cafe.Services
 
         public string HashPassword(string password)
         {
-            // Use SHA256 with salt to match database format
-            using var sha256 = SHA256.Create();
-            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password + "SALT_KEY_2025"));
-            return Convert.ToBase64String(hashedBytes);
+            return BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
         }
 
         public bool VerifyPassword(string password, string hashedPassword)
@@ -31,11 +26,7 @@ namespace Cafe.Services
 
             try
             {
-                // Generate hash for input password
-                var inputHash = HashPassword(password);
-
-                // Compare with stored hash
-                return inputHash == hashedPassword;
+                return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
             }
             catch
             {

@@ -74,6 +74,10 @@
     <script>(function(){var t=localStorage.getItem('cafetheme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
 </head>
 <body>
+    @* Pages send this via a "RequestVerificationToken" header on JSON/fetch POSTs.
+       Rendered once here so every page has it, instead of relying on each view
+       happening to contain a <form> that incidentally emits the same field. *@
+    <form style="display:none">@Html.AntiForgeryToken()</form>
     @{
         var userRole = Context.Session.GetString("UserRole");
         var userName = Context.Session.GetString("UserName");

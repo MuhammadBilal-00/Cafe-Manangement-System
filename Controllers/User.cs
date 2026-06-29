@@ -1,3 +1,4 @@
+using Cafe.Attributes;
 using Cafe.Data;
 using Cafe.Models;
 using Cafe.Models.ViewModels;
@@ -18,6 +19,9 @@ namespace Cafe.Controllers
             _authService = authService;
         }
 
+        // User management (list/create/edit/delete any account) is Owner-only.
+        // Profile/Settings/ChangePassword below stay open to any logged-in user.
+        [RequireOwner]
         public async Task<IActionResult> Index(string role)
         {
             var users = _context.Users.AsQueryable();
@@ -33,6 +37,7 @@ namespace Cafe.Controllers
             return View(await users.OrderBy(u => u.Name).ToListAsync());
         }
 
+        [RequireOwner]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -50,6 +55,7 @@ namespace Cafe.Controllers
             return View(user);
         }
 
+        [RequireOwner]
         public IActionResult Create()
         {
             ViewBag.Roles = new[] { "Owner", "BranchManager", "Staff", "Customer" };
@@ -58,6 +64,7 @@ namespace Cafe.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RequireOwner]
         public async Task<IActionResult> Create([Bind("Name,Email,Phone,Role,PasswordHash")] User user)
         {
             if (ModelState.IsValid)
@@ -94,6 +101,7 @@ namespace Cafe.Controllers
             return View(user);
         }
 
+        [RequireOwner]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -107,6 +115,7 @@ namespace Cafe.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RequireOwner]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Email,Phone,Role,PasswordHash,CreatedDate")] User user)
         {
             if (id != user.Id) return NotFound();
@@ -140,6 +149,7 @@ namespace Cafe.Controllers
             return View(user);
         }
 
+        [RequireOwner]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -154,6 +164,7 @@ namespace Cafe.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [RequireOwner]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var user = await _context.Users.FindAsync(id);

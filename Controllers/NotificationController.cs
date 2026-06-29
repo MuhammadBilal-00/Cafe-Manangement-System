@@ -104,6 +104,7 @@ namespace Cafe.Controllers
 
         // ─── API: Mark single as read ────────────────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsRead(int id)
         {
             var userId = GetCurrentUserId() ?? 0;
@@ -116,6 +117,7 @@ namespace Cafe.Controllers
 
         // ─── API: Mark all as read ───────────────────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAllAsRead()
         {
             var userId = GetCurrentUserId() ?? 0;

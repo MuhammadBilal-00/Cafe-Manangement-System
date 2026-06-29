@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Caching.Memory;
 using Cafe.Data;
 using Cafe.Models;
 using Cafe.Attributes;
@@ -16,11 +17,15 @@ namespace Cafe.Controllers
     {
         private readonly IInventoryService _inventoryService;
         private readonly INotificationService _notificationService;
+        private readonly IMemoryCache _cache;
+        private readonly ILogger<OrderController> _logger;
 
-        public OrderController(ApplicationDbContext context, IInventoryService inventoryService, INotificationService notificationService) : base(context)
+        public OrderController(ApplicationDbContext context, IInventoryService inventoryService, INotificationService notificationService, IMemoryCache cache, ILogger<OrderController> logger) : base(context)
         {
             _inventoryService = inventoryService;
             _notificationService = notificationService;
+            _cache = cache;
+            _logger = logger;
         }
 
         // Main Index Page - Works with your HTML
@@ -135,9 +140,12 @@ namespace Cafe.Controllers
                     subtotal = oi.Quantity * oi.Price,
                     description = oi.MenuItem.Description
                 }).ToList(),
-                subtotal = order.OrderItems.Sum(oi => oi.Quantity * oi.Price),
-                tax = order.OrderItems.Sum(oi => oi.Quantity * oi.Price) * 0.08m,
-                serviceCharge = 1.50m,
+                // No tax/service charge is actually applied anywhere in order creation —
+                // subtotal must equal totalAmount so the receipt math is never inconsistent
+                // with what was actually charged.
+                subtotal = order.TotalAmount,
+                tax = 0m,
+                serviceCharge = 0m,
                 totalAmount = order.TotalAmount
             };
 
@@ -172,10 +180,29 @@ namespace Cafe.Controllers
         {
             try
             {
+                if (request == null || !ModelState.IsValid)
+                {
+                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                    return Json(new { success = false, message = string.Join(" ", errors).Trim() is { Length: > 0 } msg ? msg : "Invalid order request." });
+                }
+
                 if (!CanAccessBranch(request.BranchId))
                 {
                     return Json(new { success = false, message = "Access denied to this branch" });
                 }
+
+                // Double-click / network-retry guard: an identical cart from the same user
+                // and branch within a short window is treated as a duplicate submission,
+                // not a second order.
+                var itemsFingerprint = string.Join(",", request.Items
+                    .OrderBy(i => i.MenuItemId)
+                    .Select(i => $"{i.MenuItemId}x{i.Quantity}"));
+                var dedupeKey = $"order-create:{GetCurrentUserId()}:{request.BranchId}:{request.CustomerId}:{itemsFingerprint}";
+                if (_cache.TryGetValue(dedupeKey, out _))
+                {
+                    return Json(new { success = false, message = "This order was already submitted moments ago." });
+                }
+                _cache.Set(dedupeKey, true, TimeSpan.FromSeconds(10));
 
                 // Check inventory availability for all items before creating order
                 foreach (var item in request.Items)
@@ -255,11 +282,18 @@ namespace Cafe.Controllers
 
                 if (!inventoryDeducted)
                 {
-                    // If inventory deduction fails, we still keep the order but log a warning
-                    order.Notes = string.IsNullOrEmpty(order.Notes) 
-                        ? "Warning: Inventory deduction failed" 
-                        : $"{order.Notes}\nWarning: Inventory deduction failed";
+                    // Stock could have been consumed by a concurrent order between the
+                    // pre-check above and this deduction. Don't leave a phantom order with
+                    // no stock behind it — undo the order and tell the caller why.
+                    _context.OrderItems.RemoveRange(orderItems);
+                    _context.Orders.Remove(order);
                     await _context.SaveChangesAsync();
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Insufficient inventory to fulfill this order. Stock levels changed — please check availability and try again."
+                    });
                 }
 
                 // Notification: new order created
@@ -276,7 +310,8 @@ namespace Cafe.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Error creating order: " + ex.Message });
+                _logger.LogError(ex, "Error creating order for branch {BranchId}", request?.BranchId);
+                return Json(new { success = false, message = "Something went wrong while creating the order. Please try again." });
             }
         }
 
@@ -287,6 +322,11 @@ namespace Cafe.Controllers
         {
             try
             {
+                if (request == null || !ModelState.IsValid)
+                {
+                    return Json(new { success = false, message = "Invalid status update request." });
+                }
+
                 var order = await _context.Orders.FindAsync(request.OrderId);
                 if (order == null || !CanAccessBranch(order.BranchId))
                 {
@@ -317,7 +357,8 @@ namespace Cafe.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Error updating status: " + ex.Message });
+                _logger.LogError(ex, "Error updating status for order {OrderId}", request?.OrderId);
+                return Json(new { success = false, message = "Something went wrong while updating the order status. Please try again." });
             }
         }
 
@@ -413,7 +454,8 @@ namespace Cafe.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Error creating customer: " + ex.Message });
+                _logger.LogError(ex, "Error creating quick customer");
+                return Json(new { success = false, message = "Something went wrong while creating the customer. Please try again." });
             }
         }
 
@@ -440,6 +482,11 @@ namespace Cafe.Controllers
         {
             try
             {
+                if (request == null || !ModelState.IsValid)
+                {
+                    return Json(new { success = false, message = "Invalid cancel request." });
+                }
+
                 var order = await _context.Orders.FindAsync(request.OrderId);
                 if (order == null || !CanAccessBranch(order.BranchId))
                 {
@@ -472,7 +519,8 @@ namespace Cafe.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Error cancelling order: " + ex.Message });
+                _logger.LogError(ex, "Error cancelling order {OrderId}", request?.OrderId);
+                return Json(new { success = false, message = "Something went wrong while cancelling the order. Please try again." });
             }
         }
 
@@ -531,15 +579,22 @@ namespace Cafe.Controllers
             };
         }
 
+        // Forward-only kitchen workflow: Pending -> Preparing -> Ready -> Completed.
+        // Cancellation is allowed from any non-terminal state. No backward or
+        // skip-ahead transitions (e.g. Ready -> Pending, or Pending -> Completed).
+        private static readonly Dictionary<string, string[]> OrderAllowedTransitions = new()
+        {
+            ["Pending"]   = ["Preparing", "Cancelled"],
+            ["Preparing"] = ["Ready", "Cancelled"],
+            ["Ready"]     = ["Completed", "Cancelled"],
+            ["Completed"] = [],
+            ["Cancelled"] = []
+        };
+
         private bool IsValidStatusTransition(string currentStatus, string newStatus)
         {
-            // Don't allow changes from completed or cancelled
-            if (currentStatus == "Completed" || currentStatus == "Cancelled")
-                return false;
-
-            // Valid statuses
-            var validStatuses = new[] { "Pending", "Preparing", "Ready", "Completed", "Cancelled" };
-            return validStatuses.Contains(newStatus);
+            return OrderAllowedTransitions.TryGetValue(currentStatus, out var allowed)
+                && allowed.Contains(newStatus);
         }
 
         private async Task<string> GenerateOrderNumber(int branchId)
