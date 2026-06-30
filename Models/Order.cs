@@ -38,5 +38,8 @@ namespace Cafe.Models
         public Branch Branch { get; set; } = null!;
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
+        // One-to-one: the immutable bill generated for this order (null until checkout completes).
+        public Invoice? Invoice { get; set; }
     }
 }

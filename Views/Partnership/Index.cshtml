@@ -1,0 +1,177 @@
+@model IEnumerable<Cafe.Models.Partnership>
+@{
+    ViewData["Title"] = "Card Partnerships";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+    var now = DateTime.Now;
+
+    var total = Model.Count();
+    var activeNow = Model.Count(p => p.IsActive && now >= p.ValidFrom && now <= p.ValidUntil);
+    var scheduled = Model.Count(p => p.IsActive && now < p.ValidFrom);
+    var expired = Model.Count(p => now > p.ValidUntil);
+}
+
+@functions {
+    (string Label, string Css) PartnerStatus(Cafe.Models.Partnership p)
+    {
+        var now = DateTime.Now;
+        if (!p.IsActive) return ("Inactive", "badge-neutral");
+        if (now < p.ValidFrom) return ("Scheduled", "badge-info");
+        if (now > p.ValidUntil) return ("Expired", "badge-danger");
+        return ("Live", "badge-success");
+    }
+}
+
+<!-- Page Header -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Card Partnerships</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Time-bound bank &amp; card-tier discounts applied at checkout.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Partnership</a>
+</div>
+
+<!-- KPI Cards -->
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:2rem;">
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(99,102,241,0.1); color:#6366f1;"><i class="fas fa-credit-card"></i></div>
+        <div class="kpi-label">Total Partnerships</div>
+        <div class="kpi-value">@total</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-bolt"></i></div>
+        <div class="kpi-label">Live Now</div>
+        <div class="kpi-value" style="color:#16a34a;">@activeNow</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-clock"></i></div>
+        <div class="kpi-label">Scheduled</div>
+        <div class="kpi-value" style="color:#3b82f6;">@scheduled</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(239,68,68,0.1); color:#dc2626;"><i class="fas fa-hourglass-end"></i></div>
+        <div class="kpi-label">Expired</div>
+        <div class="kpi-value" style="color:#dc2626;">@expired</div>
+    </div>
+</div>
+
+<!-- Filters -->
+@if (branches.Count > 1)
+{
+    <div class="card mb-6">
+        <div class="card-body">
+            <form method="get" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Branch</label>
+                    <select name="branchId" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Branches</option>
+                        @foreach (var b in branches)
+                        {
+                            <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option>
+                        }
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter" style="margin-right:0.5rem;"></i> Filter</button>
+            </form>
+        </div>
+    </div>
+}
+
+<!-- Table -->
+<div class="card">
+    <div class="card-body card-body-flush">
+        <div style="overflow-x:auto;">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Partner / Tier</th>
+                        <th style="text-align:center;">Discount</th>
+                        <th>Cap / Min</th>
+                        <th>Validity</th>
+                        <th>Scope</th>
+                        <th style="text-align:center;">Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7" style="text-align:center; padding:3rem 1rem;">
+                                <i class="fas fa-credit-card" style="font-size:2.5rem; color:var(--border-light); margin-bottom:1rem; display:block;"></i>
+                                <p style="font-weight:600; margin:0 0 0.25rem; color:var(--text-secondary);">No partnerships yet</p>
+                                <p class="caption" style="margin:0 0 1rem;">Add a bank or card-tier discount, e.g. Standard Chartered Platinum.</p>
+                                <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> New Partnership</a>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var p in Model)
+                    {
+                        var status = PartnerStatus(p);
+                        <tr>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:0.6rem;">
+                                    <div style="width:36px; height:36px; border-radius:9px; background:rgba(99,102,241,0.1); color:#6366f1; display:flex; align-items:center; justify-content:center;">
+                                        <i class="fas fa-credit-card"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:600;">@p.PartnerName</div>
+                                        <div class="caption">@p.CardTier</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="text-align:center;">
+                                <span style="font-weight:800; font-size:1.05rem; color:#16a34a;">@p.DiscountPercentage.ToString("0.##")%</span>
+                            </td>
+                            <td>
+                                @if (p.MaxDiscountAmount.HasValue)
+                                {
+                                    <div class="caption">cap Rs. @p.MaxDiscountAmount.Value.ToString("N0")</div>
+                                }
+                                @if (p.MinimumOrderAmount > 0)
+                                {
+                                    <div class="caption">min Rs. @p.MinimumOrderAmount.ToString("N0")</div>
+                                }
+                                @if (!p.MaxDiscountAmount.HasValue && p.MinimumOrderAmount == 0)
+                                {
+                                    <span class="caption">—</span>
+                                }
+                            </td>
+                            <td>
+                                <div style="font-size:0.82rem;"><i class="far fa-calendar" style="font-size:0.7rem; margin-right:0.3rem; color:var(--text-tertiary);"></i>@p.ValidFrom.ToString("dd MMM yyyy")</div>
+                                <div class="caption">to @p.ValidUntil.ToString("dd MMM yyyy")</div>
+                            </td>
+                            <td>
+                                @if (p.BranchId == null)
+                                {
+                                    <span class="badge badge-accent">All branches</span>
+                                }
+                                else
+                                {
+                                    <span class="caption">@p.Branch?.Name</span>
+                                }
+                            </td>
+                            <td style="text-align:center;"><span class="badge @status.Css">@status.Label</span></td>
+                            <td>
+                                <div style="display:flex; gap:0.4rem;">
+                                    <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-ghost btn-sm" title="Edit"><i class="fas fa-edit"></i></a>
+                                    <form asp-action="ToggleActive" asp-route-id="@p.Id" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-ghost btn-sm" title="@(p.IsActive ? "Deactivate" : "Activate")">
+                                            <i class="fas @(p.IsActive ? "fa-pause" : "fa-play")"></i>
+                                        </button>
+                                    </form>
+                                    @if (isOwner)
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-ghost btn-sm" title="Delete" style="color:#dc2626;"><i class="fas fa-trash"></i></a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

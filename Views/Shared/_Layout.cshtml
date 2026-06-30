@@ -150,6 +150,11 @@
                         <span class="sidebar-link-icon"><i class="fas fa-receipt"></i></span>
                         <span class="sidebar-link-text">Orders</span>
                     </a>
+
+                    <a asp-controller="Invoice" asp-action="Index" class="sidebar-link" data-nav="Invoice">
+                        <span class="sidebar-link-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                        <span class="sidebar-link-text">Bill History</span>
+                    </a>
                 }
 
                 @if (isOwnerOrManager)
@@ -200,6 +205,23 @@
                     <a asp-controller="Feedback" asp-action="Index" class="sidebar-link" data-nav="Feedback">
                         <span class="sidebar-link-icon"><i class="fas fa-message"></i></span>
                         <span class="sidebar-link-text">Feedback</span>
+                    </a>
+
+                    <div class="sidebar-section-label">Marketing</div>
+
+                    <a asp-controller="PromoCode" asp-action="Index" class="sidebar-link" data-nav="PromoCode">
+                        <span class="sidebar-link-icon"><i class="fas fa-tags"></i></span>
+                        <span class="sidebar-link-text">Promo Codes</span>
+                    </a>
+
+                    <a asp-controller="Partnership" asp-action="Index" class="sidebar-link" data-nav="Partnership">
+                        <span class="sidebar-link-icon"><i class="fas fa-credit-card"></i></span>
+                        <span class="sidebar-link-text">Card Partnerships</span>
+                    </a>
+
+                    <a asp-controller="CheckoutSettings" asp-action="Index" class="sidebar-link" data-nav="CheckoutSettings">
+                        <span class="sidebar-link-icon"><i class="fas fa-cash-register"></i></span>
+                        <span class="sidebar-link-text">Checkout Settings</span>
                     </a>
                 }
 

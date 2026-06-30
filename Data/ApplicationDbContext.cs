@@ -61,6 +61,12 @@ namespace Cafe.Data
         public DbSet<EmailQueue> EmailQueues { get; set; }
         public DbSet<NotificationPreference> NotificationPreferences { get; set; }
 
+        // Checkout: Promos, Bank Partnerships, Invoicing, Branch settings
+        public DbSet<PromoCode> PromoCodes { get; set; }
+        public DbSet<Partnership> Partnerships { get; set; }
+        public DbSet<Invoice> Invoices { get; set; }
+        public DbSet<BranchSetting> BranchSettings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -71,6 +77,64 @@ namespace Cafe.Data
             ConfigureDefaultValues(modelBuilder);
             ConfigureCheckConstraints(modelBuilder);
             ConfigureNotifications(modelBuilder);
+            ConfigureCheckoutModules(modelBuilder);
+        }
+
+        /// <summary>
+        /// Promo / Partnership / Invoice / BranchSetting configuration. All FK delete
+        /// behaviours are NoAction/SetNull on purpose — these tables reference Branches,
+        /// Orders and Users, and SQL Server rejects multiple cascade paths into those hubs.
+        /// </summary>
+        private void ConfigureCheckoutModules(ModelBuilder modelBuilder)
+        {
+            // ── PromoCode ──
+            modelBuilder.Entity<PromoCode>()
+                .HasIndex(p => p.Code).IsUnique();
+            modelBuilder.Entity<PromoCode>()
+                .ToTable(t => t.HasCheckConstraint("CK_PromoCode_DiscountType",
+                    "[DiscountType] IN ('Percentage','Flat')"));
+            modelBuilder.Entity<PromoCode>()
+                .HasOne(p => p.Branch).WithMany()
+                .HasForeignKey(p => p.BranchId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<PromoCode>()
+                .HasOne(p => p.CreatedBy).WithMany()
+                .HasForeignKey(p => p.CreatedById).OnDelete(DeleteBehavior.SetNull);
+
+            // ── Partnership ──
+            modelBuilder.Entity<Partnership>()
+                .HasOne(p => p.Branch).WithMany()
+                .HasForeignKey(p => p.BranchId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Partnership>()
+                .HasOne(p => p.CreatedBy).WithMany()
+                .HasForeignKey(p => p.CreatedById).OnDelete(DeleteBehavior.SetNull);
+
+            // ── Invoice (one per order) ──
+            modelBuilder.Entity<Invoice>()
+                .HasIndex(i => i.OrderId).IsUnique();
+            modelBuilder.Entity<Invoice>()
+                .HasIndex(i => i.InvoiceNumber).IsUnique();
+            modelBuilder.Entity<Invoice>()
+                .ToTable(t => t.HasCheckConstraint("CK_Invoice_PaymentStatus",
+                    "[PaymentStatus] IN ('Pending','Paid','Failed','Cancelled')"));
+            modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.Order).WithOne(o => o.Invoice)
+                .HasForeignKey<Invoice>(i => i.OrderId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.Branch).WithMany()
+                .HasForeignKey(i => i.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.PromoCode).WithMany()
+                .HasForeignKey(i => i.PromoCodeId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.Partnership).WithMany()
+                .HasForeignKey(i => i.PartnershipId).OnDelete(DeleteBehavior.SetNull);
+
+            // ── BranchSetting (one per branch) ──
+            modelBuilder.Entity<BranchSetting>()
+                .HasIndex(b => b.BranchId).IsUnique();
+            modelBuilder.Entity<BranchSetting>()
+                .HasOne(b => b.Branch).WithMany()
+                .HasForeignKey(b => b.BranchId).OnDelete(DeleteBehavior.NoAction);
         }
 
         private void ConfigureDecimalPrecision(ModelBuilder modelBuilder)

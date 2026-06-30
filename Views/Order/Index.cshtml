@@ -202,6 +202,38 @@
                         </table>
                     </div>
 
+                    <!-- Discounts & Payment -->
+                    <div id="checkoutSection" class="hidden" style="border-top:1px solid var(--border-light);padding-top:1rem;display:flex;flex-direction:column;gap:0.85rem;">
+                        <div class="form-row" style="margin:0;">
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">Promo Code</label>
+                                <div style="display:flex;gap:0.5rem;">
+                                    <input id="promoInput" type="text" class="form-control" placeholder="e.g. SAVE15" style="text-transform:uppercase;letter-spacing:0.5px;" />
+                                    <button type="button" id="applyPromoBtn" onclick="applyPromo()" class="btn btn-secondary btn-sm" style="white-space:nowrap;">Apply</button>
+                                </div>
+                                <div id="promoMsg" class="caption" style="margin-top:0.35rem;"></div>
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">Card Partnership</label>
+                                <select id="partnershipSelect" class="form-select" onchange="refreshQuote()">
+                                    <option value="">None</option>
+                                </select>
+                                <div class="caption" style="margin-top:0.35rem;">Bank/card-tier discount if the customer presents an eligible card.</div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin:0;max-width:220px;">
+                            <label class="form-label">Payment Method</label>
+                            <select id="paymentMethod" class="form-select">
+                                <option value="Cash">Cash</option>
+                                <option value="Card">Card</option>
+                            </select>
+                        </div>
+
+                        <!-- Live totals breakdown -->
+                        <div id="totalsBreakdown" style="background:var(--bg-body);border-radius:12px;padding:0.95rem 1.15rem;font-size:0.9rem;"></div>
+                    </div>
+
                     <!-- Notes -->
                     <div class="form-group" style="margin:0;">
                         <label class="form-label">Order Notes</label>
@@ -225,6 +257,12 @@
                     let orderItems = [];
                     let menuItemsCache = [];
                     let customerSearchTimeout = null;
+                    let appliedPromo = null;   // validated promo code string, or null
+                    let quoteTimer = null;
+                    let quoteSeq = 0;          // guards against out-of-order quote responses
+
+                    function money(n) { return 'Rs. ' + (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+                    function cartSubtotal() { return orderItems.reduce((s, i) => s + i.price * i.quantity, 0); }
 
                     document.addEventListener("DOMContentLoaded", function () {
                         loadBranches();
@@ -241,11 +279,14 @@
 
                         document.getElementById("branchSelect").addEventListener("change", function () {
                             const branchId = this.value;
-                            if (branchId) loadMenuItems(branchId);
+                            clearPromo();
+                            if (branchId) { loadMenuItems(branchId); loadPartnerships(branchId); }
                             else {
                                 document.getElementById("menuItemSelect").innerHTML = '<option value="">Select Menu Item</option>';
+                                document.getElementById("partnershipSelect").innerHTML = '<option value="">None</option>';
                                 menuItemsCache = [];
                             }
+                            refreshQuote();
                         });
 
                         const searchInput = document.getElementById("customerSearch");
@@ -373,10 +414,17 @@
 
                     function renderOrderItems() {
                         const container = document.getElementById("orderItemsContainer");
+                        const checkout = document.getElementById("checkoutSection");
                         const tbody = document.getElementById("orderItemsBody");
                         tbody.innerHTML = "";
-                        if (orderItems.length === 0) { container.classList.add("hidden"); return; }
+                        if (orderItems.length === 0) {
+                            container.classList.add("hidden");
+                            checkout.classList.add("hidden");
+                            refreshQuote();
+                            return;
+                        }
                         container.classList.remove("hidden");
+                        checkout.classList.remove("hidden");
                         let total = 0;
                         orderItems.forEach((item, idx) => {
                             const subtotal = item.price * item.quantity;
@@ -389,8 +437,8 @@
                                                class="form-control" style="width:60px;display:inline-block;text-align:center;padding:0.3rem;"
                                                onchange="updateItemQuantity(${idx}, parseInt(this.value))">
                                     </td>
-                                    <td style="text-align:right;padding:0.6rem 1rem;">$${item.price.toFixed(2)}</td>
-                                    <td style="text-align:right;padding:0.6rem 1rem;font-weight:600;">$${subtotal.toFixed(2)}</td>
+                                    <td style="text-align:right;padding:0.6rem 1rem;">${money(item.price)}</td>
+                                    <td style="text-align:right;padding:0.6rem 1rem;font-weight:600;">${money(subtotal)}</td>
                                     <td style="text-align:center;padding:0.6rem 0.5rem;">
                                         <button onclick="removeOrderItem(${idx})" class="btn btn-ghost btn-sm" style="color:#dc2626;">
                                             <i class="fas fa-trash"></i>
@@ -398,7 +446,100 @@
                                     </td>
                                 </tr>`;
                         });
-                        document.getElementById("orderTotal").textContent = `$${total.toFixed(2)}`;
+                        document.getElementById("orderTotal").textContent = money(total);
+                        refreshQuote();
+                    }
+
+                    // ── Checkout: promos, partnerships, live totals ──
+                    function loadPartnerships(branchId) {
+                        const sel = document.getElementById("partnershipSelect");
+                        sel.innerHTML = '<option value="">None</option>';
+                        fetch(`/Checkout/GetActivePartnerships?branchId=${branchId}`)
+                            .then(r => r.json())
+                            .then(list => {
+                                (list || []).forEach(p => {
+                                    sel.innerHTML += `<option value="${p.id}">${escapeHtml(p.displayName)} — ${p.discountPercentage}%</option>`;
+                                });
+                            }).catch(() => { });
+                    }
+
+                    function clearPromo() {
+                        appliedPromo = null;
+                        const input = document.getElementById("promoInput");
+                        const msg = document.getElementById("promoMsg");
+                        if (input) input.value = "";
+                        if (msg) { msg.textContent = ""; msg.style.color = ""; }
+                    }
+
+                    function applyPromo() {
+                        const code = document.getElementById("promoInput").value.trim().toUpperCase();
+                        const branchId = parseInt(document.getElementById("branchSelect").value);
+                        const msg = document.getElementById("promoMsg");
+                        if (!branchId) { msg.style.color = "#dc2626"; msg.textContent = "Select a branch first."; return; }
+                        if (!code) { msg.style.color = "#dc2626"; msg.textContent = "Enter a promo code."; appliedPromo = null; refreshQuote(); return; }
+
+                        const btn = document.getElementById("applyPromoBtn");
+                        btn.disabled = true; btn.textContent = "...";
+                        fetch("/Checkout/ValidatePromo", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
+                            body: JSON.stringify({ code, branchId, subtotal: cartSubtotal() })
+                        }).then(r => r.json()).then(res => {
+                            btn.disabled = false; btn.textContent = "Apply";
+                            if (res.success) {
+                                appliedPromo = code;
+                                msg.style.color = "#16a34a";
+                                msg.innerHTML = '<i class="fas fa-check-circle"></i> ' + escapeHtml(res.message);
+                            } else {
+                                appliedPromo = null;
+                                msg.style.color = "#dc2626";
+                                msg.innerHTML = '<i class="fas fa-times-circle"></i> ' + escapeHtml(res.message);
+                            }
+                            refreshQuote();
+                        }).catch(() => { btn.disabled = false; btn.textContent = "Apply"; });
+                    }
+
+                    function refreshQuote() {
+                        const breakdown = document.getElementById("totalsBreakdown");
+                        if (!breakdown) return;
+                        const branchId = parseInt(document.getElementById("branchSelect").value);
+                        const subtotal = cartSubtotal();
+                        if (!branchId || subtotal <= 0) { breakdown.innerHTML = ""; return; }
+
+                        const partnershipId = document.getElementById("partnershipSelect").value || null;
+                        clearTimeout(quoteTimer);
+                        quoteTimer = setTimeout(() => {
+                            const seq = ++quoteSeq;
+                            fetch("/Checkout/Quote", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
+                                body: JSON.stringify({ branchId, subtotal, promoCode: appliedPromo, partnershipId: partnershipId ? parseInt(partnershipId) : null })
+                            }).then(r => r.json()).then(q => {
+                                if (seq !== quoteSeq) return;          // a newer request superseded this one
+                                if (!q.success) { breakdown.innerHTML = ""; return; }
+                                renderBreakdown(q);
+                            }).catch(() => { });
+                        }, 200);
+                    }
+
+                    function lineRow(label, value, color) {
+                        return `<div style="display:flex;justify-content:space-between;padding:0.2rem 0;">
+                                    <span style="color:var(--text-secondary);">${label}</span>
+                                    <span style="font-weight:600;${color ? 'color:' + color + ';' : ''}">${value}</span>
+                                </div>`;
+                    }
+
+                    function renderBreakdown(q) {
+                        const breakdown = document.getElementById("totalsBreakdown");
+                        let html = lineRow("Subtotal", money(q.subtotal));
+                        if (q.promoDiscount > 0) html += lineRow(`Promo${q.promoCodeText ? ' (' + escapeHtml(q.promoCodeText) + ')' : ''}`, "− " + money(q.promoDiscount), "#16a34a");
+                        if (q.partnershipDiscount > 0) html += lineRow(escapeHtml(q.partnershipText || "Card discount"), "− " + money(q.partnershipDiscount), "#16a34a");
+                        if (q.taxAmount > 0) html += lineRow(`Tax (${q.taxRate}%)`, money(q.taxAmount));
+                        html += `<div style="display:flex;justify-content:space-between;border-top:1px solid var(--border-light);margin-top:0.4rem;padding-top:0.5rem;">
+                                    <span style="font-weight:800;">Total</span>
+                                    <span style="font-weight:800;font-size:1.05rem;color:var(--accent);">${money(q.total)}</span>
+                                 </div>`;
+                        breakdown.innerHTML = html;
                     }
 
                     function resetCreateForm() {
@@ -411,6 +552,10 @@
                         document.getElementById("itemQuantity").value = 1;
                         hideQuickCreate();
                         menuItemsCache = [];
+                        clearPromo();
+                        document.getElementById("partnershipSelect").innerHTML = '<option value="">None</option>';
+                        document.getElementById("paymentMethod").value = "Cash";
+                        document.getElementById("totalsBreakdown").innerHTML = "";
                     }
 
                     function loadBranches() {
@@ -531,11 +676,15 @@
                         if (!customerId) { ActionCard.warning('Missing Customer', 'Please select a customer.'); return; }
                         if (!branchId) { ActionCard.warning('Missing Branch', 'Please select a branch.'); return; }
                         if (orderItems.length === 0) { ActionCard.warning('No Items', 'Please add at least one item to the order.'); return; }
+                        const partnershipVal = document.getElementById("partnershipSelect").value;
                         const request = {
                             customerId: parseInt(customerId),
                             branchId: parseInt(branchId),
                             notes: document.getElementById("orderNotes").value,
-                            items: orderItems.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity }))
+                            items: orderItems.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
+                            promoCode: appliedPromo,
+                            partnershipId: partnershipVal ? parseInt(partnershipVal) : null,
+                            paymentMethod: document.getElementById("paymentMethod").value
                         };
                         document.getElementById("saveOrderBtn").disabled = true;
                         document.getElementById("saveOrderBtn").textContent = "Creating...";
@@ -549,12 +698,28 @@
                             if (res.success) {
                                 closeModal('createOrderModal');
                                 loadOrders();
-                                ActionCard.success('Order Created', `Order ${res.orderNumber} has been created successfully.`, { autoDismiss: 3000 });
+                                showBillResult(res);
                             } else ActionCard.error('Order Failed', res.message);
                         }).catch(() => {
                             document.getElementById("saveOrderBtn").disabled = false;
                             document.getElementById("saveOrderBtn").innerHTML = '<i class="fas fa-save"></i> Create Order';
                         });
+                    }
+
+                    function showBillResult(res) {
+                        const b = res.bill;
+                        if (!b) { ActionCard.success('Order Created', `Order ${escapeHtml(res.orderNumber)} has been created.`, { autoDismiss: 3000 }); return; }
+                        let html = '<div style="text-align:left;font-size:0.88rem;line-height:1.85;max-width:300px;margin:0 auto;">';
+                        html += `<div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Invoice</span><b style="font-family:ui-monospace,monospace;">${escapeHtml(b.invoiceNumber)}</b></div>`;
+                        html += `<div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Subtotal</span><span>${money(b.subtotal)}</span></div>`;
+                        if (b.promoDiscount > 0) html += `<div style="display:flex;justify-content:space-between;color:#16a34a;"><span>Promo</span><span>− ${money(b.promoDiscount)}</span></div>`;
+                        if (b.partnershipDiscount > 0) html += `<div style="display:flex;justify-content:space-between;color:#16a34a;"><span>Card discount</span><span>− ${money(b.partnershipDiscount)}</span></div>`;
+                        if (b.taxAmount > 0) html += `<div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Tax</span><span>${money(b.taxAmount)}</span></div>`;
+                        html += `<div style="display:flex;justify-content:space-between;border-top:1px solid #e5e7eb;margin-top:6px;padding-top:6px;"><b>Total</b><b style="color:var(--accent);">${money(b.total)}</b></div>`;
+                        if (b.awaitingTerminal) html += `<div style="margin-top:10px;color:#d97706;font-size:0.8rem;text-align:center;"><i class="fas fa-clock"></i> Awaiting card terminal confirmation…</div>`;
+                        if (b.pdfUrl) html += `<div style="margin-top:14px;text-align:center;"><a href="${b.pdfUrl}" target="_blank" class="btn btn-primary btn-sm"><i class="fas fa-file-pdf" style="margin-right:0.3rem;"></i> Download Bill</a></div>`;
+                        html += '</div>';
+                        ActionCard.success(`Order ${escapeHtml(res.orderNumber)} placed`, html);
                     }
 
                     async function updateOrderStatus(id, status) {

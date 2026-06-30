@@ -1,0 +1,119 @@
+@model Cafe.Models.Partnership
+@{
+    ViewData["Title"] = "Edit Partnership";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+
+<div class="max-w-[760px] mx-auto">
+    <div style="display:flex; align-items:center; margin-bottom:1.5rem; gap:1rem;">
+        <a asp-action="Index" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h1 class="page-title" style="margin:0;">Edit Partnership</h1>
+            <p class="body-text" style="margin-top:0.2rem;">Past invoices keep their original discount snapshot.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CreatedAt" />
+                <div asp-validation-summary="ModelOnly" class="caption" style="color:#dc2626;"></div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Partner / Bank Name *</label>
+                        <input asp-for="PartnerName" class="form-control" required />
+                        <span asp-validation-for="PartnerName" class="caption" style="color:#dc2626;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Card Tier *</label>
+                        <input asp-for="CardTier" class="form-control" required />
+                        <span asp-validation-for="CardTier" class="caption" style="color:#dc2626;"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Discount Percentage *</label>
+                        <input asp-for="DiscountPercentage" id="pct" type="number" step="0.01" min="0" max="100" class="form-control" required oninput="updatePreview()" />
+                        <span asp-validation-for="DiscountPercentage" class="caption" style="color:#dc2626;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Discount Cap (Rs.)</label>
+                        <input asp-for="MaxDiscountAmount" type="number" step="0.01" min="0" class="form-control" placeholder="Optional cap" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Minimum Order (Rs.)</label>
+                        <input asp-for="MinimumOrderAmount" type="number" step="0.01" min="0" class="form-control" />
+                    </div>
+                    @if (isOwner)
+                    {
+                        <div class="form-group">
+                            <label class="form-label">Branch Scope</label>
+                            <select asp-for="BranchId" class="form-select">
+                                <option value="">All branches</option>
+                                @foreach (var b in branches)
+                                {
+                                    <option value="@b.Id">@b.Name</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="form-group">
+                            <label class="form-label">Scope</label>
+                            <input class="form-control" value="@(Model.BranchId == null ? "All branches" : Model.Branch?.Name ?? "Your branch")" disabled />
+                        </div>
+                    }
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Valid From *</label>
+                        <input asp-for="ValidFrom" type="date" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Valid Until *</label>
+                        <input asp-for="ValidUntil" type="date" class="form-control" required />
+                        <span asp-validation-for="ValidUntil" class="caption" style="color:#dc2626;"></span>
+                    </div>
+                </div>
+
+                <label class="form-label" style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                    <input asp-for="IsActive" type="checkbox" style="width:auto;" />
+                    Active
+                </label>
+
+                <div style="margin-top:1.25rem; padding:0.9rem 1.1rem; background:rgba(99,102,241,0.07); border:1px dashed rgba(99,102,241,0.4); border-radius:12px; display:flex; align-items:center; gap:0.7rem;">
+                    <i class="fas fa-credit-card" style="color:#6366f1;"></i>
+                    <span style="font-size:0.88rem; color:var(--text-secondary);" id="previewText"></span>
+                </div>
+
+                <div class="divider"></div>
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:0.5rem;"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updatePreview() {
+            const v = parseFloat(document.getElementById('pct').value) || 0;
+            document.getElementById('previewText').innerHTML = v
+                ? `Cardholders get <b>${v}% off</b> their bill at checkout.`
+                : 'Customers paying with this card get a discount at checkout.';
+        }
+        updatePreview();
+    </script>
+}

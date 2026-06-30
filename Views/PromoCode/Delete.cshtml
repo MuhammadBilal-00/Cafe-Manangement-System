@@ -1,0 +1,54 @@
+@model Cafe.Models.PromoCode
+@{
+    ViewData["Title"] = "Delete Promo Code";
+}
+
+<div class="max-w-[640px] mx-auto">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+        <h1 class="page-title" style="margin:0;">Delete Promo Code</h1>
+        <a asp-action="Index" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    <div class="card border-red-200 overflow-hidden">
+        <div class="bg-gradient-to-br from-red-600 to-red-800 text-white p-6">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-exclamation-triangle text-2xl"></i>
+                <div>
+                    <h2 class="font-bold text-lg" style="margin:0;">Confirm Deletion</h2>
+                    <p class="text-sm opacity-90 mt-0.5">This permanently removes the promo code. Existing invoices keep their snapshot.</p>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+                <div>
+                    <span class="caption uppercase tracking-wider">Code</span>
+                    <p class="font-semibold text-[var(--text-primary)] mt-0.5" style="font-family:ui-monospace,monospace;">@Model.Code</p>
+                </div>
+                <div>
+                    <span class="caption uppercase tracking-wider">Discount</span>
+                    <p class="font-semibold text-[var(--text-primary)] mt-0.5">
+                        @(Model.DiscountType == "Percentage" ? $"{Model.DiscountValue:0.##}%" : $"Rs. {Model.DiscountValue:N0}")
+                    </p>
+                </div>
+                <div>
+                    <span class="caption uppercase tracking-wider">Times Used</span>
+                    <p class="font-semibold text-[var(--text-primary)] mt-0.5">@Model.TimesUsed</p>
+                </div>
+                <div>
+                    <span class="caption uppercase tracking-wider">Scope</span>
+                    <p class="font-medium text-[var(--text-primary)] mt-0.5">@(Model.BranchId == null ? "All branches" : Model.Branch?.Name ?? "—")</p>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <form asp-action="Delete" method="post" class="flex justify-end gap-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete Permanently</button>
+            </form>
+        </div>
+    </div>
+</div>

@@ -17,6 +17,11 @@ namespace Cafe.Models.Requests
         [Required(ErrorMessage = "An order must contain at least one item.")]
         [MinLength(1, ErrorMessage = "An order must contain at least one item.")]
         public List<OrderItemRequest> Items { get; set; } = new List<OrderItemRequest>();
+
+        // ── Checkout: discounts + payment (all optional) ──
+        public string? PromoCode { get; set; }
+        public int? PartnershipId { get; set; }
+        public string? PaymentMethod { get; set; }
     }
 
     public class OrderItemRequest
@@ -64,5 +69,38 @@ namespace Cafe.Models.Requests
         public int StaffId { get; set; }
         public decimal NewBaseSalary { get; set; }
         public string? Reason { get; set; }
+    }
+
+    /// <summary>POS request to validate a promo code against the current cart.</summary>
+    public class PromoValidateRequest
+    {
+        public string? Code { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "A valid branch is required.")]
+        public int BranchId { get; set; }
+
+        [Range(0, double.MaxValue)]
+        public decimal Subtotal { get; set; }
+    }
+
+    /// <summary>POS request for a full price breakdown (promo + card partnership + tax).</summary>
+    public class QuoteRequest
+    {
+        public int BranchId { get; set; }
+        public decimal Subtotal { get; set; }
+        public string? PromoCode { get; set; }
+        public int? PartnershipId { get; set; }
+    }
+
+    /// <summary>
+    /// Generic payment-terminal webhook payload. A real terminal provider POSTs this to
+    /// close (or fail) the bill. Authenticated by a shared secret, not a user session.
+    /// </summary>
+    public class PaymentWebhookPayload
+    {
+        public string? InvoiceNumber { get; set; }
+        public string? Status { get; set; }      // "success" | "failed"
+        public string? Reference { get; set; }   // terminal transaction id
+        public string? Secret { get; set; }      // shared secret (or send via X-Webhook-Secret header)
     }
 }

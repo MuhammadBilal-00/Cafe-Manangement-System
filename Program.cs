@@ -8,6 +8,9 @@ using Cafe.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// QuestPDF Community license (free for orgs under $1M revenue) — required before any PDF render.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
@@ -43,6 +46,12 @@ builder.Services.AddScoped<IFinancialService, FinancialService>();
 builder.Services.AddScoped<IMenuReportService, MenuReportService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Checkout modules: promos, bank partnerships, per-branch settings, invoicing + PDF
+builder.Services.AddScoped<IBranchSettingService, BranchSettingService>();
+builder.Services.AddScoped<ICheckoutPricingService, CheckoutPricingService>();
+builder.Services.AddScoped<IPdfInvoiceService, PdfInvoiceService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddHostedService<EmailBackgroundWorker>();
 builder.Services.AddHttpContextAccessor();
 

@@ -19,13 +19,17 @@ namespace Cafe.Controllers
         private readonly INotificationService _notificationService;
         private readonly IMemoryCache _cache;
         private readonly ILogger<OrderController> _logger;
+        private readonly IInvoiceService _invoiceService;
+        private readonly IBranchSettingService _branchSettings;
 
-        public OrderController(ApplicationDbContext context, IInventoryService inventoryService, INotificationService notificationService, IMemoryCache cache, ILogger<OrderController> logger) : base(context)
+        public OrderController(ApplicationDbContext context, IInventoryService inventoryService, INotificationService notificationService, IMemoryCache cache, ILogger<OrderController> logger, IInvoiceService invoiceService, IBranchSettingService branchSettings) : base(context)
         {
             _inventoryService = inventoryService;
             _notificationService = notificationService;
             _cache = cache;
             _logger = logger;
+            _invoiceService = invoiceService;
+            _branchSettings = branchSettings;
         }
 
         // Main Index Page - Works with your HTML
@@ -296,6 +300,45 @@ namespace Cafe.Controllers
                     });
                 }
 
+                // Generate the bill (invoice) for this order, applying any promo/partnership.
+                // The server re-validates the discount, so a tampered client can't fake one.
+                // Payment status follows the branch's hardware toggle: with a terminal the
+                // bill stays Pending until the payment webhook confirms (Step 5); without one
+                // the cashier's click closes it immediately as Paid.
+                object? billInfo = null;
+                try
+                {
+                    var setting = await _branchSettings.GetOrCreateAsync(request.BranchId);
+                    var paymentStatus = setting.HardwareTerminalEnabled ? "Pending" : "Paid";
+                    var invoice = await _invoiceService.CreateForOrderAsync(
+                        order.Id, request.PromoCode, request.PartnershipId,
+                        string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod,
+                        paymentStatus, GetCurrentUserId());
+
+                    // Order amount reflects net sales (after discounts, before tax) so revenue stays correct.
+                    order.TotalAmount = invoice.Subtotal - invoice.TotalDiscount;
+                    await _context.SaveChangesAsync();
+
+                    billInfo = new
+                    {
+                        invoiceNumber = invoice.InvoiceNumber,
+                        subtotal = invoice.Subtotal,
+                        promoDiscount = invoice.PromoDiscount,
+                        partnershipDiscount = invoice.PartnershipDiscount,
+                        taxAmount = invoice.TaxAmount,
+                        total = invoice.TotalAmount,
+                        paymentStatus = invoice.PaymentStatus,
+                        pdfUrl = invoice.PdfPath,
+                        awaitingTerminal = setting.HardwareTerminalEnabled
+                    };
+                }
+                catch (Exception billEx)
+                {
+                    // A bill failure must never void a completed sale — the order stands and
+                    // the invoice can be regenerated from Bill History.
+                    _logger.LogError(billEx, "Invoice generation failed for order {OrderId}", order.Id);
+                }
+
                 // Notification: new order created
                 await _notificationService.CreateNotificationAsync(
                     "New Order Created",
@@ -306,7 +349,7 @@ namespace Cafe.Controllers
                     redirectUrl: $"/Order/Index",
                     icon: "fas fa-receipt");
 
-                return Json(new { success = true, orderId = order.Id, orderNumber = order.OrderNumber });
+                return Json(new { success = true, orderId = order.Id, orderNumber = order.OrderNumber, bill = billInfo });
             }
             catch (Exception ex)
             {

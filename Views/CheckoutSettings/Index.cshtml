@@ -1,0 +1,138 @@
+@model Cafe.Models.BranchSetting
+@{
+    ViewData["Title"] = "Checkout Settings";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+
+<div class="max-w-[760px] mx-auto">
+    <div style="margin-bottom:1.5rem;">
+        <h1 class="page-title" style="margin:0;">Checkout Settings</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Tax, payment hardware, and invoice options for this branch.</p>
+    </div>
+
+    @if (Model == null)
+    {
+        <div class="card"><div class="card-body" style="text-align:center; padding:3rem;">
+            <i class="fas fa-store-slash" style="font-size:2.5rem; color:var(--border-light); display:block; margin-bottom:1rem;"></i>
+            <p style="font-weight:600; color:var(--text-secondary);">No branch available</p>
+            <p class="caption">You don't have an accessible branch to configure.</p>
+        </div></div>
+    }
+    else
+    {
+        @* Branch picker (owner only) *@
+        @if (isOwner && branches.Count > 1)
+        {
+            <div class="card mb-6">
+                <div class="card-body">
+                    <form method="get" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+                        <div class="form-group" style="margin-bottom:0; min-width:240px;">
+                            <label class="form-label">Branch</label>
+                            <select name="branchId" class="form-select" onchange="this.form.submit()">
+                                @foreach (var b in branches)
+                                {
+                                    <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+
+        <form asp-action="Save" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="branchId" value="@Model.BranchId" />
+
+            <!-- Tax -->
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:1rem;">
+                        <div style="width:38px; height:38px; border-radius:10px; background:rgba(212,175,55,0.12); color:var(--accent); display:flex; align-items:center; justify-content:center;"><i class="fas fa-percent"></i></div>
+                        <div>
+                            <div style="font-weight:700;">Sales Tax</div>
+                            <div class="caption">Applied to the post-discount total on every invoice.</div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="max-width:240px; margin-bottom:0;">
+                        <label class="form-label">Tax Rate (%)</label>
+                        <div style="position:relative;">
+                            <input type="number" name="taxRatePercent" value="@Model.TaxRatePercent.ToString("0.##")" step="0.01" min="0" max="100" class="form-control" style="padding-right:2rem;" />
+                            <span style="position:absolute; right:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-tertiary); font-weight:600;">%</span>
+                        </div>
+                        <span class="caption">Set to 0 for no tax.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hardware terminal -->
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:0.6rem;">
+                            <div style="width:38px; height:38px; border-radius:10px; background:rgba(99,102,241,0.1); color:#6366f1; display:flex; align-items:center; justify-content:center;"><i class="fas fa-money-check-dollar"></i></div>
+                            <div>
+                                <div style="font-weight:700;">Hardware Payment Terminal</div>
+                                <div class="caption" style="max-width:440px;">When ON, an order closes only after the card terminal confirms payment via webhook. When OFF, the cashier closes the bill manually on "Pay".</div>
+                            </div>
+                        </div>
+                        <!-- Toggle switch -->
+                        <label class="ck-switch">
+                            <input type="checkbox" name="hardwareTerminalEnabled" value="true" @(Model.HardwareTerminalEnabled ? "checked" : "") />
+                            <input type="hidden" name="hardwareTerminalEnabled" value="false" disabled id="hwFalse" />
+                            <span class="ck-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice footer -->
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:1rem;">
+                        <div style="width:38px; height:38px; border-radius:10px; background:rgba(16,185,129,0.12); color:#10b981; display:flex; align-items:center; justify-content:center;"><i class="fas fa-file-invoice"></i></div>
+                        <div>
+                            <div style="font-weight:700;">Invoice Footer</div>
+                            <div class="caption">Printed at the bottom of every PDF bill.</div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <textarea name="invoiceFooterNote" rows="2" class="form-control" maxlength="300" placeholder="e.g. Thank you for dining with us! · FBR POS #12345">@Model.InvoiceFooterNote</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:0.5rem;"></i> Save Settings</button>
+            </div>
+        </form>
+    }
+</div>
+
+@section Styles {
+    <style>
+        .ck-switch { position:relative; display:inline-block; width:52px; height:30px; flex-shrink:0; }
+        .ck-switch input[type=checkbox] { opacity:0; width:0; height:0; position:absolute; }
+        .ck-slider { position:absolute; inset:0; cursor:pointer; background:var(--border); border-radius:30px; transition:.3s; }
+        .ck-slider:before { content:""; position:absolute; height:22px; width:22px; left:4px; bottom:4px; background:#fff; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,0.3); }
+        .ck-switch input:checked + .ck-slider { background:linear-gradient(135deg,#6366f1,#8b5cf6); }
+        .ck-switch input:checked + .ck-slider:before { transform:translateX(22px); }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // Enable the "false" fallback only when the checkbox is unchecked, so exactly one value posts.
+        (function () {
+            const form = document.querySelector('form[action$="Save"]') || document.querySelector('form');
+            const cb = document.querySelector('input[name="hardwareTerminalEnabled"][type="checkbox"]');
+            const hidden = document.getElementById('hwFalse');
+            if (!form || !cb || !hidden) return;
+            form.addEventListener('submit', function () {
+                hidden.disabled = cb.checked; // if checked, drop the false; if unchecked, send false
+            });
+        })();
+    </script>
+}

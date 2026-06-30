@@ -20,7 +20,10 @@
                               publicPaths.Any(p => path?.StartsWith(p) == true) ||
                               path?.Contains("/css/") == true || path?.Contains("/js/") == true ||
                               path?.Contains("/images/") == true ||
-                              path?.StartsWith("/hubs/") == true;
+                              path?.StartsWith("/hubs/") == true ||
+                              // Payment terminal webhooks are server-to-server (no session);
+                              // they authenticate with a shared secret inside the controller.
+                              path?.StartsWith("/paymentwebhook") == true;
 
             if (!isPublicPath)
             {

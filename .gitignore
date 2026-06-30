@@ -364,3 +364,9 @@ FodyWeavers.xsd
 
 # Backup files
 *.bak
+
+# Generated invoice PDFs (runtime artifacts)
+wwwroot/invoices/
+
+# Local screenshots & demo recordings
+ss/
