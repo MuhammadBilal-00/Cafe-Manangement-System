@@ -4,6 +4,8 @@ using Cafe.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+// Phase 8 added Cafe.Models.Document, which collides with QuestPDF's Document here.
+using Document = QuestPDF.Fluent.Document;
 
 namespace Cafe.Services
 {

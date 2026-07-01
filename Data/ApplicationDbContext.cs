@@ -110,6 +110,13 @@ namespace Cafe.Data
         public DbSet<SalesTarget> SalesTargets { get; set; }
         public DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
 
+        // Phase 8: productivity / essentials
+        public DbSet<Document> Documents { get; set; }
+        public DbSet<Memo> Memos { get; set; }
+        public DbSet<Reminder> Reminders { get; set; }
+        public DbSet<Message> Messages { get; set; }
+        public DbSet<KnowledgeBaseArticle> KnowledgeBaseArticles { get; set; }
+
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
@@ -163,7 +170,17 @@ namespace Cafe.Data
             ConfigurePhase5Accounting(modelBuilder);
             ConfigurePhase6Marketing(modelBuilder);
             ConfigurePhase7Hr(modelBuilder);
+            ConfigurePhase8Essentials(modelBuilder);
             ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>Phase 8 (productivity/essentials): documents, memos, reminders, messages, KB.</summary>
+        private void ConfigurePhase8Essentials(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Message>().HasOne(m => m.FromUser).WithMany().HasForeignKey(m => m.FromUserId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Message>().HasOne(m => m.ToUser).WithMany().HasForeignKey(m => m.ToUserId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Message>().HasIndex(m => new { m.TenantId, m.ToUserId, m.IsRead });
+            modelBuilder.Entity<Reminder>().HasIndex(r => new { r.TenantId, r.OwnerId, r.Done });
         }
 
         /// <summary>Phase 7 (HR depth): leave, holidays, departments/designations, targets, documents.</summary>

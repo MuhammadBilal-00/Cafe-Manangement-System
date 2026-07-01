@@ -1,0 +1,53 @@
+@{
+    ViewData["Title"] = "Messages";
+    var people = ViewBag.People as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+<div style="margin-bottom:1.25rem;"><h1 class="page-title" style="margin:0;">Messages</h1><p class="body-text" style="margin-top:0.25rem;">Direct messages with your team.</p></div>
+<div style="display:grid;grid-template-columns:260px 1fr;gap:1.25rem;align-items:start;height:70vh;">
+    <div class="card" style="height:100%;overflow:auto;"><div class="card-body card-body-flush">
+        @foreach (var p in people)
+        {
+            <a href="javascript:void(0)" class="msg-person" data-id="@p.Id" data-name="@p.Name" onclick="openThread(@p.Id,'@p.Name')" style="display:block;padding:0.8rem 1rem;border-bottom:1px solid var(--border-light);text-decoration:none;color:var(--text-primary);">
+                <div style="font-weight:600;">@p.Name</div><div class="caption">@p.Role</div>
+            </a>
+        }
+        @if (!people.Any()) { <div style="padding:2rem;text-align:center;color:var(--text-secondary);">No teammates yet.</div> }
+    </div></div>
+    <div class="card" style="height:100%;display:flex;flex-direction:column;"><div class="card-body" style="flex:1;display:flex;flex-direction:column;padding:0;">
+        <div id="threadHeader" style="padding:0.9rem 1.1rem;border-bottom:1px solid var(--border);font-weight:700;">Select a teammate</div>
+        <div id="threadBody" style="flex:1;overflow:auto;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;"></div>
+        <div id="threadInput" style="display:none;padding:0.75rem;border-top:1px solid var(--border);gap:0.5rem;">
+            <input id="msgBody" class="form-control" placeholder="Type a message…" style="flex:1;" onkeydown="if(event.key==='Enter')sendMsg()">
+            <button class="btn btn-primary" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div></div>
+</div>
+@section Scripts {
+<script>
+(function () {
+    const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    let current = null, timer = null;
+    window.openThread = async (id, name) => {
+        current = id;
+        document.getElementById('threadHeader').textContent = name;
+        document.getElementById('threadInput').style.display = 'flex';
+        document.querySelectorAll('.msg-person').forEach(p => p.style.background = p.dataset.id == id ? 'var(--bg-surface-alt)' : '');
+        await loadThread();
+        clearInterval(timer); timer = setInterval(loadThread, 8000);
+    };
+    async function loadThread() {
+        if (!current) return;
+        const msgs = await fetch('/Message/Thread?userId=' + current).then(r => r.json());
+        const body = document.getElementById('threadBody');
+        body.innerHTML = msgs.map(m => `<div style="align-self:${m.mine ? 'flex-end' : 'flex-start'};max-width:70%;background:${m.mine ? 'var(--accent)' : 'var(--bg-surface-alt)'};color:${m.mine ? '#fff' : 'var(--text-primary)'};padding:0.5rem 0.8rem;border-radius:12px;"><div style="font-size:0.88rem;">${m.body}</div><div style="font-size:0.65rem;opacity:0.7;margin-top:2px;">${m.at}</div></div>`).join('');
+        body.scrollTop = body.scrollHeight;
+    }
+    window.sendMsg = async () => {
+        const el = document.getElementById('msgBody'); const body = el.value.trim(); if (!body || !current) return;
+        el.value = '';
+        await fetch('/Message/Send', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: `toUserId=${current}&body=${encodeURIComponent(body)}` });
+        loadThread();
+    };
+})();
+</script>
+}

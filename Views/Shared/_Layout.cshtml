@@ -343,6 +343,16 @@
                             <span class="sidebar-link-icon"><i class="fas fa-calendar-check"></i></span>
                             <span class="sidebar-link-text">Attendance</span>
                         </a>
+
+                        <div class="sidebar-section-label">Essentials</div>
+                        <a asp-controller="Essentials" asp-action="Index" class="sidebar-link" data-nav="Essentials">
+                            <span class="sidebar-link-icon"><i class="fas fa-clipboard-list"></i></span>
+                            <span class="sidebar-link-text">Workspace</span>
+                        </a>
+                        <a asp-controller="Message" asp-action="Index" class="sidebar-link" data-nav="Message">
+                            <span class="sidebar-link-icon"><i class="fas fa-comments"></i></span>
+                            <span class="sidebar-link-text">Messages</span>
+                        </a>
                     }
 
                     @if (isOwnerOrManager)

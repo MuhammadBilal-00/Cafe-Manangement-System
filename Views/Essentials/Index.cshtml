@@ -1,0 +1,75 @@
+@{
+    ViewData["Title"] = "Essentials";
+    var documents = ViewBag.Documents as List<Cafe.Models.Document> ?? new();
+    var memos = ViewBag.Memos as List<Cafe.Models.Memo> ?? new();
+    var reminders = ViewBag.Reminders as List<Cafe.Models.Reminder> ?? new();
+    var articles = ViewBag.Articles as List<Cafe.Models.KnowledgeBaseArticle> ?? new();
+}
+<div style="margin-bottom:1.25rem;"><h1 class="page-title" style="margin:0;">Essentials</h1><p class="body-text" style="margin-top:0.25rem;">Documents, memos, reminders and the knowledge base.</p></div>
+<div style="display:flex;gap:0.4rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+    @foreach (var (t, label) in new[] { ("docs", "Documents"), ("memos", "Memos"), ("reminders", "Reminders"), ("kb", "Knowledge Base") })
+    { <button class="btn btn-sm ess-tab" data-tab="@t" onclick="essTab('@t')">@label</button> }
+</div>
+
+<!-- Documents -->
+<div id="tab-docs" class="ess-panel">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;"><button class="btn btn-primary btn-sm" onclick="docModal()"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> Add Document</button></div>
+    <div class="card"><div class="card-body card-body-flush"><table class="premium-table"><thead><tr><th>Title</th><th>Category</th><th>File</th><th></th></tr></thead><tbody>
+        @if (!documents.Any()) { <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary);">No documents.</td></tr> }
+        @foreach (var d in documents) { <tr><td>@d.Title</td><td><span class="caption">@d.Category</span></td><td>@if (!string.IsNullOrEmpty(d.FileUrl)){<a href="@d.FileUrl" target="_blank"><i class="fas fa-file"></i></a>}</td><td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="essDel('Document',@d.Id)"><i class="fas fa-trash"></i></button></td></tr> }
+    </tbody></table></div></div>
+</div>
+
+<!-- Memos -->
+<div id="tab-memos" class="ess-panel" style="display:none;">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;"><button class="btn btn-primary btn-sm" onclick="memoModal()"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> New Memo</button></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;">
+        @if (!memos.Any()) { <div class="card"><div class="card-body" style="text-align:center;color:var(--text-secondary);">No memos.</div></div> }
+        @foreach (var m in memos) { <div class="card" style="@(m.Pinned ? "border-top:3px solid var(--accent);" : "")"><div class="card-body"><div style="display:flex;justify-content:space-between;"><b>@m.Title @(m.Pinned ? "📌" : "")</b><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="essDel('Memo',@m.Id)"><i class="fas fa-trash"></i></button></div><p style="font-size:0.85rem;color:var(--text-secondary);margin:0.5rem 0 0;white-space:pre-wrap;">@m.Body</p></div></div> }
+    </div>
+</div>
+
+<!-- Reminders -->
+<div id="tab-reminders" class="ess-panel" style="display:none;">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;"><button class="btn btn-primary btn-sm" onclick="remModal()"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> New Reminder</button></div>
+    <div class="card"><div class="card-body card-body-flush"><table class="premium-table"><thead><tr><th></th><th>Title</th><th>Due</th><th></th></tr></thead><tbody>
+        @if (!reminders.Any()) { <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary);">No reminders.</td></tr> }
+        @foreach (var r in reminders) { var overdue = !r.Done && r.DueAt < DateTime.Now; <tr style="@(r.Done ? "opacity:0.5;text-decoration:line-through;" : "")"><td><input type="checkbox" @(r.Done ? "checked" : "") onchange="remToggle(@r.Id)"></td><td>@r.Title</td><td><span class="badge @(overdue ? "badge-danger" : "badge-neutral")">@r.DueAt.ToString("dd MMM HH:mm")</span></td><td></td></tr> }
+    </tbody></table></div></div>
+</div>
+
+<!-- Knowledge base -->
+<div id="tab-kb" class="ess-panel" style="display:none;">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;"><button class="btn btn-primary btn-sm" onclick="kbModal()"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> New Article</button></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">
+        @if (!articles.Any()) { <div class="card"><div class="card-body" style="text-align:center;color:var(--text-secondary);">No articles.</div></div> }
+        @foreach (var a in articles) { <div class="card"><div class="card-body"><div style="display:flex;justify-content:space-between;"><b>@a.Title</b><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="essDel('Article',@a.Id)"><i class="fas fa-trash"></i></button></div><div class="caption">@a.Category</div><p style="font-size:0.85rem;color:var(--text-secondary);margin:0.5rem 0 0;white-space:pre-wrap;">@(a.Body.Length > 200 ? a.Body[..200] + "…" : a.Body)</p></div></div> }
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="essModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:520px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body"><h3 id="essTitle" style="margin:0 0 1rem;"></h3><div id="essFields"></div><div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="essSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('essModal').style.display='none'">Cancel</button></div></div></div></div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function essTab(t) { document.querySelectorAll('.ess-panel').forEach(p => p.style.display = 'none'); document.getElementById('tab-' + t).style.display = 'block'; document.querySelectorAll('.ess-tab').forEach(b => b.classList.toggle('btn-primary', b.dataset.tab === t)); document.querySelectorAll('.ess-tab').forEach(b => b.classList.toggle('btn-secondary', b.dataset.tab !== t)); }
+essTab('docs');
+let _essUrl = '';
+function show(title, url, fields) { _essUrl = url; document.getElementById('essTitle').textContent = title; document.getElementById('essFields').innerHTML = fields; document.getElementById('essModal').style.display = 'flex'; }
+function docModal() { show('Add Document', '/Essentials/SaveDocument', `<div class="form-group"><label class="form-label">Title</label><input id="f_title" class="form-control"></div><div class="form-row"><div class="form-group"><label class="form-label">Category</label><input id="f_category" class="form-control"></div><div class="form-group"><label class="form-label">File URL</label><input id="f_fileUrl" class="form-control"></div></div><div class="form-group"><label class="form-label">Notes</label><input id="f_notes" class="form-control"></div>`); }
+function memoModal() { show('New Memo', '/Essentials/SaveMemo', `<div class="form-group"><label class="form-label">Title</label><input id="f_title" class="form-control"></div><div class="form-group"><label class="form-label">Body</label><textarea id="f_body" class="form-control" rows="4"></textarea></div><div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="f_pinned"> Pin</label></div>`); }
+function remModal() { show('New Reminder', '/Essentials/SaveReminder', `<div class="form-group"><label class="form-label">Title</label><input id="f_title" class="form-control"></div><div class="form-group"><label class="form-label">Due</label><input id="f_dueAt" type="datetime-local" class="form-control"></div>`); }
+function kbModal() { show('New Article', '/Essentials/SaveArticle', `<div class="form-row"><div class="form-group"><label class="form-label">Title</label><input id="f_title" class="form-control"></div><div class="form-group"><label class="form-label">Category</label><input id="f_category" class="form-control"></div></div><div class="form-group"><label class="form-label">Body</label><textarea id="f_body" class="form-control" rows="5"></textarea></div><div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="f_isPublished" checked> Published</label></div>`); }
+async function essSave() {
+    const parts = ['id=0'];
+    ['title', 'category', 'fileUrl', 'notes', 'body', 'dueAt'].forEach(k => { const el = document.getElementById('f_' + k); if (el) parts.push(k + '=' + encodeURIComponent(el.value)); });
+    ['pinned', 'isPublished'].forEach(k => { const el = document.getElementById('f_' + k); if (el) parts.push(k + '=' + el.checked); });
+    const d = await post(_essUrl, parts.join('&'));
+    if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Essentials', d.message);
+}
+async function remToggle(id) { await post('/Essentials/ToggleReminder', 'id=' + id); location.reload(); }
+async function essDel(type, id) { const go = async () => { const d = await post('/Essentials/Delete' + type, 'id=' + id); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Delete?', '', go) : (confirm('Delete?') && go()); }
+</script>
+}
