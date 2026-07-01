@@ -12,7 +12,18 @@ var builder = WebApplication.CreateBuilder(args);
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 // Add services to the container
-builder.Services.AddControllersWithViews();
+// #56 i18n: localization + view localization. Resource .resx files live under /Resources.
+builder.Services.AddLocalization(o => o.ResourcesPath = "Resources");
+builder.Services.AddControllersWithViews().AddViewLocalization();
+
+// Supported cultures — English (default), Urdu, Arabic (RTL). Culture is chosen via cookie.
+var supportedCultures = new[] { "en", "ur", "ar" };
+builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(options =>
+{
+    options.SetDefaultCulture("en")
+        .AddSupportedCultures(supportedCultures)
+        .AddSupportedUICultures(supportedCultures);
+});
 
 // AJAX/JSON POST actions ([FromBody]) send the antiforgery token via this header
 // instead of a form field — without naming it here, [ValidateAntiForgeryToken]
@@ -72,6 +83,9 @@ builder.Services.AddScoped<ISupplyChainService, SupplyChainService>();
 
 // ── Phase 4: receivables/payables ──
 builder.Services.AddScoped<IReceivablesService, ReceivablesService>();
+
+// ── Phase 9: reusable export (CSV/Excel) ──
+builder.Services.AddScoped<IExportService, ExportService>();
 
 // ── Phase 6: customer portal & marketing ──
 builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
@@ -182,6 +196,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// #56 i18n: apply the request culture (cookie → Accept-Language → default) before routing.
+app.UseRequestLocalization(app.Services
+    .GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>>().Value);
 
 app.UseRouting();
 

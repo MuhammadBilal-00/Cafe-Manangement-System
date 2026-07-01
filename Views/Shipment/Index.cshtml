@@ -1,0 +1,46 @@
+@model List<Cafe.Models.Shipment>
+@{
+    ViewData["Title"] = "Shipments";
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+    (string, string) Badge(string s) => s switch { "Delivered" => ("badge-success", s), "Returned" => ("badge-danger", s), "InTransit" or "Shipped" => ("badge-info", s), _ => ("badge-warning", s) };
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Shipments</h1><p class="body-text" style="margin-top:0.25rem;">Track shipments for orders and stock transfers.</p></div>
+    <button class="btn btn-primary" onclick="shEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Shipment</button>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Carrier</th><th>Tracking #</th><th>Order/Transfer</th><th style="text-align:center;">Status</th><th>Shipped</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any()) { <tr><td colspan="6" style="text-align:center;padding:3rem;color:var(--text-secondary);">No shipments yet.</td></tr> }
+            @foreach (var s in Model)
+            {
+                var b = Badge(s.Status);
+                <tr data-id="@s.Id" data-order="@s.OrderId" data-transfer="@s.StockTransferId" data-carrier="@s.Carrier" data-track="@s.TrackingNumber" data-status="@s.Status">
+                    <td style="font-weight:600;">@s.Carrier</td><td style="font-family:ui-monospace,monospace;">@s.TrackingNumber</td>
+                    <td><span class="caption">@(s.OrderId.HasValue ? $"Order #{s.OrderId}" : s.StockTransferId.HasValue ? $"Transfer #{s.StockTransferId}" : "—")</span></td>
+                    <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
+                    <td><span class="caption">@(s.ShippedAt?.ToString("dd MMM yyyy") ?? "—")</span></td>
+                    <td><div style="display:flex;gap:0.4rem;"><button class="btn btn-ghost btn-sm" onclick="shEditRow(this)"><i class="fas fa-edit"></i></button>@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="shDel(@s.Id)"><i class="fas fa-trash"></i></button> }</div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+<div id="shModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:480px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Shipment</h3><input type="hidden" id="sId" />
+    <div class="form-row"><div class="form-group"><label class="form-label">Order # (optional)</label><input id="sOrder" type="number" class="form-control"></div><div class="form-group"><label class="form-label">Transfer # (optional)</label><input id="sTransfer" type="number" class="form-control"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Carrier</label><input id="sCarrier" class="form-control"></div><div class="form-group"><label class="form-label">Tracking #</label><input id="sTrack" class="form-control"></div></div>
+    <div class="form-group"><label class="form-label">Status</label><select id="sStatus" class="form-select"><option>Preparing</option><option>Shipped</option><option>InTransit</option><option>Delivered</option><option>Returned</option></select></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="shSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('shModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function shEdit(id, order, transfer, carrier, track, status) { document.getElementById('sId').value = id; document.getElementById('sOrder').value = order || ''; document.getElementById('sTransfer').value = transfer || ''; document.getElementById('sCarrier').value = carrier || ''; document.getElementById('sTrack').value = track || ''; document.getElementById('sStatus').value = status || 'Preparing'; document.getElementById('shModal').style.display = 'flex'; }
+function shEditRow(b) { const r = b.closest('tr'); shEdit(r.dataset.id, r.dataset.order, r.dataset.transfer, r.dataset.carrier, r.dataset.track, r.dataset.status); }
+async function shSave() { const o = document.getElementById('sOrder').value, t = document.getElementById('sTransfer').value; const d = await post('/Shipment/Save', `id=${document.getElementById('sId').value || 0}${o ? '&orderId=' + o : ''}${t ? '&stockTransferId=' + t : ''}&carrier=${encodeURIComponent(document.getElementById('sCarrier').value)}&trackingNumber=${encodeURIComponent(document.getElementById('sTrack').value)}&status=${document.getElementById('sStatus').value}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Shipment', d.message); }
+async function shDel(id) { const go = async () => { const d = await post('/Shipment/Delete', 'id=' + id); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Delete shipment?', '', go) : (confirm('Delete?') && go()); }
+</script>
+}

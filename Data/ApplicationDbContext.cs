@@ -117,6 +117,12 @@ namespace Cafe.Data
         public DbSet<Message> Messages { get; set; }
         public DbSet<KnowledgeBaseArticle> KnowledgeBaseArticles { get; set; }
 
+        // Phase 9: logistics + POS profiles
+        public DbSet<Rider> Riders { get; set; }
+        public DbSet<Delivery> Deliveries { get; set; }
+        public DbSet<Shipment> Shipments { get; set; }
+        public DbSet<PosProfile> PosProfiles { get; set; }
+
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
@@ -171,7 +177,19 @@ namespace Cafe.Data
             ConfigurePhase6Marketing(modelBuilder);
             ConfigurePhase7Hr(modelBuilder);
             ConfigurePhase8Essentials(modelBuilder);
+            ConfigurePhase9Logistics(modelBuilder);
             ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>Phase 9 (platform/system): delivery/rider, shipments, POS profiles.</summary>
+        private void ConfigurePhase9Logistics(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Rider>().HasOne<Branch>().WithMany().HasForeignKey(r => r.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Delivery>().HasOne(d => d.Order).WithMany().HasForeignKey(d => d.OrderId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Delivery>().HasOne(d => d.Rider).WithMany().HasForeignKey(d => d.RiderId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Delivery>().ToTable(t => t.HasCheckConstraint("CK_Delivery_Status", "[Status] IN ('Pending','Assigned','PickedUp','Delivered','Failed')"));
+            modelBuilder.Entity<Delivery>().HasIndex(d => d.OrderId);
+            modelBuilder.Entity<Shipment>().ToTable(t => t.HasCheckConstraint("CK_Shipment_Status", "[Status] IN ('Preparing','Shipped','InTransit','Delivered','Returned')"));
         }
 
         /// <summary>Phase 8 (productivity/essentials): documents, memos, reminders, messages, KB.</summary>

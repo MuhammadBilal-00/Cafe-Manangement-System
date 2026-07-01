@@ -1,0 +1,56 @@
+@{
+    ViewData["Title"] = "Delivery & Riders";
+    var riders = ViewBag.Riders as List<Cafe.Models.Rider> ?? new();
+    var deliveries = ViewBag.Deliveries as List<Cafe.Models.Delivery> ?? new();
+    var pending = ViewBag.Pending as List<Cafe.Models.Order> ?? new();
+    (string, string) Badge(string s) => s switch { "Delivered" => ("badge-success", s), "Failed" => ("badge-danger", s), "PickedUp" => ("badge-info", s), "Assigned" => ("badge-warning", s), _ => ("badge-neutral", s) };
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Delivery &amp; Riders</h1><p class="body-text" style="margin-top:0.25rem;">Assign riders to delivery orders and track them.</p></div>
+    <button class="btn btn-secondary" onclick="riderModal()"><i class="fas fa-motorcycle" style="margin-right:0.4rem;"></i> Add Rider</button>
+</div>
+<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:1.25rem;align-items:start;">
+    <div class="card"><div class="card-body card-body-flush">
+        <div class="card-body"><h2 style="margin:0;font-size:1.05rem;">Active Deliveries</h2></div>
+        <div style="overflow-x:auto;"><table class="premium-table"><thead><tr><th>Order</th><th>Rider</th><th style="text-align:right;">Fee</th><th style="text-align:center;">Status</th><th>Action</th></tr></thead><tbody>
+            @if (!pending.Any() && !deliveries.Any()) { <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-secondary);">No delivery orders.</td></tr> }
+            @foreach (var o in pending)
+            {
+                <tr><td style="font-weight:600;">#@o.OrderNumber<div class="caption">@(o.Customer?.Name ?? "Walk-In")</div></td>
+                <td colspan="2"><select class="form-select r-sel" data-order="@o.Id" style="min-width:130px;"><option value="">assign rider…</option>@foreach (var r in riders){<option value="@r.Id">@r.Name</option>}</select></td>
+                <td style="text-align:center;"><span class="badge badge-neutral">Unassigned</span></td>
+                <td><button class="btn btn-primary btn-sm" onclick="assign(@o.Id, this)">Assign</button></td></tr>
+            }
+            @foreach (var d in deliveries)
+            {
+                var b = Badge(d.Status);
+                <tr><td style="font-weight:600;">#@d.Order?.OrderNumber</td><td>@(d.Rider?.Name ?? "—")</td><td style="text-align:right;">Rs. @d.Fee.ToString("N0")</td>
+                <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
+                <td>@if (d.Status != "Delivered" && d.Status != "Failed"){<select class="form-select" style="min-width:120px;" onchange="setStatus(@d.Id,this.value)"><option>Assigned</option><option>PickedUp</option><option>Delivered</option><option>Failed</option></select>}</td></tr>
+            }
+        </tbody></table></div>
+    </div></div>
+    <div class="card"><div class="card-body">
+        <h2 style="margin:0 0 0.75rem;font-size:1.05rem;">Riders</h2>
+        <table class="premium-table"><tbody>
+            @if (!riders.Any()) { <tr><td style="color:var(--text-secondary);padding:1rem;">No riders yet.</td></tr> }
+            @foreach (var r in riders) { <tr><td><b>@r.Name</b><div class="caption">@r.Phone @r.Vehicle</div></td></tr> }
+        </tbody></table>
+    </div></div>
+</div>
+<div id="riderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:400px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Add Rider</h3>
+    <div class="form-group"><label class="form-label">Name</label><input id="rdName" class="form-control"></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Phone</label><input id="rdPhone" class="form-control"></div><div class="form-group"><label class="form-label">Vehicle</label><input id="rdVehicle" class="form-control"></div></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="riderSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('riderModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function riderModal() { document.getElementById('riderModal').style.display = 'flex'; }
+async function riderSave() { const d = await post('/Delivery/SaveRider', `id=0&name=${encodeURIComponent(document.getElementById('rdName').value)}&phone=${encodeURIComponent(document.getElementById('rdPhone').value)}&vehicle=${encodeURIComponent(document.getElementById('rdVehicle').value)}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Rider', d.message); }
+async function assign(orderId, btn) { const sel = btn.closest('tr').querySelector('.r-sel'); const rid = sel.value; if (!rid) { if (window.ActionCard) ActionCard.error('Assign', 'Pick a rider.'); return; } const d = await post('/Delivery/Assign', `orderId=${orderId}&riderId=${rid}&fee=0`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Assign', d.message); }
+async function setStatus(id, status) { const d = await post('/Delivery/UpdateStatus', `id=${id}&status=${status}`); if (d.success) location.reload(); }
+</script>
+}

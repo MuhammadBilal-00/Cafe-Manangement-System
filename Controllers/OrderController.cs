@@ -21,8 +21,9 @@ namespace Cafe.Controllers
         private readonly ILogger<OrderController> _logger;
         private readonly IInvoiceService _invoiceService;
         private readonly IBranchSettingService _branchSettings;
+        private readonly IExportService _export;
 
-        public OrderController(ApplicationDbContext context, IInventoryService inventoryService, INotificationService notificationService, IMemoryCache cache, ILogger<OrderController> logger, IInvoiceService invoiceService, IBranchSettingService branchSettings) : base(context)
+        public OrderController(ApplicationDbContext context, IInventoryService inventoryService, INotificationService notificationService, IMemoryCache cache, ILogger<OrderController> logger, IInvoiceService invoiceService, IBranchSettingService branchSettings, IExportService export) : base(context)
         {
             _inventoryService = inventoryService;
             _notificationService = notificationService;
@@ -30,6 +31,28 @@ namespace Cafe.Controllers
             _logger = logger;
             _invoiceService = invoiceService;
             _branchSettings = branchSettings;
+            _export = export;
+        }
+
+        // Phase 9 (59): Excel export via the reusable IExportService.
+        public async Task<IActionResult> ExportExcel(int? branchId, string? status, DateTime? from, DateTime? to)
+        {
+            var query = _context.Orders.Include(o => o.Customer).Include(o => o.Branch).AsQueryable();
+            if (!HttpContext.Session.IsOwner())
+            {
+                var ids = (await GetAccessibleBranches()).Select(b => b.Id).ToList();
+                query = query.Where(o => ids.Contains(o.BranchId));
+            }
+            else if (branchId.HasValue) query = query.Where(o => o.BranchId == branchId.Value);
+            if (!string.IsNullOrEmpty(status)) query = query.Where(o => o.Status == status);
+            if (from.HasValue) query = query.Where(o => o.OrderDate >= from.Value);
+            if (to.HasValue) query = query.Where(o => o.OrderDate <= to.Value.AddDays(1));
+
+            var orders = await query.OrderByDescending(o => o.OrderDate).Take(5000).ToListAsync();
+            var headers = new[] { "Order #", "Date", "Customer", "Branch", "Service", "Status", "Amount" };
+            var rows = orders.Select(o => new object?[] { o.OrderNumber, o.OrderDate, o.Customer?.Name ?? "Walk-In", o.Branch?.Name, o.ServiceType, o.Status, o.TotalAmount });
+            var bytes = _export.ToExcel("Orders", headers, rows);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"orders-{DateTime.Now:yyyyMMdd}.xlsx");
         }
 
         // Main Index Page - Works with your HTML

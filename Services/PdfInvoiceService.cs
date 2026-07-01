@@ -4,8 +4,9 @@ using Cafe.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-// Phase 8 added Cafe.Models.Document, which collides with QuestPDF's Document here.
+// Phase 8/9 added Cafe.Models.Document and Cafe.Models.Unit, which collide with QuestPDF's here.
 using Document = QuestPDF.Fluent.Document;
+using Unit = QuestPDF.Infrastructure.Unit;
 
 namespace Cafe.Services
 {
@@ -13,6 +14,9 @@ namespace Cafe.Services
     {
         /// <summary>Renders a finished invoice (with its order + items) to a PDF byte array.</summary>
         byte[] GenerateInvoicePdf(Invoice invoice, Order order, Branch branch, string? footerNote);
+
+        /// <summary>Phase 9 (58): an 80mm thermal receipt for the same invoice.</summary>
+        byte[] GenerateThermalReceipt(Invoice invoice, Order order, Branch branch, string? footerNote);
     }
 
     public class PdfInvoiceService : IPdfInvoiceService
@@ -36,6 +40,59 @@ namespace Cafe.Services
             });
 
             return document.GeneratePdf();
+        }
+
+        public byte[] GenerateThermalReceipt(Invoice invoice, Order order, Branch branch, string? footerNote)
+        {
+            var doc = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    // 80mm roll, continuous height (thermal printers).
+                    page.ContinuousSize(80, Unit.Millimetre);
+                    page.Margin(6);
+                    page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Consolas));
+
+                    page.Content().Column(col =>
+                    {
+                        col.Item().AlignCenter().Text(branch.Name).FontSize(11).Bold();
+                        if (!string.IsNullOrWhiteSpace(branch.Location)) col.Item().AlignCenter().Text(branch.Location).FontSize(7);
+                        if (!string.IsNullOrWhiteSpace(branch.ContactInfo)) col.Item().AlignCenter().Text(branch.ContactInfo).FontSize(7);
+                        col.Item().PaddingVertical(3).LineHorizontal(0.5f);
+                        col.Item().Text($"Receipt: {invoice.InvoiceNumber}").FontSize(7);
+                        col.Item().Text($"Date: {invoice.CreatedAt:dd MMM yyyy HH:mm}").FontSize(7);
+                        col.Item().PaddingVertical(3).LineHorizontal(0.5f);
+
+                        foreach (var it in order.OrderItems)
+                        {
+                            col.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text($"{it.Quantity}x {it.MenuItem?.Name}").FontSize(8);
+                                r.ConstantItem(55).AlignRight().Text(Money(it.Price * it.Quantity)).FontSize(8);
+                            });
+                        }
+
+                        col.Item().PaddingVertical(3).LineHorizontal(0.5f);
+                        void Line(string label, decimal v, bool bold = false)
+                        {
+                            col.Item().Row(r =>
+                            {
+                                var t1 = r.RelativeItem().Text(label).FontSize(8); if (bold) t1.Bold();
+                                var t2 = r.ConstantItem(60).AlignRight().Text(Money(v)).FontSize(8); if (bold) t2.Bold();
+                            });
+                        }
+                        Line("Subtotal", invoice.Subtotal);
+                        if (invoice.TotalDiscount > 0) Line("Discount", -invoice.TotalDiscount);
+                        if (invoice.PackingCharge + invoice.ShippingCharge > 0) Line("Charges", invoice.PackingCharge + invoice.ShippingCharge);
+                        if (invoice.TaxAmount > 0) Line($"Tax ({invoice.TaxRate:0.##}%)", invoice.TaxAmount);
+                        col.Item().PaddingVertical(2).LineHorizontal(0.5f);
+                        Line("TOTAL", invoice.TotalAmount, true);
+
+                        col.Item().PaddingTop(6).AlignCenter().Text(footerNote ?? "Thank you!").FontSize(8);
+                    });
+                });
+            });
+            return doc.GeneratePdf();
         }
 
         private static void ComposeHeader(IContainer container, Invoice invoice, Branch branch)

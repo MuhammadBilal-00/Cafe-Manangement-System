@@ -303,6 +303,14 @@
                             <span class="sidebar-link-icon"><i class="fas fa-file-signature"></i></span>
                             <span class="sidebar-link-text">Quotations</span>
                         </a>
+                        <a asp-controller="Delivery" asp-action="Index" class="sidebar-link" data-nav="Delivery">
+                            <span class="sidebar-link-icon"><i class="fas fa-motorcycle"></i></span>
+                            <span class="sidebar-link-text">Delivery &amp; Riders</span>
+                        </a>
+                        <a asp-controller="Shipment" asp-action="Index" class="sidebar-link" data-nav="Shipment">
+                            <span class="sidebar-link-icon"><i class="fas fa-box"></i></span>
+                            <span class="sidebar-link-text">Shipments</span>
+                        </a>
                     }
 
                     @if (isOwnerOrManager)
@@ -456,6 +464,10 @@
                                 <span class="sidebar-link-icon"><i class="fas fa-cash-register"></i></span>
                                 <span class="sidebar-link-text">Checkout Settings</span>
                             </a>
+                            <a asp-controller="PosProfile" asp-action="Index" class="sidebar-link" data-nav="PosProfile">
+                                <span class="sidebar-link-icon"><i class="fas fa-receipt"></i></span>
+                                <span class="sidebar-link-text">POS &amp; Receipts</span>
+                            </a>
                         }
                     }
 
@@ -570,6 +582,21 @@
                         <!-- Toast Container -->
                         <div id="notifToastContainer" style="position:fixed;top:80px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none;"></div>
                     }
+                    @{
+                        var curCulture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+                        var returnPath = Context.Request.Path + Context.Request.QueryString;
+                    }
+                    <div style="position:relative;" id="langMenu">
+                        <button class="header-icon-btn" data-tooltip="Language" onclick="document.getElementById('langDrop').style.display=document.getElementById('langDrop').style.display==='block'?'none':'block'">
+                            <i class="fas fa-language"></i>
+                        </button>
+                        <div id="langDrop" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:9999;overflow:hidden;min-width:130px;">
+                            @foreach (var (code, label) in new[] { ("en", "English"), ("ur", "اردو"), ("ar", "العربية") })
+                            {
+                                <a href="/Language/Set?culture=@code&returnUrl=@Uri.EscapeDataString(returnPath)" style="display:block;padding:0.55rem 0.9rem;text-decoration:none;color:var(--text-primary);font-size:0.85rem;@(curCulture == code ? "background:var(--accent-light);font-weight:700;" : "")">@label</a>
+                            }
+                        </div>
+                    </div>
                     <button class="header-icon-btn" id="themeToggle" data-tooltip="Toggle theme" onclick="toggleTheme()">
                         <i class="fas fa-moon" id="themeIcon"></i>
                     </button>

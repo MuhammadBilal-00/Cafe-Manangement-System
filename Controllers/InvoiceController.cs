@@ -20,10 +20,28 @@ namespace Cafe.Controllers
     public class InvoiceController : BaseController
     {
         private readonly IInvoiceService _invoiceService;
+        private readonly IPdfInvoiceService _pdf;
+        private readonly IBranchSettingService _branchSettings;
 
-        public InvoiceController(ApplicationDbContext context, IInvoiceService invoiceService) : base(context)
+        public InvoiceController(ApplicationDbContext context, IInvoiceService invoiceService,
+            IPdfInvoiceService pdf, IBranchSettingService branchSettings) : base(context)
         {
             _invoiceService = invoiceService;
+            _pdf = pdf;
+            _branchSettings = branchSettings;
+        }
+
+        // Phase 9 (58): 80mm thermal receipt for an invoice.
+        public async Task<IActionResult> Thermal(int id)
+        {
+            var invoice = await _invoiceService.GetByIdAsync(id);
+            if (invoice == null || !CanAccessBranch(invoice.BranchId)) return NotFound();
+            var order = await _context.Orders.Include(o => o.OrderItems).ThenInclude(oi => oi.MenuItem)
+                .Include(o => o.Branch).FirstOrDefaultAsync(o => o.Id == invoice.OrderId);
+            if (order == null) return NotFound();
+            var setting = await _branchSettings.GetOrCreateAsync(invoice.BranchId);
+            var bytes = _pdf.GenerateThermalReceipt(invoice, order, order.Branch, setting.InvoiceFooterNote);
+            return File(bytes, "application/pdf", $"{invoice.InvoiceNumber}-thermal.pdf");
         }
 
         private int? ScopedBranchId(int? requested)

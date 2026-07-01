@@ -1,0 +1,49 @@
+@model List<Cafe.Models.PosProfile>
+@{
+    ViewData["Title"] = "POS & Receipt Settings";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new();
+    var bmap = branches.ToDictionary(b => b.Id, b => b.Name);
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">POS &amp; Receipt Settings</h1><p class="body-text" style="margin-top:0.25rem;">Receipt paper size, logo, tax breakdown and header/footer.</p></div>
+    <button class="btn btn-primary" onclick="ppEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Profile</button>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Name</th><th>Branch</th><th>Paper</th><th style="text-align:center;">Logo</th><th style="text-align:center;">Tax</th><th style="text-align:center;">Default</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any()) { <tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--text-secondary);">No profiles yet.</td></tr> }
+            @foreach (var p in Model)
+            {
+                <tr data-id="@p.Id" data-name="@p.Name" data-branch="@p.BranchId" data-paper="@p.PaperSize" data-logo="@p.ShowLogo.ToString().ToLower()" data-tax="@p.ShowTaxBreakdown.ToString().ToLower()" data-header="@p.HeaderText" data-footer="@p.FooterText" data-def="@p.IsDefault.ToString().ToLower()">
+                    <td style="font-weight:600;">@p.Name</td><td>@(p.BranchId.HasValue && bmap.ContainsKey(p.BranchId.Value) ? bmap[p.BranchId.Value] : "All")</td>
+                    <td>@(p.PaperSize == "Thermal80" ? "80mm thermal" : "A5")</td>
+                    <td style="text-align:center;">@(p.ShowLogo ? "✓" : "—")</td><td style="text-align:center;">@(p.ShowTaxBreakdown ? "✓" : "—")</td>
+                    <td style="text-align:center;">@(p.IsDefault ? "<span class=\"badge badge-accent\">Default</span>" : "")</td>
+                    <td><div style="display:flex;gap:0.4rem;"><button class="btn btn-ghost btn-sm" onclick="ppEditRow(this)"><i class="fas fa-edit"></i></button>@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="ppDel(@p.Id)"><i class="fas fa-trash"></i></button> }</div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+<div id="ppModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:500px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">POS Profile</h3><input type="hidden" id="pId" />
+    <div class="form-row"><div class="form-group"><label class="form-label">Name</label><input id="pName" class="form-control"></div><div class="form-group"><label class="form-label">Branch</label><select id="pBranch" class="form-select"><option value="">All branches</option>@foreach (var b in branches){<option value="@b.Id">@b.Name</option>}</select></div></div>
+    <div class="form-group"><label class="form-label">Paper size</label><select id="pPaper" class="form-select"><option value="A5">A5 PDF</option><option value="Thermal80">80mm thermal</option></select></div>
+    <div class="form-row"><div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="pLogo" checked> Show logo</label></div><div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="pTax" checked> Tax breakdown</label></div></div>
+    <div class="form-group"><label class="form-label">Header text</label><input id="pHeader" class="form-control"></div>
+    <div class="form-group"><label class="form-label">Footer text</label><input id="pFooter" class="form-control"></div>
+    <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="pDef"> Make default</label></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="ppSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('ppModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function ppEdit(id, name, branch, paper, logo, tax, header, footer, def) { document.getElementById('pId').value = id; document.getElementById('pName').value = name || ''; document.getElementById('pBranch').value = branch || ''; document.getElementById('pPaper').value = paper || 'A5'; document.getElementById('pLogo').checked = logo !== false; document.getElementById('pTax').checked = tax !== false; document.getElementById('pHeader').value = header || ''; document.getElementById('pFooter').value = footer || ''; document.getElementById('pDef').checked = def === true; document.getElementById('ppModal').style.display = 'flex'; }
+function ppEditRow(b) { const r = b.closest('tr'); ppEdit(r.dataset.id, r.dataset.name, r.dataset.branch, r.dataset.paper, r.dataset.logo === 'true', r.dataset.tax === 'true', r.dataset.header, r.dataset.footer, r.dataset.def === 'true'); }
+async function ppSave() { const br = document.getElementById('pBranch').value; const d = await post('/PosProfile/Save', `id=${document.getElementById('pId').value || 0}&name=${encodeURIComponent(document.getElementById('pName').value)}${br ? '&branchId=' + br : ''}&paperSize=${document.getElementById('pPaper').value}&showLogo=${document.getElementById('pLogo').checked}&showTaxBreakdown=${document.getElementById('pTax').checked}&headerText=${encodeURIComponent(document.getElementById('pHeader').value)}&footerText=${encodeURIComponent(document.getElementById('pFooter').value)}&isDefault=${document.getElementById('pDef').checked}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Profile', d.message); }
+async function ppDel(id) { const go = async () => { const d = await post('/PosProfile/Delete', 'id=' + id); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Delete profile?', '', go) : (confirm('Delete?') && go()); }
+</script>
+}
