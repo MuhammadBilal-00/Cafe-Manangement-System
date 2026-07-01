@@ -261,6 +261,22 @@
                                 <span class="sidebar-link-text">Purchases</span>
                             </a>
                         }
+
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Inventory))
+                        {
+                            <a asp-controller="StockTransfer" asp-action="Index" class="sidebar-link" data-nav="StockTransfer">
+                                <span class="sidebar-link-icon"><i class="fas fa-right-left"></i></span>
+                                <span class="sidebar-link-text">Stock Transfers</span>
+                            </a>
+                            <a asp-controller="StockAdjustment" asp-action="Index" class="sidebar-link" data-nav="StockAdjustment">
+                                <span class="sidebar-link-icon"><i class="fas fa-scale-balanced"></i></span>
+                                <span class="sidebar-link-text">Stock Adjustments</span>
+                            </a>
+                            <a asp-controller="Production" asp-action="Index" class="sidebar-link" data-nav="Production">
+                                <span class="sidebar-link-icon"><i class="fas fa-industry"></i></span>
+                                <span class="sidebar-link-text">Production</span>
+                            </a>
+                        }
                     }
 
                     @if (isOwnerOrManager)

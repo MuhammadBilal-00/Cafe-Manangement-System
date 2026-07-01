@@ -1,0 +1,103 @@
+@model List<Cafe.Models.ProductionOrder>
+@{
+    ViewData["Title"] = "Production";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    (string, string) Badge(string s) => s switch { "Completed" => ("badge-success", s), "Cancelled" => ("badge-danger", s), _ => ("badge-warning", s) };
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Production</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Manufacture items from inputs. Completing consumes inputs and rolls their cost into the output.</p>
+    </div>
+    <button class="btn btn-primary" onclick="prNew()"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Production</button>
+</div>
+
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>#</th><th>Branch</th><th>Output</th><th style="text-align:center;">Inputs</th><th>Unit cost</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any())
+            { <tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--text-secondary);">No production orders yet.</td></tr> }
+            @foreach (var p in Model)
+            {
+                var b = Badge(p.Status);
+                <tr>
+                    <td style="font-weight:600;">#@p.Id</td>
+                    <td>@p.Branch?.Name</td>
+                    <td>@p.OutputQuantity.ToString("0.##") × @p.OutputItem?.Name</td>
+                    <td style="text-align:center;">@p.Inputs.Count</td>
+                    <td>@(p.Status == "Completed" ? $"Rs. {p.UnitCost:N2}" : "—")</td>
+                    <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
+                    <td>
+                        @if (p.Status == "Draft")
+                        {
+                            <div style="display:flex;gap:0.4rem;">
+                                <button class="btn btn-primary btn-sm" onclick="prComplete(@p.Id)"><i class="fas fa-industry" style="margin-right:0.3rem;"></i> Produce</button>
+                                <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="prCancel(@p.Id)">Cancel</button>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+
+<div id="prModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:560px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body">
+        <h3 style="margin:0 0 1rem;">New Production Order</h3>
+        <div class="form-group"><label class="form-label">Branch</label>
+            <select id="prBranch" class="form-select" onchange="prLoadItems()">
+                @foreach (var b in branches) { <option value="@b.Id">@b.Name</option> }
+            </select></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Output item</label><select id="prOutput" class="form-select"></select></div>
+            <div class="form-group"><label class="form-label">Output quantity</label><input id="prOutQty" type="number" min="0.01" step="0.01" value="1" class="form-control" /></div>
+        </div>
+        <label class="form-label">Inputs (consumed)</label>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;">
+            <select id="prItem" class="form-select" style="flex:1;"></select>
+            <input id="prQty" type="number" min="0.01" step="0.01" value="1" class="form-control" style="width:90px;">
+            <button class="btn btn-secondary" onclick="prAdd()">Add</button>
+        </div>
+        <div id="prInputs" style="margin-bottom:0.5rem;"></div>
+        <div class="caption" id="prCost" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="prSave()">Create draft</button><button class="btn btn-secondary" onclick="document.getElementById('prModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body }).then(r => r.json());
+let items = [], inputs = [];
+const money = v => 'Rs. ' + (Math.round(v * 100) / 100).toLocaleString();
+async function prLoadItems() {
+    const bid = document.getElementById('prBranch').value;
+    items = await fetch('/Production/GetItems?branchId=' + bid).then(r => r.json());
+    const opts = items.map(i => `<option value="${i.id}">${i.name} (${i.qty} ${i.unit})</option>`).join('');
+    document.getElementById('prOutput').innerHTML = opts;
+    document.getElementById('prItem').innerHTML = opts;
+}
+function renderInputs() {
+    const map = Object.fromEntries(items.map(i => [i.id, i]));
+    document.getElementById('prInputs').innerHTML = inputs.map((l, idx) =>
+        `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${map[l.inventoryItemId]?.name || '#' + l.inventoryItemId} — <b>${l.quantity}</b></span><a href="javascript:void(0)" onclick="prDel(${idx})" style="color:#dc2626;">×</a></div>`).join('');
+    const total = inputs.reduce((s, l) => s + (map[l.inventoryItemId]?.cost || 0) * l.quantity, 0);
+    const oq = parseFloat(document.getElementById('prOutQty').value) || 0;
+    document.getElementById('prCost').textContent = `Input cost ${money(total)}${oq ? ' · ≈ ' + money(total / oq) + '/unit' : ''}`;
+}
+window.prNew = async () => { inputs = []; renderInputs(); await prLoadItems(); document.getElementById('prModal').style.display = 'flex'; };
+window.prAdd = () => { const id = parseInt(document.getElementById('prItem').value); const q = parseFloat(document.getElementById('prQty').value); if (!id || !(q > 0)) return; const e = inputs.find(l => l.inventoryItemId === id); if (e) e.quantity += q; else inputs.push({ inventoryItemId: id, quantity: q }); renderInputs(); };
+window.prDel = i => { inputs.splice(i, 1); renderInputs(); };
+document.getElementById('prOutQty').addEventListener('input', renderInputs);
+window.prSave = async () => {
+    if (!inputs.length) return;
+    const body = `branchId=${document.getElementById('prBranch').value}&outputInventoryItemId=${document.getElementById('prOutput').value}&outputQuantity=${document.getElementById('prOutQty').value}&inputs=${encodeURIComponent(JSON.stringify(inputs))}`;
+    const d = await post('/Production/Create', body); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Production', d.message);
+};
+window.prComplete = async id => { const go = async () => { const d = await post('/Production/Complete', 'id=' + id); if (window.ActionCard) d.success ? ActionCard.success('Production', d.message) : ActionCard.error('Production', d.message); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Produce now?', 'Inputs are consumed and the output is stocked.', go) : (confirm('Produce?') && go()); };
+window.prCancel = async id => { const d = await post('/Production/Cancel', 'id=' + id); if (d.success) location.reload(); };
+</script>
+}

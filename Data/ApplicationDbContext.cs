@@ -64,6 +64,14 @@ namespace Cafe.Data
         public DbSet<PriceGroup> PriceGroups { get; set; }
         public DbSet<MenuItemPrice> MenuItemPrices { get; set; }
 
+        // Phase 3: inventory & supply chain
+        public DbSet<StockTransfer> StockTransfers { get; set; }
+        public DbSet<StockTransferItem> StockTransferItems { get; set; }
+        public DbSet<StockAdjustment> StockAdjustments { get; set; }
+        public DbSet<StockAdjustmentLine> StockAdjustmentLines { get; set; }
+        public DbSet<ProductionOrder> ProductionOrders { get; set; }
+        public DbSet<ProductionInput> ProductionInputs { get; set; }
+
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
@@ -112,7 +120,42 @@ namespace Cafe.Data
             ConfigureCheckoutModules(modelBuilder);
             ConfigurePhase1Pos(modelBuilder);
             ConfigurePhase2Menu(modelBuilder);
+            ConfigurePhase3Inventory(modelBuilder);
             ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>Phase 3 (inventory &amp; supply chain): transfers, adjustments, production.
+        /// FK delete behaviour is NoAction into the Branches/InventoryItems/Users hubs; child
+        /// lines cascade from their parent document.</summary>
+        private void ConfigurePhase3Inventory(ModelBuilder modelBuilder)
+        {
+            // Stock transfers
+            modelBuilder.Entity<StockTransfer>().HasOne(t => t.FromBranch).WithMany().HasForeignKey(t => t.FromBranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<StockTransfer>().HasOne(t => t.ToBranch).WithMany().HasForeignKey(t => t.ToBranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<StockTransfer>().HasOne(t => t.CreatedBy).WithMany().HasForeignKey(t => t.CreatedById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<StockTransfer>().ToTable(t => t.HasCheckConstraint("CK_StockTransfer_Status", "[Status] IN ('Draft','Completed','Cancelled')"));
+            modelBuilder.Entity<StockTransferItem>().HasOne(i => i.StockTransfer).WithMany(t => t.Items).HasForeignKey(i => i.StockTransferId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<StockTransferItem>().HasOne(i => i.InventoryItem).WithMany().HasForeignKey(i => i.InventoryItemId).OnDelete(DeleteBehavior.NoAction);
+
+            // Stock adjustments
+            modelBuilder.Entity<StockAdjustment>().HasOne(a => a.Branch).WithMany().HasForeignKey(a => a.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<StockAdjustment>().HasOne(a => a.CreatedBy).WithMany().HasForeignKey(a => a.CreatedById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<StockAdjustment>().HasOne(a => a.ApprovedBy).WithMany().HasForeignKey(a => a.ApprovedById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<StockAdjustment>().ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_StockAdjustment_Type", "[Type] IN ('Increase','Decrease','Recount')");
+                t.HasCheckConstraint("CK_StockAdjustment_Approval", "[ApprovalStatus] IN ('Pending','Approved','Rejected')");
+            });
+            modelBuilder.Entity<StockAdjustmentLine>().HasOne(l => l.StockAdjustment).WithMany(a => a.Lines).HasForeignKey(l => l.StockAdjustmentId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<StockAdjustmentLine>().HasOne(l => l.InventoryItem).WithMany().HasForeignKey(l => l.InventoryItemId).OnDelete(DeleteBehavior.NoAction);
+
+            // Production
+            modelBuilder.Entity<ProductionOrder>().HasOne(p => p.Branch).WithMany().HasForeignKey(p => p.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ProductionOrder>().HasOne(p => p.OutputItem).WithMany().HasForeignKey(p => p.OutputInventoryItemId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ProductionOrder>().HasOne(p => p.CreatedBy).WithMany().HasForeignKey(p => p.CreatedById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ProductionOrder>().ToTable(t => t.HasCheckConstraint("CK_ProductionOrder_Status", "[Status] IN ('Draft','Completed','Cancelled')"));
+            modelBuilder.Entity<ProductionInput>().HasOne(i => i.ProductionOrder).WithMany(p => p.Inputs).HasForeignKey(i => i.ProductionOrderId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ProductionInput>().HasOne(i => i.InventoryItem).WithMany().HasForeignKey(i => i.InventoryItemId).OnDelete(DeleteBehavior.NoAction);
         }
 
         /// <summary>Phase 2 (menu &amp; product depth): brands, units, modifiers, combos, price tiers.</summary>

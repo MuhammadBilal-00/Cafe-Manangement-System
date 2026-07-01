@@ -1,0 +1,98 @@
+@model List<Cafe.Models.StockTransfer>
+@{
+    ViewData["Title"] = "Stock Transfers";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var allBranches = ViewBag.AllBranches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    (string, string) Badge(string s) => s switch { "Completed" => ("badge-success", s), "Cancelled" => ("badge-danger", s), _ => ("badge-warning", s) };
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Stock Transfers</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Move inventory between branches. Completing moves stock atomically.</p>
+    </div>
+    <button class="btn btn-primary" onclick="stNew()"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Transfer</button>
+</div>
+
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>#</th><th>From → To</th><th style="text-align:center;">Items</th><th>Created</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any())
+            { <tr><td colspan="6" style="text-align:center;padding:3rem;color:var(--text-secondary);">No transfers yet.</td></tr> }
+            @foreach (var t in Model)
+            {
+                var b = Badge(t.Status);
+                <tr>
+                    <td style="font-weight:600;">#@t.Id</td>
+                    <td>@t.FromBranch?.Name <i class="fas fa-arrow-right" style="margin:0 0.3rem;color:var(--text-tertiary);"></i> @t.ToBranch?.Name @(string.IsNullOrEmpty(t.Reference) ? "" : $"· {t.Reference}")</td>
+                    <td style="text-align:center;">@t.Items.Count</td>
+                    <td><span class="caption">@t.CreatedAt.ToString("dd MMM HH:mm")</span></td>
+                    <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
+                    <td>
+                        @if (t.Status == "Draft")
+                        {
+                            <div style="display:flex;gap:0.4rem;">
+                                <button class="btn btn-primary btn-sm" onclick="stComplete(@t.Id)"><i class="fas fa-check" style="margin-right:0.3rem;"></i> Complete</button>
+                                <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="stCancel(@t.Id)">Cancel</button>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+
+<div id="stModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:560px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body">
+        <h3 style="margin:0 0 1rem;">New Transfer</h3>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">From branch</label>
+                <select id="stFrom" class="form-select" onchange="stLoadItems()">
+                    @foreach (var b in branches) { <option value="@b.Id">@b.Name</option> }
+                </select></div>
+            <div class="form-group"><label class="form-label">To branch</label>
+                <select id="stTo" class="form-select">
+                    @foreach (var b in allBranches) { <option value="@b.Id">@b.Name</option> }
+                </select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Reference (optional)</label><input id="stRef" class="form-control" /></div>
+        <label class="form-label">Items</label>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;">
+            <select id="stItem" class="form-select" style="flex:1;"></select>
+            <input id="stQty" type="number" min="0.01" step="0.01" value="1" class="form-control" style="width:90px;">
+            <button class="btn btn-secondary" onclick="stAdd()">Add</button>
+        </div>
+        <div id="stLines" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="stSave()">Create draft</button><button class="btn btn-secondary" onclick="document.getElementById('stModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body }).then(r => r.json());
+let items = [], lines = [];
+async function stLoadItems() {
+    const bid = document.getElementById('stFrom').value;
+    items = await fetch('/StockTransfer/GetItems?branchId=' + bid).then(r => r.json());
+    document.getElementById('stItem').innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.qty} ${i.unit})</option>`).join('');
+}
+function renderLines() {
+    const map = Object.fromEntries(items.map(i => [i.id, i]));
+    document.getElementById('stLines').innerHTML = lines.map((l, idx) =>
+        `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${map[l.inventoryItemId]?.name || '#' + l.inventoryItemId} — <b>${l.quantity}</b></span><a href="javascript:void(0)" onclick="stDel(${idx})" style="color:#dc2626;">×</a></div>`).join('');
+}
+window.stNew = async () => { lines = []; renderLines(); await stLoadItems(); document.getElementById('stModal').style.display = 'flex'; };
+window.stAdd = () => { const id = parseInt(document.getElementById('stItem').value); const q = parseFloat(document.getElementById('stQty').value); if (!id || !(q > 0)) return; const e = lines.find(l => l.inventoryItemId === id); if (e) e.quantity += q; else lines.push({ inventoryItemId: id, quantity: q }); renderLines(); };
+window.stDel = i => { lines.splice(i, 1); renderLines(); };
+window.stSave = async () => {
+    if (!lines.length) return;
+    const body = `fromBranchId=${document.getElementById('stFrom').value}&toBranchId=${document.getElementById('stTo').value}&reference=${encodeURIComponent(document.getElementById('stRef').value)}&items=${encodeURIComponent(JSON.stringify(lines))}`;
+    const d = await post('/StockTransfer/Create', body); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Transfer', d.message);
+};
+window.stComplete = async id => { const go = async () => { const d = await post('/StockTransfer/Complete', 'id=' + id); if (window.ActionCard) d.success ? ActionCard.success('Transfer', d.message) : ActionCard.error('Transfer', d.message); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Complete transfer?', 'Stock will move between branches.', go) : (confirm('Complete?') && go()); };
+window.stCancel = async id => { const d = await post('/StockTransfer/Cancel', 'id=' + id); if (d.success) location.reload(); };
+</script>
+}

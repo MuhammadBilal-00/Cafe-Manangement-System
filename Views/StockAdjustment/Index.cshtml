@@ -1,0 +1,96 @@
+@model List<Cafe.Models.StockAdjustment>
+@{
+    ViewData["Title"] = "Stock Adjustments";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    (string, string) Badge(string s) => s switch { "Approved" => ("badge-success", s), "Rejected" => ("badge-danger", s), _ => ("badge-warning", s) };
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Stock Adjustments</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Correct stock (damage, wastage, recount). Approving applies the change atomically.</p>
+    </div>
+    <button class="btn btn-primary" onclick="saNew()"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Adjustment</button>
+</div>
+
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>#</th><th>Branch</th><th>Type</th><th>Reason</th><th style="text-align:center;">Lines</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any())
+            { <tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--text-secondary);">No adjustments yet.</td></tr> }
+            @foreach (var a in Model)
+            {
+                var b = Badge(a.ApprovalStatus);
+                <tr>
+                    <td style="font-weight:600;">#@a.Id</td>
+                    <td>@a.Branch?.Name</td>
+                    <td>@a.Type</td>
+                    <td><span class="caption">@a.Reason</span></td>
+                    <td style="text-align:center;">@a.Lines.Count</td>
+                    <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
+                    <td>
+                        @if (a.ApprovalStatus == "Pending")
+                        {
+                            <div style="display:flex;gap:0.4rem;">
+                                <button class="btn btn-primary btn-sm" onclick="saApprove(@a.Id)"><i class="fas fa-check" style="margin-right:0.3rem;"></i> Approve</button>
+                                <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="saReject(@a.Id)">Reject</button>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+
+<div id="saModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:560px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body">
+        <h3 style="margin:0 0 1rem;">New Adjustment</h3>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Branch</label>
+                <select id="saBranch" class="form-select" onchange="saLoadItems()">
+                    @foreach (var b in branches) { <option value="@b.Id">@b.Name</option> }
+                </select></div>
+            <div class="form-group"><label class="form-label">Type</label>
+                <select id="saType" class="form-select"><option>Decrease</option><option>Increase</option><option>Recount</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Reason</label><input id="saReason" class="form-control" placeholder="e.g. spoilage" /></div>
+        <label class="form-label">Lines (use ± change, e.g. -3 or 5)</label>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;">
+            <select id="saItem" class="form-select" style="flex:1;"></select>
+            <input id="saDelta" type="number" step="0.01" value="-1" class="form-control" style="width:100px;" title="signed change">
+            <button class="btn btn-secondary" onclick="saAdd()">Add</button>
+        </div>
+        <div id="saLines" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="saSave()">Create draft</button><button class="btn btn-secondary" onclick="document.getElementById('saModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body }).then(r => r.json());
+let items = [], lines = [];
+async function saLoadItems() {
+    const bid = document.getElementById('saBranch').value;
+    items = await fetch('/StockAdjustment/GetItems?branchId=' + bid).then(r => r.json());
+    document.getElementById('saItem').innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.qty} ${i.unit})</option>`).join('');
+}
+function renderLines() {
+    const map = Object.fromEntries(items.map(i => [i.id, i]));
+    document.getElementById('saLines').innerHTML = lines.map((l, idx) =>
+        `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${map[l.inventoryItemId]?.name || '#' + l.inventoryItemId} — <b style="color:${l.quantityDelta < 0 ? '#dc2626' : '#16a34a'}">${l.quantityDelta > 0 ? '+' : ''}${l.quantityDelta}</b></span><a href="javascript:void(0)" onclick="saDel(${idx})" style="color:#dc2626;">×</a></div>`).join('');
+}
+window.saNew = async () => { lines = []; renderLines(); await saLoadItems(); document.getElementById('saModal').style.display = 'flex'; };
+window.saAdd = () => { const id = parseInt(document.getElementById('saItem').value); const d = parseFloat(document.getElementById('saDelta').value); if (!id || !d) return; const e = lines.find(l => l.inventoryItemId === id); if (e) e.quantityDelta = d; else lines.push({ inventoryItemId: id, quantityDelta: d }); renderLines(); };
+window.saDel = i => { lines.splice(i, 1); renderLines(); };
+window.saSave = async () => {
+    if (!lines.length) return;
+    const body = `branchId=${document.getElementById('saBranch').value}&type=${document.getElementById('saType').value}&reason=${encodeURIComponent(document.getElementById('saReason').value)}&lines=${encodeURIComponent(JSON.stringify(lines))}`;
+    const d = await post('/StockAdjustment/Create', body); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Adjustment', d.message);
+};
+window.saApprove = async id => { const go = async () => { const d = await post('/StockAdjustment/Approve', 'id=' + id); if (window.ActionCard) d.success ? ActionCard.success('Adjustment', d.message) : ActionCard.error('Adjustment', d.message); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Approve adjustment?', 'Stock will change.', go) : (confirm('Approve?') && go()); };
+window.saReject = async id => { const d = await post('/StockAdjustment/Reject', 'id=' + id); if (d.success) location.reload(); };
+</script>
+}

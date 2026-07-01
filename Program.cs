@@ -67,6 +67,9 @@ builder.Services.AddScoped<ITableService, TableService>();
 builder.Services.AddScoped<IKitchenService, KitchenService>();
 builder.Services.AddScoped<IPosService, PosService>();
 
+// ── Phase 3: inventory & supply chain ──
+builder.Services.AddScoped<ISupplyChainService, SupplyChainService>();
+
 // ── SaaS platform services (Phase 0): feature gating, billing, provisioning, branding ──
 builder.Services.AddScoped<IFeatureGate, FeatureGate>();
 builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
