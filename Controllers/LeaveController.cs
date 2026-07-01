@@ -47,9 +47,11 @@ namespace Cafe.Controllers
             return Json(new { success = true });
         }
 
+        // Named "Submit" (route kept as /Leave/Request) so the method doesn't hide ControllerBase.Request.
         [HttpPost]
+        [ActionName("Request")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Request(int staffId, int leaveTypeId, DateTime fromDate, DateTime toDate, string? reason)
+        public async Task<IActionResult> Submit(int staffId, int leaveTypeId, DateTime fromDate, DateTime toDate, string? reason)
         {
             if (toDate < fromDate) return Json(new { success = false, message = "End date must be on/after the start date." });
             var staff = await _context.Staff.FirstOrDefaultAsync(s => s.Id == staffId);
