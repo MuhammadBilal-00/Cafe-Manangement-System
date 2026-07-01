@@ -35,6 +35,10 @@ namespace Cafe.Models.ViewModels
         [StringLength(100, ErrorMessage = "Department cannot exceed 100 characters")]
         public string? Department { get; set; }
 
+        // Phase 7/10: structured department & designation (org chart) alongside the legacy free-text field.
+        public int? DepartmentId { get; set; }
+        public int? DesignationId { get; set; }
+
         [StringLength(100, ErrorMessage = "Employee ID cannot exceed 100 characters")]
         public string? EmployeeId { get; set; }
 

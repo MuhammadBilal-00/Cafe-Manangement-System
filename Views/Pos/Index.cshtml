@@ -107,11 +107,12 @@
     <div class="card" style="max-width:440px;width:100%;"><div class="card-body">
         <h3 style="margin:0 0 0.75rem;">Split Payment · <span id="payTotal"></span></h3>
         <div id="payLines" style="margin-bottom:0.6rem;"></div>
-        <div style="display:flex;gap:0.4rem;margin-bottom:0.6rem;">
-            <select id="payMethod" class="form-select" style="flex:1;"><option>Cash</option><option>Card</option><option>Wallet</option><option>BankTransfer</option></select>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem;">
+            <select id="payMethod" class="form-select" style="flex:1;" onchange="payMethodChanged()"><option>Cash</option><option>Card</option><option>Wallet</option><option>BankTransfer</option><option value="GiftCard">Gift Card</option><option value="Loyalty">Loyalty Points</option></select>
             <input id="payAmt" type="number" min="0" class="form-control" placeholder="Amount" style="flex:1;">
             <button class="btn btn-secondary" onclick="payAdd()">Add</button>
         </div>
+        <input id="payRef" class="form-control" placeholder="Gift card code" style="display:none;margin-bottom:0.6rem;">
         <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;"><span>Remaining</span><b id="payRemaining"></b></div>
         <div style="display:flex;gap:0.5rem;">
             <button class="btn btn-primary" onclick="posFinalize()"><i class="fas fa-check" style="margin-right:0.4rem;"></i> Complete</button>
@@ -340,10 +341,18 @@
         document.getElementById('payTotal').textContent = money(quote.total);
         renderTenders(); document.getElementById('payModal').style.display = 'flex';
     };
+    window.payMethodChanged = () => {
+        // Gift card needs a code; loyalty auto-fills the balance to redeem (1 pt = Rs.1).
+        const m = document.getElementById('payMethod').value;
+        document.getElementById('payRef').style.display = m === 'GiftCard' ? 'block' : 'none';
+    };
     window.payAdd = () => {
         const amt = parseFloat(document.getElementById('payAmt').value); if (!(amt > 0)) return;
-        tenders.push({ method: document.getElementById('payMethod').value, amount: amt });
-        document.getElementById('payAmt').value = ''; renderTenders();
+        const method = document.getElementById('payMethod').value;
+        const ref = document.getElementById('payRef').value.trim();
+        if (method === 'GiftCard' && !ref) { if (window.ActionCard) ActionCard.error('Gift card', 'Enter the gift card code.'); return; }
+        tenders.push({ method, amount: amt, reference: method === 'GiftCard' ? ref : null });
+        document.getElementById('payAmt').value = ''; document.getElementById('payRef').value = ''; renderTenders();
     };
     function renderTenders() {
         const paid = tenders.reduce((s, t) => s + t.amount, 0);

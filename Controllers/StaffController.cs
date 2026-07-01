@@ -130,6 +130,8 @@ namespace Cafe.Controllers
                     BranchId = model.BranchId,
                     EmploymentType = model.EmploymentType,
                     Department = model.Department,
+                    DepartmentId = model.DepartmentId,
+                    DesignationId = model.DesignationId,
                     EmployeeId = model.EmployeeId,
                     HireDate = DateTime.Now,
                     IsActive = model.IsActive
@@ -183,6 +185,8 @@ namespace Cafe.Controllers
                 BranchId = staff.BranchId,
                 EmploymentType = staff.EmploymentType,
                 Department = staff.Department,
+                DepartmentId = staff.DepartmentId,
+                DesignationId = staff.DesignationId,
                 EmployeeId = staff.EmployeeId,
                 PerformanceRating = staff.PerformanceRating,
                 IsActive = staff.IsActive,
@@ -248,6 +252,8 @@ namespace Cafe.Controllers
                     staff.BranchId = model.BranchId;
                     staff.EmploymentType = model.EmploymentType;
                     staff.Department = model.Department;
+                    staff.DepartmentId = model.DepartmentId;
+                    staff.DesignationId = model.DesignationId;
                     staff.EmployeeId = model.EmployeeId;
                     staff.PerformanceRating = model.PerformanceRating;
                     staff.IsActive = model.IsActive;
@@ -351,6 +357,16 @@ namespace Cafe.Controllers
                 .ToListAsync();
 
             ViewBag.Branches = await GetBranchSelectList();
+
+            // Phase 7/10: org-chart pickers for the staff form.
+            ViewBag.Departments = await _context.Departments.Where(d => d.IsActive)
+                .OrderBy(d => d.Name)
+                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name })
+                .ToListAsync();
+            ViewBag.Designations = await _context.Designations.Where(d => d.IsActive)
+                .OrderBy(d => d.Name)
+                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name })
+                .ToListAsync();
         }
 
         public async Task<IActionResult> ExportCsv()

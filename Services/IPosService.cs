@@ -38,17 +38,20 @@ namespace Cafe.Services
         private readonly IInvoiceService _invoices;
         private readonly IBranchSettingService _branchSettings;
         private readonly ILoyaltyService _loyalty;
+        private readonly IGiftCardService _giftCards;
         private readonly IMemoryCache _cache;
         private readonly ILogger<PosService> _logger;
 
         public PosService(ApplicationDbContext db, IInventoryService inventory, IInvoiceService invoices,
-            IBranchSettingService branchSettings, ILoyaltyService loyalty, IMemoryCache cache, ILogger<PosService> logger)
+            IBranchSettingService branchSettings, ILoyaltyService loyalty, IGiftCardService giftCards,
+            IMemoryCache cache, ILogger<PosService> logger)
         {
             _db = db;
             _inventory = inventory;
             _invoices = invoices;
             _branchSettings = branchSettings;
             _loyalty = loyalty;
+            _giftCards = giftCards;
             _cache = cache;
             _logger = logger;
         }
@@ -95,18 +98,42 @@ namespace Cafe.Services
                 primaryMethod, "Pending", userId, req.TaxRateOverride);
 
             // Record split payments directly (single SaveChanges) and derive PaymentStatus.
+            // Gift-card and loyalty tenders are redeemed against their live balances here, so a
+            // tender only counts for what it could actually cover (never over-credits the bill).
             decimal paid = 0;
             foreach (var p in req.Payments.Where(p => p.Amount > 0))
             {
+                var method = string.IsNullOrWhiteSpace(p.Method) ? "Cash" : p.Method.Trim();
+                var amount = Math.Round(p.Amount, 2);
+                var reference = p.Reference;
+
+                if (method.Equals("GiftCard", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (string.IsNullOrWhiteSpace(p.Reference)) continue;   // no card code → tender ignored
+                    var gr = await _giftCards.RedeemAsync(p.Reference.Trim(), amount, invoice.Id);
+                    if (!gr.Success || gr.Applied <= 0) continue;           // invalid / empty card → contributes nothing
+                    amount = gr.Applied;                                     // only what the card actually covered
+                    reference = p.Reference.Trim();
+                }
+                else if (method.Equals("Loyalty", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!entity.CustomerId.HasValue) continue;              // walk-in has no points
+                    var points = (int)Math.Floor(amount);                   // 1 point = Rs.1
+                    var lr = await _loyalty.RedeemAsync(entity.CustomerId.Value, points, invoice.Id);
+                    if (!lr.ok) continue;                                    // insufficient points → tender ignored
+                    amount = points;
+                    reference = $"{points} pts";
+                }
+
                 _db.Payments.Add(new Payment
                 {
                     InvoiceId = invoice.Id,
-                    Method = string.IsNullOrWhiteSpace(p.Method) ? "Cash" : p.Method,
-                    Amount = Math.Round(p.Amount, 2),
-                    Reference = p.Reference,
+                    Method = method,
+                    Amount = amount,
+                    Reference = reference,
                     PaidAt = DateTime.Now
                 });
-                paid += Math.Round(p.Amount, 2);
+                paid += amount;
             }
 
             var fullyPaid = paid + 0.01m >= invoice.TotalAmount && paid > 0;

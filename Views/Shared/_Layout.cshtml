@@ -13,9 +13,14 @@
         isPlatform
         || Cafe.Services.FeatureCatalog.Core.Contains(key)
         || (planFeatures != null && (planFeatures.Contains("*") || planFeatures.Contains(key)));
+
+    // Phase 10 (i18n): drive the page language + direction from the active culture (Urdu/Arabic = RTL).
+    var uiCulture = System.Globalization.CultureInfo.CurrentUICulture;
+    var isRtl = uiCulture.TextInfo.IsRightToLeft;
+    var pageDir = isRtl ? "rtl" : "ltr";
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@uiCulture.TwoLetterISOLanguageName" dir="@pageDir">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

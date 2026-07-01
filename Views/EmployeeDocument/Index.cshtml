@@ -29,7 +29,8 @@
     <h3 style="margin:0 0 1rem;">New Document</h3>
     <div class="form-group"><label class="form-label">Employee</label><select id="edStaff" class="form-select">@foreach (var s in staff){<option value="@s.Id">@s.User?.Name</option>}</select></div>
     <div class="form-row"><div class="form-group"><label class="form-label">Title</label><input id="edTitle" class="form-control" /></div><div class="form-group"><label class="form-label">Type</label><input id="edType" class="form-control" placeholder="Contract" /></div></div>
-    <div class="form-group"><label class="form-label">File URL</label><input id="edUrl" class="form-control" placeholder="https://…" /></div>
+    <div class="form-group"><label class="form-label">Upload file</label><input type="file" class="form-control" onchange="edUpload(this)" /><small id="edUpStatus" class="caption"></small></div>
+    <div class="form-group"><label class="form-label">File URL</label><input id="edUrl" class="form-control" placeholder="auto-filled after upload, or paste a link" /></div>
     <div class="form-group"><label class="form-label">Expires (optional)</label><input id="edExp" type="date" class="form-control" /></div>
     <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="edSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('edModal').style.display='none'">Cancel</button></div>
 </div></div></div>
@@ -38,6 +39,14 @@
 const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
 function edNew() { document.getElementById('edModal').style.display = 'flex'; }
+async function edUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    const status = document.getElementById('edUpStatus'); status.textContent = 'Uploading…';
+    const fd = new FormData(); fd.append('file', input.files[0]); fd.append('folder', 'employee');
+    const d = await fetch('/File/Upload', { method: 'POST', headers: { 'RequestVerificationToken': _tok }, body: fd }).then(r => r.json());
+    if (d.success) { document.getElementById('edUrl').value = d.url; status.textContent = 'Uploaded ✓'; }
+    else { status.textContent = ''; if (window.ActionCard) ActionCard.error('Upload', d.message); }
+}
 async function edSave() { const exp = document.getElementById('edExp').value; const d = await post('/EmployeeDocument/Save', `id=0&staffId=${document.getElementById('edStaff').value}&title=${encodeURIComponent(document.getElementById('edTitle').value)}&docType=${encodeURIComponent(document.getElementById('edType').value)}&fileUrl=${encodeURIComponent(document.getElementById('edUrl').value)}${exp ? '&expiresAt=' + exp : ''}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Document', d.message); }
 async function edDel(id) { const d = await post('/EmployeeDocument/Delete', 'id=' + id); if (d.success) location.reload(); }
 </script>

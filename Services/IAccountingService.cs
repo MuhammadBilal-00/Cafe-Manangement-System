@@ -59,12 +59,18 @@ namespace Cafe.Services
         {
             var acc = await _db.Accounts.ToDictionaryAsync(a => a.Code, a => a.Id);
             if (!acc.ContainsKey("1000")) return 0; // no chart of accounts yet
-            int Cash = acc["1000"], AR = acc["1100"], Sales = acc["4000"], TaxPay = acc["2100"], OpEx = acc["6000"];
+            int Cash = acc["1000"], AR = acc["1100"], Inventory = acc["1200"], AP = acc["2000"],
+                TaxPay = acc["2100"], Sales = acc["4000"], OpEx = acc["6000"];
 
             var posted = 0;
-            var doneInvoices = await _db.JournalEntries.Where(j => j.SourceType == "Invoice" && j.SourceId != null).Select(j => j.SourceId!.Value).ToListAsync();
-            var doneInvSet = doneInvoices.ToHashSet();
 
+            // Set of already-posted (SourceType, SourceId) pairs to keep every pass idempotent.
+            async Task<HashSet<int>> DoneAsync(string sourceType) =>
+                (await _db.JournalEntries.Where(j => j.SourceType == sourceType && j.SourceId != null)
+                    .Select(j => j.SourceId!.Value).ToListAsync()).ToHashSet();
+
+            // ── Sales invoices: Dr Cash/AR, Cr Sales (+ Cr Tax Payable) ──
+            var doneInvSet = await DoneAsync("Invoice");
             var invoices = await _db.Invoices.Where(i => i.PaymentStatus == "Paid" || i.PaymentStatus == "Pending").ToListAsync();
             foreach (var inv in invoices.Where(i => !doneInvSet.Contains(i.Id)))
             {
@@ -80,7 +86,8 @@ namespace Cafe.Services
                 posted++;
             }
 
-            var doneExp = (await _db.JournalEntries.Where(j => j.SourceType == "Expense" && j.SourceId != null).Select(j => j.SourceId!.Value).ToListAsync()).ToHashSet();
+            // ── Approved expenses: Dr OpEx, Cr Cash ──
+            var doneExp = await DoneAsync("Expense");
             var expenses = await _db.Expenses.Where(e => e.ApprovalStatus == "Approved").ToListAsync();
             foreach (var e in expenses.Where(x => !doneExp.Contains(x.Id)))
             {
@@ -91,6 +98,60 @@ namespace Cafe.Services
                 }, userId);
                 posted++;
             }
+
+            // ── Stock purchases (received/approved): Dr Inventory, Cr Accounts Payable (accrued liability) ──
+            var donePur = await DoneAsync("Purchase");
+            var purchases = await _db.Purchases.Where(p => p.Status == "Received" || p.Status == "Approved").ToListAsync();
+            foreach (var p in purchases.Where(x => !donePur.Contains(x.Id) && x.TotalCost > 0))
+            {
+                await PostJournalAsync(p.BranchId, p.DatePurchased, $"Purchase: {p.SupplierName}", "Purchase", p.Id, new List<(int, decimal, decimal, string?)>
+                {
+                    (Inventory, p.TotalCost, 0, "Stock received"),
+                    (AP, 0, p.TotalCost, p.SupplierName)
+                }, userId);
+                posted++;
+            }
+
+            // ── Supplier payments: Dr Accounts Payable, Cr Cash (settles the liability) ──
+            var donePay = await DoneAsync("SupplierPayment");
+            var supPays = await _db.SupplierPayments.ToListAsync();
+            foreach (var sp in supPays.Where(x => !donePay.Contains(x.Id) && x.Amount > 0))
+            {
+                await PostJournalAsync(sp.BranchId, sp.PaidAt, "Supplier payment", "SupplierPayment", sp.Id, new List<(int, decimal, decimal, string?)>
+                {
+                    (AP, sp.Amount, 0, sp.Reference ?? "Paid to supplier"),
+                    (Cash, 0, sp.Amount, sp.Method)
+                }, userId);
+                posted++;
+            }
+
+            // ── Approved sell returns: Dr Sales (contra-revenue), Cr Cash/AR (refund/credit) ──
+            var doneSR = await DoneAsync("SellReturn");
+            var sellReturns = await _db.SellReturns.Where(r => r.Status == "Approved").ToListAsync();
+            foreach (var r in sellReturns.Where(x => !doneSR.Contains(x.Id) && x.TotalAmount > 0))
+            {
+                var creditAccount = r.CustomerId.HasValue ? AR : Cash; // credit account owed vs. cash refunded
+                await PostJournalAsync(r.BranchId, r.ApprovedAt ?? r.CreatedAt, $"Sell return {r.ReturnNumber}", "SellReturn", r.Id, new List<(int, decimal, decimal, string?)>
+                {
+                    (Sales, r.TotalAmount, 0, "Returned goods"),
+                    (creditAccount, 0, r.TotalAmount, "Customer credit/refund")
+                }, userId);
+                posted++;
+            }
+
+            // ── Approved purchase returns: Dr Accounts Payable, Cr Inventory (stock sent back) ──
+            var donePR = await DoneAsync("PurchaseReturn");
+            var purReturns = await _db.PurchaseReturns.Where(r => r.Status == "Approved").ToListAsync();
+            foreach (var r in purReturns.Where(x => !donePR.Contains(x.Id) && x.TotalAmount > 0))
+            {
+                await PostJournalAsync(r.BranchId, r.ApprovedAt ?? r.CreatedAt, $"Purchase return {r.ReturnNumber}", "PurchaseReturn", r.Id, new List<(int, decimal, decimal, string?)>
+                {
+                    (AP, r.TotalAmount, 0, "Reduced payable"),
+                    (Inventory, 0, r.TotalAmount, "Stock returned")
+                }, userId);
+                posted++;
+            }
+
             return posted;
         }
 

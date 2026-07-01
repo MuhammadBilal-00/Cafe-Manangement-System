@@ -32,7 +32,40 @@ namespace Cafe.Controllers
                 h.Name = name.Trim(); h.Date = date.Date; h.BranchId = branchId; h.IsRecurring = isRecurring;
             }
             await _context.SaveChangesAsync();
-            return Json(new { success = true });
+
+            // Phase 10: stamp "Holiday" attendance so the salary engine pays the day off. Only mark
+            // days not already recorded (a leave/present record wins), scoped to the branch if set.
+            var marked = await StampHolidayAttendanceAsync(date.Date, branchId);
+            return Json(new { success = true, marked });
+        }
+
+        /// <summary>Mark active staff as "Holiday" for a date (idempotent — never overwrites an existing record).</summary>
+        private async Task<int> StampHolidayAttendanceAsync(DateTime date, int? branchId)
+        {
+            var staff = await _context.Staff
+                .Where(s => s.IsActive && (branchId == null || s.BranchId == branchId.Value))
+                .Select(s => new { s.Id, s.BranchId })
+                .ToListAsync();
+            if (staff.Count == 0) return 0;
+
+            var staffIds = staff.Select(s => s.Id).ToList();
+            var already = (await _context.Attendances
+                .Where(a => a.Date == date && staffIds.Contains(a.StaffId))
+                .Select(a => a.StaffId).ToListAsync()).ToHashSet();
+
+            var uid = GetCurrentUserId();
+            var added = 0;
+            foreach (var s in staff.Where(s => !already.Contains(s.Id)))
+            {
+                _context.Attendances.Add(new Attendance
+                {
+                    StaffId = s.Id, BranchId = s.BranchId, Date = date, Status = "Holiday",
+                    TotalHours = 0, OvertimeHours = 0, LateMinutes = 0, CreatedAt = DateTime.Now, MarkedById = uid
+                });
+                added++;
+            }
+            if (added > 0) await _context.SaveChangesAsync();
+            return added;
         }
 
         [HttpPost]

@@ -92,6 +92,7 @@ builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
 builder.Services.AddScoped<IGiftCardService, GiftCardService>();
 builder.Services.AddScoped<ISmsProvider, LoggingSmsProvider>();
 builder.Services.AddScoped<ISmsQueueService, SmsQueueService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 
 // ── Phase 5: accounting + pluggable tax e-invoicing ──
 builder.Services.AddScoped<IAccountingService, AccountingService>();
@@ -108,6 +109,7 @@ builder.Services.AddScoped<Cafe.Services.Billing.IBillingProvider>(sp =>
     sp.GetRequiredService<Cafe.Services.Billing.ManualBillingProvider>());
 
 builder.Services.AddHostedService<EmailBackgroundWorker>();
+builder.Services.AddHostedService<SmsBackgroundWorker>();
 builder.Services.AddHttpContextAccessor();
 
 // Add SignalR for real-time notifications
