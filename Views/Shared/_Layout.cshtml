@@ -361,6 +361,11 @@
                                 <span class="sidebar-link-icon"><i class="fas fa-scale-unbalanced"></i></span>
                                 <span class="sidebar-link-text">Receivables / Payables</span>
                             </a>
+
+                            <a asp-controller="Accounting" asp-action="Index" class="sidebar-link" data-nav="Accounting">
+                                <span class="sidebar-link-icon"><i class="fas fa-book"></i></span>
+                                <span class="sidebar-link-text">Accounting</span>
+                            </a>
                         }
 
                         @if (canFeature(Cafe.Services.FeatureCatalog.Feedback))

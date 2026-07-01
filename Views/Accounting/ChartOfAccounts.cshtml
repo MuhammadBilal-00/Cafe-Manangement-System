@@ -1,0 +1,46 @@
+@model List<Cafe.Models.Account>
+@{
+    ViewData["Title"] = "Chart of Accounts";
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+    (string, string) TypeBadge(string t) => t switch { "Asset" => ("badge-info", t), "Liability" => ("badge-warning", t), "Equity" => ("badge-accent", t), "Income" => ("badge-success", t), _ => ("badge-neutral", t) };
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Chart of Accounts</h1><p class="body-text" style="margin-top:0.25rem;">Your ledger accounts by type.</p></div>
+    <div style="display:flex;gap:0.5rem;"><a asp-action="Index" class="btn btn-ghost"><i class="fas fa-arrow-left" style="margin-right:0.4rem;"></i> Back</a><button class="btn btn-primary" onclick="accEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Account</button></div>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Code</th><th>Name</th><th style="text-align:center;">Type</th><th>Actions</th></tr></thead>
+        <tbody>
+            @foreach (var a in Model)
+            {
+                var b = TypeBadge(a.Type);
+                <tr data-id="@a.Id" data-code="@a.Code" data-name="@a.Name" data-type="@a.Type">
+                    <td style="font-weight:700;font-family:ui-monospace,monospace;">@a.Code</td>
+                    <td>@a.Name @(a.IsSystem ? "<span class=\"caption\">· system</span>" : "")</td>
+                    <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
+                    <td><div style="display:flex;gap:0.4rem;">
+                        <button class="btn btn-ghost btn-sm" onclick="accEditRow(this)"><i class="fas fa-edit"></i></button>
+                        @if (isOwner && !a.IsSystem) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="accDel(@a.Id)"><i class="fas fa-trash"></i></button> }
+                    </div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+<div id="accModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:440px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Account</h3><input type="hidden" id="aId" />
+    <div class="form-row"><div class="form-group"><label class="form-label">Code</label><input id="aCode" class="form-control" placeholder="1500" /></div><div class="form-group"><label class="form-label">Type</label><select id="aType" class="form-select"><option>Asset</option><option>Liability</option><option>Equity</option><option>Income</option><option>Expense</option></select></div></div>
+    <div class="form-group"><label class="form-label">Name</label><input id="aName" class="form-control" /></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="accSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('accModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function accEdit(id, code, name, type) { document.getElementById('aId').value = id; document.getElementById('aCode').value = code || ''; document.getElementById('aName').value = name || ''; document.getElementById('aType').value = type || 'Asset'; document.getElementById('accModal').style.display = 'flex'; }
+function accEditRow(btn) { const r = btn.closest('tr'); accEdit(r.dataset.id, r.dataset.code, r.dataset.name, r.dataset.type); }
+async function accSave() { const d = await post('/Accounting/SaveAccount', `id=${document.getElementById('aId').value || 0}&code=${encodeURIComponent(document.getElementById('aCode').value)}&name=${encodeURIComponent(document.getElementById('aName').value)}&type=${document.getElementById('aType').value}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Account', d.message); }
+async function accDel(id) { const go = async () => { const d = await post('/Accounting/DeleteAccount', 'id=' + id); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Account', d.message); }; window.ActionCard ? ActionCard.confirm('Delete account?', '', go) : (confirm('Delete?') && go()); }
+</script>
+}

@@ -83,6 +83,14 @@ namespace Cafe.Data
         public DbSet<TaxGroup> TaxGroups { get; set; }
         public DbSet<Tax> Taxes { get; set; }
 
+        // Phase 5: accounting
+        public DbSet<Account> Accounts { get; set; }
+        public DbSet<JournalEntry> JournalEntries { get; set; }
+        public DbSet<JournalLine> JournalLines { get; set; }
+        public DbSet<PaymentAccount> PaymentAccounts { get; set; }
+        public DbSet<Budget> Budgets { get; set; }
+        public DbSet<BudgetLine> BudgetLines { get; set; }
+
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
@@ -133,7 +141,31 @@ namespace Cafe.Data
             ConfigurePhase2Menu(modelBuilder);
             ConfigurePhase3Inventory(modelBuilder);
             ConfigurePhase4Sales(modelBuilder);
+            ConfigurePhase5Accounting(modelBuilder);
             ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>Phase 5 (accounting): chart of accounts, journals, payment accounts, budgets.</summary>
+        private void ConfigurePhase5Accounting(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Account>().HasIndex(a => new { a.TenantId, a.Code }).IsUnique();
+            modelBuilder.Entity<Account>().HasOne(a => a.Parent).WithMany().HasForeignKey(a => a.ParentId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Account>().ToTable(t => t.HasCheckConstraint("CK_Account_Type", "[Type] IN ('Asset','Liability','Equity','Income','Expense')"));
+
+            modelBuilder.Entity<JournalEntry>().HasOne<Branch>().WithMany().HasForeignKey(j => j.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<JournalEntry>().ToTable(t => t.HasCheckConstraint("CK_JournalEntry_Status", "[Status] IN ('Draft','Posted','Void')"));
+            // Idempotency for auto-posting: one entry per (source doc).
+            modelBuilder.Entity<JournalEntry>().HasIndex(j => new { j.TenantId, j.SourceType, j.SourceId })
+                .IsUnique().HasFilter("[SourceId] IS NOT NULL");
+
+            modelBuilder.Entity<JournalLine>().HasOne(l => l.JournalEntry).WithMany(j => j.Lines).HasForeignKey(l => l.JournalEntryId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<JournalLine>().HasOne(l => l.Account).WithMany().HasForeignKey(l => l.AccountId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<JournalLine>().HasIndex(l => new { l.TenantId, l.AccountId }); // report aggregates
+
+            modelBuilder.Entity<PaymentAccount>().HasOne(p => p.Account).WithMany().HasForeignKey(p => p.AccountId).OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<BudgetLine>().HasOne(l => l.Budget).WithMany(b => b.Lines).HasForeignKey(l => l.BudgetId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<BudgetLine>().HasOne(l => l.Account).WithMany().HasForeignKey(l => l.AccountId).OnDelete(DeleteBehavior.NoAction);
         }
 
         /// <summary>Phase 4 (sales lifecycle, returns, receivables): quotations, returns, supplier

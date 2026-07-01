@@ -1,0 +1,70 @@
+@using Cafe.Services
+@{
+    ViewData["Title"] = "Financial Statements";
+    var trial = ViewBag.Trial as List<TrialRow> ?? new();
+    var pnl = ViewBag.PnL as PnL;
+    var bs = ViewBag.BalanceSheet as BalanceSheet;
+    DateTime from = ViewBag.From, to = ViewBag.To;
+    var tD = trial.Sum(r => r.Debit); var tC = trial.Sum(r => r.Credit);
+    string m(decimal v) => "Rs. " + v.ToString("N0");
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Financial Statements</h1><p class="body-text" style="margin-top:0.25rem;">Trial Balance · Profit &amp; Loss · Balance Sheet.</p></div>
+    <a asp-action="Index" class="btn btn-ghost"><i class="fas fa-arrow-left" style="margin-right:0.4rem;"></i> Back</a>
+</div>
+<div class="card mb-6"><div class="card-body"><form method="get" style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;">
+    <div class="form-group" style="margin:0;"><label class="form-label">From</label><input type="date" name="from" value="@from.ToString("yyyy-MM-dd")" class="form-control" /></div>
+    <div class="form-group" style="margin:0;"><label class="form-label">To</label><input type="date" name="to" value="@to.ToString("yyyy-MM-dd")" class="form-control" /></div>
+    <button class="btn btn-primary"><i class="fas fa-filter" style="margin-right:0.4rem;"></i> Apply</button>
+</form></div></div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;">
+    <!-- Trial Balance -->
+    <div class="card" style="grid-column:1 / -1;"><div class="card-body">
+        <h2 style="margin:0 0 0.75rem;font-size:1.05rem;">Trial Balance</h2>
+        <div style="overflow-x:auto;"><table class="premium-table">
+            <thead><tr><th>Code</th><th>Account</th><th style="text-align:right;">Debit</th><th style="text-align:right;">Credit</th></tr></thead>
+            <tbody>
+                @if (!trial.Any()) { <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary);">No posted activity in this period. Try Auto-post first.</td></tr> }
+                @foreach (var r in trial)
+                {
+                    <tr><td style="font-family:ui-monospace,monospace;">@r.Code</td><td>@r.Name</td><td style="text-align:right;">@(r.Debit > 0 ? m(r.Debit) : "")</td><td style="text-align:right;">@(r.Credit > 0 ? m(r.Credit) : "")</td></tr>
+                }
+                <tr style="font-weight:800;border-top:2px solid var(--border);"><td colspan="2">Total</td><td style="text-align:right;">@m(tD)</td><td style="text-align:right;">@m(tC)</td></tr>
+                <tr><td colspan="4" style="text-align:center;"><span class="badge @(tD == tC ? "badge-success" : "badge-danger")">@(tD == tC ? "In balance ✓" : "Out of balance")</span></td></tr>
+            </tbody>
+        </table></div>
+    </div></div>
+
+    <!-- P&L -->
+    <div class="card"><div class="card-body">
+        <h2 style="margin:0 0 0.75rem;font-size:1.05rem;">Profit &amp; Loss</h2>
+        <table class="premium-table"><tbody>
+            <tr><td colspan="2" style="font-weight:700;color:var(--text-secondary);">Income</td></tr>
+            @foreach (var l in pnl!.Income) { <tr><td>@l.Name</td><td style="text-align:right;">@m(l.Amount)</td></tr> }
+            <tr style="font-weight:700;"><td>Total income</td><td style="text-align:right;color:#16a34a;">@m(pnl.TotalIncome)</td></tr>
+            <tr><td colspan="2" style="font-weight:700;color:var(--text-secondary);padding-top:0.75rem;">Expenses</td></tr>
+            @foreach (var l in pnl.Expenses) { <tr><td>@l.Name</td><td style="text-align:right;">@m(l.Amount)</td></tr> }
+            <tr style="font-weight:700;"><td>Total expenses</td><td style="text-align:right;color:#dc2626;">@m(pnl.TotalExpense)</td></tr>
+            <tr style="font-weight:800;border-top:2px solid var(--border);"><td>Net profit</td><td style="text-align:right;color:@(pnl.NetProfit >= 0 ? "#16a34a" : "#dc2626");">@m(pnl.NetProfit)</td></tr>
+        </tbody></table>
+    </div></div>
+
+    <!-- Balance Sheet -->
+    <div class="card"><div class="card-body">
+        <h2 style="margin:0 0 0.75rem;font-size:1.05rem;">Balance Sheet</h2>
+        <table class="premium-table"><tbody>
+            <tr><td colspan="2" style="font-weight:700;color:var(--text-secondary);">Assets</td></tr>
+            @foreach (var l in bs!.Assets) { <tr><td>@l.Name</td><td style="text-align:right;">@m(l.Amount)</td></tr> }
+            <tr style="font-weight:700;"><td>Total assets</td><td style="text-align:right;">@m(bs.TotalAssets)</td></tr>
+            <tr><td colspan="2" style="font-weight:700;color:var(--text-secondary);padding-top:0.75rem;">Liabilities</td></tr>
+            @foreach (var l in bs.Liabilities) { <tr><td>@l.Name</td><td style="text-align:right;">@m(l.Amount)</td></tr> }
+            <tr style="font-weight:700;"><td>Total liabilities</td><td style="text-align:right;">@m(bs.TotalLiabilities)</td></tr>
+            <tr><td colspan="2" style="font-weight:700;color:var(--text-secondary);padding-top:0.75rem;">Equity</td></tr>
+            @foreach (var l in bs.Equity) { <tr><td>@l.Name</td><td style="text-align:right;">@m(l.Amount)</td></tr> }
+            <tr><td>Retained earnings (period)</td><td style="text-align:right;">@m(bs.RetainedEarnings)</td></tr>
+            <tr style="font-weight:700;"><td>Total equity</td><td style="text-align:right;">@m(bs.TotalEquity)</td></tr>
+            <tr style="font-weight:800;border-top:2px solid var(--border);"><td>Liabilities + Equity</td><td style="text-align:right;">@m(bs.TotalLiabilities + bs.TotalEquity)</td></tr>
+        </tbody></table>
+    </div></div>
+</div>

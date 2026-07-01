@@ -73,6 +73,11 @@ builder.Services.AddScoped<ISupplyChainService, SupplyChainService>();
 // ── Phase 4: receivables/payables ──
 builder.Services.AddScoped<IReceivablesService, ReceivablesService>();
 
+// ── Phase 5: accounting + pluggable tax e-invoicing ──
+builder.Services.AddScoped<IAccountingService, AccountingService>();
+builder.Services.AddScoped<Cafe.Services.TaxInvoice.PakFbrTaxInvoiceProvider>();
+builder.Services.AddScoped<Cafe.Services.TaxInvoice.ITaxInvoiceProvider, Cafe.Services.TaxInvoice.NullTaxInvoiceProvider>();
+
 // ── SaaS platform services (Phase 0): feature gating, billing, provisioning, branding ──
 builder.Services.AddScoped<IFeatureGate, FeatureGate>();
 builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();

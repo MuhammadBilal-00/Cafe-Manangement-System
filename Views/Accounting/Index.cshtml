@@ -1,0 +1,42 @@
+@{
+    ViewData["Title"] = "Accounting";
+    decimal td = ViewBag.TotalDebit ?? 0m, tc = ViewBag.TotalCredit ?? 0m;
+    bool balanced = td == tc;
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Accounting</h1><p class="body-text" style="margin-top:0.25rem;">Double-entry books — chart of accounts, journals and financial statements.</p></div>
+    <button class="btn btn-primary" onclick="autoPost()"><i class="fas fa-wand-magic-sparkles" style="margin-right:0.5rem;"></i> Auto-post invoices &amp; expenses</button>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="kpi-card"><div class="kpi-icon" style="background:rgba(99,102,241,0.1);color:#6366f1;"><i class="fas fa-sitemap"></i></div><div class="kpi-label">Accounts</div><div class="kpi-value">@ViewBag.AccountCount</div></div>
+    <div class="kpi-card"><div class="kpi-icon" style="background:rgba(212,175,55,0.12);color:var(--accent);"><i class="fas fa-book"></i></div><div class="kpi-label">Journal entries</div><div class="kpi-value">@ViewBag.JournalCount</div></div>
+    <div class="kpi-card"><div class="kpi-icon" style="background:@(balanced ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)");color:@(balanced ? "#16a34a" : "#dc2626");"><i class="fas fa-scale-balanced"></i></div><div class="kpi-label">Ledger balance</div><div class="kpi-value" style="color:@(balanced ? "#16a34a" : "#dc2626");font-size:1.1rem;">@(balanced ? "Balanced ✓" : "Out of balance")</div><div class="caption">Dr Rs. @td.ToString("N0") · Cr Rs. @tc.ToString("N0")</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
+    @foreach (var (ctl, act, icon, title, desc) in new[] {
+        ("Accounting","ChartOfAccounts","fa-sitemap","Chart of Accounts","Manage the CoA"),
+        ("Accounting","Journals","fa-book","Journal Entries","Post & review journals"),
+        ("Accounting","Reports","fa-file-invoice","Financial Statements","Trial Balance · P&L · Balance Sheet"),
+        ("PaymentAccount","Index","fa-building-columns","Payment Accounts","Bank/cash + reconciliation"),
+        ("Budget","Index","fa-chart-pie","Budgets","Budget vs actual")
+    })
+    {
+        <a asp-controller="@ctl" asp-action="@act" class="card" style="text-decoration:none;"><div class="card-body">
+            <div style="width:44px;height:44px;border-radius:12px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;"><i class="fas @icon"></i></div>
+            <div style="font-weight:700;color:var(--text-primary);">@title</div><div class="caption">@desc</div>
+        </div></a>
+    }
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+async function autoPost() {
+    const d = await fetch('/Accounting/AutoPost', { method: 'POST', headers: { 'RequestVerificationToken': _tok } }).then(r => r.json());
+    if (window.ActionCard) ActionCard.success('Auto-post', d.message);
+    setTimeout(() => location.reload(), 900);
+}
+</script>
+}

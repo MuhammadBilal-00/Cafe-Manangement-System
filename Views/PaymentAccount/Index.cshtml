@@ -1,0 +1,54 @@
+@model List<Cafe.Models.PaymentAccount>
+@{
+    ViewData["Title"] = "Payment Accounts";
+    var accounts = ViewBag.Accounts as List<Cafe.Models.Account> ?? new();
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Payment Accounts</h1><p class="body-text" style="margin-top:0.25rem;">Bank &amp; cash registers with reconciliation.</p></div>
+    <button class="btn btn-primary" onclick="paEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Account</button>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Name</th><th>Type</th><th>Ledger account</th><th style="text-align:right;">Opening</th><th style="text-align:right;">Reconciled</th><th>Last reconciled</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any()) { <tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--text-secondary);">No payment accounts yet.</td></tr> }
+            @foreach (var p in Model)
+            {
+                <tr data-id="@p.Id" data-name="@p.Name" data-type="@p.Type" data-acc="@p.AccountId" data-open="@p.OpeningBalance">
+                    <td style="font-weight:600;">@p.Name</td><td>@p.Type</td><td><span class="caption">@(p.Account != null ? p.Account.Code + " " + p.Account.Name : "—")</span></td>
+                    <td style="text-align:right;">Rs. @p.OpeningBalance.ToString("N0")</td><td style="text-align:right;">Rs. @p.ReconciledBalance.ToString("N0")</td>
+                    <td><span class="caption">@(p.LastReconciledAt?.ToString("dd MMM yyyy") ?? "—")</span></td>
+                    <td><div style="display:flex;gap:0.4rem;">
+                        <button class="btn btn-ghost btn-sm" onclick="paEditRow(this)"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-ghost btn-sm" title="Reconcile" onclick="paRec(@p.Id,'@p.Name')"><i class="fas fa-scale-balanced"></i></button>
+                        @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="paDel(@p.Id)"><i class="fas fa-trash"></i></button> }
+                    </div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+<div id="paModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:460px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Payment Account</h3><input type="hidden" id="pId" />
+    <div class="form-row"><div class="form-group"><label class="form-label">Name</label><input id="pName" class="form-control" /></div><div class="form-group"><label class="form-label">Type</label><select id="pType" class="form-select"><option>Cash</option><option>Bank</option><option>Wallet</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Ledger account</label><select id="pAcc" class="form-select"><option value="">— none —</option>@foreach (var a in accounts){<option value="@a.Id">@a.Code — @a.Name</option>}</select></div><div class="form-group"><label class="form-label">Opening balance</label><input id="pOpen" type="number" step="0.01" value="0" class="form-control" /></div></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="paSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('paModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+<div id="recModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:380px;width:100%;"><div class="card-body">
+    <h3 id="recTitle" style="margin:0 0 1rem;">Reconcile</h3><input type="hidden" id="rId" />
+    <div class="form-group"><label class="form-label">Statement balance</label><input id="rBal" type="number" step="0.01" class="form-control" /></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="recSave()">Mark reconciled</button><button class="btn btn-secondary" onclick="document.getElementById('recModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function paEdit(id, name, type, acc, open) { document.getElementById('pId').value = id; document.getElementById('pName').value = name || ''; document.getElementById('pType').value = type || 'Cash'; document.getElementById('pAcc').value = acc || ''; document.getElementById('pOpen').value = open || 0; document.getElementById('paModal').style.display = 'flex'; }
+function paEditRow(b) { const r = b.closest('tr'); paEdit(r.dataset.id, r.dataset.name, r.dataset.type, r.dataset.acc, r.dataset.open); }
+async function paSave() { const acc = document.getElementById('pAcc').value; const d = await post('/PaymentAccount/Save', `id=${document.getElementById('pId').value || 0}&name=${encodeURIComponent(document.getElementById('pName').value)}&type=${document.getElementById('pType').value}${acc ? '&accountId=' + acc : ''}&openingBalance=${document.getElementById('pOpen').value}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Account', d.message); }
+function paRec(id, name) { document.getElementById('rId').value = id; document.getElementById('recTitle').textContent = 'Reconcile ' + name; document.getElementById('recModal').style.display = 'flex'; }
+async function recSave() { const d = await post('/PaymentAccount/Reconcile', `id=${document.getElementById('rId').value}&statementBalance=${document.getElementById('rBal').value}`); if (d.success) location.reload(); }
+async function paDel(id) { const go = async () => { const d = await post('/PaymentAccount/Delete', 'id=' + id); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Delete account?', '', go) : (confirm('Delete?') && go()); }
+</script>
+}

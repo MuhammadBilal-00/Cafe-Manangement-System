@@ -23,6 +23,7 @@ namespace Cafe.Data
             await EnsurePlatformAdminAsync(context, authService);
             await EnsureTenantsHavePlanAsync(context); // any plan-less tenant (e.g. the migration's Demo) → Pro
             await EnsureWalkInCustomersAsync(context); // Phase 1: a Walk-In customer per tenant
+            await EnsureChartOfAccountsAsync(context); // Phase 5: default CoA per tenant
 
             // If real tenant data already exists, don't seed demo data.
             if (await context.Users.AnyAsync(u => u.Role != "PlatformAdmin"))
@@ -516,6 +517,34 @@ namespace Cafe.Data
             if (pro == null) return;
             foreach (var t in planless) t.PlanId = pro.Id;
             await context.SaveChangesAsync();
+        }
+
+        /// <summary>Phase 5: seed a default double-entry chart of accounts for any tenant that has none.</summary>
+        private static async Task EnsureChartOfAccountsAsync(ApplicationDbContext context)
+        {
+            var defaults = new (string Code, string Name, string Type)[]
+            {
+                ("1000", "Cash", "Asset"),
+                ("1010", "Bank", "Asset"),
+                ("1100", "Accounts Receivable", "Asset"),
+                ("1200", "Inventory", "Asset"),
+                ("2000", "Accounts Payable", "Liability"),
+                ("2100", "Tax Payable", "Liability"),
+                ("3000", "Owner's Equity", "Equity"),
+                ("4000", "Sales Revenue", "Income"),
+                ("5000", "Cost of Goods Sold", "Expense"),
+                ("6000", "Operating Expenses", "Expense"),
+                ("6100", "Payroll Expense", "Expense"),
+            };
+
+            var tenantIds = await context.Tenants.Select(t => t.Id).ToListAsync();
+            foreach (var tid in tenantIds)
+            {
+                if (await context.Accounts.AnyAsync(a => a.TenantId == tid)) continue;
+                foreach (var d in defaults)
+                    context.Accounts.Add(new Account { TenantId = tid, Code = d.Code, Name = d.Name, Type = d.Type, IsSystem = true, IsActive = true });
+                await context.SaveChangesAsync();
+            }
         }
 
         /// <summary>Phase 1: guarantee every tenant has a "Walk-In Customer" for optional-customer POS sales.</summary>
