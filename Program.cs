@@ -93,6 +93,7 @@ builder.Services.AddScoped<IGiftCardService, GiftCardService>();
 builder.Services.AddScoped<ISmsProvider, LoggingSmsProvider>();
 builder.Services.AddScoped<ISmsQueueService, SmsQueueService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IDemoDataService, DemoDataService>();
 
 // ── Phase 5: accounting + pluggable tax e-invoicing ──
 builder.Services.AddScoped<IAccountingService, AccountingService>();

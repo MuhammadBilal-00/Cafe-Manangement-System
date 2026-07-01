@@ -1,0 +1,42 @@
+@{
+    ViewData["Title"] = "Demo Data";
+}
+<div style="max-width:720px;">
+    <h1 class="page-title" style="margin:0 0 0.25rem;">Seed Demo Data</h1>
+    <p class="body-text" style="margin-bottom:1.5rem;">
+        Populates every module (menu depth, tables, supply chain, sales &amp; returns, accounting, marketing,
+        HR, essentials, logistics) with realistic sample records so each page shows content. It is
+        <b>idempotent</b> — a module is only filled if it is currently empty, so it is safe to run again.
+    </p>
+    <div class="card"><div class="card-body">
+        <button id="seedBtn" class="btn btn-primary btn-lg" onclick="runSeed()">
+            <i class="fas fa-database" style="margin-right:0.5rem;"></i> Seed demo data now
+        </button>
+        <div id="seedResult" style="margin-top:1.25rem;display:none;">
+            <h3 style="margin:0 0 0.5rem;font-size:1rem;">Result</h3>
+            <ul id="seedLog" style="font-family:ui-monospace,monospace;font-size:0.85rem;line-height:1.7;list-style:none;padding:0;margin:0;"></ul>
+        </div>
+    </div></div>
+</div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+async function runSeed() {
+    const btn = document.getElementById('seedBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:0.5rem;"></i> Seeding…';
+    try {
+        const d = await fetch('/Demo/Seed', { method: 'POST', headers: { 'RequestVerificationToken': _tok } }).then(r => r.json());
+        const ul = document.getElementById('seedLog');
+        ul.innerHTML = (d.log || []).map(l => {
+            const color = l.startsWith('✓') ? '#16a34a' : l.startsWith('✗') ? '#dc2626' : 'var(--text-secondary)';
+            return `<li style="color:${color};">${l}</li>`;
+        }).join('');
+        document.getElementById('seedResult').style.display = 'block';
+        if (window.ActionCard) ActionCard.success('Demo data', 'Seeding complete — open the module pages to see it.');
+    } catch (e) {
+        if (window.ActionCard) ActionCard.error('Demo data', 'Seeding failed: ' + e);
+    }
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-database" style="margin-right:0.5rem;"></i> Seed demo data now';
+}
+</script>
+}
