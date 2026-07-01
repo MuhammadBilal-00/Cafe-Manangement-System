@@ -1,0 +1,61 @@
+@model List<Cafe.Models.TaxGroup>
+@{
+    ViewData["Title"] = "Tax Groups";
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Tax Groups</h1><p class="body-text" style="margin-top:0.25rem;">Stack multiple taxes (compound applies on top of the running total).</p></div>
+    <button class="btn btn-primary" onclick="tgEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Group</button>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem;">
+    @if (!Model.Any()) { <div class="card"><div class="card-body" style="text-align:center;padding:2.5rem;color:var(--text-secondary);">No tax groups yet.</div></div> }
+    @foreach (var g in Model)
+    {
+        <div class="card"><div class="card-body">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div><h3 style="margin:0;font-size:1.05rem;">@g.Name</h3><div class="caption">@(g.IsActive ? "active" : "hidden")</div></div>
+                <div style="display:flex;gap:0.3rem;">
+                    <button class="btn btn-ghost btn-sm" onclick="tgEdit(@g.Id,'@g.Name',@g.IsActive.ToString().ToLower())"><i class="fas fa-edit"></i></button>
+                    @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="tgDel(@g.Id)"><i class="fas fa-trash"></i></button> }
+                </div>
+            </div>
+            <ul style="list-style:none;padding:0;margin:0.75rem 0;">
+                @foreach (var t in g.Taxes.OrderBy(x => x.SortOrder))
+                {
+                    <li style="display:flex;justify-content:space-between;align-items:center;padding:0.35rem 0;border-bottom:1px solid var(--border-light);">
+                        <span>@t.Name <span class="caption">@t.Rate.ToString("0.##")%@(t.IsCompound ? " · compound" : "")</span></span>
+                        <span style="display:flex;gap:0.3rem;">
+                            <button class="btn btn-ghost btn-sm" onclick="txEdit(@t.Id,@g.Id,'@t.Name',@t.Rate,@t.IsCompound.ToString().ToLower(),@t.SortOrder)"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="txDel(@t.Id)"><i class="fas fa-xmark"></i></button>
+                        </span>
+                    </li>
+                }
+            </ul>
+            <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="txEdit(0,@g.Id)"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> Add tax</button>
+        </div></div>
+    }
+</div>
+<div id="tgModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:400px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Tax Group</h3><input type="hidden" id="tgId" />
+    <div class="form-group"><label class="form-label">Name</label><input id="tgName" class="form-control" placeholder="GST+PST" /></div>
+    <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="tgActive" checked /> Active</label></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="tgSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('tgModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+<div id="txModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:400px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Tax</h3><input type="hidden" id="txId" /><input type="hidden" id="txGroupId" />
+    <div class="form-row"><div class="form-group"><label class="form-label">Name</label><input id="txName" class="form-control" /></div><div class="form-group"><label class="form-label">Rate %</label><input id="txRate" type="number" step="0.01" class="form-control" /></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Sort</label><input id="txSort" type="number" value="0" class="form-control" /></div><div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;margin-top:1.8rem;"><input type="checkbox" id="txCompound" /> Compound</label></div></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="txSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('txModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function tgEdit(id, name, active) { document.getElementById('tgId').value = id; document.getElementById('tgName').value = name || ''; document.getElementById('tgActive').checked = active !== false; document.getElementById('tgModal').style.display = 'flex'; }
+async function tgSave() { const d = await post('/TaxGroup/SaveGroup', `id=${document.getElementById('tgId').value || 0}&name=${encodeURIComponent(document.getElementById('tgName').value)}&isActive=${document.getElementById('tgActive').checked}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Tax group', d.message); }
+async function tgDel(id) { const go = async () => { const d = await post('/TaxGroup/DeleteGroup', 'id=' + id); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Delete group?', 'Its taxes are removed too.', go) : (confirm('Delete?') && go()); }
+function txEdit(id, gid, name, rate, comp, sort) { document.getElementById('txId').value = id; document.getElementById('txGroupId').value = gid; document.getElementById('txName').value = name || ''; document.getElementById('txRate').value = rate ?? 0; document.getElementById('txCompound').checked = comp === true; document.getElementById('txSort').value = sort ?? 0; document.getElementById('txModal').style.display = 'flex'; }
+async function txSave() { const d = await post('/TaxGroup/SaveTax', `id=${document.getElementById('txId').value || 0}&taxGroupId=${document.getElementById('txGroupId').value}&name=${encodeURIComponent(document.getElementById('txName').value)}&rate=${document.getElementById('txRate').value}&isCompound=${document.getElementById('txCompound').checked}&sortOrder=${document.getElementById('txSort').value}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Tax', d.message); }
+async function txDel(id) { const d = await post('/TaxGroup/DeleteTax', 'id=' + id); if (d.success) location.reload(); }
+</script>
+}

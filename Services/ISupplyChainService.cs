@@ -14,6 +14,11 @@ namespace Cafe.Services
         Task<(bool ok, string message)> CompleteTransferAsync(int transferId, string performedBy);
         Task<(bool ok, string message)> ApproveAdjustmentAsync(int adjustmentId, int approverId, string performedBy);
         Task<(bool ok, string message)> CompleteProductionAsync(int productionId, string performedBy);
+
+        /// <summary>Phase 4: approve a sell return — restock the returned goods (AR credit is derived).</summary>
+        Task<(bool ok, string message)> ApproveSellReturnAsync(int sellReturnId, int approverId, string performedBy);
+        /// <summary>Phase 4: approve a purchase return — remove the returned goods (AP is reduced).</summary>
+        Task<(bool ok, string message)> ApprovePurchaseReturnAsync(int purchaseReturnId, int approverId, string performedBy);
     }
 
     public class SupplyChainService : ISupplyChainService
@@ -165,6 +170,67 @@ namespace Cafe.Services
                 await tx.RollbackAsync();
                 _logger.LogError(ex, "Production {Id} failed", productionId);
                 return (false, "Production failed — no stock was changed.");
+            }
+        }
+
+        public async Task<(bool, string)> ApproveSellReturnAsync(int sellReturnId, int approverId, string performedBy)
+        {
+            var ret = await _db.SellReturns.Include(r => r.Lines).ThenInclude(l => l.InventoryItem)
+                .FirstOrDefaultAsync(r => r.Id == sellReturnId);
+            if (ret == null) return (false, "Return not found.");
+            if (ret.Status != "Pending") return (false, "This return is already resolved.");
+
+            await using var tx = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var line in ret.Lines)
+                {
+                    if (line.InventoryItem == null || line.InventoryItem.BranchId != ret.BranchId)
+                        { await tx.RollbackAsync(); return (false, "A line references an item not in this branch."); }
+                    if (line.Quantity > 0)
+                        await MoveAsync(line.InventoryItemId, line.Quantity, "Sell Return", $"Sell return #{ret.Id}", performedBy);
+                }
+                ret.Status = "Approved"; ret.ApprovedById = approverId; ret.ApprovedAt = DateTime.Now;
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+                return (true, "Sell return approved — goods restocked and customer credited.");
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Sell return {Id} failed", sellReturnId);
+                return (false, "Return failed — nothing changed.");
+            }
+        }
+
+        public async Task<(bool, string)> ApprovePurchaseReturnAsync(int purchaseReturnId, int approverId, string performedBy)
+        {
+            var ret = await _db.PurchaseReturns.Include(r => r.Lines).ThenInclude(l => l.InventoryItem)
+                .FirstOrDefaultAsync(r => r.Id == purchaseReturnId);
+            if (ret == null) return (false, "Return not found.");
+            if (ret.Status != "Pending") return (false, "This return is already resolved.");
+
+            await using var tx = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var line in ret.Lines)
+                {
+                    if (line.InventoryItem == null || line.InventoryItem.BranchId != ret.BranchId)
+                        { await tx.RollbackAsync(); return (false, "A line references an item not in this branch."); }
+                    if (line.Quantity <= 0) continue;
+                    if (!await MoveAsync(line.InventoryItemId, -line.Quantity, "Purchase Return", $"Purchase return #{ret.Id}", performedBy))
+                        { await tx.RollbackAsync(); return (false, $"Insufficient stock of {line.InventoryItem.Name} to return."); }
+                }
+                ret.Status = "Approved"; ret.ApprovedById = approverId; ret.ApprovedAt = DateTime.Now;
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+                return (true, "Purchase return approved — goods removed and payable reduced.");
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Purchase return {Id} failed", purchaseReturnId);
+                return (false, "Return failed — nothing changed.");
             }
         }
 

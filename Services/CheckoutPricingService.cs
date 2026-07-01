@@ -30,7 +30,7 @@ namespace Cafe.Services
         /// optional editable tax rate that overrides the branch default at the register.
         /// </summary>
         Task<CheckoutPricing> ComputePricingAsync(int branchId, decimal subtotal, string? promoCode, int? partnershipId,
-            decimal packingCharge = 0, decimal shippingCharge = 0, decimal? taxRateOverride = null);
+            decimal packingCharge = 0, decimal shippingCharge = 0, decimal? taxRateOverride = null, int? taxGroupId = null);
     }
 
     public class CheckoutPricingService : ICheckoutPricingService
@@ -163,7 +163,7 @@ namespace Cafe.Services
         }
 
         public async Task<CheckoutPricing> ComputePricingAsync(int branchId, decimal subtotal, string? promoCode, int? partnershipId,
-            decimal packingCharge = 0, decimal shippingCharge = 0, decimal? taxRateOverride = null)
+            decimal packingCharge = 0, decimal shippingCharge = 0, decimal? taxRateOverride = null, int? taxGroupId = null)
         {
             var pricing = new CheckoutPricing { Subtotal = Math.Round(subtotal, 2) };
 
@@ -205,10 +205,28 @@ namespace Cafe.Services
             pricing.ShippingCharge = Math.Round(Math.Max(0, shippingCharge), 2);
             var taxableBase = afterDiscounts + pricing.PackingCharge + pricing.ShippingCharge;
 
-            // ── 4. Tax (editable at the register, else the branch default) ──
-            var setting = await _branchSettings.GetOrCreateAsync(branchId);
-            pricing.TaxRate = taxRateOverride.HasValue ? Math.Max(0, taxRateOverride.Value) : setting.TaxRatePercent;
-            pricing.TaxAmount = Math.Round(taxableBase * (pricing.TaxRate / 100m), 2);
+            // ── 4. Tax — a tax group (possibly compound), else editable rate, else the branch default ──
+            if (taxGroupId.HasValue)
+            {
+                var taxes = await _context.Taxes.Where(t => t.TaxGroupId == taxGroupId.Value)
+                    .OrderBy(t => t.SortOrder).ThenBy(t => t.Id).ToListAsync();
+                decimal running = taxableBase, totalTax = 0;
+                foreach (var t in taxes)
+                {
+                    var basis = t.IsCompound ? running : taxableBase;
+                    var amt = Math.Round(basis * (t.Rate / 100m), 2);
+                    totalTax += amt;
+                    running += amt;
+                }
+                pricing.TaxAmount = Math.Round(totalTax, 2);
+                pricing.TaxRate = taxableBase > 0 ? Math.Round(totalTax / taxableBase * 100m, 2) : 0;
+            }
+            else
+            {
+                var setting = await _branchSettings.GetOrCreateAsync(branchId);
+                pricing.TaxRate = taxRateOverride.HasValue ? Math.Max(0, taxRateOverride.Value) : setting.TaxRatePercent;
+                pricing.TaxAmount = Math.Round(taxableBase * (pricing.TaxRate / 100m), 2);
+            }
 
             pricing.Total = Math.Round(taxableBase + pricing.TaxAmount, 2);
             return pricing;

@@ -1,0 +1,85 @@
+@{
+    ViewData["Title"] = "Receivables & Payables";
+    var customers = ViewBag.Customers as List<Cafe.Services.DueRow> ?? new();
+    var suppliers = ViewBag.Suppliers as List<Cafe.Services.DueRow> ?? new();
+    var arTotal = customers.Sum(c => c.Due);
+    var apTotal = suppliers.Sum(s => s.Due);
+    string money(decimal v) => "Rs. " + v.ToString("N0");
+}
+
+<div style="margin-bottom:1.5rem;">
+    <h1 class="page-title" style="margin:0;">Receivables &amp; Payables</h1>
+    <p class="body-text" style="margin-top:0.25rem;">Who owes you (AR) and who you owe (AP). Record payments to settle balances.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="kpi-card"><div class="kpi-icon" style="background:rgba(34,197,94,0.1);color:#16a34a;"><i class="fas fa-hand-holding-dollar"></i></div><div class="kpi-label">Receivable (customers owe)</div><div class="kpi-value" style="color:#16a34a;">@money(arTotal)</div></div>
+    <div class="kpi-card"><div class="kpi-icon" style="background:rgba(239,68,68,0.1);color:#dc2626;"><i class="fas fa-file-invoice"></i></div><div class="kpi-label">Payable (you owe suppliers)</div><div class="kpi-value" style="color:#dc2626;">@money(apTotal)</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;">
+    <div class="card"><div class="card-body">
+        <h2 style="margin:0 0 0.75rem;font-size:1.05rem;">Customer Receivables (AR)</h2>
+        <div style="overflow-x:auto;"><table class="premium-table">
+            <thead><tr><th>Customer</th><th style="text-align:right;">Due</th><th></th></tr></thead>
+            <tbody>
+                @if (!customers.Any()) { <tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--text-secondary);">No outstanding receivables.</td></tr> }
+                @foreach (var c in customers)
+                {
+                    <tr>
+                        <td>@c.Name <span class="caption">@c.Contact</span></td>
+                        <td style="text-align:right;font-weight:700;">@money(c.Due)</td>
+                        <td style="text-align:right;"><button class="btn btn-primary btn-sm" onclick="recv(@c.Id,'@c.Name',@c.Due)">Receive</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table></div>
+    </div></div>
+
+    <div class="card"><div class="card-body">
+        <h2 style="margin:0 0 0.75rem;font-size:1.05rem;">Supplier Payables (AP)</h2>
+        <div style="overflow-x:auto;"><table class="premium-table">
+            <thead><tr><th>Supplier</th><th style="text-align:right;">Due</th><th></th></tr></thead>
+            <tbody>
+                @if (!suppliers.Any()) { <tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--text-secondary);">No outstanding payables.</td></tr> }
+                @foreach (var s in suppliers)
+                {
+                    <tr>
+                        <td>@s.Name <span class="caption">@s.Contact</span></td>
+                        <td style="text-align:right;font-weight:700;">@money(s.Due)</td>
+                        <td style="text-align:right;"><button class="btn btn-primary btn-sm" onclick="pay(@s.Id,'@s.Name',@s.Due)">Pay</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table></div>
+    </div></div>
+</div>
+
+<div id="payModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:400px;width:100%;"><div class="card-body">
+        <h3 id="pmTitle" style="margin:0 0 1rem;"></h3>
+        <input type="hidden" id="pmId" /><input type="hidden" id="pmKind" />
+        <div class="form-group"><label class="form-label">Amount (Rs.)</label><input id="pmAmt" type="number" min="0.01" step="0.01" class="form-control" /></div>
+        <div class="form-group"><label class="form-label">Method</label><select id="pmMethod" class="form-select"><option>Cash</option><option>Card</option><option>BankTransfer</option></select></div>
+        <div class="form-group"><label class="form-label">Reference (optional)</label><input id="pmRef" class="form-control" /></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="pmSave()">Record</button><button class="btn btn-secondary" onclick="document.getElementById('payModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+function open_(kind, id, name, due) { document.getElementById('pmKind').value = kind; document.getElementById('pmId').value = id; document.getElementById('pmAmt').value = due; document.getElementById('pmTitle').textContent = (kind === 'cust' ? 'Receive from ' : 'Pay ') + name; document.getElementById('payModal').style.display = 'flex'; }
+window.recv = (id, n, due) => open_('cust', id, n, due);
+window.pay = (id, n, due) => open_('supp', id, n, due);
+window.pmSave = async () => {
+    const kind = document.getElementById('pmKind').value, id = document.getElementById('pmId').value;
+    const url = kind === 'cust' ? '/Receivables/ReceiveCustomerPayment' : '/Receivables/RecordSupplierPayment';
+    const idField = kind === 'cust' ? 'customerId' : 'supplierId';
+    const body = `${idField}=${id}&amount=${document.getElementById('pmAmt').value}&method=${document.getElementById('pmMethod').value}&reference=${encodeURIComponent(document.getElementById('pmRef').value)}`;
+    const d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body }).then(r => r.json());
+    if (window.ActionCard) d.success ? ActionCard.success('Payment', d.message) : ActionCard.error('Payment', d.message);
+    if (d.success) location.reload();
+};
+</script>
+}

@@ -70,6 +70,9 @@ builder.Services.AddScoped<IPosService, PosService>();
 // ── Phase 3: inventory & supply chain ──
 builder.Services.AddScoped<ISupplyChainService, SupplyChainService>();
 
+// ── Phase 4: receivables/payables ──
+builder.Services.AddScoped<IReceivablesService, ReceivablesService>();
+
 // ── SaaS platform services (Phase 0): feature gating, billing, provisioning, branding ──
 builder.Services.AddScoped<IFeatureGate, FeatureGate>();
 builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();

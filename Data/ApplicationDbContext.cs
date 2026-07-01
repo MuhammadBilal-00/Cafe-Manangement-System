@@ -72,6 +72,17 @@ namespace Cafe.Data
         public DbSet<ProductionOrder> ProductionOrders { get; set; }
         public DbSet<ProductionInput> ProductionInputs { get; set; }
 
+        // Phase 4: sales lifecycle, returns, receivables
+        public DbSet<Quotation> Quotations { get; set; }
+        public DbSet<QuotationItem> QuotationItems { get; set; }
+        public DbSet<SellReturn> SellReturns { get; set; }
+        public DbSet<SellReturnLine> SellReturnLines { get; set; }
+        public DbSet<PurchaseReturn> PurchaseReturns { get; set; }
+        public DbSet<PurchaseReturnLine> PurchaseReturnLines { get; set; }
+        public DbSet<SupplierPayment> SupplierPayments { get; set; }
+        public DbSet<TaxGroup> TaxGroups { get; set; }
+        public DbSet<Tax> Taxes { get; set; }
+
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
@@ -121,7 +132,45 @@ namespace Cafe.Data
             ConfigurePhase1Pos(modelBuilder);
             ConfigurePhase2Menu(modelBuilder);
             ConfigurePhase3Inventory(modelBuilder);
+            ConfigurePhase4Sales(modelBuilder);
             ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>Phase 4 (sales lifecycle, returns, receivables): quotations, returns, supplier
+        /// payments, tax groups. NoAction/SetNull into hubs; child lines cascade from their parent.</summary>
+        private void ConfigurePhase4Sales(ModelBuilder modelBuilder)
+        {
+            // Quotations
+            modelBuilder.Entity<Quotation>().HasIndex(q => new { q.TenantId, q.QuotationNumber }).IsUnique();
+            modelBuilder.Entity<Quotation>().HasOne(q => q.Branch).WithMany().HasForeignKey(q => q.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Quotation>().HasOne(q => q.Customer).WithMany().HasForeignKey(q => q.CustomerId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Quotation>().ToTable(t => t.HasCheckConstraint("CK_Quotation_Status", "[Status] IN ('Draft','Sent','Accepted','Converted','Expired','Cancelled')"));
+            modelBuilder.Entity<QuotationItem>().HasOne(i => i.Quotation).WithMany(q => q.Items).HasForeignKey(i => i.QuotationId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<QuotationItem>().HasOne(i => i.MenuItem).WithMany().HasForeignKey(i => i.MenuItemId).OnDelete(DeleteBehavior.NoAction);
+
+            // Sell returns
+            modelBuilder.Entity<SellReturn>().HasIndex(r => new { r.TenantId, r.ReturnNumber }).IsUnique();
+            modelBuilder.Entity<SellReturn>().HasOne(r => r.Branch).WithMany().HasForeignKey(r => r.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<SellReturn>().HasOne(r => r.Customer).WithMany().HasForeignKey(r => r.CustomerId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<SellReturn>().ToTable(t => t.HasCheckConstraint("CK_SellReturn_Status", "[Status] IN ('Pending','Approved','Rejected')"));
+            modelBuilder.Entity<SellReturnLine>().HasOne(l => l.SellReturn).WithMany(r => r.Lines).HasForeignKey(l => l.SellReturnId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<SellReturnLine>().HasOne(l => l.InventoryItem).WithMany().HasForeignKey(l => l.InventoryItemId).OnDelete(DeleteBehavior.NoAction);
+
+            // Purchase returns
+            modelBuilder.Entity<PurchaseReturn>().HasIndex(r => new { r.TenantId, r.ReturnNumber }).IsUnique();
+            modelBuilder.Entity<PurchaseReturn>().HasOne(r => r.Branch).WithMany().HasForeignKey(r => r.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<PurchaseReturn>().HasOne(r => r.Supplier).WithMany().HasForeignKey(r => r.SupplierId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<PurchaseReturn>().ToTable(t => t.HasCheckConstraint("CK_PurchaseReturn_Status", "[Status] IN ('Pending','Approved','Rejected')"));
+            modelBuilder.Entity<PurchaseReturnLine>().HasOne(l => l.PurchaseReturn).WithMany(r => r.Lines).HasForeignKey(l => l.PurchaseReturnId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PurchaseReturnLine>().HasOne(l => l.InventoryItem).WithMany().HasForeignKey(l => l.InventoryItemId).OnDelete(DeleteBehavior.NoAction);
+
+            // Supplier payments (AP)
+            modelBuilder.Entity<SupplierPayment>().HasOne(p => p.Supplier).WithMany().HasForeignKey(p => p.SupplierId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<SupplierPayment>().HasIndex(p => p.SupplierId);
+
+            // Tax groups
+            modelBuilder.Entity<TaxGroup>().HasIndex(g => new { g.TenantId, g.Name }).IsUnique();
+            modelBuilder.Entity<Tax>().HasOne(t => t.TaxGroup).WithMany(g => g.Taxes).HasForeignKey(t => t.TaxGroupId).OnDelete(DeleteBehavior.Cascade);
         }
 
         /// <summary>Phase 3 (inventory &amp; supply chain): transfers, adjustments, production.

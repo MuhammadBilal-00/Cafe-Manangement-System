@@ -1,0 +1,71 @@
+@model List<Cafe.Models.PurchaseReturn>
+@{
+    ViewData["Title"] = "Purchase Returns";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new();
+    (string, string) Badge(string s) => s switch { "Approved" => ("badge-success", s), "Rejected" => ("badge-danger", s), _ => ("badge-warning", s) };
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Purchase Returns</h1><p class="body-text" style="margin-top:0.25rem;">Return goods to a supplier. Approving removes the stock and reduces what you owe.</p></div>
+    <button class="btn btn-primary" onclick="prNew()"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Return</button>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Number</th><th>Branch</th><th>Supplier</th><th style="text-align:center;">Lines</th><th style="text-align:right;">Value</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any()) { <tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--text-secondary);">No purchase returns yet.</td></tr> }
+            @foreach (var r in Model)
+            {
+                var b = Badge(r.Status);
+                <tr>
+                    <td style="font-weight:600;">@r.ReturnNumber</td><td>@r.Branch?.Name</td><td>@(r.Supplier?.Name ?? "—")</td><td style="text-align:center;">@r.Lines.Count</td>
+                    <td style="text-align:right;">Rs. @r.TotalAmount.ToString("N0")</td>
+                    <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
+                    <td>@if (r.Status == "Pending"){<div style="display:flex;gap:0.4rem;"><button class="btn btn-primary btn-sm" onclick="prApprove(@r.Id)">Approve</button><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="prReject(@r.Id)">Reject</button></div>}</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+<div id="prModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:560px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body">
+        <h3 style="margin:0 0 1rem;">New Purchase Return</h3>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Branch</label><select id="prBranch" class="form-select" onchange="prLoad()">@foreach (var b in branches){<option value="@b.Id">@b.Name</option>}</select></div>
+            <div class="form-group"><label class="form-label">Supplier</label><select id="prSupplier" class="form-select"></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Reason</label><input id="prReason" class="form-control" placeholder="e.g. damaged on arrival" /></div>
+        <label class="form-label">Items returned (removed from stock)</label>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;">
+            <select id="prItem" class="form-select" style="flex:1;"></select>
+            <input id="prQty" type="number" min="0.01" step="0.01" value="1" class="form-control" style="width:80px;" title="qty">
+            <input id="prCost" type="number" min="0" step="0.01" value="0" class="form-control" style="width:100px;" title="cost/unit">
+            <button class="btn btn-secondary" onclick="prAdd()">Add</button>
+        </div>
+        <div id="prLines" style="margin-bottom:0.5rem;"></div>
+        <div class="caption" id="prTot" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="prSave()">Create</button><button class="btn btn-secondary" onclick="document.getElementById('prModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+let items = [], lines = [], suppliers = [];
+const money = v => 'Rs. ' + Math.round(v).toLocaleString();
+async function prLoad() {
+    const bid = document.getElementById('prBranch').value;
+    items = await fetch('/PurchaseReturn/GetItems?branchId=' + bid).then(r => r.json());
+    if (!suppliers.length) suppliers = await fetch('/PurchaseReturn/GetSuppliers').then(r => r.json());
+    document.getElementById('prItem').innerHTML = items.map(i => `<option value="${i.id}" data-cost="${i.cost}">${i.name} (${i.qty} ${i.unit})</option>`).join('');
+    document.getElementById('prSupplier').innerHTML = '<option value="">— none —</option>' + suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
+document.addEventListener('change', e => { if (e.target.id === 'prItem') document.getElementById('prCost').value = e.target.selectedOptions[0].dataset.cost; });
+function render() { const m = Object.fromEntries(items.map(i => [i.id, i])); document.getElementById('prLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${l.quantity}× ${m[l.inventoryItemId]?.name} @@ ${money(l.unitCost)}</span><a href="javascript:void(0)" onclick="prDel(${x})" style="color:#dc2626;">×</a></div>`).join(''); document.getElementById('prTot').textContent = 'Value ' + money(lines.reduce((s, l) => s + l.quantity * l.unitCost, 0)); }
+window.prNew = async () => { lines = []; render(); await prLoad(); document.getElementById('prModal').style.display = 'flex'; };
+window.prAdd = () => { const id = parseInt(document.getElementById('prItem').value); const q = parseFloat(document.getElementById('prQty').value); const c = parseFloat(document.getElementById('prCost').value) || 0; if (!id || !(q > 0)) return; lines.push({ inventoryItemId: id, quantity: q, unitCost: c }); render(); };
+window.prDel = i => { lines.splice(i, 1); render(); };
+window.prSave = async () => { if (!lines.length) return; const sup = document.getElementById('prSupplier').value; const d = await post('/PurchaseReturn/Create', `branchId=${document.getElementById('prBranch').value}${sup ? '&supplierId=' + sup : ''}&reason=${encodeURIComponent(document.getElementById('prReason').value)}&lines=${encodeURIComponent(JSON.stringify(lines))}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Return', d.message); };
+window.prApprove = async id => { const go = async () => { const d = await post('/PurchaseReturn/Approve', 'id=' + id); if (window.ActionCard) d.success ? ActionCard.success('Return', d.message) : ActionCard.error('Return', d.message); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Approve return?', 'Removes stock, reduces payable.', go) : (confirm('Approve?') && go()); };
+window.prReject = async id => { const d = await post('/PurchaseReturn/Reject', 'id=' + id); if (d.success) location.reload(); };
+</script>
+}

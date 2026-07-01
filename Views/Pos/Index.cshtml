@@ -94,6 +94,7 @@
                 <button class="btn btn-primary" onclick="posPay('Cash')"><i class="fas fa-money-bill" style="margin-right:0.4rem;"></i> Cash</button>
                 <button class="btn btn-primary" onclick="posPay('Card')"><i class="fas fa-credit-card" style="margin-right:0.4rem;"></i> Card</button>
                 <button class="btn btn-secondary" onclick="posMultiPay()"><i class="fas fa-layer-group" style="margin-right:0.4rem;"></i> Multiple</button>
+                <button class="btn btn-secondary" onclick="posCredit()"><i class="fas fa-hand-holding-dollar" style="margin-right:0.4rem;"></i> Credit</button>
                 <button class="btn btn-secondary" onclick="posHold('Suspended')"><i class="fas fa-pause" style="margin-right:0.4rem;"></i> Suspend</button>
                 <button class="btn btn-ghost" onclick="posHold('Draft')" style="grid-column:span 2;"><i class="fas fa-file-lines" style="margin-right:0.4rem;"></i> Save as Draft</button>
             </div>
@@ -327,6 +328,12 @@
 
     // ── pay ──
     window.posPay = method => { if (!cart.length) return; tenders = [{ method, amount: quote.total }]; posFinalize(); };
+    window.posCredit = () => {
+        if (!cart.length) return;
+        if (!document.getElementById('posCustomerId').value) { if (window.ActionCard) ActionCard.error('Credit sale', 'Select a customer for a credit (on-account) sale.'); return; }
+        tenders = []; // no payment now — invoice stays Pending and adds to the customer's receivable
+        posFinalize();
+    };
     window.posMultiPay = () => {
         if (!cart.length) return;
         tenders = [];

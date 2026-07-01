@@ -1,0 +1,75 @@
+@model List<Cafe.Models.Quotation>
+@{
+    ViewData["Title"] = "Quotations";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new();
+    (string, string) Badge(string s) => s switch { "Converted" => ("badge-success", s), "Cancelled" or "Expired" => ("badge-danger", s), "Accepted" => ("badge-info", s), _ => ("badge-warning", s) };
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Quotations</h1><p class="body-text" style="margin-top:0.25rem;">Draft quotes and convert accepted ones into orders.</p></div>
+    <button class="btn btn-primary" onclick="qNew()"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Quote</button>
+</div>
+
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Number</th><th>Branch</th><th style="text-align:center;">Items</th><th style="text-align:right;">Subtotal</th><th>Valid until</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any()) { <tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--text-secondary);">No quotations yet.</td></tr> }
+            @foreach (var q in Model)
+            {
+                var b = Badge(q.Status);
+                <tr>
+                    <td style="font-weight:600;">@q.QuotationNumber</td>
+                    <td>@q.Branch?.Name</td>
+                    <td style="text-align:center;">@q.Items.Count</td>
+                    <td style="text-align:right;">Rs. @q.Subtotal.ToString("N0")</td>
+                    <td><span class="caption">@q.ValidUntil.ToString("dd MMM yyyy")</span></td>
+                    <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
+                    <td>
+                        @if (q.Status != "Converted" && q.Status != "Cancelled")
+                        {
+                            <div style="display:flex;gap:0.4rem;">
+                                <button class="btn btn-primary btn-sm" onclick="qConvert(@q.Id)"><i class="fas fa-right-to-bracket" style="margin-right:0.3rem;"></i> Convert</button>
+                                <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="qCancel(@q.Id)">Cancel</button>
+                            </div>
+                        }
+                        else if (q.ConvertedOrderId != null) { <span class="caption">→ order #@q.ConvertedOrderId</span> }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+
+<div id="qModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:560px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body">
+        <h3 style="margin:0 0 1rem;">New Quotation</h3>
+        <div class="form-group"><label class="form-label">Branch</label><select id="qBranch" class="form-select" onchange="qLoad()">@foreach (var b in branches){<option value="@b.Id">@b.Name</option>}</select></div>
+        <label class="form-label">Items</label>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;">
+            <select id="qItem" class="form-select" style="flex:1;"></select>
+            <input id="qQty" type="number" min="1" value="1" class="form-control" style="width:80px;">
+            <button class="btn btn-secondary" onclick="qAdd()">Add</button>
+        </div>
+        <div id="qLines" style="margin-bottom:0.5rem;"></div>
+        <div class="caption" id="qTotal" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="qSave()">Create draft</button><button class="btn btn-secondary" onclick="document.getElementById('qModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+let items = [], lines = [];
+const money = v => 'Rs. ' + Math.round(v).toLocaleString();
+async function qLoad() { items = await fetch('/Quotation/GetMenu?branchId=' + document.getElementById('qBranch').value).then(r => r.json()); document.getElementById('qItem').innerHTML = items.map(i => `<option value="${i.id}">${i.name} · ${money(i.price)}</option>`).join(''); }
+function render() { const m = Object.fromEntries(items.map(i => [i.id, i])); document.getElementById('qLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${l.quantity}× ${m[l.menuItemId]?.name}</span><a href="javascript:void(0)" onclick="qDel(${x})" style="color:#dc2626;">×</a></div>`).join(''); document.getElementById('qTotal').textContent = 'Subtotal ' + money(lines.reduce((s, l) => s + l.price * l.quantity - l.lineDiscount, 0)); }
+window.qNew = async () => { lines = []; render(); await qLoad(); document.getElementById('qModal').style.display = 'flex'; };
+window.qAdd = () => { const id = parseInt(document.getElementById('qItem').value); const q = parseInt(document.getElementById('qQty').value) || 1; const m = items.find(i => i.id === id); if (!m) return; const e = lines.find(l => l.menuItemId === id); if (e) e.quantity += q; else lines.push({ menuItemId: id, quantity: q, price: m.price, lineDiscount: 0 }); render(); };
+window.qDel = i => { lines.splice(i, 1); render(); };
+window.qSave = async () => { if (!lines.length) return; const d = await post('/Quotation/Create', `branchId=${document.getElementById('qBranch').value}&items=${encodeURIComponent(JSON.stringify(lines))}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Quote', d.message); };
+window.qConvert = async id => { const go = async () => { const d = await post('/Quotation/Convert', 'id=' + id); if (window.ActionCard) d.success ? ActionCard.success('Converted', 'Order ' + d.orderNumber) : ActionCard.error('Convert', d.message); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Convert to order?', 'Creates an order + pending invoice.', go) : (confirm('Convert?') && go()); };
+window.qCancel = async id => { const d = await post('/Quotation/Cancel', 'id=' + id); if (d.success) location.reload(); };
+</script>
+}
