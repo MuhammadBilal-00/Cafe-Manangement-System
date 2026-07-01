@@ -168,6 +168,10 @@ namespace Cafe.Controllers
             ModelState.Remove("OrderItems");
             ModelState.Remove("Ingredients");
             ModelState.Remove("Reviews");
+            ModelState.Remove("Brand");
+            ModelState.Remove("Unit");
+            ModelState.Remove("ModifierGroups");
+            ModelState.Remove("PriceOverrides");
             
             // Validate
             if (!ModelState.IsValid)
@@ -225,7 +229,7 @@ namespace Cafe.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireManagerOrOwner]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,LongDescription,Price,OriginalPrice,CostPrice,Availability,CategoryId,BranchId,CreatedDate,ImageUrl,ImageGallery,Calories,Protein,Carbohydrates,Fat,Fiber,Sugar,Sodium,IsVegetarian,IsVegan,IsGlutenFree,IsDairyFree,IsNutFree,IsSpicy,SpiceLevel,PreparationTime,IsFeatured,IsSpecial,DisplayOrder,Tags")] MenuItem menuItem)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,LongDescription,Price,OriginalPrice,CostPrice,Availability,CategoryId,BranchId,CreatedDate,ImageUrl,ImageGallery,Calories,Protein,Carbohydrates,Fat,Fiber,Sugar,Sodium,IsVegetarian,IsVegan,IsGlutenFree,IsDairyFree,IsNutFree,IsSpicy,SpiceLevel,PreparationTime,IsFeatured,IsSpecial,DisplayOrder,Tags,Sku,BrandId,UnitId,AvailableFromTime,AvailableToTime,AvailableDaysMask,TrackSerial,WarrantyMonths")] MenuItem menuItem)
         {
             if (id != menuItem.Id) return NotFound();
 
@@ -240,6 +244,10 @@ namespace Cafe.Controllers
             ModelState.Remove("OrderItems");
             ModelState.Remove("Ingredients");
             ModelState.Remove("Reviews");
+            ModelState.Remove("Brand");
+            ModelState.Remove("Unit");
+            ModelState.Remove("ModifierGroups");
+            ModelState.Remove("PriceOverrides");
 
             if (ModelState.IsValid)
             {
@@ -386,6 +394,12 @@ namespace Cafe.Controllers
         new SelectListItem { Value = "4", Text = "Very Hot" },
         new SelectListItem { Value = "5", Text = "Extremely Hot" }
     };
+
+            // Phase 2: brands & units for the catalogue fields.
+            ViewBag.Brands = await _context.Brands.Where(b => b.IsActive).OrderBy(b => b.Name)
+                .Select(b => new SelectListItem { Value = b.Id.ToString(), Text = b.Name }).ToListAsync();
+            ViewBag.Units = await _context.Units.Where(u => u.IsActive).OrderBy(u => u.Name)
+                .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Name + " (" + u.Abbreviation + ")" }).ToListAsync();
         }
 
         private bool MenuItemExists(int id)

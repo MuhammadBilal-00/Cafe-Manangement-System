@@ -1,0 +1,76 @@
+@model Cafe.Models.MenuItem
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var brands = ViewBag.Brands as List<SelectListItem> ?? new List<SelectListItem>();
+    var units = ViewBag.Units as List<SelectListItem> ?? new List<SelectListItem>();
+    var mask = Model.AvailableDaysMask == 0 ? 127 : Model.AvailableDaysMask;
+    var days = new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+    string t(TimeSpan? v) => v.HasValue ? v.Value.ToString(@"hh\:mm") : "";
+}
+
+<div class="divider"></div>
+<h3 style="font-size:1rem;font-weight:700;margin:0 0 0.75rem;"><i class="fas fa-tags" style="margin-right:0.4rem;color:var(--accent);"></i> Catalogue &amp; Availability</h3>
+
+<div class="form-row">
+    <div class="form-group">
+        <label asp-for="Sku" class="form-label">Barcode / SKU</label>
+        <input asp-for="Sku" class="form-control" placeholder="scan or type" />
+    </div>
+    <div class="form-group">
+        <label asp-for="BrandId" class="form-label">Brand</label>
+        <select asp-for="BrandId" class="form-select" asp-items="brands"><option value="">— none —</option></select>
+    </div>
+    <div class="form-group">
+        <label asp-for="UnitId" class="form-label">Unit</label>
+        <select asp-for="UnitId" class="form-select" asp-items="units"><option value="">— none —</option></select>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label asp-for="AvailableFromTime" class="form-label">Available from</label>
+        <input name="AvailableFromTime" type="time" value="@t(Model.AvailableFromTime)" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="AvailableToTime" class="form-label">Available until</label>
+        <input name="AvailableToTime" type="time" value="@t(Model.AvailableToTime)" class="form-control" />
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="form-label">Available on days</label>
+    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+        @for (int i = 0; i < 7; i++)
+        {
+            var on = (mask & (1 << i)) != 0;
+            <label class="day-chip" style="display:flex;align-items:center;gap:0.35rem;padding:0.4rem 0.7rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;">
+                <input type="checkbox" class="day-bit" data-bit="@(1 << i)" @(on ? "checked" : "") /> @days[i]
+            </label>
+        }
+    </div>
+    <input type="hidden" asp-for="AvailableDaysMask" id="daysMaskInput" value="@mask" />
+    <p class="caption" style="margin-top:0.3rem;">Leave the time fields empty for all-day. Uncheck days to hide the item then.</p>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label style="display:flex;align-items:center;gap:0.5rem;font-weight:600;">
+            <input asp-for="TrackSerial" type="checkbox" /> Track serial number
+        </label>
+    </div>
+    <div class="form-group">
+        <label asp-for="WarrantyMonths" class="form-label">Warranty (months)</label>
+        <input asp-for="WarrantyMonths" type="number" min="0" class="form-control" placeholder="none" />
+    </div>
+</div>
+
+<script>
+(function () {
+    function recompute() {
+        let m = 0;
+        document.querySelectorAll('.day-bit').forEach(cb => { if (cb.checked) m |= parseInt(cb.dataset.bit); });
+        document.getElementById('daysMaskInput').value = m || 127; // never persist 0 (would hide everywhere)
+    }
+    document.querySelectorAll('.day-bit').forEach(cb => cb.addEventListener('change', recompute));
+})();
+</script>
