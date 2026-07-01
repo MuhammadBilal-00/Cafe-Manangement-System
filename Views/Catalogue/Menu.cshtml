@@ -2,14 +2,17 @@
 @{
     Layout = null;
     var branch = ViewBag.Branch as Cafe.Models.Branch;
-    var groups = Model.GroupBy(m => m.Category?.Name ?? "Menu");
+    var groups = Model.GroupBy(m => m.Category?.Name ?? L["Menu"].Value);
+    // Public QR page: culture resolves from the browser's Accept-Language (no cookie on first scan).
+    var uic = System.Globalization.CultureInfo.CurrentUICulture;
+    var pageDir = uic.TextInfo.IsRightToLeft ? "rtl" : "ltr";
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@uic.TwoLetterISOLanguageName" dir="@pageDir">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@branch?.Name — Menu</title>
+    <title>@branch?.Name — @L["Menu"]</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
         body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #faf9f7; color: #1e2a3a; }
@@ -33,7 +36,7 @@
         </div>
         @if (!Model.Any())
         {
-            <p style="text-align:center;color:#9ca3af;">Menu coming soon.</p>
+            <p style="text-align:center;color:#9ca3af;">@L["Menu coming soon."]</p>
         }
         @foreach (var g in groups)
         {
@@ -46,7 +49,7 @@
                 </div>
             }
         }
-        <div class="foot">Digital menu · powered by Cafe Manager</div>
+        <div class="foot">@L["Digital menu"] · powered by Cafe Manager</div>
     </div>
 </body>
 </html>

@@ -16,8 +16,8 @@ QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddLocalization(o => o.ResourcesPath = "Resources");
 builder.Services.AddControllersWithViews().AddViewLocalization();
 
-// Supported cultures — English (default), Urdu, Arabic (RTL). Culture is chosen via cookie.
-var supportedCultures = new[] { "en", "ur", "ar" };
+// Supported cultures — English (default) and Urdu (RTL). Culture is chosen via cookie.
+var supportedCultures = new[] { "en", "ur" };
 builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(options =>
 {
     options.SetDefaultCulture("en")

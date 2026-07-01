@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- ═══ POS register ═══ -->
+  <data name="Register" xml:space="preserve"><value>کاؤنٹر</value></data>
+  <data name="Recent" xml:space="preserve"><value>حالیہ</value></data>
+  <data name="Held" xml:space="preserve"><value>روکے گئے</value></data>
+  <data name="Expense" xml:space="preserve"><value>خرچ</value></data>
+  <data name="Search or scan barcode…" xml:space="preserve"><value>تلاش کریں یا بارکوڈ اسکین کریں…</value></data>
+  <data name="Deals" xml:space="preserve"><value>ڈیلز</value></data>
+  <data name="No items — pick a branch with a menu." xml:space="preserve"><value>کوئی آئٹم نہیں — ایسی برانچ منتخب کریں جس کا مینو ہو۔</value></data>
+  <data name="DineIn" xml:space="preserve"><value>ڈائن اِن</value></data>
+  <data name="Takeaway" xml:space="preserve"><value>ٹیک اوے</value></data>
+  <data name="Delivery" xml:space="preserve"><value>ڈیلیوری</value></data>
+  <data name="No table" xml:space="preserve"><value>کوئی میز نہیں</value></data>
+  <data name="No staff" xml:space="preserve"><value>کوئی اسٹاف نہیں</value></data>
+  <data name="Standard pricing" xml:space="preserve"><value>معیاری قیمت</value></data>
+  <data name="Walk-In customer (type to search)" xml:space="preserve"><value>واک اِن گاہک (تلاش کے لیے لکھیں)</value></data>
+  <data name="Tap items to add" xml:space="preserve"><value>شامل کرنے کے لیے آئٹمز پر ٹیپ کریں</value></data>
+  <data name="Packing" xml:space="preserve"><value>پیکنگ</value></data>
+  <data name="Shipping" xml:space="preserve"><value>ترسیل</value></data>
+  <data name="Tax %" xml:space="preserve"><value>ٹیکس %</value></data>
+  <data name="auto" xml:space="preserve"><value>خودکار</value></data>
+  <data name="Promo code" xml:space="preserve"><value>پرومو کوڈ</value></data>
+  <data name="No card offer" xml:space="preserve"><value>کوئی کارڈ آفر نہیں</value></data>
+  <data name="Subtotal" xml:space="preserve"><value>ذیلی میزان</value></data>
+  <data name="Discounts" xml:space="preserve"><value>رعایت</value></data>
+  <data name="Charges" xml:space="preserve"><value>چارجز</value></data>
+  <data name="Tax" xml:space="preserve"><value>ٹیکس</value></data>
+  <data name="Total" xml:space="preserve"><value>کل رقم</value></data>
+  <data name="Cash" xml:space="preserve"><value>نقد</value></data>
+  <data name="Card" xml:space="preserve"><value>کارڈ</value></data>
+  <data name="Multiple" xml:space="preserve"><value>متعدد</value></data>
+  <data name="Credit" xml:space="preserve"><value>اُدھار</value></data>
+  <data name="Suspend" xml:space="preserve"><value>روکیں</value></data>
+  <data name="Save as Draft" xml:space="preserve"><value>ڈرافٹ محفوظ کریں</value></data>
+  <data name="Split Payment" xml:space="preserve"><value>تقسیم شدہ ادائیگی</value></data>
+  <data name="Wallet" xml:space="preserve"><value>والٹ</value></data>
+  <data name="BankTransfer" xml:space="preserve"><value>بینک ٹرانسفر</value></data>
+  <data name="Gift Card" xml:space="preserve"><value>گفٹ کارڈ</value></data>
+  <data name="Loyalty Points" xml:space="preserve"><value>لائلٹی پوائنٹس</value></data>
+  <data name="Gift card code" xml:space="preserve"><value>گفٹ کارڈ کوڈ</value></data>
+  <data name="Amount" xml:space="preserve"><value>رقم</value></data>
+  <data name="Add" xml:space="preserve"><value>شامل کریں</value></data>
+  <data name="Remaining" xml:space="preserve"><value>باقی</value></data>
+  <data name="Complete" xml:space="preserve"><value>مکمل کریں</value></data>
+  <data name="Cancel" xml:space="preserve"><value>منسوخ</value></data>
+  <data name="Options" xml:space="preserve"><value>اختیارات</value></data>
+  <data name="Add to cart" xml:space="preserve"><value>کارٹ میں شامل کریں</value></data>
+  <data name="Quick Expense" xml:space="preserve"><value>فوری خرچ</value></data>
+  <data name="Title" xml:space="preserve"><value>عنوان</value></data>
+  <data name="Category" xml:space="preserve"><value>قسم</value></data>
+  <data name="Save" xml:space="preserve"><value>محفوظ کریں</value></data>
+  <data name="Recent Transactions" xml:space="preserve"><value>حالیہ لین دین</value></data>
+  <data name="Held Orders" xml:space="preserve"><value>روکے گئے آرڈرز</value></data>
+  <data name="Held &amp; Drafts" xml:space="preserve"><value>روکے گئے اور ڈرافٹس</value></data>
+  <data name="Combos &amp; Deals" xml:space="preserve"><value>کومبوز اور ڈیلز</value></data>
+  <data name="Sale complete" xml:space="preserve"><value>فروخت مکمل</value></data>
+  <data name="Sale" xml:space="preserve"><value>فروخت</value></data>
+  <data name="change" xml:space="preserve"><value>واپسی</value></data>
+  <data name="Please satisfy the required choices." xml:space="preserve"><value>براہِ کرم مطلوبہ اختیارات منتخب کریں۔</value></data>
+  <data name="Credit sale" xml:space="preserve"><value>اُدھار فروخت</value></data>
+  <data name="Select a customer for a credit (on-account) sale." xml:space="preserve"><value>اُدھار فروخت کے لیے گاہک منتخب کریں۔</value></data>
+  <data name="Enter the gift card code." xml:space="preserve"><value>گفٹ کارڈ کوڈ درج کریں۔</value></data>
+  <!-- ═══ Customer portal (Shop) ═══ -->
+  <data name="Order Online" xml:space="preserve"><value>آن لائن آرڈر</value></data>
+  <data name="Browse the menu and place an order for takeaway or delivery." xml:space="preserve"><value>مینو دیکھیں اور ٹیک اوے یا ڈیلیوری کے لیے آرڈر کریں۔</value></data>
+  <data name="points" xml:space="preserve"><value>پوائنٹس</value></data>
+  <data name="My Orders" xml:space="preserve"><value>میرے آرڈرز</value></data>
+  <data name="No items available." xml:space="preserve"><value>کوئی آئٹم دستیاب نہیں۔</value></data>
+  <data name="Your cart is empty" xml:space="preserve"><value>آپ کی کارٹ خالی ہے</value></data>
+  <data name="Place Order" xml:space="preserve"><value>آرڈر کریں</value></data>
+  <data name="Order placed" xml:space="preserve"><value>آرڈر موصول ہوگیا</value></data>
+  <data name="we will get cooking!" xml:space="preserve"><value>ہم تیاری شروع کر رہے ہیں!</value></data>
+  <data name="Order" xml:space="preserve"><value>آرڈر</value></data>
+  <data name="Track your orders in real time." xml:space="preserve"><value>اپنے آرڈرز کی حقیقی وقت میں نگرانی کریں۔</value></data>
+  <data name="New Order" xml:space="preserve"><value>نیا آرڈر</value></data>
+  <data name="No orders yet." xml:space="preserve"><value>ابھی کوئی آرڈر نہیں۔</value></data>
+  <data name="Place your first order" xml:space="preserve"><value>اپنا پہلا آرڈر کریں</value></data>
+  <data name="item(s)" xml:space="preserve"><value>آئٹم</value></data>
+  <data name="Pending" xml:space="preserve"><value>زیرِ التوا</value></data>
+  <data name="Preparing" xml:space="preserve"><value>تیاری میں</value></data>
+  <data name="Ready" xml:space="preserve"><value>تیار</value></data>
+  <data name="Completed" xml:space="preserve"><value>مکمل</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>منسوخ</value></data>
+  <!-- ═══ Public QR catalogue ═══ -->
+  <data name="Menu" xml:space="preserve"><value>مینو</value></data>
+  <data name="Menu coming soon." xml:space="preserve"><value>مینو جلد آ رہا ہے۔</value></data>
+  <data name="Digital menu" xml:space="preserve"><value>ڈیجیٹل مینو</value></data>
+</root>

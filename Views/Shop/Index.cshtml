@@ -1,14 +1,14 @@
 @{
-    ViewData["Title"] = "Order Online";
+    ViewData["Title"] = L["Order Online"].Value;
     var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new();
     var selectedBranchId = ViewBag.SelectedBranchId as int?;
     int points = ViewBag.Points ?? 0;
 }
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
-    <div><h1 class="page-title" style="margin:0;">Order Online</h1><p class="body-text" style="margin-top:0.25rem;">Browse the menu and place an order for takeaway or delivery.</p></div>
+    <div><h1 class="page-title" style="margin:0;">@L["Order Online"]</h1><p class="body-text" style="margin-top:0.25rem;">@L["Browse the menu and place an order for takeaway or delivery."]</p></div>
     <div style="display:flex;gap:0.75rem;align-items:center;">
-        <span class="badge badge-accent"><i class="fas fa-star" style="margin-right:0.3rem;"></i>@points points</span>
-        <a asp-action="History" class="btn btn-ghost btn-sm"><i class="fas fa-clock-rotate-left" style="margin-right:0.4rem;"></i> My Orders</a>
+        <span class="badge badge-accent"><i class="fas fa-star" style="margin-right:0.3rem;"></i>@points @L["points"]</span>
+        <a asp-action="History" class="btn btn-ghost btn-sm"><i class="fas fa-clock-rotate-left" style="margin-right:0.4rem;"></i> @L["My Orders"]</a>
         @if (branches.Count > 1)
         {
             <select id="shopBranch" class="form-select" style="min-width:170px;">@foreach (var b in branches){<option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option>}</select>
@@ -19,16 +19,16 @@
 <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:1.25rem;align-items:start;">
     <div class="card"><div class="card-body">
         <div id="shopTiles" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.75rem;max-height:70vh;overflow-y:auto;"></div>
-        <div id="shopEmpty" style="display:none;text-align:center;padding:2.5rem;color:var(--text-secondary);">No items available.</div>
+        <div id="shopEmpty" style="display:none;text-align:center;padding:2.5rem;color:var(--text-secondary);">@L["No items available."]</div>
     </div></div>
     <div class="card" style="position:sticky;top:1rem;"><div class="card-body">
         <div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;">
-            @foreach (var st in new[] { "Delivery", "Takeaway" }) { <button type="button" class="btn btn-secondary btn-sm shop-svc" data-svc="@st" style="flex:1;">@st</button> }
+            @foreach (var st in new[] { "Delivery", "Takeaway" }) { <button type="button" class="btn btn-secondary btn-sm shop-svc" data-svc="@st" style="flex:1;">@L[st]</button> }
         </div>
         <div id="shopCart" style="max-height:40vh;overflow-y:auto;border-top:1px solid var(--border-light);"></div>
-        <div id="shopCartEmpty" style="text-align:center;padding:1.5rem;color:var(--text-tertiary);"><i class="fas fa-basket-shopping" style="font-size:1.5rem;display:block;margin-bottom:0.4rem;"></i>Your cart is empty</div>
-        <div style="display:flex;justify-content:space-between;font-size:1.15rem;margin:0.75rem 0;border-top:1px solid var(--border-light);padding-top:0.6rem;"><span>Total</span><b id="shopTotal" style="color:var(--accent);">Rs. 0</b></div>
-        <button class="btn btn-primary btn-lg" style="width:100%;" onclick="shopPlace()"><i class="fas fa-paper-plane" style="margin-right:0.4rem;"></i> Place Order</button>
+        <div id="shopCartEmpty" style="text-align:center;padding:1.5rem;color:var(--text-tertiary);"><i class="fas fa-basket-shopping" style="font-size:1.5rem;display:block;margin-bottom:0.4rem;"></i>@L["Your cart is empty"]</div>
+        <div style="display:flex;justify-content:space-between;font-size:1.15rem;margin:0.75rem 0;border-top:1px solid var(--border-light);padding-top:0.6rem;"><span>@L["Total"]</span><b id="shopTotal" style="color:var(--accent);">Rs. 0</b></div>
+        <button class="btn btn-primary btn-lg" style="width:100%;" onclick="shopPlace()"><i class="fas fa-paper-plane" style="margin-right:0.4rem;"></i> @L["Place Order"]</button>
     </div></div>
 </div>
 @section Scripts {
@@ -37,6 +37,7 @@
     const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
     const branchEl = document.getElementById('shopBranch');
     const money = v => 'Rs. ' + Math.round(v).toLocaleString();
+    const T = { placed: '@L["Order placed"]', cooking: '@L["we will get cooking!"]', order: '@L["Order"]' };
     let menu = [], cart = [], svc = 'Delivery';
     const bid = () => parseInt(branchEl?.value || '0');
     document.querySelectorAll('.shop-svc').forEach(b => { b.classList.toggle('btn-primary', b.dataset.svc === svc); b.addEventListener('click', () => { svc = b.dataset.svc; document.querySelectorAll('.shop-svc').forEach(x => x.classList.toggle('btn-primary', x === b)); }); });
@@ -57,8 +58,8 @@
         if (!cart.length) return;
         const items = cart.map(l => ({ menuItemId: l.menuItemId, quantity: l.qty }));
         const d = await fetch('/Shop/PlaceOrder', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: `branchId=${bid()}&serviceType=${svc}&items=${encodeURIComponent(JSON.stringify(items))}` }).then(r => r.json());
-        if (d.success) { if (window.ActionCard) ActionCard.success('Order placed', `#${d.orderNumber} — we'll get cooking!`); cart = []; renderCart(); setTimeout(() => location.href = '/Shop/History', 1200); }
-        else if (window.ActionCard) ActionCard.error('Order', d.message);
+        if (d.success) { if (window.ActionCard) ActionCard.success(T.placed, `#${d.orderNumber} — ${T.cooking}`); cart = []; renderCart(); setTimeout(() => location.href = '/Shop/History', 1200); }
+        else if (window.ActionCard) ActionCard.error(T.order, d.message);
     };
     branchEl?.addEventListener?.('change', () => { cart = []; renderCart(); load(); });
     load();

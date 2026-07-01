@@ -1,3 +1,6 @@
 ﻿@using Cafe
 @using Cafe.Models
+@using Microsoft.Extensions.Localization
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@* Phase 10 (Urdu slice): shared localizer available in every view. English text is the key. *@
+@inject IStringLocalizer<Cafe.SharedResource> L

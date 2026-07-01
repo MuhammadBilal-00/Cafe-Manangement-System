@@ -1,12 +1,12 @@
 @{
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = L["Register"].Value;
     var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
     var selectedBranchId = ViewBag.SelectedBranchId as int?;
 }
 
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem;">
     <div style="display:flex;align-items:center;gap:0.75rem;">
-        <h1 class="page-title" style="margin:0;">Register</h1>
+        <h1 class="page-title" style="margin:0;">@L["Register"]</h1>
         @if (branches.Count > 1)
         {
             <select id="posBranch" class="form-select" style="min-width:170px;">
@@ -20,9 +20,9 @@
         }
     </div>
     <div style="display:flex;gap:0.5rem;">
-        <button class="btn btn-ghost btn-sm" onclick="posOpenDrawer('recent')"><i class="fas fa-clock-rotate-left" style="margin-right:0.4rem;"></i> Recent</button>
-        <button class="btn btn-ghost btn-sm" onclick="posOpenDrawer('held')"><i class="fas fa-pause" style="margin-right:0.4rem;"></i> Held</button>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('expenseModal').style.display='flex'"><i class="fas fa-receipt" style="margin-right:0.4rem;"></i> Expense</button>
+        <button class="btn btn-ghost btn-sm" onclick="posOpenDrawer('recent')"><i class="fas fa-clock-rotate-left" style="margin-right:0.4rem;"></i> @L["Recent"]</button>
+        <button class="btn btn-ghost btn-sm" onclick="posOpenDrawer('held')"><i class="fas fa-pause" style="margin-right:0.4rem;"></i> @L["Held"]</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('expenseModal').style.display='flex'"><i class="fas fa-receipt" style="margin-right:0.4rem;"></i> @L["Expense"]</button>
     </div>
 </div>
 
@@ -31,12 +31,12 @@
     <div class="card">
         <div class="card-body">
             <div style="display:flex;gap:0.6rem;margin-bottom:0.9rem;">
-                <input id="posSearch" type="search" class="form-control" placeholder="Search or scan barcode…" style="flex:1;" />
-                <button class="btn btn-secondary" onclick="posOpenDeals()"><i class="fas fa-gift" style="margin-right:0.4rem;"></i> Deals</button>
+                <input id="posSearch" type="search" class="form-control" placeholder="@L["Search or scan barcode…"]" style="flex:1;" />
+                <button class="btn btn-secondary" onclick="posOpenDeals()"><i class="fas fa-gift" style="margin-right:0.4rem;"></i> @L["Deals"]</button>
             </div>
             <div id="posCats" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.9rem;"></div>
             <div id="posTiles" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.7rem;max-height:62vh;overflow-y:auto;"></div>
-            <div id="posMenuEmpty" style="display:none;text-align:center;padding:2.5rem;color:var(--text-secondary);">No items — pick a branch with a menu.</div>
+            <div id="posMenuEmpty" style="display:none;text-align:center;padding:2.5rem;color:var(--text-secondary);">@L["No items — pick a branch with a menu."]</div>
         </div>
     </div>
 
@@ -47,18 +47,18 @@
             <div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;">
                 @foreach (var st in new[] { "DineIn", "Takeaway", "Delivery" })
                 {
-                    <button type="button" class="btn btn-secondary btn-sm pos-svc" data-svc="@st" style="flex:1;">@st</button>
+                    <button type="button" class="btn btn-secondary btn-sm pos-svc" data-svc="@st" style="flex:1;">@L[st]</button>
                 }
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
-                <select id="posTable" class="form-select"><option value="">No table</option></select>
-                <select id="posStaff" class="form-select"><option value="">No staff</option></select>
+                <select id="posTable" class="form-select"><option value="">@L["No table"]</option></select>
+                <select id="posStaff" class="form-select"><option value="">@L["No staff"]</option></select>
             </div>
             <div style="margin-bottom:0.75rem;">
-                <select id="posPriceGroup" class="form-select"><option value="">Standard pricing</option></select>
+                <select id="posPriceGroup" class="form-select"><option value="">@L["Standard pricing"]</option></select>
             </div>
             <div style="margin-bottom:0.75rem;position:relative;">
-                <input id="posCustomer" class="form-control" placeholder="Walk-In customer (type to search)" autocomplete="off" />
+                <input id="posCustomer" class="form-control" placeholder="@L["Walk-In customer (type to search)"]" autocomplete="off" />
                 <input type="hidden" id="posCustomerId" />
                 <div id="posCustList" style="display:none;position:absolute;z-index:20;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;width:100%;max-height:180px;overflow:auto;"></div>
             </div>
@@ -66,37 +66,37 @@
             <!-- cart lines -->
             <div id="posCart" style="max-height:34vh;overflow-y:auto;border-top:1px solid var(--border-light);"></div>
             <div id="posCartEmpty" style="text-align:center;padding:1.5rem;color:var(--text-tertiary);">
-                <i class="fas fa-basket-shopping" style="font-size:1.6rem;display:block;margin-bottom:0.4rem;"></i>Tap items to add
+                <i class="fas fa-basket-shopping" style="font-size:1.6rem;display:block;margin-bottom:0.4rem;"></i>@L["Tap items to add"]
             </div>
 
             <!-- charges -->
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;margin:0.75rem 0;">
-                <div><label class="caption">Packing</label><input id="posPacking" type="number" min="0" value="0" class="form-control" oninput="posQuote()"></div>
-                <div><label class="caption">Shipping</label><input id="posShipping" type="number" min="0" value="0" class="form-control" oninput="posQuote()"></div>
-                <div><label class="caption">Tax %</label><input id="posTax" type="number" min="0" placeholder="auto" class="form-control" oninput="posQuote()"></div>
+                <div><label class="caption">@L["Packing"]</label><input id="posPacking" type="number" min="0" value="0" class="form-control" oninput="posQuote()"></div>
+                <div><label class="caption">@L["Shipping"]</label><input id="posShipping" type="number" min="0" value="0" class="form-control" oninput="posQuote()"></div>
+                <div><label class="caption">@L["Tax %"]</label><input id="posTax" type="number" min="0" placeholder="@L["auto"]" class="form-control" oninput="posQuote()"></div>
             </div>
             <div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;">
-                <input id="posPromo" class="form-control" placeholder="Promo code" oninput="posQuote()" style="flex:1;">
-                <select id="posPartner" class="form-select" style="flex:1;" onchange="posQuote()"><option value="">No card offer</option></select>
+                <input id="posPromo" class="form-control" placeholder="@L["Promo code"]" oninput="posQuote()" style="flex:1;">
+                <select id="posPartner" class="form-select" style="flex:1;" onchange="posQuote()"><option value="">@L["No card offer"]</option></select>
             </div>
 
             <!-- totals -->
             <div style="border-top:1px solid var(--border-light);padding-top:0.6rem;font-size:0.9rem;">
-                <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><b id="tSub">Rs. 0</b></div>
-                <div style="display:flex;justify-content:space-between;color:#16a34a;"><span>Discounts</span><b id="tDisc">Rs. 0</b></div>
-                <div style="display:flex;justify-content:space-between;"><span>Charges</span><b id="tChg">Rs. 0</b></div>
-                <div style="display:flex;justify-content:space-between;"><span>Tax (<span id="tRate">0</span>%)</span><b id="tTax">Rs. 0</b></div>
-                <div style="display:flex;justify-content:space-between;font-size:1.15rem;margin-top:0.35rem;"><span>Total</span><b id="tTotal" style="color:var(--accent);">Rs. 0</b></div>
+                <div style="display:flex;justify-content:space-between;"><span>@L["Subtotal"]</span><b id="tSub">Rs. 0</b></div>
+                <div style="display:flex;justify-content:space-between;color:#16a34a;"><span>@L["Discounts"]</span><b id="tDisc">Rs. 0</b></div>
+                <div style="display:flex;justify-content:space-between;"><span>@L["Charges"]</span><b id="tChg">Rs. 0</b></div>
+                <div style="display:flex;justify-content:space-between;"><span>@L["Tax"] (<span id="tRate">0</span>%)</span><b id="tTax">Rs. 0</b></div>
+                <div style="display:flex;justify-content:space-between;font-size:1.15rem;margin-top:0.35rem;"><span>@L["Total"]</span><b id="tTotal" style="color:var(--accent);">Rs. 0</b></div>
             </div>
 
             <!-- bottom bar -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.9rem;">
-                <button class="btn btn-primary" onclick="posPay('Cash')"><i class="fas fa-money-bill" style="margin-right:0.4rem;"></i> Cash</button>
-                <button class="btn btn-primary" onclick="posPay('Card')"><i class="fas fa-credit-card" style="margin-right:0.4rem;"></i> Card</button>
-                <button class="btn btn-secondary" onclick="posMultiPay()"><i class="fas fa-layer-group" style="margin-right:0.4rem;"></i> Multiple</button>
-                <button class="btn btn-secondary" onclick="posCredit()"><i class="fas fa-hand-holding-dollar" style="margin-right:0.4rem;"></i> Credit</button>
-                <button class="btn btn-secondary" onclick="posHold('Suspended')"><i class="fas fa-pause" style="margin-right:0.4rem;"></i> Suspend</button>
-                <button class="btn btn-ghost" onclick="posHold('Draft')" style="grid-column:span 2;"><i class="fas fa-file-lines" style="margin-right:0.4rem;"></i> Save as Draft</button>
+                <button class="btn btn-primary" onclick="posPay('Cash')"><i class="fas fa-money-bill" style="margin-right:0.4rem;"></i> @L["Cash"]</button>
+                <button class="btn btn-primary" onclick="posPay('Card')"><i class="fas fa-credit-card" style="margin-right:0.4rem;"></i> @L["Card"]</button>
+                <button class="btn btn-secondary" onclick="posMultiPay()"><i class="fas fa-layer-group" style="margin-right:0.4rem;"></i> @L["Multiple"]</button>
+                <button class="btn btn-secondary" onclick="posCredit()"><i class="fas fa-hand-holding-dollar" style="margin-right:0.4rem;"></i> @L["Credit"]</button>
+                <button class="btn btn-secondary" onclick="posHold('Suspended')"><i class="fas fa-pause" style="margin-right:0.4rem;"></i> @L["Suspend"]</button>
+                <button class="btn btn-ghost" onclick="posHold('Draft')" style="grid-column:span 2;"><i class="fas fa-file-lines" style="margin-right:0.4rem;"></i> @L["Save as Draft"]</button>
             </div>
         </div>
     </div>
@@ -105,18 +105,18 @@
 <!-- Multiple payment modal -->
 <div id="payModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
     <div class="card" style="max-width:440px;width:100%;"><div class="card-body">
-        <h3 style="margin:0 0 0.75rem;">Split Payment · <span id="payTotal"></span></h3>
+        <h3 style="margin:0 0 0.75rem;">@L["Split Payment"] · <span id="payTotal"></span></h3>
         <div id="payLines" style="margin-bottom:0.6rem;"></div>
         <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem;">
-            <select id="payMethod" class="form-select" style="flex:1;" onchange="payMethodChanged()"><option>Cash</option><option>Card</option><option>Wallet</option><option>BankTransfer</option><option value="GiftCard">Gift Card</option><option value="Loyalty">Loyalty Points</option></select>
-            <input id="payAmt" type="number" min="0" class="form-control" placeholder="Amount" style="flex:1;">
-            <button class="btn btn-secondary" onclick="payAdd()">Add</button>
+            <select id="payMethod" class="form-select" style="flex:1;" onchange="payMethodChanged()"><option value="Cash">@L["Cash"]</option><option value="Card">@L["Card"]</option><option value="Wallet">@L["Wallet"]</option><option value="BankTransfer">@L["BankTransfer"]</option><option value="GiftCard">@L["Gift Card"]</option><option value="Loyalty">@L["Loyalty Points"]</option></select>
+            <input id="payAmt" type="number" min="0" class="form-control" placeholder="@L["Amount"]" style="flex:1;">
+            <button class="btn btn-secondary" onclick="payAdd()">@L["Add"]</button>
         </div>
-        <input id="payRef" class="form-control" placeholder="Gift card code" style="display:none;margin-bottom:0.6rem;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;"><span>Remaining</span><b id="payRemaining"></b></div>
+        <input id="payRef" class="form-control" placeholder="@L["Gift card code"]" style="display:none;margin-bottom:0.6rem;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;"><span>@L["Remaining"]</span><b id="payRemaining"></b></div>
         <div style="display:flex;gap:0.5rem;">
-            <button class="btn btn-primary" onclick="posFinalize()"><i class="fas fa-check" style="margin-right:0.4rem;"></i> Complete</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('payModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="posFinalize()"><i class="fas fa-check" style="margin-right:0.4rem;"></i> @L["Complete"]</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('payModal').style.display='none'">@L["Cancel"]</button>
         </div>
     </div></div>
 </div>
@@ -124,11 +124,11 @@
 <!-- Modifier picker modal -->
 <div id="modModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
     <div class="card" style="max-width:420px;width:100%;max-height:85vh;overflow:auto;"><div class="card-body">
-        <h3 id="modTitle" style="margin:0 0 1rem;">Options</h3>
+        <h3 id="modTitle" style="margin:0 0 1rem;">@L["Options"]</h3>
         <div id="modBody"></div>
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
-            <button class="btn btn-primary" onclick="posConfirmMods()"><i class="fas fa-check" style="margin-right:0.4rem;"></i> Add to cart</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('modModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="posConfirmMods()"><i class="fas fa-check" style="margin-right:0.4rem;"></i> @L["Add to cart"]</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('modModal').style.display='none'">@L["Cancel"]</button>
         </div>
     </div></div>
 </div>
@@ -136,15 +136,15 @@
 <!-- Expense modal -->
 <div id="expenseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
     <div class="card" style="max-width:400px;width:100%;"><div class="card-body">
-        <h3 style="margin:0 0 0.75rem;">Quick Expense</h3>
-        <div class="form-group"><label class="form-label">Title</label><input id="expTitle" class="form-control"></div>
+        <h3 style="margin:0 0 0.75rem;">@L["Quick Expense"]</h3>
+        <div class="form-group"><label class="form-label">@L["Title"]</label><input id="expTitle" class="form-control"></div>
         <div class="form-row">
-            <div class="form-group"><label class="form-label">Amount</label><input id="expAmt" type="number" min="0" class="form-control"></div>
-            <div class="form-group"><label class="form-label">Category</label><input id="expCat" class="form-control" value="Misc"></div>
+            <div class="form-group"><label class="form-label">@L["Amount"]</label><input id="expAmt" type="number" min="0" class="form-control"></div>
+            <div class="form-group"><label class="form-label">@L["Category"]</label><input id="expCat" class="form-control" value="Misc"></div>
         </div>
         <div style="display:flex;gap:0.5rem;">
-            <button class="btn btn-primary" onclick="posExpense()">Save</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('expenseModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="posExpense()">@L["Save"]</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('expenseModal').style.display='none'">@L["Cancel"]</button>
         </div>
     </div></div>
 </div>
@@ -164,6 +164,14 @@
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
     const branchEl = document.getElementById('posBranch');
     const money = v => 'Rs. ' + (Math.round((v || 0) * 100) / 100).toLocaleString();
+    // Localized strings for JS-rendered UI / toasts (Urdu slice).
+    const T = {
+        options: '@L["Options"]', reqChoices: '@L["Please satisfy the required choices."]',
+        combosDeals: '@L["Combos & Deals"]', recentTx: '@L["Recent Transactions"]', heldDrafts: '@L["Held & Drafts"]',
+        creditSale: '@L["Credit sale"]', pickCustomer: '@L["Select a customer for a credit (on-account) sale."]',
+        giftCard: '@L["Gift Card"]', enterGcCode: '@L["Enter the gift card code."]',
+        sale: '@L["Sale"]', saleComplete: '@L["Sale complete"]', change: '@L["change"]', expense: '@L["Expense"]'
+    };
     let menu = [], cart = [], svc = 'DineIn', quote = { total: 0 }, tenders = [];
     const bid = () => parseInt(branchEl?.value || '0');
 
@@ -243,7 +251,7 @@
             if (sel.length < g.min || sel.length > g.max) ok = false;
             sel.forEach(s => { ids.push(parseInt(s.value)); names.push(s.dataset.name); delta += parseFloat(s.dataset.delta); });
         });
-        if (!ok) { if (window.ActionCard) ActionCard.error('Options', 'Please satisfy the required choices.'); return; }
+        if (!ok) { if (window.ActionCard) ActionCard.error(T.options, T.reqChoices); return; }
         cart.push({ menuItemId: _modItem.id, name: _modItem.name, price: _modItem.price + delta, qty: 1, lineDiscount: 0, notes: names.join(', ') || null, modifierIds: ids });
         document.getElementById('modModal').style.display = 'none';
         renderCart();
@@ -253,7 +261,7 @@
     window.posOpenDeals = async () => {
         const combos = await fetch('/Pos/GetCombos?branchId=' + bid()).then(r => r.json());
         const body = document.getElementById('drawerBody');
-        document.getElementById('drawerTitle').textContent = 'Combos & Deals';
+        document.getElementById('drawerTitle').textContent = T.combosDeals;
         document.getElementById('posDrawer').style.display = 'block';
         body.innerHTML = combos.length ? combos.map(c =>
             `<div class="card" style="margin-bottom:0.5rem;cursor:pointer;" onclick="posAddCombo(${c.id})"><div class="card-body" style="padding:0.7rem;display:flex;justify-content:space-between;">
@@ -331,7 +339,7 @@
     window.posPay = method => { if (!cart.length) return; tenders = [{ method, amount: quote.total }]; posFinalize(); };
     window.posCredit = () => {
         if (!cart.length) return;
-        if (!document.getElementById('posCustomerId').value) { if (window.ActionCard) ActionCard.error('Credit sale', 'Select a customer for a credit (on-account) sale.'); return; }
+        if (!document.getElementById('posCustomerId').value) { if (window.ActionCard) ActionCard.error(T.creditSale, T.pickCustomer); return; }
         tenders = []; // no payment now — invoice stays Pending and adds to the customer's receivable
         posFinalize();
     };
@@ -350,7 +358,7 @@
         const amt = parseFloat(document.getElementById('payAmt').value); if (!(amt > 0)) return;
         const method = document.getElementById('payMethod').value;
         const ref = document.getElementById('payRef').value.trim();
-        if (method === 'GiftCard' && !ref) { if (window.ActionCard) ActionCard.error('Gift card', 'Enter the gift card code.'); return; }
+        if (method === 'GiftCard' && !ref) { if (window.ActionCard) ActionCard.error(T.giftCard, T.enterGcCode); return; }
         tenders.push({ method, amount: amt, reference: method === 'GiftCard' ? ref : null });
         document.getElementById('payAmt').value = ''; document.getElementById('payRef').value = ''; renderTenders();
     };
@@ -368,8 +376,8 @@
         const body = payload({ payments: tenders });
         const r = await fetch('/Pos/Finalize', { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token }, body: JSON.stringify(body) });
         const d = await r.json();
-        if (!d.success) { if (window.ActionCard) ActionCard.error('Sale', d.message); return; }
-        if (window.ActionCard) ActionCard.success('Sale complete', `#${d.orderNumber} · ${money(d.total)} · ${d.paymentStatus}${d.change > 0 ? ' · change ' + money(d.change) : ''}`);
+        if (!d.success) { if (window.ActionCard) ActionCard.error(T.sale, d.message); return; }
+        if (window.ActionCard) ActionCard.success(T.saleComplete, `#${d.orderNumber} · ${money(d.total)} · ${d.paymentStatus}${d.change > 0 ? ' · ' + T.change + ' ' + money(d.change) : ''}`);
         document.getElementById('payModal').style.display = 'none';
         cart = []; tenders = []; window._posRef = null; window._posExisting = null;
         document.getElementById('posPromo').value = ''; document.getElementById('posPacking').value = 0; document.getElementById('posShipping').value = 0; document.getElementById('posTax').value = '';
@@ -387,7 +395,7 @@
 
     // ── drawer (recent / held / drafts) ──
     window.posOpenDrawer = async kind => {
-        document.getElementById('drawerTitle').textContent = kind === 'recent' ? 'Recent Transactions' : 'Held & Drafts';
+        document.getElementById('drawerTitle').textContent = kind === 'recent' ? T.recentTx : T.heldDrafts;
         const drawer = document.getElementById('posDrawer'); drawer.style.display = 'block';
         const body = document.getElementById('drawerBody'); body.innerHTML = '<div class="caption">Loading…</div>';
         if (kind === 'recent') {
@@ -425,7 +433,7 @@
     window.posExpense = async () => {
         const body = `branchId=${bid()}&title=${encodeURIComponent(document.getElementById('expTitle').value)}&amount=${document.getElementById('expAmt').value}&category=${encodeURIComponent(document.getElementById('expCat').value)}`;
         const d = await fetch('/Pos/QuickExpense', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token }, body }).then(x => x.json());
-        if (window.ActionCard) d.success ? ActionCard.success('Expense', d.message) : ActionCard.error('Expense', d.message);
+        if (window.ActionCard) d.success ? ActionCard.success(T.expense, d.message) : ActionCard.error(T.expense, d.message);
         if (d.success) document.getElementById('expenseModal').style.display = 'none';
     };
 

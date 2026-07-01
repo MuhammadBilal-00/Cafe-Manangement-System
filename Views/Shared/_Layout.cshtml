@@ -596,7 +596,7 @@
                             <i class="fas fa-language"></i>
                         </button>
                         <div id="langDrop" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:9999;overflow:hidden;min-width:130px;">
-                            @foreach (var (code, label) in new[] { ("en", "English"), ("ur", "اردو"), ("ar", "العربية") })
+                            @foreach (var (code, label) in new[] { ("en", "English"), ("ur", "اردو") })
                             {
                                 <a href="/Language/Set?culture=@code&returnUrl=@Uri.EscapeDataString(returnPath)" style="display:block;padding:0.55rem 0.9rem;text-decoration:none;color:var(--text-primary);font-size:0.85rem;@(curCulture == code ? "background:var(--accent-light);font-weight:700;" : "")">@label</a>
                             }
