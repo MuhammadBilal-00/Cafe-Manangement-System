@@ -1,0 +1,45 @@
+@model List<Cafe.Models.Holiday>
+@{
+    ViewData["Title"] = "Holidays";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new();
+    var bmap = branches.ToDictionary(b => b.Id, b => b.Name);
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Holidays</h1><p class="body-text" style="margin-top:0.25rem;">Company &amp; branch holiday calendar.</p></div>
+    <button class="btn btn-primary" onclick="hEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Holiday</button>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Date</th><th>Name</th><th>Scope</th><th style="text-align:center;">Recurring</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any()) { <tr><td colspan="5" style="text-align:center;padding:3rem;color:var(--text-secondary);">No holidays yet.</td></tr> }
+            @foreach (var h in Model)
+            {
+                <tr data-id="@h.Id" data-name="@h.Name" data-date="@h.Date.ToString("yyyy-MM-dd")" data-branch="@h.BranchId" data-rec="@h.IsRecurring.ToString().ToLower()">
+                    <td style="font-weight:600;">@h.Date.ToString("dd MMM yyyy")</td><td>@h.Name</td>
+                    <td>@(h.BranchId.HasValue && bmap.ContainsKey(h.BranchId.Value) ? bmap[h.BranchId.Value] : "All branches")</td>
+                    <td style="text-align:center;">@(h.IsRecurring ? "Yes" : "—")</td>
+                    <td><div style="display:flex;gap:0.4rem;"><button class="btn btn-ghost btn-sm" onclick="hEditRow(this)"><i class="fas fa-edit"></i></button>@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="hDel(@h.Id)"><i class="fas fa-trash"></i></button> }</div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+<div id="hModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:440px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Holiday</h3><input type="hidden" id="hId" />
+    <div class="form-group"><label class="form-label">Name</label><input id="hName" class="form-control" /></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Date</label><input id="hDate" type="date" class="form-control" /></div><div class="form-group"><label class="form-label">Branch</label><select id="hBranch" class="form-select"><option value="">All branches</option>@foreach (var b in branches){<option value="@b.Id">@b.Name</option>}</select></div></div>
+    <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="hRec" /> Recurring yearly</label></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="hSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('hModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function hEdit(id, name, date, branch, rec) { document.getElementById('hId').value = id; document.getElementById('hName').value = name || ''; document.getElementById('hDate').value = date || ''; document.getElementById('hBranch').value = branch || ''; document.getElementById('hRec').checked = rec === true; document.getElementById('hModal').style.display = 'flex'; }
+function hEditRow(b) { const r = b.closest('tr'); hEdit(r.dataset.id, r.dataset.name, r.dataset.date, r.dataset.branch, r.dataset.rec === 'true'); }
+async function hSave() { const br = document.getElementById('hBranch').value; const d = await post('/Holiday/Save', `id=${document.getElementById('hId').value || 0}&name=${encodeURIComponent(document.getElementById('hName').value)}&date=${document.getElementById('hDate').value}${br ? '&branchId=' + br : ''}&isRecurring=${document.getElementById('hRec').checked}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Holiday', d.message); }
+async function hDel(id) { const go = async () => { const d = await post('/Holiday/Delete', 'id=' + id); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Delete holiday?', '', go) : (confirm('Delete?') && go()); }
+</script>
+}

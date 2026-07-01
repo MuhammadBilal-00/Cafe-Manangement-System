@@ -31,6 +31,15 @@ namespace Cafe.Models
         [StringLength(100)]
         public string? Department { get; set; }
 
+        // ── Phase 7: HR org links (optional) ──
+        public int? DepartmentId { get; set; }
+        public int? DesignationId { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.ForeignKey("DepartmentId")]
+        public Department? DepartmentRef { get; set; }
+        [System.ComponentModel.DataAnnotations.Schema.ForeignKey("DesignationId")]
+        public Designation? DesignationRef { get; set; }
+
         [StringLength(100)]
         public string? EmployeeId { get; set; } // Unique employee identifier
 

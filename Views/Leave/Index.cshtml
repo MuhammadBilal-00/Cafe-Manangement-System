@@ -1,0 +1,59 @@
+@{
+    ViewData["Title"] = "Leave Management";
+    var types = ViewBag.Types as List<Cafe.Models.LeaveType> ?? new();
+    var requests = ViewBag.Requests as List<Cafe.Models.LeaveRequest> ?? new();
+    var staff = ViewBag.Staff as List<Cafe.Models.Staff> ?? new();
+    (string, string) Badge(string s) => s switch { "Approved" => ("badge-success", s), "Rejected" => ("badge-danger", s), _ => ("badge-warning", s) };
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Leave Management</h1><p class="body-text" style="margin-top:0.25rem;">Approving a request marks attendance so payroll deducts/pays correctly.</p></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-secondary" onclick="typeEdit(0)"><i class="fas fa-gear" style="margin-right:0.4rem;"></i> Leave Types</button><button class="btn btn-primary" onclick="reqNew()"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> New Request</button></div>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Employee</th><th>Type</th><th>Dates</th><th style="text-align:center;">Days</th><th>Reason</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!requests.Any()) { <tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--text-secondary);">No leave requests yet.</td></tr> }
+            @foreach (var r in requests)
+            {
+                var b = Badge(r.Status);
+                <tr>
+                    <td style="font-weight:600;">@r.Staff?.User?.Name</td><td>@r.LeaveType?.Name</td>
+                    <td><span class="caption">@r.FromDate.ToString("dd MMM") – @r.ToDate.ToString("dd MMM yyyy")</span></td>
+                    <td style="text-align:center;">@r.Days</td><td><span class="caption">@r.Reason</span></td>
+                    <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
+                    <td>@if (r.Status == "Pending"){<div style="display:flex;gap:0.4rem;"><button class="btn btn-primary btn-sm" onclick="reqApprove(@r.Id)">Approve</button><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="reqReject(@r.Id)">Reject</button></div>}</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+
+<div id="reqModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:460px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">New Leave Request</h3>
+    <div class="form-group"><label class="form-label">Employee</label><select id="rStaff" class="form-select">@foreach (var s in staff){<option value="@s.Id">@s.User?.Name</option>}</select></div>
+    <div class="form-group"><label class="form-label">Leave type</label><select id="rType" class="form-select">@foreach (var t in types){<option value="@t.Id">@t.Name</option>}</select></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">From</label><input id="rFrom" type="date" class="form-control" /></div><div class="form-group"><label class="form-label">To</label><input id="rTo" type="date" class="form-control" /></div></div>
+    <div class="form-group"><label class="form-label">Reason</label><input id="rReason" class="form-control" /></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="reqSave()">Submit</button><button class="btn btn-secondary" onclick="document.getElementById('reqModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+<div id="typeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:520px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Leave Types</h3>
+    <div style="margin-bottom:1rem;">@foreach (var t in types){<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>@t.Name <span class="caption">→ @t.AttendanceStatus · @t.DaysPerYear/yr</span></span></div>}</div>
+    <input type="hidden" id="tId" />
+    <div class="form-row"><div class="form-group"><label class="form-label">Name</label><input id="tName" class="form-control" /></div><div class="form-group"><label class="form-label">Days/year</label><input id="tDays" type="number" value="0" class="form-control" /></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Attendance status</label><select id="tStatus" class="form-select"><option>Paid Leave</option><option>Sick Leave</option><option>Casual Leave</option><option>Holiday</option></select></div><div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;margin-top:1.8rem;"><input type="checkbox" id="tPaid" checked /> Paid</label></div></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="typeSave()">Add type</button><button class="btn btn-secondary" onclick="document.getElementById('typeModal').style.display='none'">Close</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function reqNew() { document.getElementById('reqModal').style.display = 'flex'; }
+async function reqSave() { const d = await post('/Leave/Request', `staffId=${document.getElementById('rStaff').value}&leaveTypeId=${document.getElementById('rType').value}&fromDate=${document.getElementById('rFrom').value}&toDate=${document.getElementById('rTo').value}&reason=${encodeURIComponent(document.getElementById('rReason').value)}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Leave', d.message); }
+async function reqApprove(id) { const go = async () => { const d = await post('/Leave/Approve', 'id=' + id); if (window.ActionCard) d.success ? ActionCard.success('Leave', d.message) : ActionCard.error('Leave', d.message); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Approve leave?', 'Marks attendance for the dates.', go) : (confirm('Approve?') && go()); }
+async function reqReject(id) { const d = await post('/Leave/Reject', 'id=' + id); if (d.success) location.reload(); }
+function typeEdit(id) { document.getElementById('typeModal').style.display = 'flex'; }
+async function typeSave() { const d = await post('/Leave/SaveType', `id=0&name=${encodeURIComponent(document.getElementById('tName').value)}&daysPerYear=${document.getElementById('tDays').value}&isPaid=${document.getElementById('tPaid').checked}&attendanceStatus=${encodeURIComponent(document.getElementById('tStatus').value)}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Type', d.message); }
+</script>
+}

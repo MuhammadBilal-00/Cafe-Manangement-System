@@ -353,6 +353,29 @@
                                 <span class="sidebar-link-icon"><i class="fas fa-wallet"></i></span>
                                 <span class="sidebar-link-text">Payroll</span>
                             </a>
+                            <a asp-controller="Leave" asp-action="Index" class="sidebar-link" data-nav="Leave">
+                                <span class="sidebar-link-icon"><i class="fas fa-plane-departure"></i></span>
+                                <span class="sidebar-link-text">Leave</span>
+                            </a>
+                        }
+                        <a asp-controller="Holiday" asp-action="Index" class="sidebar-link" data-nav="Holiday">
+                            <span class="sidebar-link-icon"><i class="fas fa-calendar-day"></i></span>
+                            <span class="sidebar-link-text">Holidays</span>
+                        </a>
+                        <a asp-controller="Department" asp-action="Index" class="sidebar-link" data-nav="Department">
+                            <span class="sidebar-link-icon"><i class="fas fa-network-wired"></i></span>
+                            <span class="sidebar-link-text">Departments</span>
+                        </a>
+                        <a asp-controller="EmployeeDocument" asp-action="Index" class="sidebar-link" data-nav="EmployeeDocument">
+                            <span class="sidebar-link-icon"><i class="fas fa-folder-open"></i></span>
+                            <span class="sidebar-link-text">Documents</span>
+                        </a>
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Analytics))
+                        {
+                            <a asp-controller="SalesTarget" asp-action="Index" class="sidebar-link" data-nav="SalesTarget">
+                                <span class="sidebar-link-icon"><i class="fas fa-bullseye"></i></span>
+                                <span class="sidebar-link-text">Sales Targets</span>
+                            </a>
                         }
 
                         @if (canFeature(Cafe.Services.FeatureCatalog.Analytics))

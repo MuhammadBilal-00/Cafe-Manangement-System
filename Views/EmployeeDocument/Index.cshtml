@@ -1,0 +1,44 @@
+@model List<Cafe.Models.EmployeeDocument>
+@{
+    ViewData["Title"] = "Employee Documents";
+    var staff = ViewBag.Staff as List<Cafe.Models.Staff> ?? new();
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Employee Documents</h1><p class="body-text" style="margin-top:0.25rem;">Contracts, IDs and certificates with expiry.</p></div>
+    <button class="btn btn-primary" onclick="edNew()"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Document</button>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Employee</th><th>Title</th><th>Type</th><th>Expires</th><th>File</th><th></th></tr></thead>
+        <tbody>
+            @if (!Model.Any()) { <tr><td colspan="6" style="text-align:center;padding:3rem;color:var(--text-secondary);">No documents yet.</td></tr> }
+            @foreach (var d in Model)
+            {
+                var expiring = d.ExpiresAt.HasValue && d.ExpiresAt.Value < DateTime.Now.AddDays(30);
+                <tr>
+                    <td style="font-weight:600;">@d.Staff?.User?.Name</td><td>@d.Title</td><td>@d.DocType</td>
+                    <td>@if (d.ExpiresAt.HasValue){<span class="badge @(expiring ? "badge-danger" : "badge-neutral")">@d.ExpiresAt.Value.ToString("dd MMM yyyy")</span>}else{<span class="caption">—</span>}</td>
+                    <td>@if (!string.IsNullOrEmpty(d.FileUrl)){<a href="@d.FileUrl" target="_blank" class="btn btn-ghost btn-sm"><i class="fas fa-file"></i></a>}</td>
+                    <td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="edDel(@d.Id)"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+<div id="edModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:480px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">New Document</h3>
+    <div class="form-group"><label class="form-label">Employee</label><select id="edStaff" class="form-select">@foreach (var s in staff){<option value="@s.Id">@s.User?.Name</option>}</select></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Title</label><input id="edTitle" class="form-control" /></div><div class="form-group"><label class="form-label">Type</label><input id="edType" class="form-control" placeholder="Contract" /></div></div>
+    <div class="form-group"><label class="form-label">File URL</label><input id="edUrl" class="form-control" placeholder="https://…" /></div>
+    <div class="form-group"><label class="form-label">Expires (optional)</label><input id="edExp" type="date" class="form-control" /></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="edSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('edModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function edNew() { document.getElementById('edModal').style.display = 'flex'; }
+async function edSave() { const exp = document.getElementById('edExp').value; const d = await post('/EmployeeDocument/Save', `id=0&staffId=${document.getElementById('edStaff').value}&title=${encodeURIComponent(document.getElementById('edTitle').value)}&docType=${encodeURIComponent(document.getElementById('edType').value)}&fileUrl=${encodeURIComponent(document.getElementById('edUrl').value)}${exp ? '&expiresAt=' + exp : ''}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Document', d.message); }
+async function edDel(id) { const d = await post('/EmployeeDocument/Delete', 'id=' + id); if (d.success) location.reload(); }
+</script>
+}

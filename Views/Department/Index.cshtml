@@ -1,0 +1,37 @@
+@model List<Cafe.Models.Department>
+@{
+    ViewData["Title"] = "Departments & Designations";
+    var designations = ViewBag.Designations as List<Cafe.Models.Designation> ?? new();
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+<div style="margin-bottom:1.5rem;"><h1 class="page-title" style="margin:0;">Departments &amp; Designations</h1><p class="body-text" style="margin-top:0.25rem;">Organisation structure for staff.</p></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;">
+    <div class="card"><div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;"><h2 style="margin:0;font-size:1.05rem;">Departments</h2></div>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;"><input id="deptName" class="form-control" placeholder="e.g. Kitchen"><button class="btn btn-primary" onclick="deptAdd()">Add</button></div>
+        <table class="premium-table"><tbody>
+            @if (!Model.Any()) { <tr><td style="color:var(--text-secondary);padding:1rem;">No departments.</td></tr> }
+            @foreach (var d in Model)
+            { <tr><td>@d.Name</td><td style="text-align:right;">@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="deptDel(@d.Id)"><i class="fas fa-trash"></i></button> }</td></tr> }
+        </tbody></table>
+    </div></div>
+    <div class="card"><div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;"><h2 style="margin:0;font-size:1.05rem;">Designations</h2></div>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;"><input id="desigName" class="form-control" placeholder="e.g. Head Chef"><button class="btn btn-primary" onclick="desigAdd()">Add</button></div>
+        <table class="premium-table"><tbody>
+            @if (!designations.Any()) { <tr><td style="color:var(--text-secondary);padding:1rem;">No designations.</td></tr> }
+            @foreach (var d in designations)
+            { <tr><td>@d.Name</td><td style="text-align:right;">@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="desigDel(@d.Id)"><i class="fas fa-trash"></i></button> }</td></tr> }
+        </tbody></table>
+    </div></div>
+</div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+async function deptAdd() { const n = document.getElementById('deptName').value.trim(); if (!n) return; const d = await post('/Department/SaveDepartment', 'id=0&name=' + encodeURIComponent(n)); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Department', d.message); }
+async function desigAdd() { const n = document.getElementById('desigName').value.trim(); if (!n) return; const d = await post('/Department/SaveDesignation', 'id=0&name=' + encodeURIComponent(n)); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Designation', d.message); }
+async function deptDel(id) { const d = await post('/Department/DeleteDepartment', 'id=' + id); if (d.success) location.reload(); }
+async function desigDel(id) { const d = await post('/Department/DeleteDesignation', 'id=' + id); if (d.success) location.reload(); }
+</script>
+}

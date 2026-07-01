@@ -101,6 +101,15 @@ namespace Cafe.Data
         public DbSet<Campaign> Campaigns { get; set; }
         public DbSet<SmsQueue> SmsQueues { get; set; }
 
+        // Phase 7: HR depth
+        public DbSet<Department> Departments { get; set; }
+        public DbSet<Designation> Designations { get; set; }
+        public DbSet<LeaveType> LeaveTypes { get; set; }
+        public DbSet<LeaveRequest> LeaveRequests { get; set; }
+        public DbSet<Holiday> Holidays { get; set; }
+        public DbSet<SalesTarget> SalesTargets { get; set; }
+        public DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
+
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
@@ -153,7 +162,27 @@ namespace Cafe.Data
             ConfigurePhase4Sales(modelBuilder);
             ConfigurePhase5Accounting(modelBuilder);
             ConfigurePhase6Marketing(modelBuilder);
+            ConfigurePhase7Hr(modelBuilder);
             ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>Phase 7 (HR depth): leave, holidays, departments/designations, targets, documents.</summary>
+        private void ConfigurePhase7Hr(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Department>().HasIndex(d => new { d.TenantId, d.Name }).IsUnique();
+            modelBuilder.Entity<Designation>().HasIndex(d => new { d.TenantId, d.Name }).IsUnique();
+            modelBuilder.Entity<LeaveType>().HasIndex(l => new { l.TenantId, l.Name }).IsUnique();
+
+            modelBuilder.Entity<Staff>().HasOne(s => s.DepartmentRef).WithMany().HasForeignKey(s => s.DepartmentId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Staff>().HasOne(s => s.DesignationRef).WithMany().HasForeignKey(s => s.DesignationId).OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<LeaveRequest>().HasOne(l => l.Staff).WithMany().HasForeignKey(l => l.StaffId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<LeaveRequest>().HasOne(l => l.LeaveType).WithMany().HasForeignKey(l => l.LeaveTypeId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<LeaveRequest>().ToTable(t => t.HasCheckConstraint("CK_LeaveRequest_Status", "[Status] IN ('Pending','Approved','Rejected')"));
+
+            modelBuilder.Entity<Holiday>().HasOne<Branch>().WithMany().HasForeignKey(h => h.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<SalesTarget>().HasOne(s => s.Staff).WithMany().HasForeignKey(s => s.StaffId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<EmployeeDocument>().HasOne(e => e.Staff).WithMany().HasForeignKey(e => e.StaffId).OnDelete(DeleteBehavior.NoAction);
         }
 
         /// <summary>Phase 6 (customer portal &amp; marketing): loyalty, gift cards, templates, CRM, SMS.</summary>

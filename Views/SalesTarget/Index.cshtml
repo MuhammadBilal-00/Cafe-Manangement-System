@@ -1,0 +1,49 @@
+@model List<Cafe.Models.SalesTarget>
+@{
+    ViewData["Title"] = "Sales Targets";
+    var achievement = ViewBag.Achievement as Dictionary<int, decimal> ?? new();
+    var staff = ViewBag.Staff as List<Cafe.Models.Staff> ?? new();
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new();
+    string m(decimal v) => "Rs. " + v.ToString("N0");
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Sales Targets &amp; Commission</h1><p class="body-text" style="margin-top:0.25rem;">Targets vs actual sales; commission on achievement.</p></div>
+    <button class="btn btn-primary" onclick="stNew()"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Target</button>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Who</th><th>Period</th><th style="text-align:right;">Target</th><th style="text-align:right;">Actual</th><th style="text-align:center;">%</th><th style="text-align:right;">Commission</th></tr></thead>
+        <tbody>
+            @if (!Model.Any()) { <tr><td colspan="6" style="text-align:center;padding:3rem;color:var(--text-secondary);">No targets yet.</td></tr> }
+            @foreach (var t in Model)
+            {
+                var actual = achievement.TryGetValue(t.Id, out var a) ? a : 0;
+                var pct = t.TargetAmount > 0 ? (int)(actual / t.TargetAmount * 100) : 0;
+                var commission = Math.Round(actual * t.CommissionPercent / 100m, 0);
+                <tr>
+                    <td>@(t.Staff?.User?.Name ?? (t.BranchId.HasValue ? branches.FirstOrDefault(b => b.Id == t.BranchId)?.Name : "Company"))</td>
+                    <td><span class="caption">@(new DateTime(t.Year, t.Month, 1).ToString("MMM yyyy"))</span></td>
+                    <td style="text-align:right;">@m(t.TargetAmount)</td>
+                    <td style="text-align:right;">@m(actual)</td>
+                    <td style="text-align:center;"><span class="badge @(pct >= 100 ? "badge-success" : pct >= 60 ? "badge-warning" : "badge-danger")">@pct%</span></td>
+                    <td style="text-align:right;font-weight:700;">@m(commission)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+<div id="stModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:480px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">New Sales Target</h3>
+    <div class="form-group"><label class="form-label">Staff (or leave blank for branch)</label><select id="stStaff" class="form-select"><option value="">— branch target —</option>@foreach (var s in staff){<option value="@s.Id">@s.User?.Name</option>}</select></div>
+    <div class="form-group"><label class="form-label">Branch (if no staff)</label><select id="stBranch" class="form-select"><option value="">—</option>@foreach (var b in branches){<option value="@b.Id">@b.Name</option>}</select></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Year</label><input id="stYear" type="number" value="@DateTime.Now.Year" class="form-control" /></div><div class="form-group"><label class="form-label">Month</label><input id="stMonth" type="number" min="1" max="12" value="@DateTime.Now.Month" class="form-control" /></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Target (Rs.)</label><input id="stTarget" type="number" step="0.01" class="form-control" /></div><div class="form-group"><label class="form-label">Commission %</label><input id="stPct" type="number" step="0.01" class="form-control" /></div></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="stSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('stModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+function stNew() { document.getElementById('stModal').style.display = 'flex'; }
+async function stSave() { const s = document.getElementById('stStaff').value, br = document.getElementById('stBranch').value; const d = await fetch('/SalesTarget/Save', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: `id=0${s ? '&staffId=' + s : ''}${br ? '&branchId=' + br : ''}&year=${document.getElementById('stYear').value}&month=${document.getElementById('stMonth').value}&targetAmount=${document.getElementById('stTarget').value}&commissionPercent=${document.getElementById('stPct').value}` }).then(r => r.json()); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Target', d.message); }
+</script>
+}
