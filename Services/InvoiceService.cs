@@ -17,7 +17,7 @@ namespace Cafe.Services
         /// generating the PDF. Idempotent: one invoice per order.
         /// </summary>
         Task<Invoice> CreateForOrderAsync(int orderId, string? promoCode, int? partnershipId,
-            string paymentMethod, string paymentStatus, int? performedById);
+            string paymentMethod, string paymentStatus, int? performedById, decimal? taxRateOverride = null);
 
         Task<Invoice?> GetByOrderIdAsync(int orderId);
         Task<Invoice?> GetByIdAsync(int invoiceId);
@@ -32,7 +32,15 @@ namespace Cafe.Services
 
         /// <summary>Flip a Pending bill to Failed. Returns false if not found or already Paid.</summary>
         Task<bool> MarkFailedAsync(int invoiceId, string? reason);
+
+        /// <summary>
+        /// Record one split-payment tender against an invoice and re-derive PaymentStatus from
+        /// the sum of tenders (Paid once tenders cover the total, else Pending). Atomic.
+        /// </summary>
+        Task<PaymentResult> AddPaymentAsync(int invoiceId, string method, decimal amount, string? reference);
     }
+
+    public record PaymentResult(bool Success, string Message, decimal TotalPaid, decimal AmountDue, string PaymentStatus);
 
     public class InvoiceService : IInvoiceService
     {
@@ -97,8 +105,47 @@ namespace Cafe.Services
             return true;
         }
 
+        public async Task<PaymentResult> AddPaymentAsync(int invoiceId, string method, decimal amount, string? reference)
+        {
+            if (amount <= 0)
+                return new PaymentResult(false, "Amount must be greater than zero.", 0, 0, "");
+
+            await using var tx = await _context.Database.BeginTransactionAsync();
+            var invoice = await _context.Invoices
+                .Include(i => i.Payments)
+                .FirstOrDefaultAsync(i => i.Id == invoiceId);
+            if (invoice == null)
+                return new PaymentResult(false, "Invoice not found.", 0, 0, "");
+            if (invoice.PaymentStatus == "Cancelled")
+                return new PaymentResult(false, "This bill has been cancelled.", 0, 0, "Cancelled");
+
+            _context.Payments.Add(new Payment
+            {
+                InvoiceId = invoice.Id,
+                Method = string.IsNullOrWhiteSpace(method) ? "Cash" : method,
+                Amount = Math.Round(amount, 2),
+                Reference = reference,
+                PaidAt = DateTime.Now
+            });
+
+            var totalPaid = invoice.Payments.Sum(p => p.Amount) + Math.Round(amount, 2);
+            var due = Math.Max(0, invoice.TotalAmount - totalPaid);
+            var fullyPaid = totalPaid + 0.01m >= invoice.TotalAmount;
+
+            invoice.PaymentStatus = fullyPaid ? "Paid" : "Pending";
+            if (fullyPaid && invoice.PaidAt == null) invoice.PaidAt = DateTime.Now;
+            if (!string.IsNullOrWhiteSpace(reference)) invoice.PaymentReference = reference;
+
+            await _context.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            return new PaymentResult(true,
+                fullyPaid ? "Payment complete." : $"Partial payment recorded. Rs. {due:N0} still due.",
+                totalPaid, due, invoice.PaymentStatus);
+        }
+
         public async Task<Invoice> CreateForOrderAsync(int orderId, string? promoCode, int? partnershipId,
-            string paymentMethod, string paymentStatus, int? performedById)
+            string paymentMethod, string paymentStatus, int? performedById, decimal? taxRateOverride = null)
         {
             // One invoice per order — return the existing one if checkout is retried.
             var existing = await _context.Invoices.FirstOrDefaultAsync(i => i.OrderId == orderId);
@@ -112,8 +159,10 @@ namespace Cafe.Services
                 .FirstOrDefaultAsync(o => o.Id == orderId)
                 ?? throw new InvalidOperationException($"Order {orderId} not found.");
 
-            var subtotal = order.OrderItems.Sum(oi => oi.Price * oi.Quantity);
-            var pricing = await _pricing.ComputePricingAsync(order.BranchId, subtotal, promoCode, partnershipId);
+            // Subtotal is net of per-line discounts (Phase 1).
+            var subtotal = order.OrderItems.Sum(oi => (oi.Price * oi.Quantity) - oi.LineDiscount);
+            var pricing = await _pricing.ComputePricingAsync(order.BranchId, subtotal, promoCode, partnershipId,
+                order.PackingCharge, order.ShippingCharge, taxRateOverride);
 
             var invoice = new Invoice
             {
@@ -127,6 +176,8 @@ namespace Cafe.Services
                 PartnershipId = pricing.PartnershipId,
                 PartnershipText = pricing.PartnershipText,
                 PartnershipDiscount = pricing.PartnershipDiscount,
+                PackingCharge = pricing.PackingCharge,
+                ShippingCharge = pricing.ShippingCharge,
                 TaxRate = pricing.TaxRate,
                 TaxAmount = pricing.TaxAmount,
                 TotalAmount = pricing.Total,

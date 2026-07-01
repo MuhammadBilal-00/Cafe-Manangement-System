@@ -22,8 +22,18 @@ namespace Cafe.Models
         [Required]
         [Range(0.01, double.MaxValue)]
         public decimal Price { get; set; }
+
+        // ── Phase 1: per-line discount, kitchen routing, notes ──
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal LineDiscount { get; set; } = 0;
+
+        public bool SentToKitchen { get; set; } = false;
+
+        [StringLength(300)]
+        public string? Notes { get; set; }
+
         [NotMapped]
-        public decimal Subtotal => Quantity * Price;
+        public decimal Subtotal => (Quantity * Price) - LineDiscount;
 
         // Navigation Properties
         [ForeignKey("OrderId")]

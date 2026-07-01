@@ -14,6 +14,10 @@ namespace Cafe.Models
         [StringLength(100)]
         public string Name { get; set; } = string.Empty;
 
+        /// <summary>Phase 1: barcode / SKU for register scan lookup (unique per tenant when set).</summary>
+        [StringLength(60)]
+        public string? Sku { get; set; }
+
         [StringLength(500)]
         public string? Description { get; set; }
 

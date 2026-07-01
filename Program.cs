@@ -62,6 +62,11 @@ builder.Services.AddScoped<ICheckoutPricingService, CheckoutPricingService>();
 builder.Services.AddScoped<IPdfInvoiceService, PdfInvoiceService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
+// ── Phase 1: POS & restaurant core ──
+builder.Services.AddScoped<ITableService, TableService>();
+builder.Services.AddScoped<IKitchenService, KitchenService>();
+builder.Services.AddScoped<IPosService, PosService>();
+
 // ── SaaS platform services (Phase 0): feature gating, billing, provisioning, branding ──
 builder.Services.AddScoped<IFeatureGate, FeatureGate>();
 builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
@@ -181,5 +186,6 @@ app.MapControllerRoute(
 
 // Map SignalR hubs
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<Cafe.Hubs.KitchenHub>("/hubs/kitchen");
 
 app.Run();

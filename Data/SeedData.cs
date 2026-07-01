@@ -22,6 +22,7 @@ namespace Cafe.Data
             await EnsurePlansAsync(context);
             await EnsurePlatformAdminAsync(context, authService);
             await EnsureTenantsHavePlanAsync(context); // any plan-less tenant (e.g. the migration's Demo) → Pro
+            await EnsureWalkInCustomersAsync(context); // Phase 1: a Walk-In customer per tenant
 
             // If real tenant data already exists, don't seed demo data.
             if (await context.Users.AnyAsync(u => u.Role != "PlatformAdmin"))
@@ -515,6 +516,28 @@ namespace Cafe.Data
             if (pro == null) return;
             foreach (var t in planless) t.PlanId = pro.Id;
             await context.SaveChangesAsync();
+        }
+
+        /// <summary>Phase 1: guarantee every tenant has a "Walk-In Customer" for optional-customer POS sales.</summary>
+        private static async Task EnsureWalkInCustomersAsync(ApplicationDbContext context)
+        {
+            var tenants = await context.Tenants.Select(t => new { t.Id, t.Slug }).ToListAsync();
+            foreach (var t in tenants)
+            {
+                var email = $"walkin+{t.Slug}@tenant.local";
+                if (await context.Users.AnyAsync(u => u.Email == email)) continue;
+
+                // Explicit TenantId — startup seeding runs with no active tenant to auto-stamp.
+                var user = new User
+                {
+                    Name = "Walk-In Customer", Email = email, Phone = "N/A",
+                    Role = "Customer", TenantId = t.Id, CreatedDate = DateTime.Now
+                };
+                context.Users.Add(user);
+                await context.SaveChangesAsync();
+                context.Customers.Add(new Customer { UserId = user.Id, TenantId = t.Id, JoinDate = DateTime.Now, IsActive = true });
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

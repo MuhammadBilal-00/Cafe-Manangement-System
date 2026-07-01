@@ -45,6 +45,13 @@ namespace Cafe.Models
         [Column(TypeName = "decimal(10,2)")]
         public decimal PartnershipDiscount { get; set; } = 0;
 
+        // ── Phase 1: packing + shipping charge lines (added before tax) ──
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal PackingCharge { get; set; } = 0;
+
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal ShippingCharge { get; set; } = 0;
+
         [Column(TypeName = "decimal(5,2)")]
         public decimal TaxRate { get; set; } = 0;        // percent applied after discounts
 
@@ -83,6 +90,9 @@ namespace Cafe.Models
 
         [ForeignKey("PartnershipId")]
         public Partnership? Partnership { get; set; }
+
+        // Phase 1: split payments tendered against this invoice.
+        public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
         [NotMapped]
         public decimal TotalDiscount => PromoDiscount + PartnershipDiscount;

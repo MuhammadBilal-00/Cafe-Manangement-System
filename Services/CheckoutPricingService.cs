@@ -26,8 +26,11 @@ namespace Cafe.Services
         /// <summary>
         /// Full money breakdown for a checkout. Invalid promo/partnership inputs are ignored
         /// (with a message) rather than throwing, so a stale code never blocks the sale.
+        /// Phase 1: optional packing/shipping charges (added after discounts, before tax) and an
+        /// optional editable tax rate that overrides the branch default at the register.
         /// </summary>
-        Task<CheckoutPricing> ComputePricingAsync(int branchId, decimal subtotal, string? promoCode, int? partnershipId);
+        Task<CheckoutPricing> ComputePricingAsync(int branchId, decimal subtotal, string? promoCode, int? partnershipId,
+            decimal packingCharge = 0, decimal shippingCharge = 0, decimal? taxRateOverride = null);
     }
 
     public class CheckoutPricingService : ICheckoutPricingService
@@ -159,7 +162,8 @@ namespace Cafe.Services
             return Math.Round(Math.Max(0, discount), 2);
         }
 
-        public async Task<CheckoutPricing> ComputePricingAsync(int branchId, decimal subtotal, string? promoCode, int? partnershipId)
+        public async Task<CheckoutPricing> ComputePricingAsync(int branchId, decimal subtotal, string? promoCode, int? partnershipId,
+            decimal packingCharge = 0, decimal shippingCharge = 0, decimal? taxRateOverride = null)
         {
             var pricing = new CheckoutPricing { Subtotal = Math.Round(subtotal, 2) };
 
@@ -196,12 +200,17 @@ namespace Cafe.Services
 
             var afterDiscounts = afterPromo - pricing.PartnershipDiscount;
 
-            // ── 3. Tax (on the net, post-discount amount) ──
-            var setting = await _branchSettings.GetOrCreateAsync(branchId);
-            pricing.TaxRate = setting.TaxRatePercent;
-            pricing.TaxAmount = Math.Round(afterDiscounts * (setting.TaxRatePercent / 100m), 2);
+            // ── 3. Charge lines (packing + shipping), added before tax ──
+            pricing.PackingCharge = Math.Round(Math.Max(0, packingCharge), 2);
+            pricing.ShippingCharge = Math.Round(Math.Max(0, shippingCharge), 2);
+            var taxableBase = afterDiscounts + pricing.PackingCharge + pricing.ShippingCharge;
 
-            pricing.Total = Math.Round(afterDiscounts + pricing.TaxAmount, 2);
+            // ── 4. Tax (editable at the register, else the branch default) ──
+            var setting = await _branchSettings.GetOrCreateAsync(branchId);
+            pricing.TaxRate = taxRateOverride.HasValue ? Math.Max(0, taxRateOverride.Value) : setting.TaxRatePercent;
+            pricing.TaxAmount = Math.Round(taxableBase * (pricing.TaxRate / 100m), 2);
+
+            pricing.Total = Math.Round(taxableBase + pricing.TaxAmount, 2);
             return pricing;
         }
     }

@@ -203,10 +203,31 @@
                             <span class="sidebar-link-text">Menu</span>
                         </a>
 
+                        <a asp-controller="Pos" asp-action="Index" class="sidebar-link" data-nav="Pos">
+                            <span class="sidebar-link-icon"><i class="fas fa-cash-register"></i></span>
+                            <span class="sidebar-link-text">Register</span>
+                        </a>
+
                         <a asp-controller="Order" asp-action="Index" class="sidebar-link" data-nav="Order">
                             <span class="sidebar-link-icon"><i class="fas fa-receipt"></i></span>
                             <span class="sidebar-link-text">Orders</span>
                         </a>
+
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Kds))
+                        {
+                            <a asp-controller="Kitchen" asp-action="Index" class="sidebar-link" data-nav="Kitchen">
+                                <span class="sidebar-link-icon"><i class="fas fa-fire-burner"></i></span>
+                                <span class="sidebar-link-text">Kitchen (KDS)</span>
+                            </a>
+                        }
+
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Tables))
+                        {
+                            <a asp-controller="Table" asp-action="Index" class="sidebar-link" data-nav="Table">
+                                <span class="sidebar-link-icon"><i class="fas fa-chair"></i></span>
+                                <span class="sidebar-link-text">Tables</span>
+                            </a>
+                        }
 
                         @if (canFeature(Cafe.Services.FeatureCatalog.Invoicing))
                         {

@@ -49,6 +49,10 @@ namespace Cafe.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
 
+        // Phase 1: POS & restaurant core
+        public DbSet<RestaurantTable> RestaurantTables { get; set; }
+        public DbSet<Payment> Payments { get; set; }
+
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
@@ -95,7 +99,66 @@ namespace Cafe.Data
             ConfigureCheckConstraints(modelBuilder);
             ConfigureNotifications(modelBuilder);
             ConfigureCheckoutModules(modelBuilder);
+            ConfigurePhase1Pos(modelBuilder);
             ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>
+        /// Phase 1 (POS &amp; restaurant core): tables, split-payment tenders, and the new order
+        /// service/kitchen fields. FK delete behaviour is NoAction/SetNull to avoid cascade paths
+        /// into the Branches/Orders/Invoices hubs.
+        /// </summary>
+        private void ConfigurePhase1Pos(ModelBuilder modelBuilder)
+        {
+            // ── RestaurantTable ──
+            modelBuilder.Entity<RestaurantTable>()
+                .HasOne(t => t.Branch).WithMany()
+                .HasForeignKey(t => t.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<RestaurantTable>()
+                .HasIndex(t => new { t.TenantId, t.BranchId, t.Name }).IsUnique();
+            modelBuilder.Entity<RestaurantTable>()
+                .ToTable(t => t.HasCheckConstraint("CK_RestaurantTable_Status",
+                    "[Status] IN ('Available','Occupied','Reserved','Dirty')"));
+
+            // ── Payment (split tenders) ── one invoice → many payments
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.Invoice).WithMany(i => i.Payments)
+                .HasForeignKey(p => p.InvoiceId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Payment>()
+                .HasIndex(p => p.InvoiceId);
+            modelBuilder.Entity<Payment>()
+                .ToTable(t => t.HasCheckConstraint("CK_Payment_Amount", "[Amount] > 0"));
+
+            // ── Order: new Phase 1 relationships + guards ──
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Table).WithMany()
+                .HasForeignKey(o => o.TableId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.ServiceStaff).WithMany()
+                .HasForeignKey(o => o.ServiceStaffId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Order>()
+                .ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_Order_ServiceType", "[ServiceType] IN ('DineIn','Takeaway','Delivery')");
+                    t.HasCheckConstraint("CK_Order_KitchenStatus", "[KitchenStatus] IN ('New','Cooking','Ready','Served')");
+                    t.HasCheckConstraint("CK_Order_HoldState", "[HoldState] IN ('Active','Suspended','Draft')");
+                });
+            // DB-level defaults so existing rows satisfy the new check constraints on migration,
+            // and new inserts are valid even if a value is omitted.
+            modelBuilder.Entity<Order>().Property(o => o.ServiceType).HasDefaultValue("DineIn");
+            modelBuilder.Entity<Order>().Property(o => o.KitchenStatus).HasDefaultValue("New");
+            modelBuilder.Entity<Order>().Property(o => o.HoldState).HasDefaultValue("Active");
+            modelBuilder.Entity<RestaurantTable>().Property(t => t.Status).HasDefaultValue("Available");
+
+            // Kitchen feed reads by (branch, kitchen status) — index it.
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => new { o.BranchId, o.KitchenStatus });
+
+            // Barcode/SKU scan lookup — filtered unique index per tenant (SKU optional).
+            modelBuilder.Entity<MenuItem>()
+                .HasIndex(m => new { m.TenantId, m.Sku })
+                .IsUnique()
+                .HasFilter("[Sku] IS NOT NULL");
         }
 
         /// <summary>
@@ -479,11 +542,13 @@ namespace Cafe.Data
                 .HasForeignKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // CustomerId is nullable (Phase 1 walk-in sales); deleting a customer must NOT delete
+            // the sale — null the link so revenue history is preserved.
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Orders)
                 .WithOne(o => o.Customer)
                 .HasForeignKey(o => o.CustomerId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Feedbacks)
@@ -958,9 +1023,10 @@ namespace Cafe.Data
                 .ToTable(t => t.HasCheckConstraint("CK_MenuItem_SpiceLevel",
                     "[SpiceLevel] >= 0 AND [SpiceLevel] <= 5"));
 
+            // >= 0 (not > 0): Phase 1 drafts/held carts can sit at 0 until finalised.
             modelBuilder.Entity<Order>()
                 .ToTable(t => t.HasCheckConstraint("CK_Order_TotalAmount",
-                    "[TotalAmount] > 0"));
+                    "[TotalAmount] >= 0"));
 
             modelBuilder.Entity<OrderItem>()
                 .ToTable(t => t.HasCheckConstraint("CK_OrderItem_Quantity",

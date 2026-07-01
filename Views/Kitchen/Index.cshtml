@@ -1,0 +1,139 @@
+@{
+    ViewData["Title"] = "Kitchen Display";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+}
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Kitchen Display</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Live tickets — updates in real time, no refresh. <span id="kdsConn" class="badge badge-neutral">connecting…</span></p>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center;">
+        @if (branches.Count > 1)
+        {
+            <select id="kdsBranch" class="form-select" style="min-width:180px;">
+                @foreach (var b in branches)
+                {
+                    <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option>
+                }
+            </select>
+        }
+        else if (selectedBranchId.HasValue)
+        {
+            <input type="hidden" id="kdsBranch" value="@selectedBranchId" />
+        }
+        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;"><input type="checkbox" id="kdsSound" checked /> Sound</label>
+    </div>
+</div>
+
+<div id="kdsBoard" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; align-items:start;"></div>
+
+<div id="kdsEmpty" style="display:none; text-align:center; padding:4rem 1rem;">
+    <i class="fas fa-mug-hot" style="font-size:3rem; color:var(--border-light); margin-bottom:1rem; display:block;"></i>
+    <p style="font-weight:700; color:var(--text-secondary); margin:0;">All caught up</p>
+    <p class="caption">New kitchen tickets will appear here automatically.</p>
+</div>
+
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+(function () {
+    const board = document.getElementById('kdsBoard');
+    const empty = document.getElementById('kdsEmpty');
+    const connBadge = document.getElementById('kdsConn');
+    const branchEl = document.getElementById('kdsBranch');
+    const soundEl = document.getElementById('kdsSound');
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    let tickets = {}; // orderId -> ticket
+
+    function branchId() { return parseInt(branchEl?.value || '0'); }
+
+    const ageColor = (m) => m >= 20 ? '#dc2626' : m >= 10 ? '#d97706' : '#16a34a';
+    const statusNext = { 'New': 'Cooking', 'Cooking': 'Ready', 'Ready': 'Served' };
+    const statusBadge = { 'New': 'badge-info', 'Cooking': 'badge-warning', 'Ready': 'badge-success', 'Served': 'badge-neutral' };
+
+    function render() {
+        const list = Object.values(tickets).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        empty.style.display = list.length ? 'none' : 'block';
+        board.innerHTML = list.map(t => {
+            const c = ageColor(t.ageMinutes);
+            const next = statusNext[t.kitchenStatus];
+            const rows = (t.items || []).map(i =>
+                `<li style="display:flex;justify-content:space-between;gap:0.5rem;padding:3px 0;border-bottom:1px solid var(--border-light);">
+                    <span><b>${i.quantity}×</b> ${i.name}${i.notes ? `<div class="caption" style="color:var(--accent);">${i.notes}</div>` : ''}</span>
+                 </li>`).join('');
+            return `<div class="card" style="border-top:4px solid ${c};">
+                <div class="card-body" style="padding:0.9rem 1rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                        <div style="font-weight:800;">#${t.orderNumber}</div>
+                        <span class="badge ${statusBadge[t.kitchenStatus] || 'badge-neutral'}">${t.kitchenStatus}</span>
+                    </div>
+                    <div class="caption" style="margin-bottom:0.5rem;">
+                        <i class="fas fa-${t.serviceType === 'DineIn' ? 'utensils' : t.serviceType === 'Delivery' ? 'motorcycle' : 'bag-shopping'}"></i>
+                        ${t.serviceType}${t.tableName ? ' · ' + t.tableName : ''}
+                        · <span style="color:${c};font-weight:700;">${t.ageMinutes}m</span>
+                    </div>
+                    <ul style="list-style:none;padding:0;margin:0 0 0.75rem;font-size:0.85rem;">${rows}</ul>
+                    ${next ? `<button class="btn btn-primary btn-sm" style="width:100%;" onclick="kdsAdvance(${t.orderId},'${next}')">
+                        <i class="fas fa-arrow-right" style="margin-right:0.4rem;"></i> Mark ${next}</button>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function load() {
+        const bid = branchId(); if (!bid) return;
+        try {
+            const res = await fetch('/Kitchen/GetTickets?branchId=' + bid);
+            const data = await res.json();
+            tickets = {};
+            data.forEach(t => tickets[t.orderId] = t);
+            render();
+        } catch (e) { console.warn('KDS load error', e); }
+    }
+
+    window.kdsAdvance = async function (orderId, status) {
+        try {
+            const res = await fetch('/Kitchen/UpdateStatus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
+                body: `orderId=${orderId}&status=${encodeURIComponent(status)}`
+            });
+            const data = await res.json();
+            if (!data.success) { if (window.ActionCard) ActionCard.error('Kitchen', data.message); return; }
+            applyTicket(data.ticket);
+        } catch (e) { console.warn(e); }
+    };
+
+    function applyTicket(t) {
+        if (!t) return;
+        if (t.branchId !== branchId()) return;
+        if (t.kitchenStatus === 'Served') delete tickets[t.orderId];
+        else tickets[t.orderId] = t;
+        render();
+    }
+
+    // ── SignalR live feed ──
+    let beep;
+    try { beep = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ=='); } catch (e) {}
+    const conn = new signalR.HubConnectionBuilder().withUrl('/hubs/kitchen?branchId=' + branchId()).withAutomaticReconnect().build();
+    conn.on('TicketUpdated', (t) => {
+        const isNew = !tickets[t.orderId];
+        applyTicket(t);
+        if (isNew && t.kitchenStatus !== 'Served' && soundEl?.checked && beep) beep.play().catch(() => {});
+    });
+    conn.onreconnected(() => { connBadge.textContent = 'live'; connBadge.className = 'badge badge-success'; conn.invoke('JoinBranch', branchId()).catch(()=>{}); load(); });
+    conn.onclose(() => { connBadge.textContent = 'offline'; connBadge.className = 'badge badge-danger'; });
+    conn.start()
+        .then(() => { connBadge.textContent = 'live'; connBadge.className = 'badge badge-success'; return conn.invoke('JoinBranch', branchId()); })
+        .catch(() => { connBadge.textContent = 'polling'; connBadge.className = 'badge badge-warning'; });
+
+    branchEl?.addEventListener?.('change', () => { conn.invoke('JoinBranch', branchId()).catch(()=>{}); load(); });
+
+    // Refresh ages every 30s (and a safety re-poll in case a push was missed).
+    setInterval(load, 30000);
+    load();
+})();
+</script>
+}

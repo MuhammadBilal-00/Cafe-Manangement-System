@@ -1,0 +1,373 @@
+@{
+    ViewData["Title"] = "Register";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem;">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+        <h1 class="page-title" style="margin:0;">Register</h1>
+        @if (branches.Count > 1)
+        {
+            <select id="posBranch" class="form-select" style="min-width:170px;">
+                @foreach (var b in branches)
+                { <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option> }
+            </select>
+        }
+        else if (selectedBranchId.HasValue)
+        {
+            <input type="hidden" id="posBranch" value="@selectedBranchId" />
+        }
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+        <button class="btn btn-ghost btn-sm" onclick="posOpenDrawer('recent')"><i class="fas fa-clock-rotate-left" style="margin-right:0.4rem;"></i> Recent</button>
+        <button class="btn btn-ghost btn-sm" onclick="posOpenDrawer('held')"><i class="fas fa-pause" style="margin-right:0.4rem;"></i> Held</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('expenseModal').style.display='flex'"><i class="fas fa-receipt" style="margin-right:0.4rem;"></i> Expense</button>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:1.25rem;align-items:start;">
+    <!-- ═══ MENU (tiles) ═══ -->
+    <div class="card">
+        <div class="card-body">
+            <div style="display:flex;gap:0.6rem;margin-bottom:0.9rem;">
+                <input id="posSearch" type="search" class="form-control" placeholder="Search or scan barcode…" style="flex:1;" />
+            </div>
+            <div id="posCats" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.9rem;"></div>
+            <div id="posTiles" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.7rem;max-height:62vh;overflow-y:auto;"></div>
+            <div id="posMenuEmpty" style="display:none;text-align:center;padding:2.5rem;color:var(--text-secondary);">No items — pick a branch with a menu.</div>
+        </div>
+    </div>
+
+    <!-- ═══ CART ═══ -->
+    <div class="card" style="position:sticky;top:1rem;">
+        <div class="card-body">
+            <!-- service type + pickers -->
+            <div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;">
+                @foreach (var st in new[] { "DineIn", "Takeaway", "Delivery" })
+                {
+                    <button type="button" class="btn btn-secondary btn-sm pos-svc" data-svc="@st" style="flex:1;">@st</button>
+                }
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
+                <select id="posTable" class="form-select"><option value="">No table</option></select>
+                <select id="posStaff" class="form-select"><option value="">No staff</option></select>
+            </div>
+            <div style="margin-bottom:0.75rem;position:relative;">
+                <input id="posCustomer" class="form-control" placeholder="Walk-In customer (type to search)" autocomplete="off" />
+                <input type="hidden" id="posCustomerId" />
+                <div id="posCustList" style="display:none;position:absolute;z-index:20;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;width:100%;max-height:180px;overflow:auto;"></div>
+            </div>
+
+            <!-- cart lines -->
+            <div id="posCart" style="max-height:34vh;overflow-y:auto;border-top:1px solid var(--border-light);"></div>
+            <div id="posCartEmpty" style="text-align:center;padding:1.5rem;color:var(--text-tertiary);">
+                <i class="fas fa-basket-shopping" style="font-size:1.6rem;display:block;margin-bottom:0.4rem;"></i>Tap items to add
+            </div>
+
+            <!-- charges -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;margin:0.75rem 0;">
+                <div><label class="caption">Packing</label><input id="posPacking" type="number" min="0" value="0" class="form-control" oninput="posQuote()"></div>
+                <div><label class="caption">Shipping</label><input id="posShipping" type="number" min="0" value="0" class="form-control" oninput="posQuote()"></div>
+                <div><label class="caption">Tax %</label><input id="posTax" type="number" min="0" placeholder="auto" class="form-control" oninput="posQuote()"></div>
+            </div>
+            <div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;">
+                <input id="posPromo" class="form-control" placeholder="Promo code" oninput="posQuote()" style="flex:1;">
+                <select id="posPartner" class="form-select" style="flex:1;" onchange="posQuote()"><option value="">No card offer</option></select>
+            </div>
+
+            <!-- totals -->
+            <div style="border-top:1px solid var(--border-light);padding-top:0.6rem;font-size:0.9rem;">
+                <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><b id="tSub">Rs. 0</b></div>
+                <div style="display:flex;justify-content:space-between;color:#16a34a;"><span>Discounts</span><b id="tDisc">Rs. 0</b></div>
+                <div style="display:flex;justify-content:space-between;"><span>Charges</span><b id="tChg">Rs. 0</b></div>
+                <div style="display:flex;justify-content:space-between;"><span>Tax (<span id="tRate">0</span>%)</span><b id="tTax">Rs. 0</b></div>
+                <div style="display:flex;justify-content:space-between;font-size:1.15rem;margin-top:0.35rem;"><span>Total</span><b id="tTotal" style="color:var(--accent);">Rs. 0</b></div>
+            </div>
+
+            <!-- bottom bar -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.9rem;">
+                <button class="btn btn-primary" onclick="posPay('Cash')"><i class="fas fa-money-bill" style="margin-right:0.4rem;"></i> Cash</button>
+                <button class="btn btn-primary" onclick="posPay('Card')"><i class="fas fa-credit-card" style="margin-right:0.4rem;"></i> Card</button>
+                <button class="btn btn-secondary" onclick="posMultiPay()"><i class="fas fa-layer-group" style="margin-right:0.4rem;"></i> Multiple</button>
+                <button class="btn btn-secondary" onclick="posHold('Suspended')"><i class="fas fa-pause" style="margin-right:0.4rem;"></i> Suspend</button>
+                <button class="btn btn-ghost" onclick="posHold('Draft')" style="grid-column:span 2;"><i class="fas fa-file-lines" style="margin-right:0.4rem;"></i> Save as Draft</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Multiple payment modal -->
+<div id="payModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:440px;width:100%;"><div class="card-body">
+        <h3 style="margin:0 0 0.75rem;">Split Payment · <span id="payTotal"></span></h3>
+        <div id="payLines" style="margin-bottom:0.6rem;"></div>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.6rem;">
+            <select id="payMethod" class="form-select" style="flex:1;"><option>Cash</option><option>Card</option><option>Wallet</option><option>BankTransfer</option></select>
+            <input id="payAmt" type="number" min="0" class="form-control" placeholder="Amount" style="flex:1;">
+            <button class="btn btn-secondary" onclick="payAdd()">Add</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;"><span>Remaining</span><b id="payRemaining"></b></div>
+        <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-primary" onclick="posFinalize()"><i class="fas fa-check" style="margin-right:0.4rem;"></i> Complete</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('payModal').style.display='none'">Cancel</button>
+        </div>
+    </div></div>
+</div>
+
+<!-- Expense modal -->
+<div id="expenseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:400px;width:100%;"><div class="card-body">
+        <h3 style="margin:0 0 0.75rem;">Quick Expense</h3>
+        <div class="form-group"><label class="form-label">Title</label><input id="expTitle" class="form-control"></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Amount</label><input id="expAmt" type="number" min="0" class="form-control"></div>
+            <div class="form-group"><label class="form-label">Category</label><input id="expCat" class="form-control" value="Misc"></div>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-primary" onclick="posExpense()">Save</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('expenseModal').style.display='none'">Cancel</button>
+        </div>
+    </div></div>
+</div>
+
+<!-- Drawer (recent / held) -->
+<div id="posDrawer" style="display:none;position:fixed;top:0;right:0;bottom:0;width:380px;max-width:90vw;background:var(--bg-surface);box-shadow:-8px 0 30px rgba(0,0,0,.15);z-index:9998;padding:1.25rem;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3 id="drawerTitle" style="margin:0;"></h3>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('posDrawer').style.display='none'"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div id="drawerBody"></div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const branchEl = document.getElementById('posBranch');
+    const money = v => 'Rs. ' + (Math.round((v || 0) * 100) / 100).toLocaleString();
+    let menu = [], cart = [], svc = 'DineIn', quote = { total: 0 }, tenders = [];
+    const bid = () => parseInt(branchEl?.value || '0');
+
+    // ── load reference data ──
+    async function boot() {
+        document.querySelectorAll('.pos-svc').forEach(b => b.classList.toggle('btn-primary', b.dataset.svc === svc));
+        await Promise.all([loadMenu(), loadPickers()]);
+    }
+    async function loadMenu() {
+        const r = await fetch('/Pos/GetMenu?branchId=' + bid()); menu = await r.json();
+        renderCats(); renderTiles();
+    }
+    async function loadPickers() {
+        const [t, s, p] = await Promise.all([
+            fetch('/Pos/GetTables?branchId=' + bid()).then(x => x.json()),
+            fetch('/Pos/GetServiceStaff?branchId=' + bid()).then(x => x.json()),
+            fetch('/Pos/GetPartnerships?branchId=' + bid()).then(x => x.json())
+        ]);
+        document.getElementById('posTable').innerHTML = '<option value="">No table</option>' + t.map(x => `<option value="${x.id}">${x.name}${x.zone ? ' · ' + x.zone : ''}</option>`).join('');
+        document.getElementById('posStaff').innerHTML = '<option value="">No staff</option>' + s.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+        document.getElementById('posPartner').innerHTML = '<option value="">No card offer</option>' + p.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+    }
+
+    let activeCat = 'All';
+    function renderCats() {
+        const cats = ['All', ...new Set(menu.map(m => m.category))];
+        document.getElementById('posCats').innerHTML = cats.map(c =>
+            `<button class="btn btn-sm ${c === activeCat ? 'btn-primary' : 'btn-secondary'}" onclick="posCat('${c.replace(/'/g, "")}')">${c}</button>`).join('');
+    }
+    window.posCat = c => { activeCat = c; renderCats(); renderTiles(); };
+    function renderTiles() {
+        const term = document.getElementById('posSearch').value.toLowerCase();
+        const items = menu.filter(m => (activeCat === 'All' || m.category === activeCat) && (!term || m.name.toLowerCase().includes(term) || (m.sku || '').toLowerCase() === term));
+        document.getElementById('posMenuEmpty').style.display = items.length ? 'none' : 'block';
+        document.getElementById('posTiles').innerHTML = items.map(m =>
+            `<button class="card" style="cursor:pointer;text-align:left;border:1px solid var(--border);padding:0;" onclick="posAdd(${m.id})">
+                <div style="padding:0.65rem;">
+                    <div style="font-weight:700;font-size:0.85rem;line-height:1.2;">${m.name}</div>
+                    <div class="caption" style="margin-top:0.3rem;">${money(m.price)}</div>
+                </div>
+            </button>`).join('');
+    }
+
+    // ── cart ──
+    window.posAdd = id => {
+        const m = menu.find(x => x.id === id); if (!m) return;
+        const line = cart.find(l => l.menuItemId === id);
+        if (line) line.qty++; else cart.push({ menuItemId: id, name: m.name, price: m.price, qty: 1, lineDiscount: 0, notes: null });
+        renderCart();
+    };
+    window.posQty = (i, d) => { cart[i].qty = Math.max(1, cart[i].qty + d); renderCart(); };
+    window.posRemove = i => { cart.splice(i, 1); renderCart(); };
+    window.posDisc = (i, v) => { cart[i].lineDiscount = Math.max(0, parseFloat(v) || 0); posQuote(); };
+    function renderCart() {
+        document.getElementById('posCartEmpty').style.display = cart.length ? 'none' : 'block';
+        document.getElementById('posCart').innerHTML = cart.map((l, i) =>
+            `<div style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 0;border-bottom:1px solid var(--border-light);">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:0.85rem;">${l.name}</div>
+                    <div class="caption">${money(l.price)} · <input type="number" min="0" value="${l.lineDiscount}" onchange="posDisc(${i},this.value)" style="width:64px;padding:1px 4px;border:1px solid var(--border);border-radius:4px;" title="line discount"></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.3rem;">
+                    <button class="btn btn-ghost btn-sm" onclick="posQty(${i},-1)">−</button>
+                    <b>${l.qty}</b>
+                    <button class="btn btn-ghost btn-sm" onclick="posQty(${i},1)">+</button>
+                    <button class="btn btn-ghost btn-sm" onclick="posRemove(${i})" style="color:#dc2626;"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`).join('');
+        posQuote();
+    }
+
+    // ── authoritative quote (server) ──
+    let quoteTimer;
+    window.posQuote = () => {
+        clearTimeout(quoteTimer);
+        quoteTimer = setTimeout(async () => {
+            if (!cart.length) { setTotals({ subtotal: 0, totalDiscount: 0, packingCharge: 0, shippingCharge: 0, taxRate: 0, taxAmount: 0, total: 0 }); return; }
+            const r = await fetch('/Pos/Quote', { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token }, body: JSON.stringify(payload()) });
+            quote = await r.json(); setTotals(quote);
+        }, 250);
+    };
+    function setTotals(q) {
+        document.getElementById('tSub').textContent = money(q.subtotal);
+        document.getElementById('tDisc').textContent = '−' + money(q.totalDiscount);
+        document.getElementById('tChg').textContent = money((q.packingCharge || 0) + (q.shippingCharge || 0));
+        document.getElementById('tRate').textContent = q.taxRate;
+        document.getElementById('tTax').textContent = money(q.taxAmount);
+        document.getElementById('tTotal').textContent = money(q.total);
+    }
+
+    function payload(extra) {
+        return Object.assign({
+            branchId: bid(),
+            customerId: document.getElementById('posCustomerId').value ? parseInt(document.getElementById('posCustomerId').value) : null,
+            tableId: document.getElementById('posTable').value ? parseInt(document.getElementById('posTable').value) : null,
+            serviceType: svc,
+            serviceStaffId: document.getElementById('posStaff').value ? parseInt(document.getElementById('posStaff').value) : null,
+            items: cart.map(l => ({ menuItemId: l.menuItemId, quantity: l.qty, lineDiscount: l.lineDiscount, notes: l.notes })),
+            promoCode: document.getElementById('posPromo').value || null,
+            partnershipId: document.getElementById('posPartner').value ? parseInt(document.getElementById('posPartner').value) : null,
+            packingCharge: parseFloat(document.getElementById('posPacking').value) || 0,
+            shippingCharge: parseFloat(document.getElementById('posShipping').value) || 0,
+            taxRateOverride: document.getElementById('posTax').value === '' ? null : parseFloat(document.getElementById('posTax').value),
+            existingOrderId: window._posExisting || null,
+            clientRef: window._posRef
+        }, extra || {});
+    }
+
+    // ── pay ──
+    window.posPay = method => { if (!cart.length) return; tenders = [{ method, amount: quote.total }]; posFinalize(); };
+    window.posMultiPay = () => {
+        if (!cart.length) return;
+        tenders = [];
+        document.getElementById('payTotal').textContent = money(quote.total);
+        renderTenders(); document.getElementById('payModal').style.display = 'flex';
+    };
+    window.payAdd = () => {
+        const amt = parseFloat(document.getElementById('payAmt').value); if (!(amt > 0)) return;
+        tenders.push({ method: document.getElementById('payMethod').value, amount: amt });
+        document.getElementById('payAmt').value = ''; renderTenders();
+    };
+    function renderTenders() {
+        const paid = tenders.reduce((s, t) => s + t.amount, 0);
+        document.getElementById('payLines').innerHTML = tenders.map((t, i) =>
+            `<div style="display:flex;justify-content:space-between;padding:3px 0;"><span>${t.method}</span><span>${money(t.amount)} <a href="javascript:void(0)" onclick="payDel(${i})" style="color:#dc2626;">×</a></span></div>`).join('');
+        document.getElementById('payRemaining').textContent = money(Math.max(0, quote.total - paid));
+    }
+    window.payDel = i => { tenders.splice(i, 1); renderTenders(); };
+
+    window.posFinalize = async () => {
+        if (!cart.length) return;
+        window._posRef = window._posRef || ('ref-' + Date.now());
+        const body = payload({ payments: tenders });
+        const r = await fetch('/Pos/Finalize', { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token }, body: JSON.stringify(body) });
+        const d = await r.json();
+        if (!d.success) { if (window.ActionCard) ActionCard.error('Sale', d.message); return; }
+        if (window.ActionCard) ActionCard.success('Sale complete', `#${d.orderNumber} · ${money(d.total)} · ${d.paymentStatus}${d.change > 0 ? ' · change ' + money(d.change) : ''}`);
+        document.getElementById('payModal').style.display = 'none';
+        cart = []; tenders = []; window._posRef = null; window._posExisting = null;
+        document.getElementById('posPromo').value = ''; document.getElementById('posPacking').value = 0; document.getElementById('posShipping').value = 0; document.getElementById('posTax').value = '';
+        document.getElementById('posCustomer').value = ''; document.getElementById('posCustomerId').value = '';
+        renderCart();
+    };
+
+    // ── hold / draft ──
+    window.posHold = async state => {
+        if (!cart.length) return;
+        const r = await fetch(state === 'Draft' ? '/Pos/SaveDraft' : '/Pos/Hold', { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token }, body: JSON.stringify(payload()) });
+        const d = await r.json();
+        if (d.success) { if (window.ActionCard) ActionCard.success(state, d.message); cart = []; renderCart(); }
+    };
+
+    // ── drawer (recent / held / drafts) ──
+    window.posOpenDrawer = async kind => {
+        document.getElementById('drawerTitle').textContent = kind === 'recent' ? 'Recent Transactions' : 'Held & Drafts';
+        const drawer = document.getElementById('posDrawer'); drawer.style.display = 'block';
+        const body = document.getElementById('drawerBody'); body.innerHTML = '<div class="caption">Loading…</div>';
+        if (kind === 'recent') {
+            const d = await fetch('/Pos/RecentTransactions?branchId=' + bid()).then(x => x.json());
+            body.innerHTML = d.length ? d.map(t =>
+                `<div class="card" style="margin-bottom:0.5rem;"><div class="card-body" style="padding:0.7rem;">
+                    <div style="display:flex;justify-content:space-between;"><b>${t.invoiceNumber}</b><span class="badge ${t.paymentStatus === 'Paid' ? 'badge-success' : 'badge-warning'}">${t.paymentStatus}</span></div>
+                    <div class="caption">${t.orderNumber} · ${money(t.totalAmount)} · ${t.paymentMethod}</div>
+                    ${t.pdfUrl ? `<a href="${t.pdfUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-top:0.3rem;"><i class="fas fa-file-pdf"></i> Bill</a>` : ''}
+                </div></div>`).join('') : '<div class="caption">No transactions yet.</div>';
+        } else {
+            const [held, drafts] = await Promise.all([
+                fetch('/Pos/Suspended?branchId=' + bid()).then(x => x.json()),
+                fetch('/Pos/Drafts?branchId=' + bid()).then(x => x.json())
+            ]);
+            const rows = [...held.map(h => ({ ...h, kind: 'Held' })), ...drafts.map(d => ({ ...d, kind: 'Draft' }))];
+            body.innerHTML = rows.length ? rows.map(o =>
+                `<div class="card" style="margin-bottom:0.5rem;cursor:pointer;" onclick="posResume(${o.id})"><div class="card-body" style="padding:0.7rem;">
+                    <div style="display:flex;justify-content:space-between;"><b>${o.orderNumber}</b><span class="badge badge-info">${o.kind}</span></div>
+                    <div class="caption">${o.items} items · ${money(o.total)} · ${o.serviceType} · ${o.at}</div>
+                </div></div>`).join('') : '<div class="caption">Nothing held.</div>';
+        }
+    };
+    window.posResume = async id => {
+        const o = await fetch('/Pos/Resume?id=' + id).then(x => x.json());
+        cart = o.items.map(i => ({ menuItemId: i.menuItemId, name: i.name, price: i.price, qty: i.quantity, lineDiscount: i.lineDiscount, notes: i.notes }));
+        svc = o.serviceType; document.querySelectorAll('.pos-svc').forEach(b => b.classList.toggle('btn-primary', b.dataset.svc === svc));
+        document.getElementById('posPacking').value = o.packingCharge; document.getElementById('posShipping').value = o.shippingCharge;
+        window._posExisting = o.id;
+        document.getElementById('posDrawer').style.display = 'none';
+        renderCart();
+    };
+
+    // ── expense ──
+    window.posExpense = async () => {
+        const body = `branchId=${bid()}&title=${encodeURIComponent(document.getElementById('expTitle').value)}&amount=${document.getElementById('expAmt').value}&category=${encodeURIComponent(document.getElementById('expCat').value)}`;
+        const d = await fetch('/Pos/QuickExpense', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token }, body }).then(x => x.json());
+        if (window.ActionCard) d.success ? ActionCard.success('Expense', d.message) : ActionCard.error('Expense', d.message);
+        if (d.success) document.getElementById('expenseModal').style.display = 'none';
+    };
+
+    // ── customer autocomplete (reuses Order/SearchCustomers) ──
+    let custTimer;
+    document.getElementById('posCustomer').addEventListener('input', e => {
+        clearTimeout(custTimer); const term = e.target.value; document.getElementById('posCustomerId').value = '';
+        if (term.length < 2) { document.getElementById('posCustList').style.display = 'none'; return; }
+        custTimer = setTimeout(async () => {
+            const d = await fetch('/Order/SearchCustomers?term=' + encodeURIComponent(term)).then(x => x.json());
+            const list = document.getElementById('posCustList');
+            list.innerHTML = d.map(c => `<div style="padding:0.5rem;cursor:pointer;" onclick="posPickCust(${c.id},'${c.name.replace(/'/g,"")}')">${c.name} <span class="caption">${c.phone || ''}</span></div>`).join('');
+            list.style.display = d.length ? 'block' : 'none';
+        }, 250);
+    });
+    window.posPickCust = (id, name) => { document.getElementById('posCustomerId').value = id; document.getElementById('posCustomer').value = name; document.getElementById('posCustList').style.display = 'none'; };
+
+    // ── events ──
+    document.querySelectorAll('.pos-svc').forEach(b => b.addEventListener('click', () => { svc = b.dataset.svc; document.querySelectorAll('.pos-svc').forEach(x => x.classList.toggle('btn-primary', x === b)); }));
+    document.getElementById('posSearch').addEventListener('input', renderTiles);
+    document.getElementById('posSearch').addEventListener('keydown', async e => {
+        if (e.key !== 'Enter') return;
+        const code = e.target.value.trim(); if (!code) return;
+        const d = await fetch(`/Pos/ScanLookup?branchId=${bid()}&code=${encodeURIComponent(code)}`).then(x => x.json());
+        if (d.found) { posAdd(d.id); e.target.value = ''; renderTiles(); }
+    });
+    branchEl?.addEventListener?.('change', () => { cart = []; renderCart(); boot(); });
+
+    boot();
+})();
+</script>
+}

@@ -1,0 +1,129 @@
+@model List<Cafe.Models.RestaurantTable>
+@{
+    ViewData["Title"] = "Floor & Tables";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+    var isManager = Context.Session.GetString("UserRole") is "Owner" or "BranchManager";
+    var zones = Model.GroupBy(t => string.IsNullOrEmpty(t.Zone) ? "Main" : t.Zone!).OrderBy(g => g.Key);
+    string statusColor(string s) => s switch { "Available" => "#16a34a", "Occupied" => "#dc2626", "Reserved" => "#d97706", "Dirty" => "#6b7280", _ => "#6b7280" };
+}
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Floor &amp; Tables</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Tap a table to change its status.</p>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center;">
+        @if (branches.Count > 1)
+        {
+            <form method="get"><select name="branchId" class="form-select" onchange="this.form.submit()">
+                @foreach (var b in branches)
+                { <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option> }
+            </select></form>
+        }
+        @if (isManager && selectedBranchId.HasValue)
+        {
+            <button class="btn btn-primary" onclick="document.getElementById('addTableModal').style.display='flex'"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> Add Table</button>
+        }
+    </div>
+</div>
+
+<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+    @foreach (var s in new[] { "Available", "Occupied", "Reserved", "Dirty" })
+    {
+        <span style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;"><span style="width:12px;height:12px;border-radius:50%;background:@statusColor(s);display:inline-block;"></span>@s</span>
+    }
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card"><div class="card-body" style="text-align:center;padding:3rem;">
+        <i class="fas fa-chair" style="font-size:2.5rem;color:var(--border-light);display:block;margin-bottom:1rem;"></i>
+        <p style="font-weight:700;color:var(--text-secondary);margin:0 0 0.25rem;">No tables yet</p>
+        <p class="caption">Add tables to build your floor plan.</p>
+    </div></div>
+}
+
+@foreach (var zone in zones)
+{
+    <div style="margin-bottom:1.5rem;">
+        <div class="sidebar-section-label" style="margin-bottom:0.75rem;">@zone.Key</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.9rem;">
+            @foreach (var t in zone)
+            {
+                <div class="card table-card" data-id="@t.Id" data-status="@t.Status"
+                     style="cursor:pointer;border:2px solid @statusColor(t.Status);text-align:center;transition:transform .15s;"
+                     onclick="cycleStatus(@t.Id)">
+                    <div class="card-body" style="padding:1rem 0.5rem;">
+                        <div style="font-size:1.3rem;font-weight:800;">@t.Name</div>
+                        <div class="caption"><i class="fas fa-user-group"></i> @t.Capacity</div>
+                        <div class="badge" style="margin-top:0.5rem;background:@(statusColor(t.Status))1a;color:@statusColor(t.Status);border:1px solid @statusColor(t.Status);">@t.Status</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Add Table Modal -->
+<div id="addTableModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:420px;width:100%;">
+        <div class="card-body">
+            <h3 style="margin:0 0 1rem;">Add Table</h3>
+            <div class="form-group"><label class="form-label">Name</label><input id="ntName" class="form-control" placeholder="T1" /></div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Capacity</label><input id="ntCap" type="number" value="4" min="1" class="form-control" /></div>
+                <div class="form-group"><label class="form-label">Zone</label><input id="ntZone" class="form-control" placeholder="Main" /></div>
+            </div>
+            <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+                <button class="btn btn-primary" onclick="createTable()"><i class="fas fa-save" style="margin-right:0.4rem;"></i> Save</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('addTableModal').style.display='none'">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const branchId = @(selectedBranchId ?? 0);
+    const order = ['Available', 'Occupied', 'Reserved', 'Dirty'];
+    const color = { Available: '#16a34a', Occupied: '#dc2626', Reserved: '#d97706', Dirty: '#6b7280' };
+
+    window.cycleStatus = async function (id) {
+        const card = document.querySelector(`.table-card[data-id="${id}"]`);
+        const cur = card.getAttribute('data-status');
+        const next = order[(order.indexOf(cur) + 1) % order.length];
+        try {
+            const res = await fetch('/Table/SetStatus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
+                body: `id=${id}&status=${next}`
+            });
+            const data = await res.json();
+            if (!data.success) return;
+            card.setAttribute('data-status', next);
+            card.style.borderColor = color[next];
+            const badge = card.querySelector('.badge');
+            badge.textContent = next; badge.style.color = color[next];
+            badge.style.background = color[next] + '1a'; badge.style.borderColor = color[next];
+        } catch (e) { console.warn(e); }
+    };
+
+    window.createTable = async function () {
+        const name = document.getElementById('ntName').value.trim();
+        if (!name) return;
+        const body = `branchId=${branchId}&name=${encodeURIComponent(name)}&capacity=${document.getElementById('ntCap').value}&zone=${encodeURIComponent(document.getElementById('ntZone').value)}`;
+        const res = await fetch('/Table/Create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
+            body
+        });
+        const data = await res.json();
+        if (data.success) location.reload();
+        else if (window.ActionCard) ActionCard.error('Table', data.message || 'Could not add table.');
+    };
+})();
+</script>
+}

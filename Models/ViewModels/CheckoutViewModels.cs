@@ -31,6 +31,10 @@ namespace Cafe.Models.ViewModels
         public decimal PartnershipDiscount { get; set; }
         public string? PartnershipMessage { get; set; }
 
+        // Phase 1: POS charge lines added after discounts, before tax.
+        public decimal PackingCharge { get; set; }
+        public decimal ShippingCharge { get; set; }
+
         public decimal TaxRate { get; set; }
         public decimal TaxAmount { get; set; }
         public decimal Total { get; set; }
