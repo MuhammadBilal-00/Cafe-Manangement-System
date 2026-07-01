@@ -9,9 +9,11 @@ namespace Cafe.Models
     /// Holds the optional-hardware toggle, the tax rate applied to invoices, and an
     /// optional footer line printed on PDF bills.
     /// </summary>
-    public class BranchSetting
+    public class BranchSetting : ITenantOwned
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0) ──
+        public int TenantId { get; set; }
 
         [Required]
         public int BranchId { get; set; }

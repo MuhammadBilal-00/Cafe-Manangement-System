@@ -9,6 +9,7 @@ using Cafe.Services;
 
 namespace Cafe.Controllers
 {
+    [RequireFeature("Purchases")]
     [RequireManagerOrOwner]
     public class PurchaseController : BaseController
     {

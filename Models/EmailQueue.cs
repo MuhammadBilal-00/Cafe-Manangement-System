@@ -4,9 +4,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Cafe.Models
 {
-    public class EmailQueue
+    public class EmailQueue : ITenantOwned
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0) ──
+        public int TenantId { get; set; }
 
         [Required]
         [StringLength(255)]

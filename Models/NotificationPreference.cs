@@ -3,9 +3,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Cafe.Models
 {
-    public class NotificationPreference
+    public class NotificationPreference : ITenantOwned
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0) ──
+        public int TenantId { get; set; }
 
         [Required]
         public int UserId { get; set; }

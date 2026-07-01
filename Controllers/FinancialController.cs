@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cafe.Controllers
 {
+    [RequireFeature("Analytics")]
     [RequireManagerOrOwner]
     public class FinancialController : BaseController
     {

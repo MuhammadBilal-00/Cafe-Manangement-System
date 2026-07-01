@@ -1,13 +1,30 @@
 ﻿using Cafe.Models;
+using Cafe.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Cafe.Data
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        private readonly ITenantContext? _tenantContext;
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantContext? tenantContext = null)
+            : base(options)
         {
+            _tenantContext = tenantContext;
         }
+
+        // ── Multi-tenancy: live values the global query filters read per query. EF parameterizes
+        //    these (they are members on the context instance), so the model is cached once but the
+        //    tenant value is re-evaluated on every query. ──
+        private bool IgnoreTenantFilterFlag => _tenantContext?.IgnoreTenantFilter ?? true;
+        private int CurrentTenantIdValue => _tenantContext?.CurrentTenantId ?? 0;
+
+        // ── SaaS platform ──
+        public DbSet<Tenant> Tenants { get; set; }
+        public DbSet<Plan> Plans { get; set; }
+        public DbSet<Subscription> Subscriptions { get; set; }
 
         // User Management
         public DbSet<User> Users { get; set; }
@@ -78,6 +95,81 @@ namespace Cafe.Data
             ConfigureCheckConstraints(modelBuilder);
             ConfigureNotifications(modelBuilder);
             ConfigureCheckoutModules(modelBuilder);
+            ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>
+        /// Wires tenant isolation for the whole model by convention so no entity is ever missed:
+        ///  • a global query filter on every <see cref="ITenantOwned"/> entity (plus User/AuditLog),
+        ///  • a NoAction FK + index on TenantId,
+        ///  • the platform tables (Tenant/Plan/Subscription) themselves.
+        /// </summary>
+        private void ConfigureMultiTenancy(ModelBuilder modelBuilder)
+        {
+            // ── Platform tables ──
+            modelBuilder.Entity<Tenant>().HasIndex(t => t.Slug).IsUnique();
+            modelBuilder.Entity<Tenant>().HasIndex(t => t.CustomDomain)
+                .IsUnique().HasFilter("[CustomDomain] IS NOT NULL");
+            modelBuilder.Entity<Tenant>()
+                .HasOne(t => t.Plan).WithMany()
+                .HasForeignKey(t => t.PlanId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Tenant>()
+                .ToTable(t => t.HasCheckConstraint("CK_Tenant_Status",
+                    "[Status] IN ('Active','Trial','Suspended')"));
+
+            modelBuilder.Entity<Plan>().HasIndex(p => p.Name).IsUnique();
+            modelBuilder.Entity<Plan>().Property(p => p.PriceMonthly).HasPrecision(10, 2);
+
+            modelBuilder.Entity<Subscription>()
+                .HasOne(s => s.Plan).WithMany()
+                .HasForeignKey(s => s.PlanId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Subscription>()
+                .ToTable(t => t.HasCheckConstraint("CK_Subscription_Status",
+                    "[Status] IN ('Active','Trialing','PastDue','Cancelled')"));
+
+            // ── Convention pass: every ITenantOwned entity gets a filter, index and FK to Tenant ──
+            var applyFilter = typeof(ApplicationDbContext)
+                .GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var clr = entityType.ClrType;
+                if (clr == null || !typeof(ITenantOwned).IsAssignableFrom(clr)) continue;
+
+                applyFilter.MakeGenericMethod(clr).Invoke(this, new object[] { modelBuilder });
+
+                var builder = modelBuilder.Entity(clr);
+
+                // Hot-path index: (TenantId, BranchId) when the entity is branch-scoped, else (TenantId).
+                if (clr.GetProperty("BranchId") != null)
+                    builder.HasIndex("TenantId", "BranchId");
+                else
+                    builder.HasIndex("TenantId");
+
+                builder.HasOne(typeof(Tenant)).WithMany()
+                    .HasForeignKey("TenantId").OnDelete(DeleteBehavior.NoAction);
+            }
+
+            // ── User & AuditLog: nullable TenantId (platform rows are tenant-less) ──
+            modelBuilder.Entity<User>().HasQueryFilter(u => IgnoreTenantFilterFlag || u.TenantId == CurrentTenantIdValue);
+            modelBuilder.Entity<User>().HasIndex(u => u.TenantId);
+            modelBuilder.Entity<User>()
+                .HasOne<Tenant>().WithMany()
+                .HasForeignKey(u => u.TenantId).OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<AuditLog>().HasQueryFilter(a => IgnoreTenantFilterFlag || a.TenantId == CurrentTenantIdValue);
+            modelBuilder.Entity<AuditLog>().HasIndex(a => a.TenantId);
+            modelBuilder.Entity<AuditLog>()
+                .HasOne<Tenant>().WithMany()
+                .HasForeignKey(a => a.TenantId).OnDelete(DeleteBehavior.NoAction);
+        }
+
+        /// <summary>Applies the tenant query filter for one entity type. Referencing the context
+        /// members keeps the filter live (EF parameterizes them) while the model stays cached.</summary>
+        private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class, ITenantOwned
+        {
+            modelBuilder.Entity<TEntity>()
+                .HasQueryFilter(e => IgnoreTenantFilterFlag || e.TenantId == CurrentTenantIdValue);
         }
 
         /// <summary>
@@ -87,9 +179,9 @@ namespace Cafe.Data
         /// </summary>
         private void ConfigureCheckoutModules(ModelBuilder modelBuilder)
         {
-            // ── PromoCode ──
+            // ── PromoCode ── (code is unique per tenant, not globally)
             modelBuilder.Entity<PromoCode>()
-                .HasIndex(p => p.Code).IsUnique();
+                .HasIndex(p => new { p.TenantId, p.Code }).IsUnique();
             modelBuilder.Entity<PromoCode>()
                 .ToTable(t => t.HasCheckConstraint("CK_PromoCode_DiscountType",
                     "[DiscountType] IN ('Percentage','Flat')"));
@@ -112,7 +204,7 @@ namespace Cafe.Data
             modelBuilder.Entity<Invoice>()
                 .HasIndex(i => i.OrderId).IsUnique();
             modelBuilder.Entity<Invoice>()
-                .HasIndex(i => i.InvoiceNumber).IsUnique();
+                .HasIndex(i => new { i.TenantId, i.InvoiceNumber }).IsUnique();
             modelBuilder.Entity<Invoice>()
                 .ToTable(t => t.HasCheckConstraint("CK_Invoice_PaymentStatus",
                     "[PaymentStatus] IN ('Pending','Paid','Failed','Cancelled')"));
@@ -328,25 +420,28 @@ namespace Cafe.Data
 
         private void ConfigureUniqueConstraints(ModelBuilder modelBuilder)
         {
+            // Email stays GLOBALLY unique — login resolves a user by email across tenants.
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
+            // ── Natural keys are unique PER TENANT (multi-tenancy): each tenant has its own
+            //    order/employee/category/ingredient namespace, so these are composite with TenantId. ──
             modelBuilder.Entity<Order>()
-                .HasIndex(o => o.OrderNumber)
+                .HasIndex(o => new { o.TenantId, o.OrderNumber })
                 .IsUnique();
 
             modelBuilder.Entity<Staff>()
-                .HasIndex(s => s.EmployeeId)
+                .HasIndex(s => new { s.TenantId, s.EmployeeId })
                 .IsUnique()
                 .HasFilter("[EmployeeId] IS NOT NULL");
 
             modelBuilder.Entity<Category>()
-                .HasIndex(c => c.Name)
+                .HasIndex(c => new { c.TenantId, c.Name })
                 .IsUnique();
 
             modelBuilder.Entity<Ingredient>()
-                .HasIndex(i => i.Name)
+                .HasIndex(i => new { i.TenantId, i.Name })
                 .IsUnique();
 
             // Attendance: one record per staff per date

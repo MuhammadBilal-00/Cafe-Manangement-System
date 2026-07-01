@@ -1,12 +1,14 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Cafe.Models
 {
-    public class Feedback
+    public class Feedback : ITenantOwned
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0) ──
+        public int TenantId { get; set; }
 
         // Nullable for now (no real customer auth)
         public int? CustomerId { get; set; }

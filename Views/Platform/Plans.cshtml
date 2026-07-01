@@ -1,0 +1,46 @@
+@model List<Cafe.Models.Plan>
+@{
+    ViewData["Title"] = "Plans";
+}
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Plans</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Pricing tiers and the features each unlocks.</p>
+    </div>
+    <a asp-action="PlanForm" class="btn btn-primary"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Plan</a>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1.25rem;">
+    @foreach (var p in Model)
+    {
+        var feats = p.Features == "*" ? new[] { "All features" } : p.Features.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        <div class="card">
+            <div class="card-body">
+                <div style="display:flex;justify-content:space-between;align-items:start;">
+                    <div>
+                        <h3 style="margin:0;font-size:1.15rem;">@p.Name</h3>
+                        <div class="caption">@p.Description</div>
+                    </div>
+                    <span class="badge @(p.IsActive ? "badge-success" : "badge-neutral")">@(p.IsActive ? "Active" : "Hidden")</span>
+                </div>
+                <div style="margin:1rem 0;">
+                    <span style="font-size:1.8rem;font-weight:800;color:var(--text-primary);">Rs. @p.PriceMonthly.ToString("N0")</span>
+                    <span class="caption">/month</span>
+                </div>
+                <div class="caption" style="margin-bottom:0.5rem;"><i class="fas fa-store" style="margin-right:0.3rem;"></i>@p.MaxBranches branches · <i class="fas fa-users" style="margin:0 0.3rem;"></i>@p.MaxUsers users</div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin:0.75rem 0;">
+                    @foreach (var f in feats)
+                    {
+                        <span class="badge badge-info" style="font-size:0.68rem;">@f</span>
+                    }
+                </div>
+                <a asp-action="PlanForm" asp-route-id="@p.Id" class="btn btn-secondary btn-sm" style="width:100%;"><i class="fas fa-edit" style="margin-right:0.4rem;"></i> Edit</a>
+            </div>
+        </div>
+    }
+    @if (!Model.Any())
+    {
+        <div class="card"><div class="card-body" style="text-align:center;padding:3rem;color:var(--text-secondary);">No plans yet. Create one to start gating features.</div></div>
+    }
+</div>

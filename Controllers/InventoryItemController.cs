@@ -8,6 +8,7 @@ using Cafe.Services;
 
 namespace Cafe.Controllers
 {
+    [RequireFeature("Inventory")]
     [RequireManagerOrOwner]
     public class InventoryItemController : BaseController
     {

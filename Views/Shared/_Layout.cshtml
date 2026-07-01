@@ -1,4 +1,20 @@
-﻿<!DOCTYPE html>
+﻿@inject Cafe.Services.ITenantBrandingService Branding
+@inject Cafe.Services.IFeatureGate FeatureGate
+@inject Cafe.Services.ITenantContext TenantCtx
+@{
+    var brand = await Branding.GetCurrentAsync();
+    var sessRole = Context.Session.GetString("UserRole");
+    var isPlatform = sessRole == "PlatformAdmin";
+    var impersonatingId = Context.Session.GetInt32("ImpersonatingTenantId");
+    var impersonatingName = Context.Session.GetString("ImpersonatingTenantName");
+    var sessAuthed = Context.Session.GetString("UserId") != null;
+    HashSet<string>? planFeatures = (sessAuthed && !isPlatform) ? await FeatureGate.GetEnabledFeaturesAsync() : null;
+    Func<string, bool> canFeature = key =>
+        isPlatform
+        || Cafe.Services.FeatureCatalog.Core.Contains(key)
+        || (planFeatures != null && (planFeatures.Contains("*") || planFeatures.Contains(key)));
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -72,6 +88,15 @@
     @await RenderSectionAsync("Styles", required: false)
     <!-- Theme init — runs immediately to prevent flash of wrong theme -->
     <script>(function(){var t=localStorage.getItem('cafetheme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+
+    <!-- Per-tenant white-label branding: overrides design-system variables (no per-tenant CSS) -->
+    <style>
+        :root {
+            --accent: @brand.PrimaryColor;
+            --accent-hover: @brand.PrimaryColor;
+        }
+        .sidebar { background: @brand.SidebarColor; }
+    </style>
 </head>
 <body>
     @* Pages send this via a "RequestVerificationToken" header on JSON/fetch POSTs.
@@ -97,14 +122,21 @@
             <!-- Brand -->
             <div class="sidebar-brand">
                 <div class="sidebar-brand-icon">
-                    <i class="fas fa-mug-hot"></i>
+                    @if (!string.IsNullOrEmpty(brand.LogoUrl))
+                    {
+                        <img src="@brand.LogoUrl" alt="logo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />
+                    }
+                    else
+                    {
+                        <i class="fas fa-mug-hot"></i>
+                    }
                 </div>
                 <div class="sidebar-brand-text">
-                    <div class="sidebar-brand-name">Cafe Manager</div>
+                    <div class="sidebar-brand-name">@(isPlatform ? "Platform Console" : brand.BusinessName)</div>
                     <div class="sidebar-brand-sub">
                         @if (isAuthenticated)
                         {
-                            @userRole<text> Panel</text>
+                            @(isPlatform ? "SaaS Operator" : userRole + " Panel")
                         }
                         else
                         {
@@ -116,128 +148,195 @@
 
             <!-- Navigation -->
             <nav class="sidebar-nav">
-                <!-- Main Navigation -->
-                <div class="sidebar-section-label">Main</div>
-
-                <a asp-controller="Home" asp-action="Index" class="sidebar-link" data-nav="Home">
-                    <span class="sidebar-link-icon"><i class="fas fa-gauge-high"></i></span>
-                    <span class="sidebar-link-text">Dashboard</span>
-                </a>
-
-                @if (isOwnerOrManager)
+                @if (isPlatform)
                 {
-                    <a asp-controller="Branch" asp-action="Index" class="sidebar-link" data-nav="Branch">
-                        <span class="sidebar-link-icon"><i class="fas fa-store"></i></span>
-                        <span class="sidebar-link-text">Branches</span>
+                    <!-- ═══ PLATFORM ADMIN NAV ═══ -->
+                    <div class="sidebar-section-label">Platform</div>
+                    <a asp-controller="Platform" asp-action="Index" class="sidebar-link" data-nav="PlatformIndex">
+                        <span class="sidebar-link-icon"><i class="fas fa-gauge-high"></i></span>
+                        <span class="sidebar-link-text">Console</span>
+                    </a>
+                    <a asp-controller="Platform" asp-action="Tenants" class="sidebar-link" data-nav="PlatformTenants">
+                        <span class="sidebar-link-icon"><i class="fas fa-building"></i></span>
+                        <span class="sidebar-link-text">Tenants</span>
+                    </a>
+                    <a asp-controller="Platform" asp-action="Plans" class="sidebar-link" data-nav="PlatformPlans">
+                        <span class="sidebar-link-icon"><i class="fas fa-layer-group"></i></span>
+                        <span class="sidebar-link-text">Plans</span>
                     </a>
 
-                    <a asp-controller="Staff" asp-action="Index" class="sidebar-link" data-nav="Staff">
-                        <span class="sidebar-link-icon"><i class="fas fa-users"></i></span>
-                        <span class="sidebar-link-text">Staff</span>
-                    </a>
-                }
-
-                @if (userRole != "Customer")
-                {
-                    <div class="sidebar-section-label">Operations</div>
-
-                    <a asp-controller="MenuItem" asp-action="Index" class="sidebar-link" data-nav="MenuItem">
-                        <span class="sidebar-link-icon"><i class="fas fa-utensils"></i></span>
-                        <span class="sidebar-link-text">Menu</span>
-                    </a>
-
-                    <a asp-controller="Order" asp-action="Index" class="sidebar-link" data-nav="Order">
-                        <span class="sidebar-link-icon"><i class="fas fa-receipt"></i></span>
-                        <span class="sidebar-link-text">Orders</span>
-                    </a>
-
-                    <a asp-controller="Invoice" asp-action="Index" class="sidebar-link" data-nav="Invoice">
-                        <span class="sidebar-link-icon"><i class="fas fa-file-invoice-dollar"></i></span>
-                        <span class="sidebar-link-text">Bill History</span>
-                    </a>
-                }
-
-                @if (isOwnerOrManager)
-                {
-                    <a asp-controller="InventoryItem" asp-action="Index" class="sidebar-link" data-nav="InventoryItem">
-                        <span class="sidebar-link-icon"><i class="fas fa-boxes-stacked"></i></span>
-                        <span class="sidebar-link-text">Inventory</span>
-                    </a>
-                    <a asp-controller="Supplier" asp-action="Index" class="sidebar-link" data-nav="Supplier">
-                        <span class="sidebar-link-icon"><i class="fas fa-truck"></i></span>
-                        <span class="sidebar-link-text">Suppliers</span>
-                    </a>
-                    <a asp-controller="Purchase" asp-action="Index" class="sidebar-link" data-nav="Purchase">
-                        <span class="sidebar-link-icon"><i class="fas fa-shopping-cart"></i></span>
-                        <span class="sidebar-link-text">Purchases</span>
-                    </a>
-                }
-
-                @if (userRole != "Customer")
-                {
-                    <div class="sidebar-section-label">People</div>
-
-                    <a asp-controller="Attendance" asp-action="Index" class="sidebar-link" data-nav="Attendance">
-                        <span class="sidebar-link-icon"><i class="fas fa-calendar-check"></i></span>
-                        <span class="sidebar-link-text">Attendance</span>
-                    </a>
-                }
-
-                @if (isOwnerOrManager)
-                {
-                    <a asp-controller="Salary" asp-action="Index" class="sidebar-link" data-nav="Salary">
-                        <span class="sidebar-link-icon"><i class="fas fa-wallet"></i></span>
-                        <span class="sidebar-link-text">Payroll</span>
-                    </a>
-
-                    <div class="sidebar-section-label">Analytics</div>
-
-                    <a asp-controller="Financial" asp-action="Dashboard" class="sidebar-link" data-nav="Financial">
-                        <span class="sidebar-link-icon"><i class="fas fa-chart-pie"></i></span>
-                        <span class="sidebar-link-text">Financials</span>
-                    </a>
-
-                    <a asp-controller="Reports" asp-action="Index" class="sidebar-link" data-nav="Reports">
-                        <span class="sidebar-link-icon"><i class="fas fa-chart-line"></i></span>
-                        <span class="sidebar-link-text">Reports</span>
-                    </a>
-
-                    <a asp-controller="Feedback" asp-action="Index" class="sidebar-link" data-nav="Feedback">
-                        <span class="sidebar-link-icon"><i class="fas fa-message"></i></span>
-                        <span class="sidebar-link-text">Feedback</span>
-                    </a>
-
-                    <div class="sidebar-section-label">Marketing</div>
-
-                    <a asp-controller="PromoCode" asp-action="Index" class="sidebar-link" data-nav="PromoCode">
-                        <span class="sidebar-link-icon"><i class="fas fa-tags"></i></span>
-                        <span class="sidebar-link-text">Promo Codes</span>
-                    </a>
-
-                    <a asp-controller="Partnership" asp-action="Index" class="sidebar-link" data-nav="Partnership">
-                        <span class="sidebar-link-icon"><i class="fas fa-credit-card"></i></span>
-                        <span class="sidebar-link-text">Card Partnerships</span>
-                    </a>
-
-                    <a asp-controller="CheckoutSettings" asp-action="Index" class="sidebar-link" data-nav="CheckoutSettings">
-                        <span class="sidebar-link-icon"><i class="fas fa-cash-register"></i></span>
-                        <span class="sidebar-link-text">Checkout Settings</span>
-                    </a>
-                }
-
-                @if (isOwner)
-                {
                     <div class="sidebar-section-label">System</div>
-
-                    <a asp-controller="Notification" asp-action="Index" class="sidebar-link" data-nav="Notification">
-                        <span class="sidebar-link-icon"><i class="fas fa-bell"></i></span>
-                        <span class="sidebar-link-text">Notifications</span>
-                    </a>
-
                     <a asp-controller="AuditLog" asp-action="Index" class="sidebar-link" data-nav="AuditLog">
                         <span class="sidebar-link-icon"><i class="fas fa-shield-halved"></i></span>
                         <span class="sidebar-link-text">Audit Logs</span>
                     </a>
+                }
+                else
+                {
+                    <!-- ═══ TENANT NAV (feature-gated by plan) ═══ -->
+                    <div class="sidebar-section-label">Main</div>
+
+                    <a asp-controller="Home" asp-action="Index" class="sidebar-link" data-nav="Home">
+                        <span class="sidebar-link-icon"><i class="fas fa-gauge-high"></i></span>
+                        <span class="sidebar-link-text">Dashboard</span>
+                    </a>
+
+                    @if (isOwnerOrManager)
+                    {
+                        <a asp-controller="Branch" asp-action="Index" class="sidebar-link" data-nav="Branch">
+                            <span class="sidebar-link-icon"><i class="fas fa-store"></i></span>
+                            <span class="sidebar-link-text">Branches</span>
+                        </a>
+
+                        <a asp-controller="Staff" asp-action="Index" class="sidebar-link" data-nav="Staff">
+                            <span class="sidebar-link-icon"><i class="fas fa-users"></i></span>
+                            <span class="sidebar-link-text">Staff</span>
+                        </a>
+                    }
+
+                    @if (userRole != "Customer")
+                    {
+                        <div class="sidebar-section-label">Operations</div>
+
+                        <a asp-controller="MenuItem" asp-action="Index" class="sidebar-link" data-nav="MenuItem">
+                            <span class="sidebar-link-icon"><i class="fas fa-utensils"></i></span>
+                            <span class="sidebar-link-text">Menu</span>
+                        </a>
+
+                        <a asp-controller="Order" asp-action="Index" class="sidebar-link" data-nav="Order">
+                            <span class="sidebar-link-icon"><i class="fas fa-receipt"></i></span>
+                            <span class="sidebar-link-text">Orders</span>
+                        </a>
+
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Invoicing))
+                        {
+                            <a asp-controller="Invoice" asp-action="Index" class="sidebar-link" data-nav="Invoice">
+                                <span class="sidebar-link-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                                <span class="sidebar-link-text">Bill History</span>
+                            </a>
+                        }
+                    }
+
+                    @if (isOwnerOrManager)
+                    {
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Inventory))
+                        {
+                            <a asp-controller="InventoryItem" asp-action="Index" class="sidebar-link" data-nav="InventoryItem">
+                                <span class="sidebar-link-icon"><i class="fas fa-boxes-stacked"></i></span>
+                                <span class="sidebar-link-text">Inventory</span>
+                            </a>
+                        }
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Suppliers))
+                        {
+                            <a asp-controller="Supplier" asp-action="Index" class="sidebar-link" data-nav="Supplier">
+                                <span class="sidebar-link-icon"><i class="fas fa-truck"></i></span>
+                                <span class="sidebar-link-text">Suppliers</span>
+                            </a>
+                        }
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Purchases))
+                        {
+                            <a asp-controller="Purchase" asp-action="Index" class="sidebar-link" data-nav="Purchase">
+                                <span class="sidebar-link-icon"><i class="fas fa-shopping-cart"></i></span>
+                                <span class="sidebar-link-text">Purchases</span>
+                            </a>
+                        }
+                    }
+
+                    @if (userRole != "Customer")
+                    {
+                        <div class="sidebar-section-label">People</div>
+
+                        <a asp-controller="Attendance" asp-action="Index" class="sidebar-link" data-nav="Attendance">
+                            <span class="sidebar-link-icon"><i class="fas fa-calendar-check"></i></span>
+                            <span class="sidebar-link-text">Attendance</span>
+                        </a>
+                    }
+
+                    @if (isOwnerOrManager)
+                    {
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Payroll))
+                        {
+                            <a asp-controller="Salary" asp-action="Index" class="sidebar-link" data-nav="Salary">
+                                <span class="sidebar-link-icon"><i class="fas fa-wallet"></i></span>
+                                <span class="sidebar-link-text">Payroll</span>
+                            </a>
+                        }
+
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Analytics))
+                        {
+                            <div class="sidebar-section-label">Analytics</div>
+
+                            <a asp-controller="Financial" asp-action="Dashboard" class="sidebar-link" data-nav="Financial">
+                                <span class="sidebar-link-icon"><i class="fas fa-chart-pie"></i></span>
+                                <span class="sidebar-link-text">Financials</span>
+                            </a>
+
+                            <a asp-controller="Reports" asp-action="Index" class="sidebar-link" data-nav="Reports">
+                                <span class="sidebar-link-icon"><i class="fas fa-chart-line"></i></span>
+                                <span class="sidebar-link-text">Reports</span>
+                            </a>
+                        }
+
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Feedback))
+                        {
+                            <a asp-controller="Feedback" asp-action="Index" class="sidebar-link" data-nav="Feedback">
+                                <span class="sidebar-link-icon"><i class="fas fa-message"></i></span>
+                                <span class="sidebar-link-text">Feedback</span>
+                            </a>
+                        }
+
+                        @if (canFeature(Cafe.Services.FeatureCatalog.Marketing))
+                        {
+                            <div class="sidebar-section-label">Marketing</div>
+
+                            <a asp-controller="PromoCode" asp-action="Index" class="sidebar-link" data-nav="PromoCode">
+                                <span class="sidebar-link-icon"><i class="fas fa-tags"></i></span>
+                                <span class="sidebar-link-text">Promo Codes</span>
+                            </a>
+
+                            <a asp-controller="Partnership" asp-action="Index" class="sidebar-link" data-nav="Partnership">
+                                <span class="sidebar-link-icon"><i class="fas fa-credit-card"></i></span>
+                                <span class="sidebar-link-text">Card Partnerships</span>
+                            </a>
+
+                            <a asp-controller="CheckoutSettings" asp-action="Index" class="sidebar-link" data-nav="CheckoutSettings">
+                                <span class="sidebar-link-icon"><i class="fas fa-cash-register"></i></span>
+                                <span class="sidebar-link-text">Checkout Settings</span>
+                            </a>
+                        }
+                    }
+
+                    @if (isOwner)
+                    {
+                        <div class="sidebar-section-label">Workspace</div>
+
+                        <a asp-controller="Subscription" asp-action="Index" class="sidebar-link" data-nav="Subscription">
+                            <span class="sidebar-link-icon"><i class="fas fa-gem"></i></span>
+                            <span class="sidebar-link-text">Plan &amp; Billing</span>
+                        </a>
+
+                        <a asp-controller="TenantSettings" asp-action="Branding" class="sidebar-link" data-nav="TenantSettings">
+                            <span class="sidebar-link-icon"><i class="fas fa-palette"></i></span>
+                            <span class="sidebar-link-text">Branding</span>
+                        </a>
+
+                        <a asp-controller="Setup" asp-action="Index" class="sidebar-link" data-nav="Setup">
+                            <span class="sidebar-link-icon"><i class="fas fa-wand-magic-sparkles"></i></span>
+                            <span class="sidebar-link-text">Setup Wizard</span>
+                        </a>
+
+                        <div class="sidebar-section-label">System</div>
+
+                        <a asp-controller="Notification" asp-action="Index" class="sidebar-link" data-nav="Notification">
+                            <span class="sidebar-link-icon"><i class="fas fa-bell"></i></span>
+                            <span class="sidebar-link-text">Notifications</span>
+                        </a>
+
+                        <a asp-controller="AuditLog" asp-action="Index" class="sidebar-link" data-nav="AuditLog">
+                            <span class="sidebar-link-icon"><i class="fas fa-shield-halved"></i></span>
+                            <span class="sidebar-link-text">Audit Logs</span>
+                        </a>
+                    }
                 }
             </nav>
 
@@ -353,6 +452,21 @@
 
             <!-- Page Content -->
             <main class="page-content">
+                @if (impersonatingId.HasValue)
+                {
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;background:linear-gradient(135deg,#7c3aed,#6366f1);color:#fff;padding:0.7rem 1.1rem;border-radius:12px;margin-bottom:1.25rem;box-shadow:0 4px 14px rgba(99,102,241,0.3);">
+                        <div style="display:flex;align-items:center;gap:0.6rem;font-weight:600;font-size:0.9rem;">
+                            <i class="fas fa-user-secret"></i>
+                            Impersonating <b>@impersonatingName</b> — actions are audited.
+                        </div>
+                        <form asp-controller="Platform" asp-action="ExitImpersonation" method="post" style="margin:0;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);">
+                                <i class="fas fa-arrow-right-from-bracket" style="margin-right:0.4rem;"></i>Exit to Console
+                            </button>
+                        </form>
+                    </div>
+                }
                 <!-- ActionCard TempData triggers -->
                 @if (TempData["Success"] != null)
                 {

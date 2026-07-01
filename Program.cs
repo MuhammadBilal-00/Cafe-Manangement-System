@@ -23,15 +23,24 @@ builder.Services.AddAntiforgery(options =>
     options.HeaderName = "RequestVerificationToken";
 });
 
+// ── Multi-tenancy (Phase 0): per-request tenant scope + auto-stamping interceptor ──
+builder.Services.AddScoped<ITenantContext, TenantContext>();
+builder.Services.AddScoped<TenantStampingInterceptor>();
+
 // Register audit interceptor as scoped (needs IHttpContextAccessor per-request)
 builder.Services.AddScoped<AuditSaveChangesInterceptor>();
 
-// Add Entity Framework with audit interceptor
+// Add Entity Framework with tenant-stamping (first) + audit interceptors
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    // Order matters: stamp TenantId before the audit interceptor captures/writes rows.
+    options.AddInterceptors(serviceProvider.GetRequiredService<TenantStampingInterceptor>());
     options.AddInterceptors(serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>());
-    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+    options.ConfigureWarnings(w => w
+        .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)
+        // Required-navigation + global-filter interaction is intentional and consistent here.
+        .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning));
 });
 
 // Add authentication services
@@ -52,6 +61,16 @@ builder.Services.AddScoped<IBranchSettingService, BranchSettingService>();
 builder.Services.AddScoped<ICheckoutPricingService, CheckoutPricingService>();
 builder.Services.AddScoped<IPdfInvoiceService, PdfInvoiceService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
+// ── SaaS platform services (Phase 0): feature gating, billing, provisioning, branding ──
+builder.Services.AddScoped<IFeatureGate, FeatureGate>();
+builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
+builder.Services.AddScoped<ITenantBrandingService, TenantBrandingService>();
+builder.Services.AddScoped<Cafe.Services.Billing.ManualBillingProvider>();
+builder.Services.AddScoped<Cafe.Services.Billing.StripeBillingProvider>();
+builder.Services.AddScoped<Cafe.Services.Billing.IBillingProvider>(sp =>
+    sp.GetRequiredService<Cafe.Services.Billing.ManualBillingProvider>());
+
 builder.Services.AddHostedService<EmailBackgroundWorker>();
 builder.Services.AddHttpContextAccessor();
 
@@ -149,6 +168,8 @@ app.UseSession();
 
 // Add custom authentication middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
+// Resolve the tenant BEFORE the auth gate so all data access is isolated from the first query.
+app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseMiddleware<AuthenticationMiddleware>();
 
 app.UseAuthorization();

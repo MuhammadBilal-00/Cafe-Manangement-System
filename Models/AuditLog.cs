@@ -7,6 +7,8 @@ namespace Cafe.Models
     public class AuditLog
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0). Null = platform-level (no tenant). ──
+        public int? TenantId { get; set; }
 
         [Required]
         [StringLength(50)]

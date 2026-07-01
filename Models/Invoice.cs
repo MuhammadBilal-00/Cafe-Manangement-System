@@ -9,9 +9,11 @@ namespace Cafe.Models
     /// tax rate, and the generated PDF path are snapshotted here so the bill never changes
     /// even if the underlying promo/partnership/tax setting is later edited.
     /// </summary>
-    public class Invoice
+    public class Invoice : ITenantOwned
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0) ──
+        public int TenantId { get; set; }
 
         [Required]
         public int OrderId { get; set; }

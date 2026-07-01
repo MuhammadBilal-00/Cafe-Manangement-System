@@ -8,9 +8,11 @@ namespace Cafe.Models
     /// Versioned salary policy — exactly ONE active at a time.
     /// Past salaries freeze the PolicyId they were generated with.
     /// </summary>
-    public class SalaryPolicy
+    public class SalaryPolicy : ITenantOwned
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0) ──
+        public int TenantId { get; set; }
 
         [Required]
         [StringLength(100)]

@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cafe.Controllers
 {
+    [RequireFeature("Feedback")]
     [RequireManagerOrOwner]
     public class FeedbackController : BaseController
     {

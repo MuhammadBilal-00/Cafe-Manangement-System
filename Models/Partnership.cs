@@ -9,9 +9,11 @@ namespace Cafe.Models
     /// (e.g. "Standard Chartered" / "Platinum" = 15% off). Nothing is hardcoded —
     /// every tier is just a row here, auto-invalidated outside its date window.
     /// </summary>
-    public class Partnership
+    public class Partnership : ITenantOwned
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0) ──
+        public int TenantId { get; set; }
 
         [Required]
         [StringLength(100)]

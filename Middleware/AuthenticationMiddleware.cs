@@ -15,7 +15,7 @@
         {
             var path = context.Request.Path.Value?.ToLower();
 
-            var publicPaths = new[] { "/auth/login", "/auth/register", "/auth/accessdenied" };
+            var publicPaths = new[] { "/auth/login", "/auth/register", "/auth/accessdenied", "/onboarding" };
             var isPublicPath = path == "/" ||
                               publicPaths.Any(p => path?.StartsWith(p) == true) ||
                               path?.Contains("/css/") == true || path?.Contains("/js/") == true ||

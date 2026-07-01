@@ -1,0 +1,105 @@
+@model List<Cafe.Models.Tenant>
+@{
+    ViewData["Title"] = "Tenants";
+    var planNames = ViewBag.PlanNames as Dictionary<int, string> ?? new();
+    var userCounts = ViewBag.UserCounts as Dictionary<int, int> ?? new();
+    var branchCounts = ViewBag.BranchCounts as Dictionary<int, int> ?? new();
+    var allPlans = planNames.OrderBy(p => p.Value).ToList();
+    (string,string) StatusBadge(string s) => s switch
+    {
+        "Active" => ("badge-success", s),
+        "Trial" => ("badge-info", s),
+        "Suspended" => ("badge-danger", s),
+        _ => ("badge-neutral", s)
+    };
+}
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Tenants</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Every business on the platform.</p>
+    </div>
+    <a asp-action="CreateTenant" class="btn btn-primary"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Tenant</a>
+</div>
+
+<div class="card mb-6">
+    <div class="card-body">
+        <form method="get" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+            <div class="form-group" style="margin-bottom:0; flex:1; min-width:220px;">
+                <label class="form-label">Search</label>
+                <input type="search" name="q" value="@ViewBag.Query" class="form-control" placeholder="Name or workspace…" />
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-magnifying-glass" style="margin-right:0.5rem;"></i> Search</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body card-body-flush">
+        <div style="overflow-x:auto;">
+            <table class="premium-table">
+                <thead>
+                    <tr><th>Business</th><th>Plan</th><th style="text-align:center;">Branches</th><th style="text-align:center;">Users</th><th style="text-align:center;">Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="6" style="text-align:center;padding:3rem;color:var(--text-secondary);">No tenants found.</td></tr>
+                    }
+                    @foreach (var t in Model)
+                    {
+                        var sb = StatusBadge(t.Status);
+                        <tr>
+                            <td>
+                                <div style="font-weight:700;">@t.Name</div>
+                                <div class="caption">@t.Slug@(string.IsNullOrEmpty(t.CustomDomain) ? "" : " · " + t.CustomDomain)</div>
+                            </td>
+                            <td>
+                                <form asp-action="AssignPlan" method="post" style="margin:0;display:flex;gap:0.4rem;align-items:center;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@t.Id" />
+                                    <select name="planId" class="form-select" style="min-width:120px;" onchange="this.form.submit()">
+                                        @foreach (var p in allPlans)
+                                        {
+                                            <option value="@p.Key" selected="@(t.PlanId == p.Key)">@p.Value</option>
+                                        }
+                                    </select>
+                                </form>
+                            </td>
+                            <td style="text-align:center;">@(branchCounts.TryGetValue(t.Id, out var bc) ? bc : 0)</td>
+                            <td style="text-align:center;">@(userCounts.TryGetValue(t.Id, out var uc) ? uc : 0)</td>
+                            <td style="text-align:center;"><span class="badge @sb.Item1">@sb.Item2</span></td>
+                            <td>
+                                <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                                    <form asp-action="Impersonate" method="post" style="margin:0;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@t.Id" />
+                                        <button type="submit" class="btn btn-ghost btn-sm" title="Impersonate"><i class="fas fa-user-secret"></i></button>
+                                    </form>
+                                    @if (t.Status != "Suspended")
+                                    {
+                                        <form asp-action="SetStatus" method="post" style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@t.Id" />
+                                            <input type="hidden" name="status" value="Suspended" />
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Suspend" style="color:#dc2626;"><i class="fas fa-ban"></i></button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="SetStatus" method="post" style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@t.Id" />
+                                            <input type="hidden" name="status" value="Active" />
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Reactivate" style="color:#16a34a;"><i class="fas fa-circle-check"></i></button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

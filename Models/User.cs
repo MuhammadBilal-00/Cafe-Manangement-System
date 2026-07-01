@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -10,6 +10,8 @@ namespace Cafe.Models
     public class User
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0). Null = platform-level (no tenant). ──
+        public int? TenantId { get; set; }
 
         [Required]
         [StringLength(100)]

@@ -15,6 +15,7 @@ namespace Cafe.Controllers
     /// Bill History — browse, filter, download and (for Pending bills) confirm/fail payment.
     /// Branch-scoped: Owner sees all, Manager/Staff see only their branch.
     /// </summary>
+    [RequireFeature("Invoicing")]
     [RequireStaffOrAbove]
     public class InvoiceController : BaseController
     {

@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cafe.Controllers
 {
+    [RequireFeature("Suppliers")]
     [RequireManagerOrOwner]
     public class SupplierController : BaseController
     {

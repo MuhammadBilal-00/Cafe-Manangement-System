@@ -5,9 +5,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Cafe.Models
 {
-    public class SalaryRecord
+    public class SalaryRecord : ITenantOwned
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0) ──
+        public int TenantId { get; set; }
 
         [Required]
         public int StaffId { get; set; }

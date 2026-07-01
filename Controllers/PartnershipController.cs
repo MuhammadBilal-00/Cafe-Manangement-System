@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Cafe.Controllers
 {
+    [RequireFeature("Marketing")]
     [RequireManagerOrOwner]
     public class PartnershipController : BaseController
     {

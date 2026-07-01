@@ -16,9 +16,37 @@ namespace Cafe.Data
             using var scope = serviceProvider.CreateScope();
             var context     = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+            var tenantCtx   = scope.ServiceProvider.GetRequiredService<ITenantContext>();
 
-            if (await context.Users.AnyAsync())
+            // ── Platform seeding (idempotent, runs on every startup for fresh AND existing DBs) ──
+            await EnsurePlansAsync(context);
+            await EnsurePlatformAdminAsync(context, authService);
+            await EnsureTenantsHavePlanAsync(context); // any plan-less tenant (e.g. the migration's Demo) → Pro
+
+            // If real tenant data already exists, don't seed demo data.
+            if (await context.Users.AnyAsync(u => u.Role != "PlatformAdmin"))
                 return;
+
+            // ── Fresh DB: create the Demo tenant and seed all demo data under it ──
+            var proPlan = await context.Plans.FirstAsync(p => p.Name == "Pro");
+            var demoTenant = await context.Tenants.FirstOrDefaultAsync(t => t.Slug == "demo");
+            if (demoTenant == null)
+            {
+                demoTenant = new Tenant
+                {
+                    Name = "Demo Cafe Co.",
+                    Slug = "demo",
+                    Status = "Active",
+                    PlanId = proPlan.Id,
+                    BrandingJson = TenantProvisioningService.DefaultBrandingJson("Demo Cafe Co."),
+                    CreatedAt = DateTime.UtcNow
+                };
+                context.Tenants.Add(demoTenant);
+                await context.SaveChangesAsync();
+            }
+
+            // From here every insert is auto-stamped with the Demo tenant id.
+            tenantCtx.SetTenant(demoTenant.Id, isPlatformAdmin: false);
 
             var rng = new Random(42);
 
@@ -428,6 +456,64 @@ namespace Cafe.Data
                 new Feedback { CustomerId = custUsers[2].Id, BranchId = br3.Id, Rating = 5, Comments = "Matcha latte is absolutely amazing, will definitely return!", Category = "Product",    Source = "Online",   Status = FeedbackStatus.Resolved, Date = DateTime.Now.AddDays(-20), ResolvedAt = DateTime.Now.AddDays(-18) },
                 new Feedback { CustomerId = custUsers[3].Id, BranchId = br4.Id, Rating = 3, Comments = "Avocado toast was good but portion sizes are small.",       Category = "Value",        Source = "In-Store", Status = FeedbackStatus.Open,     Date = DateTime.Now.AddDays(-2) }
             );
+            await context.SaveChangesAsync();
+        }
+
+        // ── Platform helpers (idempotent) ──
+
+        private static async Task EnsurePlansAsync(ApplicationDbContext context)
+        {
+            if (await context.Plans.AnyAsync()) return;
+
+            context.Plans.AddRange(
+                new Plan
+                {
+                    Name = "Free", Description = "Core POS for a single branch.",
+                    PriceMonthly = 0, MaxBranches = 1, MaxUsers = 5, SortOrder = 0, IsActive = true,
+                    Features = string.Join(",", FeatureCatalog.Invoicing)
+                },
+                new Plan
+                {
+                    Name = "Starter", Description = "Inventory, suppliers and feedback for a growing shop.",
+                    PriceMonthly = 2500, MaxBranches = 3, MaxUsers = 20, SortOrder = 1, IsActive = true,
+                    Features = string.Join(",", FeatureCatalog.Invoicing, FeatureCatalog.Inventory,
+                        FeatureCatalog.Suppliers, FeatureCatalog.Purchases, FeatureCatalog.Feedback)
+                },
+                new Plan
+                {
+                    Name = "Pro", Description = "Everything — analytics, payroll, marketing, all modules.",
+                    PriceMonthly = 6000, MaxBranches = 99, MaxUsers = 999, SortOrder = 2, IsActive = true,
+                    Features = "*"
+                });
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task EnsurePlatformAdminAsync(ApplicationDbContext context, IAuthService authService)
+        {
+            // Platform admin lives outside any tenant (TenantId = null). Bypass not needed: the
+            // tenant context defaults to "ignore filter" during startup seeding.
+            if (await context.Users.AnyAsync(u => u.Role == "PlatformAdmin")) return;
+
+            context.Users.Add(new User
+            {
+                Name = "Platform Admin",
+                Email = "platform@cafe.com",
+                Phone = "000-0000",
+                Role = "PlatformAdmin",
+                TenantId = null,
+                PasswordHash = authService.HashPassword("platform123"),
+                CreatedDate = DateTime.Now
+            });
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task EnsureTenantsHavePlanAsync(ApplicationDbContext context)
+        {
+            var planless = await context.Tenants.Where(t => t.PlanId == null).ToListAsync();
+            if (planless.Count == 0) return;
+            var pro = await context.Plans.FirstOrDefaultAsync(p => p.Name == "Pro");
+            if (pro == null) return;
+            foreach (var t in planless) t.PlanId = pro.Id;
             await context.SaveChangesAsync();
         }
     }

@@ -8,9 +8,11 @@ namespace Cafe.Models
     /// A discount code a cashier can apply at checkout before payment.
     /// DiscountType is "Percentage" (DiscountValue = 0–100) or "Flat" (DiscountValue = currency amount).
     /// </summary>
-    public class PromoCode
+    public class PromoCode : ITenantOwned
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0) ──
+        public int TenantId { get; set; }
 
         [Required]
         [StringLength(40)]

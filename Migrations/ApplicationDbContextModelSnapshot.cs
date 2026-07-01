@@ -71,6 +71,9 @@ namespace Cafe.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("Present");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("TotalHours")
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
@@ -86,6 +89,8 @@ namespace Cafe.Migrations
 
                     b.HasIndex("StaffId", "Date")
                         .IsUnique();
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("Attendances", t =>
                         {
@@ -125,6 +130,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(45)
                         .HasColumnType("nvarchar(45)");
 
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("Timestamp")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -146,6 +154,8 @@ namespace Cafe.Migrations
                     b.HasIndex("BranchId");
 
                     b.HasIndex("EntityType");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("Timestamp");
 
@@ -194,9 +204,14 @@ namespace Cafe.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ManagerId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Branches");
                 });
@@ -222,6 +237,9 @@ namespace Cafe.Migrations
                     b.Property<decimal>("TaxRatePercent")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -229,6 +247,8 @@ namespace Cafe.Migrations
 
                     b.HasIndex("BranchId")
                         .IsUnique();
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("BranchSettings");
                 });
@@ -275,9 +295,14 @@ namespace Cafe.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "Name")
                         .IsUnique();
 
                     b.ToTable("Categories");
@@ -310,10 +335,15 @@ namespace Cafe.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(0);
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("UserId");
 
@@ -350,11 +380,16 @@ namespace Cafe.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
 
                     b.HasIndex("MenuItemId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("DailySpecials", t =>
                         {
@@ -398,6 +433,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ToEmail")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -414,6 +452,8 @@ namespace Cafe.Migrations
                     b.HasIndex("IsSent");
 
                     b.HasIndex("NotificationId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("EmailQueues");
                 });
@@ -488,6 +528,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -500,6 +543,8 @@ namespace Cafe.Migrations
                     b.HasIndex("BranchId");
 
                     b.HasIndex("CreatedById");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("Expenses", t =>
                         {
@@ -561,6 +606,9 @@ namespace Cafe.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
@@ -568,6 +616,8 @@ namespace Cafe.Migrations
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("Feedbacks", t =>
                         {
@@ -619,6 +669,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Unit")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -628,7 +681,9 @@ namespace Cafe.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "Name")
                         .IsUnique();
 
                     b.ToTable("Ingredients", t =>
@@ -691,6 +746,9 @@ namespace Cafe.Migrations
                     b.Property<int?>("SupplierId")
                         .HasColumnType("int");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -707,6 +765,8 @@ namespace Cafe.Migrations
                     b.HasIndex("BranchId");
 
                     b.HasIndex("SupplierId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("InventoryItems", t =>
                         {
@@ -734,6 +794,9 @@ namespace Cafe.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -744,6 +807,8 @@ namespace Cafe.Migrations
                     b.HasIndex("InventoryItemId");
 
                     b.HasIndex("MenuItemId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("InventoryRecipeMappings");
                 });
@@ -785,6 +850,9 @@ namespace Cafe.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("TransactionDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -802,6 +870,8 @@ namespace Cafe.Migrations
                     b.HasIndex("InventoryItemId");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("InventoryTransactions");
                 });
@@ -878,6 +948,9 @@ namespace Cafe.Migrations
                     b.Property<decimal>("TaxRate")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(10,2)");
 
@@ -885,15 +958,17 @@ namespace Cafe.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.HasIndex("InvoiceNumber")
-                        .IsUnique();
-
                     b.HasIndex("OrderId")
                         .IsUnique();
 
                     b.HasIndex("PartnershipId");
 
                     b.HasIndex("PromoCodeId");
+
+                    b.HasIndex("TenantId", "BranchId");
+
+                    b.HasIndex("TenantId", "InvoiceNumber")
+                        .IsUnique();
 
                     b.ToTable("Invoices", t =>
                         {
@@ -1033,6 +1108,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<int>("TotalRatings")
                         .HasColumnType("int");
 
@@ -1041,6 +1119,8 @@ namespace Cafe.Migrations
                     b.HasIndex("BranchId");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("MenuItems", t =>
                         {
@@ -1073,6 +1153,9 @@ namespace Cafe.Migrations
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Unit")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -1083,6 +1166,8 @@ namespace Cafe.Migrations
                     b.HasKey("MenuItemId", "IngredientId");
 
                     b.HasIndex("IngredientId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("MenuItemIngredients");
                 });
@@ -1118,11 +1203,16 @@ namespace Cafe.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("MenuItemId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("MenuItemReviews", t =>
                         {
@@ -1167,6 +1257,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1195,6 +1288,8 @@ namespace Cafe.Migrations
                     b.HasIndex("Type");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("Notifications");
                 });
@@ -1228,10 +1323,15 @@ namespace Cafe.Migrations
                     b.Property<bool>("SystemNotifications")
                         .HasColumnType("bit");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("UserId")
                         .IsUnique();
@@ -1274,6 +1374,9 @@ namespace Cafe.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("Pending");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
@@ -1284,7 +1387,9 @@ namespace Cafe.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("OrderNumber")
+                    b.HasIndex("TenantId", "BranchId");
+
+                    b.HasIndex("TenantId", "OrderNumber")
                         .IsUnique();
 
                     b.ToTable("Orders", t =>
@@ -1314,11 +1419,16 @@ namespace Cafe.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MenuItemId");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("OrderItems", t =>
                         {
@@ -1367,6 +1477,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1382,7 +1495,58 @@ namespace Cafe.Migrations
 
                     b.HasIndex("CreatedById");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.ToTable("Partnerships");
+                });
+
+            modelBuilder.Entity("Cafe.Models.Plan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Features")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxBranches")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxUsers")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<decimal>("PriceMonthly")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Plans");
                 });
 
             modelBuilder.Entity("Cafe.Models.PromoCode", b =>
@@ -1428,6 +1592,9 @@ namespace Cafe.Migrations
                     b.Property<decimal>("MinimumOrderAmount")
                         .HasColumnType("decimal(10,2)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<int>("TimesUsed")
                         .HasColumnType("int");
 
@@ -1447,10 +1614,12 @@ namespace Cafe.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.HasIndex("Code")
-                        .IsUnique();
-
                     b.HasIndex("CreatedById");
+
+                    b.HasIndex("TenantId", "BranchId");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique();
 
                     b.ToTable("PromoCodes", t =>
                         {
@@ -1503,6 +1672,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("TotalCost")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
@@ -1516,6 +1688,8 @@ namespace Cafe.Migrations
                     b.HasIndex("ItemId");
 
                     b.HasIndex("SupplierId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("Purchases", t =>
                         {
@@ -1552,6 +1726,9 @@ namespace Cafe.Migrations
                     b.Property<int>("SalaryRecordId")
                         .HasColumnType("int");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1562,6 +1739,8 @@ namespace Cafe.Migrations
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("SalaryRecordId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("SalaryAdjustments", t =>
                         {
@@ -1643,6 +1822,9 @@ namespace Cafe.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1652,6 +1834,8 @@ namespace Cafe.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedById");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("UpdatedById");
 
@@ -1793,6 +1977,9 @@ namespace Cafe.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("Draft");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("TotalDeductions")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
@@ -1818,6 +2005,8 @@ namespace Cafe.Migrations
                     b.HasIndex("PolicyIdUsed");
 
                     b.HasIndex("UnlockedById");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.HasIndex("BranchId", "Year", "Month");
 
@@ -1863,6 +2052,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("ToDate")
                         .HasColumnType("datetime2");
 
@@ -1880,6 +2072,8 @@ namespace Cafe.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.ToTable("SalesReports");
                 });
@@ -1940,6 +2134,9 @@ namespace Cafe.Migrations
                     b.Property<int>("StaffRoleId")
                         .HasColumnType("int");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("TerminationDate")
                         .HasColumnType("datetime2");
 
@@ -1950,13 +2147,15 @@ namespace Cafe.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.HasIndex("EmployeeId")
-                        .IsUnique()
-                        .HasFilter("[EmployeeId] IS NOT NULL");
-
                     b.HasIndex("StaffRoleId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("TenantId", "BranchId");
+
+                    b.HasIndex("TenantId", "EmployeeId")
+                        .IsUnique()
+                        .HasFilter("[EmployeeId] IS NOT NULL");
 
                     b.ToTable("Staff", t =>
                         {
@@ -2001,9 +2200,14 @@ namespace Cafe.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("StaffRoles");
                 });
@@ -2063,13 +2267,67 @@ namespace Cafe.Migrations
                     b.Property<int>("StaffId")
                         .HasColumnType("int");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("StaffId");
 
+                    b.HasIndex("TenantId");
+
                     b.ToTable("StaffSalaries");
+                });
+
+            modelBuilder.Entity("Cafe.Models.Subscription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CurrentPeriodEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CurrentPeriodStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExternalRef")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("PlanId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("Subscriptions", t =>
+                        {
+                            t.HasCheckConstraint("CK_Subscription_Status", "[Status] IN ('Active','Trialing','PastDue','Cancelled')");
+                        });
                 });
 
             modelBuilder.Entity("Cafe.Models.Supplier", b =>
@@ -2114,6 +2372,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -2121,7 +2382,62 @@ namespace Cafe.Migrations
 
                     b.HasIndex("BranchId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.ToTable("Suppliers");
+                });
+
+            modelBuilder.Entity("Cafe.Models.Tenant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BrandingJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomDomain")
+                        .HasMaxLength(253)
+                        .HasColumnType("nvarchar(253)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("PlanId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(63)
+                        .HasColumnType("nvarchar(63)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomDomain")
+                        .IsUnique()
+                        .HasFilter("[CustomDomain] IS NOT NULL");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Tenants", t =>
+                        {
+                            t.HasCheckConstraint("CK_Tenant_Status", "[Status] IN ('Active','Trial','Suspended')");
+                        });
                 });
 
             modelBuilder.Entity("Cafe.Models.TodoItem", b =>
@@ -2146,6 +2462,9 @@ namespace Cafe.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -2155,6 +2474,8 @@ namespace Cafe.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("UserId");
 
@@ -2198,10 +2519,15 @@ namespace Cafe.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Users");
                 });
@@ -2247,11 +2573,16 @@ namespace Cafe.Migrations
                     b.Property<int>("StaffId")
                         .HasColumnType("int");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApprovedBy");
 
                     b.HasIndex("StaffId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("StaffSchedules");
                 });
@@ -2275,6 +2606,12 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
 
                     b.Navigation("MarkedBy");
@@ -2287,6 +2624,11 @@ namespace Cafe.Migrations
                     b.HasOne("Cafe.Models.Branch", "Branch")
                         .WithMany()
                         .HasForeignKey("BranchId");
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cafe.Models.User", "User")
                         .WithMany()
@@ -2304,6 +2646,12 @@ namespace Cafe.Migrations
                         .HasForeignKey("ManagerId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Manager");
                 });
 
@@ -2315,11 +2663,32 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("Cafe.Models.Category", b =>
+                {
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Cafe.Models.Customer", b =>
                 {
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Cafe.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -2343,6 +2712,12 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
 
                     b.Navigation("MenuItem");
@@ -2354,6 +2729,12 @@ namespace Cafe.Migrations
                         .WithMany()
                         .HasForeignKey("NotificationId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("Notification");
                 });
@@ -2375,6 +2756,12 @@ namespace Cafe.Migrations
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("ApprovedBy");
 
@@ -2400,11 +2787,26 @@ namespace Cafe.Migrations
                         .WithMany()
                         .HasForeignKey("OrderId");
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
 
                     b.Navigation("Customer");
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Cafe.Models.Ingredient", b =>
+                {
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Cafe.Models.InventoryItem", b =>
@@ -2419,6 +2821,12 @@ namespace Cafe.Migrations
                         .WithMany("InventoryItems")
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("Branch");
 
@@ -2437,6 +2845,12 @@ namespace Cafe.Migrations
                         .WithMany()
                         .HasForeignKey("MenuItemId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("InventoryItem");
@@ -2461,6 +2875,12 @@ namespace Cafe.Migrations
                     b.HasOne("Cafe.Models.Order", "Order")
                         .WithMany()
                         .HasForeignKey("OrderId");
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("Branch");
 
@@ -2493,6 +2913,12 @@ namespace Cafe.Migrations
                         .HasForeignKey("PromoCodeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
 
                     b.Navigation("Order");
@@ -2516,6 +2942,12 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
 
                     b.Navigation("Category");
@@ -2533,6 +2965,12 @@ namespace Cafe.Migrations
                         .WithMany("Ingredients")
                         .HasForeignKey("MenuItemId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Ingredient");
@@ -2554,6 +2992,12 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Customer");
 
                     b.Navigation("MenuItem");
@@ -2571,6 +3015,12 @@ namespace Cafe.Migrations
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Cafe.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -2585,6 +3035,12 @@ namespace Cafe.Migrations
 
             modelBuilder.Entity("Cafe.Models.NotificationPreference", b =>
                 {
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Cafe.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -2608,6 +3064,12 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
 
                     b.Navigation("Customer");
@@ -2627,6 +3089,12 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("MenuItem");
 
                     b.Navigation("Order");
@@ -2644,6 +3112,12 @@ namespace Cafe.Migrations
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
 
                     b.Navigation("CreatedBy");
@@ -2660,6 +3134,12 @@ namespace Cafe.Migrations
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("Branch");
 
@@ -2689,6 +3169,12 @@ namespace Cafe.Migrations
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
 
                     b.Navigation("CreatedBy");
@@ -2711,6 +3197,12 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("CreatedBy");
 
                     b.Navigation("SalaryRecord");
@@ -2722,6 +3214,12 @@ namespace Cafe.Migrations
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("Cafe.Models.User", "UpdatedBy")
                         .WithMany()
@@ -2762,6 +3260,12 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Cafe.Models.User", "UnlockedBy")
                         .WithMany()
                         .HasForeignKey("UnlockedById")
@@ -2788,6 +3292,12 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
                 });
 
@@ -2803,6 +3313,12 @@ namespace Cafe.Migrations
                         .WithMany("StaffMembers")
                         .HasForeignKey("StaffRoleId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Cafe.Models.User", "User")
@@ -2824,6 +3340,12 @@ namespace Cafe.Migrations
                         .WithMany()
                         .HasForeignKey("CreatedBy");
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("CreatedByUser");
                 });
 
@@ -2841,9 +3363,32 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("CreatedByUser");
 
                     b.Navigation("Staff");
+                });
+
+            modelBuilder.Entity("Cafe.Models.Subscription", b =>
+                {
+                    b.HasOne("Cafe.Models.Plan", "Plan")
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
                 });
 
             modelBuilder.Entity("Cafe.Models.Supplier", b =>
@@ -2854,11 +3399,33 @@ namespace Cafe.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("Cafe.Models.Tenant", b =>
+                {
+                    b.HasOne("Cafe.Models.Plan", "Plan")
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Plan");
                 });
 
             modelBuilder.Entity("Cafe.Models.TodoItem", b =>
                 {
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Cafe.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -2866,6 +3433,14 @@ namespace Cafe.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Cafe.Models.User", b =>
+                {
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("StaffSchedule", b =>
@@ -2878,6 +3453,12 @@ namespace Cafe.Migrations
                         .WithMany("Schedules")
                         .HasForeignKey("StaffId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cafe.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("ApprovedByUser");

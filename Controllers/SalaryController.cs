@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cafe.Controllers
 {
+    [RequireFeature("Payroll")]
     [RequireManagerOrOwner]
     public class SalaryController : BaseController
     {

@@ -11,6 +11,7 @@ namespace Cafe.Controllers
     /// Per-branch checkout configuration: tax rate, the optional-hardware terminal toggle,
     /// and an invoice footer note. Owner picks any branch; a manager sees only their own.
     /// </summary>
+    [RequireFeature("Marketing")]
     [RequireManagerOrOwner]
     public class CheckoutSettingsController : BaseController
     {

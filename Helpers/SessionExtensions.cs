@@ -66,5 +66,29 @@ namespace Cafe.Helpers
         {
             return session.GetUserId().HasValue;
         }
+
+        // ── Multi-tenancy (Phase 0) ──
+
+        /// <summary>The tenant the logged-in user belongs to (null for platform admin at the root domain).</summary>
+        public static int? GetTenantId(this ISession session)
+        {
+            return session.GetInt32("TenantId");
+        }
+
+        public static bool IsPlatformAdmin(this ISession session)
+        {
+            return session.GetUserRole() == "PlatformAdmin";
+        }
+
+        /// <summary>When a platform admin is impersonating a tenant, the id of that tenant; else null.</summary>
+        public static int? GetImpersonatedTenantId(this ISession session)
+        {
+            return session.GetInt32("ImpersonatingTenantId");
+        }
+
+        public static bool IsImpersonating(this ISession session)
+        {
+            return session.GetImpersonatedTenantId().HasValue;
+        }
     }
 }

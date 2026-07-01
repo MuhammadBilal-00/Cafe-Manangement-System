@@ -28,4 +28,12 @@
     <Folder Include="Migrations\" />
   </ItemGroup>
 
+  <!-- The test project lives in a subfolder; keep its files out of the web project's compile. -->
+  <ItemGroup>
+    <Compile Remove="Cafe.Tests\**" />
+    <Content Remove="Cafe.Tests\**" />
+    <EmbeddedResource Remove="Cafe.Tests\**" />
+    <None Remove="Cafe.Tests\**" />
+  </ItemGroup>
+
 </Project>

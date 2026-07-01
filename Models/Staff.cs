@@ -1,12 +1,14 @@
-﻿using Cafe.Models;
+using Cafe.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
 namespace Cafe.Models
 {
-    public class Staff
+    public class Staff : ITenantOwned
     {
         public int Id { get; set; }
+        // ── Multi-tenant isolation (Phase 0) ──
+        public int TenantId { get; set; }
 
         [Required]
         public int UserId { get; set; }
