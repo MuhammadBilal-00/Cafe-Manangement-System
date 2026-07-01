@@ -37,16 +37,18 @@ namespace Cafe.Services
         private readonly IInventoryService _inventory;
         private readonly IInvoiceService _invoices;
         private readonly IBranchSettingService _branchSettings;
+        private readonly ILoyaltyService _loyalty;
         private readonly IMemoryCache _cache;
         private readonly ILogger<PosService> _logger;
 
         public PosService(ApplicationDbContext db, IInventoryService inventory, IInvoiceService invoices,
-            IBranchSettingService branchSettings, IMemoryCache cache, ILogger<PosService> logger)
+            IBranchSettingService branchSettings, ILoyaltyService loyalty, IMemoryCache cache, ILogger<PosService> logger)
         {
             _db = db;
             _inventory = inventory;
             _invoices = invoices;
             _branchSettings = branchSettings;
+            _loyalty = loyalty;
             _cache = cache;
             _logger = logger;
         }
@@ -115,6 +117,12 @@ namespace Cafe.Services
             // Order amount = net sales (after discounts, before tax) for correct revenue.
             entity.TotalAmount = invoice.Subtotal - invoice.TotalDiscount;
             await _db.SaveChangesAsync();
+
+            // Phase 6: earn loyalty points when a customer's sale is fully paid (idempotent per invoice).
+            if (invoice.PaymentStatus == "Paid" && entity.CustomerId.HasValue)
+            {
+                try { await _loyalty.EarnForInvoiceAsync(invoice); } catch (Exception ex) { _logger.LogWarning(ex, "Loyalty earn failed"); }
+            }
 
             if (req.TableId.HasValue)
                 await _db.RestaurantTables.Where(t => t.Id == req.TableId.Value)

@@ -91,6 +91,16 @@ namespace Cafe.Data
         public DbSet<Budget> Budgets { get; set; }
         public DbSet<BudgetLine> BudgetLines { get; set; }
 
+        // Phase 6: customer portal & marketing
+        public DbSet<LoyaltyTransaction> LoyaltyTransactions { get; set; }
+        public DbSet<GiftCard> GiftCards { get; set; }
+        public DbSet<GiftCardTransaction> GiftCardTransactions { get; set; }
+        public DbSet<NotificationTemplate> NotificationTemplates { get; set; }
+        public DbSet<Lead> Leads { get; set; }
+        public DbSet<FollowUp> FollowUps { get; set; }
+        public DbSet<Campaign> Campaigns { get; set; }
+        public DbSet<SmsQueue> SmsQueues { get; set; }
+
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
@@ -142,7 +152,28 @@ namespace Cafe.Data
             ConfigurePhase3Inventory(modelBuilder);
             ConfigurePhase4Sales(modelBuilder);
             ConfigurePhase5Accounting(modelBuilder);
+            ConfigurePhase6Marketing(modelBuilder);
             ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>Phase 6 (customer portal &amp; marketing): loyalty, gift cards, templates, CRM, SMS.</summary>
+        private void ConfigurePhase6Marketing(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<LoyaltyTransaction>().HasOne(l => l.Customer).WithMany().HasForeignKey(l => l.CustomerUserId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<LoyaltyTransaction>().HasIndex(l => new { l.TenantId, l.CustomerUserId });
+            modelBuilder.Entity<LoyaltyTransaction>().ToTable(t => t.HasCheckConstraint("CK_Loyalty_Type", "[Type] IN ('Earn','Redeem','Adjust')"));
+
+            modelBuilder.Entity<GiftCard>().HasIndex(g => new { g.TenantId, g.Code }).IsUnique();
+            modelBuilder.Entity<GiftCardTransaction>().HasOne(t => t.GiftCard).WithMany(g => g.Transactions).HasForeignKey(t => t.GiftCardId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NotificationTemplate>().HasIndex(t => new { t.TenantId, t.Key }).IsUnique();
+            modelBuilder.Entity<NotificationTemplate>().ToTable(t => t.HasCheckConstraint("CK_Template_Channel", "[Channel] IN ('Email','SMS','InApp')"));
+
+            modelBuilder.Entity<Lead>().ToTable(t => t.HasCheckConstraint("CK_Lead_Status", "[Status] IN ('New','Contacted','Qualified','Won','Lost')"));
+            modelBuilder.Entity<FollowUp>().HasOne(f => f.Lead).WithMany(l => l.FollowUps).HasForeignKey(f => f.LeadId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Campaign>().ToTable(t => t.HasCheckConstraint("CK_Campaign_Channel", "[Channel] IN ('Email','SMS')"));
+            modelBuilder.Entity<SmsQueue>().HasIndex(s => s.IsSent);
         }
 
         /// <summary>Phase 5 (accounting): chart of accounts, journals, payment accounts, budgets.</summary>

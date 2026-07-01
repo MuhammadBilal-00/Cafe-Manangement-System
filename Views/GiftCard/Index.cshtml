@@ -1,0 +1,43 @@
+@model List<Cafe.Models.GiftCard>
+@{ ViewData["Title"] = "Gift Cards"; }
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Gift Cards</h1><p class="body-text" style="margin-top:0.25rem;">Issue prepaid cards; redeem them as a payment method.</p></div>
+    <div style="display:flex;gap:0.5rem;">
+        <div style="display:flex;gap:0.4rem;"><input id="gcCheck" class="form-control" placeholder="Check code…" style="width:150px;"><button class="btn btn-secondary" onclick="gcBalance()">Balance</button></div>
+        <button class="btn btn-primary" onclick="document.getElementById('gcModal').style.display='flex'"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> Issue</button>
+    </div>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Code</th><th style="text-align:right;">Initial</th><th style="text-align:right;">Balance</th><th>Expires</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any()) { <tr><td colspan="6" style="text-align:center;padding:3rem;color:var(--text-secondary);">No gift cards yet.</td></tr> }
+            @foreach (var g in Model)
+            {
+                <tr>
+                    <td style="font-family:ui-monospace,monospace;font-weight:700;">@g.Code</td>
+                    <td style="text-align:right;">Rs. @g.InitialBalance.ToString("N0")</td>
+                    <td style="text-align:right;font-weight:700;">Rs. @g.Balance.ToString("N0")</td>
+                    <td><span class="caption">@(g.ExpiresAt?.ToString("dd MMM yyyy") ?? "—")</span></td>
+                    <td style="text-align:center;"><span class="badge @(g.IsActive ? "badge-success" : "badge-neutral")">@(g.IsActive ? "Active" : "Inactive")</span></td>
+                    <td><button class="btn btn-ghost btn-sm" onclick="gcToggle(@g.Id)">@(g.IsActive ? "Deactivate" : "Activate")</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+<div id="gcModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:380px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Issue Gift Card</h3>
+    <div class="form-group"><label class="form-label">Amount (Rs.)</label><input id="gcAmt" type="number" min="1" step="0.01" class="form-control" /></div>
+    <div class="form-group"><label class="form-label">Expires (optional)</label><input id="gcExp" type="date" class="form-control" /></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="gcIssue()">Issue</button><button class="btn btn-secondary" onclick="document.getElementById('gcModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+async function gcIssue() { const exp = document.getElementById('gcExp').value; const d = await post('/GiftCard/Issue', `amount=${document.getElementById('gcAmt').value}${exp ? '&expiresAt=' + exp : ''}`); if (d.success) { if (window.ActionCard) ActionCard.success('Gift card', 'Issued ' + d.code); location.reload(); } else if (window.ActionCard) ActionCard.error('Gift card', d.message); }
+async function gcToggle(id) { const d = await post('/GiftCard/Toggle', 'id=' + id); if (d.success) location.reload(); }
+async function gcBalance() { const code = document.getElementById('gcCheck').value.trim(); if (!code) return; const d = await fetch('/GiftCard/Balance?code=' + encodeURIComponent(code)).then(r => r.json()); if (window.ActionCard) d.found ? ActionCard.info('Gift card', `${d.code}: Rs. ${d.balance} (${d.active ? 'active' : 'inactive'})`) : ActionCard.error('Gift card', 'Not found'); }
+</script>
+}

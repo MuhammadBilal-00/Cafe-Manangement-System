@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Loyalty";
+    var customers = ViewBag.Customers as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var ledger = ViewBag.Ledger as List<Cafe.Models.LoyaltyTransaction> ?? new();
+}
+<div style="margin-bottom:1.5rem;"><h1 class="page-title" style="margin:0;">Loyalty Points</h1><p class="body-text" style="margin-top:0.25rem;">Points earn on paid sales and redeem at checkout.</p></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;">
+    <div class="card"><div class="card-body">
+        <h2 style="margin:0 0 0.75rem;font-size:1.05rem;">Members</h2>
+        <div style="overflow-x:auto;"><table class="premium-table">
+            <thead><tr><th>Customer</th><th style="text-align:right;">Points</th><th></th></tr></thead>
+            <tbody>
+                @if (!customers.Any()) { <tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--text-secondary);">No members with points yet.</td></tr> }
+                @foreach (var c in customers)
+                {
+                    <tr><td>@c.Name <span class="caption">@c.Phone</span></td><td style="text-align:right;font-weight:700;">@c.LoyaltyPoints</td>
+                    <td style="text-align:right;"><button class="btn btn-ghost btn-sm" onclick="loyAdj(@c.UserId,'@c.Name')">Adjust</button></td></tr>
+                }
+            </tbody>
+        </table></div>
+    </div></div>
+    <div class="card"><div class="card-body">
+        <h2 style="margin:0 0 0.75rem;font-size:1.05rem;">Recent activity</h2>
+        <div style="overflow-x:auto;"><table class="premium-table">
+            <thead><tr><th>When</th><th>Customer</th><th>Type</th><th style="text-align:right;">Points</th></tr></thead>
+            <tbody>
+                @if (!ledger.Any()) { <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary);">No activity yet.</td></tr> }
+                @foreach (var l in ledger)
+                {
+                    <tr><td><span class="caption">@l.CreatedAt.ToString("dd MMM HH:mm")</span></td><td>@l.Customer?.Name</td><td>@l.Type</td>
+                    <td style="text-align:right;color:@(l.Points >= 0 ? "#16a34a" : "#dc2626");font-weight:700;">@l.Points.ToString("+#;-#;0")</td></tr>
+                }
+            </tbody>
+        </table></div>
+    </div></div>
+</div>
+<div id="loyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:380px;width:100%;"><div class="card-body">
+    <h3 id="loyTitle" style="margin:0 0 1rem;">Adjust points</h3><input type="hidden" id="loyCid" />
+    <div class="form-group"><label class="form-label">Points (+ earn / − deduct)</label><input id="loyPts" type="number" class="form-control" /></div>
+    <div class="form-group"><label class="form-label">Note</label><input id="loyNote" class="form-control" /></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="loySave()">Apply</button><button class="btn btn-secondary" onclick="document.getElementById('loyModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+function loyAdj(id, name) { document.getElementById('loyCid').value = id; document.getElementById('loyTitle').textContent = 'Adjust — ' + name; document.getElementById('loyModal').style.display = 'flex'; }
+async function loySave() { const d = await fetch('/Loyalty/Adjust', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: `customerUserId=${document.getElementById('loyCid').value}&points=${document.getElementById('loyPts').value}&note=${encodeURIComponent(document.getElementById('loyNote').value)}` }).then(r => r.json()); if (d.success) location.reload(); }
+</script>
+}

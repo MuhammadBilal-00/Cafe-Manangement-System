@@ -1,0 +1,53 @@
+@model List<Cafe.Models.Order>
+@{
+    ViewData["Title"] = "My Orders";
+    int points = ViewBag.Points ?? 0;
+    (string, string) Badge(string s) => s switch { "Completed" => ("badge-success", s), "Cancelled" => ("badge-danger", s), "Ready" => ("badge-success", s), "Preparing" => ("badge-warning", s), _ => ("badge-info", s) };
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">My Orders</h1><p class="body-text" style="margin-top:0.25rem;">Track your orders in real time.</p></div>
+    <div style="display:flex;gap:0.75rem;align-items:center;"><span class="badge badge-accent"><i class="fas fa-star" style="margin-right:0.3rem;"></i>@points points</span><a asp-action="Index" class="btn btn-primary btn-sm"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> New Order</a></div>
+</div>
+@if (!Model.Any())
+{
+    <div class="card"><div class="card-body" style="text-align:center;padding:3rem;color:var(--text-secondary);"><i class="fas fa-receipt" style="font-size:2.5rem;display:block;margin-bottom:1rem;color:var(--border-light);"></i>No orders yet. <a asp-action="Index">Place your first order</a>.</div></div>
+}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">
+    @foreach (var o in Model)
+    {
+        var b = Badge(o.Status);
+        var steps = new[] { "Pending", "Preparing", "Ready", "Completed" };
+        var idx = Array.IndexOf(steps, o.Status);
+        <div class="card" data-order="@o.Id"><div class="card-body">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                <div><b>#@o.OrderNumber</b><div class="caption">@o.Branch?.Name · @o.ServiceType</div></div>
+                <span class="badge @b.Item1 order-status">@o.Status</span>
+            </div>
+            <div class="caption" style="margin-bottom:0.6rem;">@o.OrderItems.Count item(s) · Rs. @o.TotalAmount.ToString("N0") · @o.OrderDate.ToString("dd MMM HH:mm")</div>
+            <div style="display:flex;gap:4px;">
+                @for (int i = 0; i < steps.Length; i++)
+                {
+                    <div class="track-step" style="flex:1;height:6px;border-radius:3px;background:@(i <= idx && o.Status != "Cancelled" ? "var(--accent)" : "var(--border-light)");"></div>
+                }
+            </div>
+        </div></div>
+    }
+</div>
+@section Scripts {
+<script>
+(function () {
+    // Live tracking: poll status for active orders every 15s (upgrade to SignalR later).
+    async function poll() {
+        for (const card of document.querySelectorAll('.card[data-order]')) {
+            const id = card.dataset.order;
+            try {
+                const d = await fetch('/Shop/TrackStatus?id=' + id).then(r => r.json());
+                const badge = card.querySelector('.order-status');
+                if (badge && badge.textContent !== d.status) location.reload();
+            } catch (e) {}
+        }
+    }
+    setInterval(poll, 15000);
+})();
+</script>
+}

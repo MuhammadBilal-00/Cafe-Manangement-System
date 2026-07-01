@@ -181,6 +181,18 @@
                         <span class="sidebar-link-text">Dashboard</span>
                     </a>
 
+                    @if (userRole == "Customer")
+                    {
+                        <a asp-controller="Shop" asp-action="Index" class="sidebar-link" data-nav="Shop">
+                            <span class="sidebar-link-icon"><i class="fas fa-bag-shopping"></i></span>
+                            <span class="sidebar-link-text">Order Online</span>
+                        </a>
+                        <a asp-controller="Shop" asp-action="History" class="sidebar-link" data-nav="ShopHistory">
+                            <span class="sidebar-link-icon"><i class="fas fa-clock-rotate-left"></i></span>
+                            <span class="sidebar-link-text">My Orders</span>
+                        </a>
+                    }
+
                     @if (isOwnerOrManager)
                     {
                         <a asp-controller="Branch" asp-action="Index" class="sidebar-link" data-nav="Branch">
@@ -388,6 +400,23 @@
                             <a asp-controller="Partnership" asp-action="Index" class="sidebar-link" data-nav="Partnership">
                                 <span class="sidebar-link-icon"><i class="fas fa-credit-card"></i></span>
                                 <span class="sidebar-link-text">Card Partnerships</span>
+                            </a>
+
+                            <a asp-controller="Loyalty" asp-action="Index" class="sidebar-link" data-nav="Loyalty">
+                                <span class="sidebar-link-icon"><i class="fas fa-star"></i></span>
+                                <span class="sidebar-link-text">Loyalty</span>
+                            </a>
+                            <a asp-controller="GiftCard" asp-action="Index" class="sidebar-link" data-nav="GiftCard">
+                                <span class="sidebar-link-icon"><i class="fas fa-gift"></i></span>
+                                <span class="sidebar-link-text">Gift Cards</span>
+                            </a>
+                            <a asp-controller="Crm" asp-action="Index" class="sidebar-link" data-nav="Crm">
+                                <span class="sidebar-link-icon"><i class="fas fa-user-group"></i></span>
+                                <span class="sidebar-link-text">CRM</span>
+                            </a>
+                            <a asp-controller="NotificationTemplate" asp-action="Index" class="sidebar-link" data-nav="NotificationTemplate">
+                                <span class="sidebar-link-icon"><i class="fas fa-envelope-open-text"></i></span>
+                                <span class="sidebar-link-text">Templates</span>
                             </a>
 
                             <a asp-controller="CheckoutSettings" asp-action="Index" class="sidebar-link" data-nav="CheckoutSettings">

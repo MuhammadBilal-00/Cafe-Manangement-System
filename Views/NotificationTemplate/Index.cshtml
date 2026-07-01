@@ -1,0 +1,44 @@
+@model List<Cafe.Models.NotificationTemplate>
+@{
+    ViewData["Title"] = "Notification Templates";
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">Notification Templates</h1><p class="body-text" style="margin-top:0.25rem;">Tokenized messages — use {CustomerName}, {OrderNumber}, {Total}.</p></div>
+    <button class="btn btn-primary" onclick="tmplEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Template</button>
+</div>
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Key</th><th>Name</th><th>Channel</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any()) { <tr><td colspan="5" style="text-align:center;padding:3rem;color:var(--text-secondary);">No templates yet.</td></tr> }
+            @foreach (var t in Model)
+            {
+                <tr data-id="@t.Id" data-key="@t.Key" data-name="@t.Name" data-channel="@t.Channel" data-subject="@t.Subject" data-body="@t.Body" data-active="@t.IsActive.ToString().ToLower()">
+                    <td style="font-family:ui-monospace,monospace;">@t.Key</td><td>@t.Name</td><td><span class="badge badge-info">@t.Channel</span></td>
+                    <td style="text-align:center;"><span class="badge @(t.IsActive ? "badge-success" : "badge-neutral")">@(t.IsActive ? "Active" : "Off")</span></td>
+                    <td><div style="display:flex;gap:0.4rem;"><button class="btn btn-ghost btn-sm" onclick="tmplEditRow(this)"><i class="fas fa-edit"></i></button>@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="tmplDel(@t.Id)"><i class="fas fa-trash"></i></button> }</div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+<div id="tmplModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:520px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Template</h3><input type="hidden" id="tId" />
+    <div class="form-row"><div class="form-group"><label class="form-label">Key</label><input id="tKey" class="form-control" placeholder="OrderReady" /></div><div class="form-group"><label class="form-label">Channel</label><select id="tChannel" class="form-select"><option>Email</option><option>SMS</option><option>InApp</option></select></div></div>
+    <div class="form-group"><label class="form-label">Name</label><input id="tName" class="form-control" /></div>
+    <div class="form-group"><label class="form-label">Subject (email)</label><input id="tSubject" class="form-control" /></div>
+    <div class="form-group"><label class="form-label">Body</label><textarea id="tBody" class="form-control" rows="4" placeholder="Hi {CustomerName}, your order {OrderNumber} is ready!"></textarea></div>
+    <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="tActive" checked /> Active</label></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="tmplSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('tmplModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function tmplEdit(id, key, name, ch, subj, body, active) { document.getElementById('tId').value = id; document.getElementById('tKey').value = key || ''; document.getElementById('tName').value = name || ''; document.getElementById('tChannel').value = ch || 'Email'; document.getElementById('tSubject').value = subj || ''; document.getElementById('tBody').value = body || ''; document.getElementById('tActive').checked = active !== false; document.getElementById('tmplModal').style.display = 'flex'; }
+function tmplEditRow(b) { const r = b.closest('tr'); tmplEdit(r.dataset.id, r.dataset.key, r.dataset.name, r.dataset.channel, r.dataset.subject, r.dataset.body, r.dataset.active === 'true'); }
+async function tmplSave() { const d = await post('/NotificationTemplate/Save', `id=${document.getElementById('tId').value || 0}&key=${encodeURIComponent(document.getElementById('tKey').value)}&name=${encodeURIComponent(document.getElementById('tName').value)}&channel=${document.getElementById('tChannel').value}&subject=${encodeURIComponent(document.getElementById('tSubject').value)}&body=${encodeURIComponent(document.getElementById('tBody').value)}&isActive=${document.getElementById('tActive').checked}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Template', d.message); }
+async function tmplDel(id) { const go = async () => { const d = await post('/NotificationTemplate/Delete', 'id=' + id); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Delete template?', '', go) : (confirm('Delete?') && go()); }
+</script>
+}

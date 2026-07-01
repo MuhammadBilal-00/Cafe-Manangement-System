@@ -1,0 +1,52 @@
+@model List<Cafe.Models.MenuItem>
+@{
+    Layout = null;
+    var branch = ViewBag.Branch as Cafe.Models.Branch;
+    var groups = Model.GroupBy(m => m.Category?.Name ?? "Menu");
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@branch?.Name — Menu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #faf9f7; color: #1e2a3a; }
+        .wrap { max-width: 640px; margin: 0 auto; padding: 1.25rem; }
+        .hero { text-align: center; padding: 1.5rem 0; }
+        .hero h1 { margin: 0.25rem 0; font-size: 1.6rem; }
+        .cat { font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #d4af37; margin: 1.5rem 0 0.5rem; }
+        .item { display: flex; justify-content: space-between; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid #eee; }
+        .item h3 { margin: 0 0 0.2rem; font-size: 1rem; }
+        .item p { margin: 0; font-size: 0.8rem; color: #6b7280; }
+        .price { font-weight: 800; color: #1e2a3a; white-space: nowrap; }
+        .foot { text-align: center; color: #9ca3af; font-size: 0.75rem; padding: 2rem 0 1rem; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="hero">
+            <div style="width:56px;height:56px;border-radius:16px;background:#d4af37;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;"><i class="fas fa-mug-hot"></i></div>
+            <h1>@branch?.Name</h1>
+            <div style="color:#6b7280;font-size:0.85rem;">@branch?.Location</div>
+        </div>
+        @if (!Model.Any())
+        {
+            <p style="text-align:center;color:#9ca3af;">Menu coming soon.</p>
+        }
+        @foreach (var g in groups)
+        {
+            <div class="cat">@g.Key</div>
+            @foreach (var m in g)
+            {
+                <div class="item">
+                    <div><h3>@m.Name</h3><p>@m.Description</p></div>
+                    <div class="price">Rs. @m.Price.ToString("N0")</div>
+                </div>
+            }
+        }
+        <div class="foot">Digital menu · powered by Cafe Manager</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,70 @@
+@{
+    ViewData["Title"] = "CRM";
+    var leads = ViewBag.Leads as List<Cafe.Models.Lead> ?? new();
+    var campaigns = ViewBag.Campaigns as List<Cafe.Models.Campaign> ?? new();
+}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div><h1 class="page-title" style="margin:0;">CRM</h1><p class="body-text" style="margin-top:0.25rem;">Leads and marketing campaigns.</p></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-secondary" onclick="leadEdit(0)"><i class="fas fa-user-plus" style="margin-right:0.4rem;"></i> New Lead</button><button class="btn btn-primary" onclick="campNew()"><i class="fas fa-bullhorn" style="margin-right:0.4rem;"></i> New Campaign</button></div>
+</div>
+<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:1.25rem;align-items:start;">
+    <div class="card"><div class="card-body card-body-flush">
+        <div class="card-body"><h2 style="margin:0;font-size:1.05rem;">Leads</h2></div>
+        <div style="overflow-x:auto;"><table class="premium-table">
+            <thead><tr><th>Name</th><th>Contact</th><th>Source</th><th style="text-align:center;">Status</th><th></th></tr></thead>
+            <tbody>
+                @if (!leads.Any()) { <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-secondary);">No leads yet.</td></tr> }
+                @foreach (var l in leads)
+                {
+                    <tr data-id="@l.Id" data-name="@l.Name" data-email="@l.Email" data-phone="@l.Phone" data-source="@l.Source" data-status="@l.Status" data-notes="@l.Notes">
+                        <td style="font-weight:600;">@l.Name</td><td><span class="caption">@l.Email @l.Phone</span></td><td>@l.Source</td>
+                        <td style="text-align:center;"><span class="badge @(l.Status == "Won" ? "badge-success" : l.Status == "Lost" ? "badge-danger" : "badge-info")">@l.Status</span></td>
+                        <td><button class="btn btn-ghost btn-sm" onclick="leadEditRow(this)"><i class="fas fa-edit"></i></button></td>
+                    </tr>
+                }
+            </tbody>
+        </table></div>
+    </div></div>
+    <div class="card"><div class="card-body card-body-flush">
+        <div class="card-body"><h2 style="margin:0;font-size:1.05rem;">Campaigns</h2></div>
+        <div style="overflow-x:auto;"><table class="premium-table">
+            <thead><tr><th>Name</th><th>Channel</th><th style="text-align:center;">Status</th><th></th></tr></thead>
+            <tbody>
+                @if (!campaigns.Any()) { <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary);">No campaigns yet.</td></tr> }
+                @foreach (var c in campaigns)
+                {
+                    <tr><td style="font-weight:600;">@c.Name<div class="caption">@c.Segment@(c.Status == "Sent" ? $" · {c.Recipients} sent" : "")</div></td><td>@c.Channel</td>
+                    <td style="text-align:center;"><span class="badge @(c.Status == "Sent" ? "badge-success" : "badge-warning")">@c.Status</span></td>
+                    <td>@if (c.Status != "Sent"){<button class="btn btn-primary btn-sm" onclick="campSend(@c.Id)">Send</button>}</td></tr>
+                }
+            </tbody>
+        </table></div>
+    </div></div>
+</div>
+<div id="leadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:460px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">Lead</h3><input type="hidden" id="lId" />
+    <div class="form-group"><label class="form-label">Name</label><input id="lName" class="form-control" /></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Email</label><input id="lEmail" class="form-control" /></div><div class="form-group"><label class="form-label">Phone</label><input id="lPhone" class="form-control" /></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Source</label><input id="lSource" class="form-control" /></div><div class="form-group"><label class="form-label">Status</label><select id="lStatus" class="form-select"><option>New</option><option>Contacted</option><option>Qualified</option><option>Won</option><option>Lost</option></select></div></div>
+    <div class="form-group"><label class="form-label">Notes</label><input id="lNotes" class="form-control" /></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="leadSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('leadModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+<div id="campModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;"><div class="card" style="max-width:480px;width:100%;"><div class="card-body">
+    <h3 style="margin:0 0 1rem;">New Campaign</h3>
+    <div class="form-row"><div class="form-group"><label class="form-label">Name</label><input id="cName" class="form-control" /></div><div class="form-group"><label class="form-label">Channel</label><select id="cChannel" class="form-select"><option>Email</option><option>SMS</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Segment</label><select id="cSeg" class="form-select"><option value="AllCustomers">All customers</option><option value="Leads">Leads</option></select></div><div class="form-group"><label class="form-label">Subject</label><input id="cSubject" class="form-control" /></div></div>
+    <div class="form-group"><label class="form-label">Body</label><textarea id="cBody" class="form-control" rows="3" placeholder="Hi {CustomerName}, ..."></textarea></div>
+    <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="campSave()">Save draft</button><button class="btn btn-secondary" onclick="document.getElementById('campModal').style.display='none'">Cancel</button></div>
+</div></div></div>
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function leadEdit(id, n, e, p, s, st, no) { document.getElementById('lId').value = id; document.getElementById('lName').value = n || ''; document.getElementById('lEmail').value = e || ''; document.getElementById('lPhone').value = p || ''; document.getElementById('lSource').value = s || ''; document.getElementById('lStatus').value = st || 'New'; document.getElementById('lNotes').value = no || ''; document.getElementById('leadModal').style.display = 'flex'; }
+function leadEditRow(b) { const r = b.closest('tr'); leadEdit(r.dataset.id, r.dataset.name, r.dataset.email, r.dataset.phone, r.dataset.source, r.dataset.status, r.dataset.notes); }
+async function leadSave() { const d = await post('/Crm/SaveLead', `id=${document.getElementById('lId').value || 0}&name=${encodeURIComponent(document.getElementById('lName').value)}&email=${encodeURIComponent(document.getElementById('lEmail').value)}&phone=${encodeURIComponent(document.getElementById('lPhone').value)}&source=${encodeURIComponent(document.getElementById('lSource').value)}&status=${document.getElementById('lStatus').value}&notes=${encodeURIComponent(document.getElementById('lNotes').value)}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Lead', d.message); }
+function campNew() { document.getElementById('campModal').style.display = 'flex'; }
+async function campSave() { const d = await post('/Crm/SaveCampaign', `id=0&name=${encodeURIComponent(document.getElementById('cName').value)}&channel=${document.getElementById('cChannel').value}&segment=${document.getElementById('cSeg').value}&subject=${encodeURIComponent(document.getElementById('cSubject').value)}&body=${encodeURIComponent(document.getElementById('cBody').value)}`); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Campaign', d.message); }
+async function campSend(id) { const go = async () => { const d = await post('/Crm/SendCampaign', 'id=' + id); if (window.ActionCard) d.success ? ActionCard.success('Campaign', d.message) : ActionCard.error('Campaign', d.message); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Send campaign?', 'Queues messages to the segment.', go) : (confirm('Send?') && go()); }
+</script>
+}

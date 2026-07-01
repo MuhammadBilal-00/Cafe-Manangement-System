@@ -73,6 +73,12 @@ builder.Services.AddScoped<ISupplyChainService, SupplyChainService>();
 // ── Phase 4: receivables/payables ──
 builder.Services.AddScoped<IReceivablesService, ReceivablesService>();
 
+// ── Phase 6: customer portal & marketing ──
+builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
+builder.Services.AddScoped<IGiftCardService, GiftCardService>();
+builder.Services.AddScoped<ISmsProvider, LoggingSmsProvider>();
+builder.Services.AddScoped<ISmsQueueService, SmsQueueService>();
+
 // ── Phase 5: accounting + pluggable tax e-invoicing ──
 builder.Services.AddScoped<IAccountingService, AccountingService>();
 builder.Services.AddScoped<Cafe.Services.TaxInvoice.PakFbrTaxInvoiceProvider>();
