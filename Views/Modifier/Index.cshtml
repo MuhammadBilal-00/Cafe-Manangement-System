@@ -1,0 +1,133 @@
+@model List<Cafe.Models.ModifierGroup>
+@{
+    ViewData["Title"] = "Modifiers";
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Modifiers &amp; Add-ons</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Options like Size or Extras — attach a group to menu items; price deltas apply at the register.</p>
+    </div>
+    <button class="btn btn-primary" onclick="grpEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Group</button>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem;">
+    @if (!Model.Any())
+    { <div class="card"><div class="card-body" style="text-align:center;padding:2.5rem;color:var(--text-secondary);">No modifier groups yet.</div></div> }
+    @foreach (var g in Model)
+    {
+        <div class="card"><div class="card-body">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div>
+                    <h3 style="margin:0;font-size:1.05rem;">@g.Name @(g.IsRequired ? "*" : "")</h3>
+                    <div class="caption">choose @g.MinSelect–@g.MaxSelect · @(g.IsActive ? "active" : "hidden")</div>
+                </div>
+                <div style="display:flex;gap:0.3rem;">
+                    <button class="btn btn-ghost btn-sm" onclick="grpEdit(@g.Id,'@g.Name',@g.MinSelect,@g.MaxSelect,@g.IsRequired.ToString().ToLower(),@g.IsActive.ToString().ToLower())"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-ghost btn-sm" title="Assign to items" onclick="assignOpen(@g.Id,'@g.Name')"><i class="fas fa-link"></i></button>
+                    @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="grpDelete(@g.Id)"><i class="fas fa-trash"></i></button> }
+                </div>
+            </div>
+            <ul style="list-style:none;padding:0;margin:0.75rem 0;">
+                @foreach (var o in g.Modifiers.OrderBy(x => x.SortOrder).ThenBy(x => x.Name))
+                {
+                    <li style="display:flex;justify-content:space-between;align-items:center;padding:0.35rem 0;border-bottom:1px solid var(--border-light);">
+                        <span>@o.Name <span class="caption">@(o.PriceDelta >= 0 ? "+" : "")Rs. @o.PriceDelta.ToString("0.##")</span></span>
+                        <span style="display:flex;gap:0.3rem;">
+                            <button class="btn btn-ghost btn-sm" onclick="optEdit(@o.Id,@g.Id,'@o.Name',@o.PriceDelta,@o.IsActive.ToString().ToLower())"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="optDelete(@o.Id)"><i class="fas fa-xmark"></i></button>
+                        </span>
+                    </li>
+                }
+            </ul>
+            <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="optEdit(0,@g.Id)"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> Add option</button>
+        </div></div>
+    }
+</div>
+
+<!-- Group modal -->
+<div id="grpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:440px;width:100%;"><div class="card-body">
+        <h3 id="grpTitle" style="margin:0 0 1rem;">New Group</h3>
+        <input type="hidden" id="gId" />
+        <div class="form-group"><label class="form-label">Name</label><input id="gName" class="form-control" placeholder="Size" /></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Min select</label><input id="gMin" type="number" min="0" value="0" class="form-control" /></div>
+            <div class="form-group"><label class="form-label">Max select</label><input id="gMax" type="number" min="1" value="1" class="form-control" /></div>
+        </div>
+        <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="gReq" /> Required</label></div>
+        <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="gActive" checked /> Active</label></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="grpSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('grpModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+<!-- Option modal -->
+<div id="optModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:400px;width:100%;"><div class="card-body">
+        <h3 style="margin:0 0 1rem;">Option</h3>
+        <input type="hidden" id="oId" /><input type="hidden" id="oGroupId" />
+        <div class="form-group"><label class="form-label">Name</label><input id="oName" class="form-control" placeholder="Large" /></div>
+        <div class="form-group"><label class="form-label">Price delta (Rs.)</label><input id="oDelta" type="number" step="0.01" value="0" class="form-control" /></div>
+        <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="oActive" checked /> Active</label></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="optSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('optModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+<!-- Assign modal -->
+<div id="assignModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:480px;width:100%;"><div class="card-body">
+        <h3 id="assignTitle" style="margin:0 0 0.75rem;">Assign to items</h3>
+        <input type="hidden" id="aGroupId" />
+        <div id="assignList" style="max-height:50vh;overflow:auto;margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="assignSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('assignModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body }).then(r => r.json());
+
+function grpEdit(id, name, min, max, req, active) {
+    document.getElementById('grpTitle').textContent = id ? 'Edit Group' : 'New Group';
+    document.getElementById('gId').value = id; document.getElementById('gName').value = name || '';
+    document.getElementById('gMin').value = min ?? 0; document.getElementById('gMax').value = max ?? 1;
+    document.getElementById('gReq').checked = req === true; document.getElementById('gActive').checked = active !== false;
+    document.getElementById('grpModal').style.display = 'flex';
+}
+async function grpSave() {
+    const b = `id=${document.getElementById('gId').value || 0}&name=${encodeURIComponent(document.getElementById('gName').value)}&minSelect=${document.getElementById('gMin').value}&maxSelect=${document.getElementById('gMax').value}&isRequired=${document.getElementById('gReq').checked}&isActive=${document.getElementById('gActive').checked}`;
+    const d = await post('/Modifier/SaveGroup', b); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Group', d.message);
+}
+async function grpDelete(id) { const go = async () => { const d = await post('/Modifier/DeleteGroup', 'id=' + id); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Group', d.message); }; window.ActionCard ? ActionCard.confirm('Delete group?', 'Options are removed too.', go) : (confirm('Delete?') && go()); }
+
+function optEdit(id, groupId, name, delta, active) {
+    document.getElementById('oId').value = id; document.getElementById('oGroupId').value = groupId;
+    document.getElementById('oName').value = name || ''; document.getElementById('oDelta').value = delta ?? 0;
+    document.getElementById('oActive').checked = active !== false; document.getElementById('optModal').style.display = 'flex';
+}
+async function optSave() {
+    const b = `id=${document.getElementById('oId').value || 0}&groupId=${document.getElementById('oGroupId').value}&name=${encodeURIComponent(document.getElementById('oName').value)}&priceDelta=${document.getElementById('oDelta').value}&isActive=${document.getElementById('oActive').checked}`;
+    const d = await post('/Modifier/SaveOption', b); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Option', d.message);
+}
+async function optDelete(id) { const d = await post('/Modifier/DeleteOption', 'id=' + id); if (d.success) location.reload(); }
+
+let _menuItems = null;
+async function assignOpen(groupId, name) {
+    document.getElementById('assignTitle').textContent = 'Assign "' + name + '" to items';
+    document.getElementById('aGroupId').value = groupId;
+    if (!_menuItems) _menuItems = await fetch('/Modifier/MenuItems').then(r => r.json());
+    const current = await fetch('/Modifier/Assignments?groupId=' + groupId).then(r => r.json());
+    const set = new Set(current);
+    document.getElementById('assignList').innerHTML = _menuItems.map(m =>
+        `<label style="display:flex;gap:0.5rem;align-items:center;padding:0.35rem 0;border-bottom:1px solid var(--border-light);"><input type="checkbox" value="${m.id}" ${set.has(m.id) ? 'checked' : ''}> ${m.name} <span class="caption">${m.branch}</span></label>`).join('');
+    document.getElementById('assignModal').style.display = 'flex';
+}
+async function assignSave() {
+    const ids = [...document.querySelectorAll('#assignList input:checked')].map(x => x.value);
+    const body = 'groupId=' + document.getElementById('aGroupId').value + ids.map(i => '&menuItemIds=' + i).join('');
+    const d = await post('/Modifier/SetAssignments', body); if (d.success) { document.getElementById('assignModal').style.display = 'none'; if (window.ActionCard) ActionCard.success('Modifiers', 'Assignments saved.'); }
+}
+</script>
+}

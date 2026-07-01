@@ -1,0 +1,108 @@
+@model List<Cafe.Models.Combo>
+@{
+    ViewData["Title"] = "Combos";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Combos &amp; Deals</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Bundle items at a deal price. Sold combos deduct each component from stock.</p>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center;">
+        @if (branches.Count > 1)
+        {
+            <form method="get"><select name="branchId" class="form-select" onchange="this.form.submit()">
+                @foreach (var b in branches) { <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option> }
+            </select></form>
+        }
+        @if (selectedBranchId.HasValue)
+        {
+            <button class="btn btn-primary" onclick="comboNew()"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Combo</button>
+        }
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;">
+    @if (!Model.Any())
+    { <div class="card"><div class="card-body" style="text-align:center;padding:2.5rem;color:var(--text-secondary);">No combos yet.</div></div> }
+    @foreach (var c in Model)
+    {
+        var comp = System.Text.Json.JsonSerializer.Serialize(c.Items.Select(i => new { menuItemId = i.MenuItemId, quantity = i.Quantity }));
+        <div class="card"><div class="card-body">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div><h3 style="margin:0;font-size:1.1rem;">@c.Name</h3><div class="caption">@c.Description</div></div>
+                <span class="badge badge-accent">Rs. @c.Price.ToString("N0")</span>
+            </div>
+            <ul style="list-style:none;padding:0;margin:0.75rem 0;font-size:0.85rem;">
+                @foreach (var i in c.Items)
+                { <li style="padding:2px 0;"><b>@i.Quantity×</b> @(i.MenuItem?.Name ?? "item")</li> }
+            </ul>
+            <div style="display:flex;gap:0.4rem;">
+                <button class="btn btn-secondary btn-sm" onclick='comboEdit(@c.Id,@Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.Name)),@Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.Description ?? "")),@c.Price,@Html.Raw(comp))'><i class="fas fa-edit" style="margin-right:0.3rem;"></i> Edit</button>
+                @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="comboDelete(@c.Id)"><i class="fas fa-trash"></i></button> }
+            </div>
+        </div></div>
+    }
+</div>
+
+<div id="comboModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:520px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body">
+        <h3 id="comboTitle" style="margin:0 0 1rem;">New Combo</h3>
+        <input type="hidden" id="cId" />
+        <div class="form-group"><label class="form-label">Name</label><input id="cName" class="form-control" /></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Deal price (Rs.)</label><input id="cPrice" type="number" step="0.01" min="0" class="form-control" /></div>
+            <div class="form-group"><label class="form-label">Description</label><input id="cDesc" class="form-control" /></div>
+        </div>
+        <label class="form-label">Components</label>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;">
+            <select id="cPick" class="form-select" style="flex:1;"></select>
+            <input id="cQty" type="number" min="1" value="1" class="form-control" style="width:80px;">
+            <button class="btn btn-secondary" onclick="compAdd()">Add</button>
+        </div>
+        <div id="compList" style="margin-bottom:0.5rem;"></div>
+        <div class="caption" id="compSummary" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="comboSave()">Save combo</button><button class="btn btn-secondary" onclick="document.getElementById('comboModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const branchId = @(selectedBranchId ?? 0);
+let items = [], comps = [];
+const money = v => 'Rs. ' + (Math.round(v)).toLocaleString();
+
+async function loadItems() {
+    if (items.length) return;
+    items = await fetch('/Combo/GetMenuItems?branchId=' + branchId).then(r => r.json());
+    document.getElementById('cPick').innerHTML = items.map(i => `<option value="${i.id}">${i.name} · ${money(i.price)}</option>`).join('');
+}
+function renderComps() {
+    const map = Object.fromEntries(items.map(i => [i.id, i]));
+    document.getElementById('compList').innerHTML = comps.map((c, idx) =>
+        `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.3rem 0;border-bottom:1px solid var(--border-light);">
+            <span><b>${c.quantity}×</b> ${map[c.menuItemId]?.name || '#' + c.menuItemId}</span>
+            <a href="javascript:void(0)" onclick="compDel(${idx})" style="color:#dc2626;">×</a></div>`).join('');
+    const total = comps.reduce((s, c) => s + (map[c.menuItemId]?.price || 0) * c.quantity, 0);
+    const price = parseFloat(document.getElementById('cPrice').value) || 0;
+    document.getElementById('compSummary').textContent = `Components total ${money(total)}${price ? ' · deal saves ' + money(Math.max(0, total - price)) : ''}`;
+}
+window.compAdd = () => { const id = parseInt(document.getElementById('cPick').value); const q = Math.max(1, parseInt(document.getElementById('cQty').value) || 1); const e = comps.find(c => c.menuItemId === id); if (e) e.quantity += q; else comps.push({ menuItemId: id, quantity: q }); renderComps(); };
+window.compDel = i => { comps.splice(i, 1); renderComps(); };
+document.getElementById('cPrice')?.addEventListener('input', renderComps);
+
+window.comboNew = async () => { await loadItems(); document.getElementById('comboTitle').textContent = 'New Combo'; document.getElementById('cId').value = 0; document.getElementById('cName').value = ''; document.getElementById('cPrice').value = ''; document.getElementById('cDesc').value = ''; comps = []; renderComps(); document.getElementById('comboModal').style.display = 'flex'; };
+window.comboEdit = async (id, name, desc, price, components) => { await loadItems(); document.getElementById('comboTitle').textContent = 'Edit Combo'; document.getElementById('cId').value = id; document.getElementById('cName').value = name; document.getElementById('cPrice').value = price; document.getElementById('cDesc').value = desc; comps = components.map(c => ({ menuItemId: c.menuItemId, quantity: c.quantity })); renderComps(); document.getElementById('comboModal').style.display = 'flex'; };
+
+window.comboSave = async () => {
+    const body = `id=${document.getElementById('cId').value || 0}&branchId=${branchId}&name=${encodeURIComponent(document.getElementById('cName').value)}&description=${encodeURIComponent(document.getElementById('cDesc').value)}&price=${document.getElementById('cPrice').value}&components=${encodeURIComponent(JSON.stringify(comps))}`;
+    const d = await fetch('/Combo/Save', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body }).then(r => r.json());
+    if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Combo', d.message);
+};
+window.comboDelete = async id => { const go = async () => { const d = await fetch('/Combo/Delete', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: 'id=' + id }).then(r => r.json()); if (d.success) location.reload(); }; window.ActionCard ? ActionCard.confirm('Delete combo?', '', go) : (confirm('Delete?') && go()); };
+</script>
+}

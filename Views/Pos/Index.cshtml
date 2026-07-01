@@ -32,6 +32,7 @@
         <div class="card-body">
             <div style="display:flex;gap:0.6rem;margin-bottom:0.9rem;">
                 <input id="posSearch" type="search" class="form-control" placeholder="Search or scan barcode…" style="flex:1;" />
+                <button class="btn btn-secondary" onclick="posOpenDeals()"><i class="fas fa-gift" style="margin-right:0.4rem;"></i> Deals</button>
             </div>
             <div id="posCats" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.9rem;"></div>
             <div id="posTiles" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.7rem;max-height:62vh;overflow-y:auto;"></div>
@@ -115,6 +116,18 @@
     </div></div>
 </div>
 
+<!-- Modifier picker modal -->
+<div id="modModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:420px;width:100%;max-height:85vh;overflow:auto;"><div class="card-body">
+        <h3 id="modTitle" style="margin:0 0 1rem;">Options</h3>
+        <div id="modBody"></div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+            <button class="btn btn-primary" onclick="posConfirmMods()"><i class="fas fa-check" style="margin-right:0.4rem;"></i> Add to cart</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('modModal').style.display='none'">Cancel</button>
+        </div>
+    </div></div>
+</div>
+
 <!-- Expense modal -->
 <div id="expenseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
     <div class="card" style="max-width:400px;width:100%;"><div class="card-body">
@@ -192,8 +205,59 @@
     // ── cart ──
     window.posAdd = id => {
         const m = menu.find(x => x.id === id); if (!m) return;
-        const line = cart.find(l => l.menuItemId === id);
-        if (line) line.qty++; else cart.push({ menuItemId: id, name: m.name, price: m.price, qty: 1, lineDiscount: 0, notes: null });
+        if (m.hasModifiers) return posOpenMods(m);
+        // Merge only plain (no-modifier) lines.
+        const line = cart.find(l => l.menuItemId === id && (!l.modifierIds || l.modifierIds.length === 0));
+        if (line) line.qty++; else cart.push({ menuItemId: id, name: m.name, price: m.price, qty: 1, lineDiscount: 0, notes: null, modifierIds: [] });
+        renderCart();
+    };
+
+    // ── modifier picker ──
+    let _modItem = null, _modGroups = [];
+    window.posOpenMods = async (m) => {
+        _modItem = m;
+        _modGroups = await fetch('/Pos/GetModifiers?menuItemId=' + m.id).then(r => r.json());
+        if (!_modGroups.length) { cart.push({ menuItemId: m.id, name: m.name, price: m.price, qty: 1, lineDiscount: 0, notes: null, modifierIds: [] }); renderCart(); return; }
+        document.getElementById('modTitle').textContent = m.name;
+        document.getElementById('modBody').innerHTML = _modGroups.map(g => `
+            <div style="margin-bottom:0.9rem;">
+                <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.35rem;">${g.name} ${g.required ? '<span style="color:#dc2626;">*</span>' : ''} <span class="caption">(choose ${g.min}–${g.max})</span></div>
+                ${g.options.map(o => `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;">
+                    <input type="${g.max > 1 ? 'checkbox' : 'radio'}" name="mg_${g.id}" value="${o.id}" data-delta="${o.priceDelta}" data-name="${o.name}">
+                    ${o.name} <span class="caption">${o.priceDelta >= 0 ? '+' : ''}Rs. ${o.priceDelta}</span></label>`).join('')}
+            </div>`).join('');
+        document.getElementById('modModal').style.display = 'flex';
+    };
+    window.posConfirmMods = () => {
+        const ids = [], names = []; let delta = 0; let ok = true;
+        _modGroups.forEach(g => {
+            const sel = [...document.querySelectorAll(`input[name="mg_${g.id}"]:checked`)];
+            if (sel.length < g.min || sel.length > g.max) ok = false;
+            sel.forEach(s => { ids.push(parseInt(s.value)); names.push(s.dataset.name); delta += parseFloat(s.dataset.delta); });
+        });
+        if (!ok) { if (window.ActionCard) ActionCard.error('Options', 'Please satisfy the required choices.'); return; }
+        cart.push({ menuItemId: _modItem.id, name: _modItem.name, price: _modItem.price + delta, qty: 1, lineDiscount: 0, notes: names.join(', ') || null, modifierIds: ids });
+        document.getElementById('modModal').style.display = 'none';
+        renderCart();
+    };
+
+    // ── combos ──
+    window.posOpenDeals = async () => {
+        const combos = await fetch('/Pos/GetCombos?branchId=' + bid()).then(r => r.json());
+        const body = document.getElementById('drawerBody');
+        document.getElementById('drawerTitle').textContent = 'Combos & Deals';
+        document.getElementById('posDrawer').style.display = 'block';
+        body.innerHTML = combos.length ? combos.map(c =>
+            `<div class="card" style="margin-bottom:0.5rem;cursor:pointer;" onclick="posAddCombo(${c.id})"><div class="card-body" style="padding:0.7rem;display:flex;justify-content:space-between;">
+                <b>${c.name}</b><span class="badge badge-accent">${money(c.price)}</span></div></div>`).join('') : '<div class="caption">No combos for this branch.</div>';
+    };
+    window.posAddCombo = async (comboId) => {
+        const c = await fetch('/Pos/ExpandCombo?comboId=' + comboId).then(r => r.json());
+        c.lines.forEach((l, idx) => cart.push({
+            menuItemId: l.menuItemId, name: l.name, price: l.price, qty: l.quantity,
+            lineDiscount: idx === 0 ? c.discount : 0, notes: 'Combo: ' + c.name, modifierIds: []
+        }));
+        document.getElementById('posDrawer').style.display = 'none';
         renderCart();
     };
     window.posQty = (i, d) => { cart[i].qty = Math.max(1, cart[i].qty + d); renderCart(); };
@@ -243,7 +307,7 @@
             tableId: document.getElementById('posTable').value ? parseInt(document.getElementById('posTable').value) : null,
             serviceType: svc,
             serviceStaffId: document.getElementById('posStaff').value ? parseInt(document.getElementById('posStaff').value) : null,
-            items: cart.map(l => ({ menuItemId: l.menuItemId, quantity: l.qty, lineDiscount: l.lineDiscount, notes: l.notes })),
+            items: cart.map(l => ({ menuItemId: l.menuItemId, quantity: l.qty, lineDiscount: l.lineDiscount, notes: l.notes, modifierIds: l.modifierIds || [] })),
             promoCode: document.getElementById('posPromo').value || null,
             partnershipId: document.getElementById('posPartner').value ? parseInt(document.getElementById('posPartner').value) : null,
             packingCharge: parseFloat(document.getElementById('posPacking').value) || 0,

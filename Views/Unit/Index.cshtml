@@ -1,0 +1,82 @@
+@model List<Cafe.Models.Unit>
+@{
+    ViewData["Title"] = "Units";
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+    var byId = Model.ToDictionary(u => u.Id, u => u.Name);
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Units of Measure</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Define units and how they convert to a base unit.</p>
+    </div>
+    <button class="btn btn-primary" onclick="uEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Unit</button>
+</div>
+
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Name</th><th>Abbr.</th><th>Converts to</th><th>Factor</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any())
+            { <tr><td colspan="6" style="text-align:center;padding:3rem;color:var(--text-secondary);">No units yet.</td></tr> }
+            @foreach (var u in Model)
+            {
+                <tr data-id="@u.Id" data-name="@u.Name" data-abbr="@u.Abbreviation" data-base="@u.BaseUnitId" data-factor="@u.ConversionFactor" data-active="@u.IsActive.ToString().ToLower()">
+                    <td style="font-weight:600;">@u.Name</td>
+                    <td>@u.Abbreviation</td>
+                    <td><span class="caption">@(u.BaseUnitId.HasValue && byId.ContainsKey(u.BaseUnitId.Value) ? byId[u.BaseUnitId.Value] : "—")</span></td>
+                    <td>@u.ConversionFactor.ToString("0.######")</td>
+                    <td style="text-align:center;"><span class="badge @(u.IsActive ? "badge-success" : "badge-neutral")">@(u.IsActive ? "Active" : "Hidden")</span></td>
+                    <td><div style="display:flex;gap:0.4rem;">
+                        <button class="btn btn-ghost btn-sm" onclick="uEditRow(this)"><i class="fas fa-edit"></i></button>
+                        @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="uDelete(@u.Id)"><i class="fas fa-trash"></i></button> }
+                    </div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+
+<div id="uModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:460px;width:100%;"><div class="card-body">
+        <h3 id="uTitle" style="margin:0 0 1rem;">New Unit</h3>
+        <input type="hidden" id="uId" />
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Name</label><input id="uName" class="form-control" placeholder="Kilogram" /></div>
+            <div class="form-group"><label class="form-label">Abbreviation</label><input id="uAbbr" class="form-control" placeholder="kg" /></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Base unit</label>
+                <select id="uBase" class="form-select"><option value="">— none (this is a base) —</option>
+                    @foreach (var u in Model) { <option value="@u.Id">@u.Name</option> }
+                </select></div>
+            <div class="form-group"><label class="form-label">Conversion factor</label><input id="uFactor" type="number" step="0.000001" value="1" class="form-control" /></div>
+        </div>
+        <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="uActive" checked /> Active</label></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="uSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('uModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+function uEdit(id, name, abbr, base, factor, active) {
+    document.getElementById('uTitle').textContent = id ? 'Edit Unit' : 'New Unit';
+    document.getElementById('uId').value = id; document.getElementById('uName').value = name || '';
+    document.getElementById('uAbbr').value = abbr || ''; document.getElementById('uBase').value = base || '';
+    document.getElementById('uFactor').value = factor || 1; document.getElementById('uActive').checked = active !== false;
+    document.getElementById('uModal').style.display = 'flex';
+}
+function uEditRow(btn) { const r = btn.closest('tr'); uEdit(r.dataset.id, r.dataset.name, r.dataset.abbr, r.dataset.base, r.dataset.factor, r.dataset.active === 'true'); }
+async function uSave() {
+    const base = document.getElementById('uBase').value;
+    const body = `id=${document.getElementById('uId').value || 0}&name=${encodeURIComponent(document.getElementById('uName').value)}&abbreviation=${encodeURIComponent(document.getElementById('uAbbr').value)}${base ? '&baseUnitId=' + base : ''}&conversionFactor=${document.getElementById('uFactor').value}&isActive=${document.getElementById('uActive').checked}`;
+    const d = await fetch('/Unit/Save', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body }).then(r => r.json());
+    if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Unit', d.message);
+}
+async function uDelete(id) {
+    const go = async () => { const d = await fetch('/Unit/Delete', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: 'id=' + id }).then(r => r.json()); if (d.success) location.reload(); };
+    if (window.ActionCard) ActionCard.confirm('Delete unit?', 'This cannot be undone.', go); else if (confirm('Delete?')) go();
+}
+</script>
+}

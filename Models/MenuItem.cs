@@ -18,6 +18,30 @@ namespace Cafe.Models
         [StringLength(60)]
         public string? Sku { get; set; }
 
+        // ── Phase 2: brand, unit, time-based availability, serial/warranty ──
+        public int? BrandId { get; set; }
+        public int? UnitId { get; set; }
+
+        /// <summary>Optional daily availability window (e.g. breakfast 07:00–11:00). Null = all day.</summary>
+        public TimeSpan? AvailableFromTime { get; set; }
+        public TimeSpan? AvailableToTime { get; set; }
+
+        /// <summary>Bitmask of days available: bit0=Sun … bit6=Sat. 127 = every day (default).</summary>
+        public int AvailableDaysMask { get; set; } = 127;
+
+        /// <summary>Product tracks a serial number (electronics/retail); optional warranty in months.</summary>
+        public bool TrackSerial { get; set; } = false;
+        public int? WarrantyMonths { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.ForeignKey("BrandId")]
+        public Brand? Brand { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.ForeignKey("UnitId")]
+        public Unit? Unit { get; set; }
+
+        public ICollection<MenuItemModifierGroup> ModifierGroups { get; set; } = new List<MenuItemModifierGroup>();
+        public ICollection<MenuItemPrice> PriceOverrides { get; set; } = new List<MenuItemPrice>();
+
         [StringLength(500)]
         public string? Description { get; set; }
 

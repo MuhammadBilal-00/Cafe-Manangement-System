@@ -53,6 +53,17 @@ namespace Cafe.Data
         public DbSet<RestaurantTable> RestaurantTables { get; set; }
         public DbSet<Payment> Payments { get; set; }
 
+        // Phase 2: menu & product depth
+        public DbSet<Brand> Brands { get; set; }
+        public DbSet<Unit> Units { get; set; }
+        public DbSet<ModifierGroup> ModifierGroups { get; set; }
+        public DbSet<Modifier> Modifiers { get; set; }
+        public DbSet<MenuItemModifierGroup> MenuItemModifierGroups { get; set; }
+        public DbSet<Combo> Combos { get; set; }
+        public DbSet<ComboItem> ComboItems { get; set; }
+        public DbSet<PriceGroup> PriceGroups { get; set; }
+        public DbSet<MenuItemPrice> MenuItemPrices { get; set; }
+
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
@@ -100,7 +111,66 @@ namespace Cafe.Data
             ConfigureNotifications(modelBuilder);
             ConfigureCheckoutModules(modelBuilder);
             ConfigurePhase1Pos(modelBuilder);
+            ConfigurePhase2Menu(modelBuilder);
             ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>Phase 2 (menu &amp; product depth): brands, units, modifiers, combos, price tiers.</summary>
+        private void ConfigurePhase2Menu(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Brand>().HasIndex(b => new { b.TenantId, b.Name }).IsUnique();
+            modelBuilder.Entity<PriceGroup>().HasIndex(p => new { p.TenantId, p.Name }).IsUnique();
+
+            modelBuilder.Entity<Unit>().HasIndex(u => new { u.TenantId, u.Name }).IsUnique();
+            modelBuilder.Entity<Unit>()
+                .HasOne(u => u.BaseUnit).WithMany()
+                .HasForeignKey(u => u.BaseUnitId).OnDelete(DeleteBehavior.NoAction);
+
+            // Modifier groups → modifiers (cascade); junction to menu items.
+            modelBuilder.Entity<Modifier>()
+                .HasOne(m => m.Group).WithMany(g => g.Modifiers)
+                .HasForeignKey(m => m.ModifierGroupId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MenuItemModifierGroup>()
+                .HasIndex(x => new { x.TenantId, x.MenuItemId, x.ModifierGroupId }).IsUnique();
+            modelBuilder.Entity<MenuItemModifierGroup>()
+                .HasOne(x => x.MenuItem).WithMany(m => m.ModifierGroups)
+                .HasForeignKey(x => x.MenuItemId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MenuItemModifierGroup>()
+                .HasOne(x => x.ModifierGroup).WithMany()
+                .HasForeignKey(x => x.ModifierGroupId).OnDelete(DeleteBehavior.NoAction);
+
+            // Combos → items (cascade); component menu items are NoAction (MenuItem is a hub).
+            modelBuilder.Entity<Combo>()
+                .HasOne(c => c.Branch).WithMany()
+                .HasForeignKey(c => c.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ComboItem>()
+                .HasOne(c => c.Combo).WithMany(x => x.Items)
+                .HasForeignKey(c => c.ComboId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ComboItem>()
+                .HasOne(c => c.MenuItem).WithMany()
+                .HasForeignKey(c => c.MenuItemId).OnDelete(DeleteBehavior.NoAction);
+
+            // Tiered pricing per (item, group).
+            modelBuilder.Entity<MenuItemPrice>()
+                .HasIndex(p => new { p.TenantId, p.MenuItemId, p.PriceGroupId }).IsUnique();
+            modelBuilder.Entity<MenuItemPrice>()
+                .HasOne(p => p.MenuItem).WithMany(m => m.PriceOverrides)
+                .HasForeignKey(p => p.MenuItemId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MenuItemPrice>()
+                .HasOne(p => p.PriceGroup).WithMany()
+                .HasForeignKey(p => p.PriceGroupId).OnDelete(DeleteBehavior.NoAction);
+
+            // Default day mask = every day (127) so existing items stay available after migration.
+            modelBuilder.Entity<MenuItem>().Property(m => m.AvailableDaysMask).HasDefaultValue(127);
+
+            // MenuItem → brand/unit (optional).
+            modelBuilder.Entity<MenuItem>()
+                .HasOne(m => m.Brand).WithMany()
+                .HasForeignKey(m => m.BrandId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<MenuItem>()
+                .HasOne(m => m.Unit).WithMany()
+                .HasForeignKey(m => m.UnitId).OnDelete(DeleteBehavior.SetNull);
         }
 
         /// <summary>

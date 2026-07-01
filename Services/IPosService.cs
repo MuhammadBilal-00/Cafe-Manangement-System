@@ -26,6 +26,9 @@ namespace Cafe.Services
 
         Task<List<Order>> ListByHoldStateAsync(int branchId, string holdState);
         Task<List<object>> RecentTransactionsAsync(int branchId, int take = 15);
+
+        /// <summary>Authoritative cart subtotal incl. server-validated modifier deltas &amp; line discounts.</summary>
+        Task<decimal> CartSubtotalAsync(PosSaleRequest req);
     }
 
     public class PosService : IPosService
@@ -185,6 +188,34 @@ namespace Cafe.Services
             return rows.Cast<object>().ToList();
         }
 
+        public async Task<decimal> CartSubtotalAsync(PosSaleRequest req)
+        {
+            decimal sub = 0;
+            foreach (var line in req.Items)
+            {
+                var mi = await _db.MenuItems.FirstOrDefaultAsync(m => m.Id == line.MenuItemId && m.BranchId == req.BranchId);
+                if (mi == null) continue;
+                var (unit, _) = await ResolveLineAsync(mi, line.ModifierIds);
+                var qty = Math.Max(1, line.Quantity);
+                sub += (unit * qty) - Math.Clamp(line.LineDiscount, 0, unit * qty);
+            }
+            return sub;
+        }
+
+        /// <summary>Unit price incl. server-validated (tenant-scoped, active) modifier deltas + a note of their names.</summary>
+        private async Task<(decimal unitPrice, string? modNote)> ResolveLineAsync(MenuItem mi, List<int>? modifierIds)
+        {
+            decimal delta = 0;
+            string? note = null;
+            if (modifierIds is { Count: > 0 })
+            {
+                var mods = await _db.Modifiers.Where(m => modifierIds.Contains(m.Id) && m.IsActive).ToListAsync();
+                delta = mods.Sum(m => m.PriceDelta);
+                if (mods.Count > 0) note = string.Join(", ", mods.Select(m => m.Name));
+            }
+            return (mi.Price + delta, note);
+        }
+
         // ── helpers ──
 
         private async Task<(Order entity, List<OrderItem> items, bool isNew)> BuildOrderAsync(PosSaleRequest req)
@@ -222,16 +253,19 @@ namespace Cafe.Services
                     && m.BranchId == req.BranchId && m.Availability);
                 if (mi == null) continue;
                 var qty = Math.Max(1, line.Quantity);
-                var lineTotal = mi.Price * qty;
+                // Server-side price math: menu price + validated modifier deltas.
+                var (unitPrice, modNote) = await ResolveLineAsync(mi, line.ModifierIds);
+                var lineTotal = unitPrice * qty;
                 var discount = Math.Clamp(line.LineDiscount, 0, lineTotal); // never below zero
+                var notes = string.Join(" · ", new[] { modNote, line.Notes }.Where(s => !string.IsNullOrWhiteSpace(s)));
                 items.Add(new OrderItem
                 {
                     Order = entity,
                     MenuItemId = mi.Id,
                     Quantity = qty,
-                    Price = mi.Price,
+                    Price = unitPrice,
                     LineDiscount = Math.Round(discount, 2),
-                    Notes = line.Notes
+                    Notes = string.IsNullOrWhiteSpace(notes) ? null : notes
                 });
             }
             _db.OrderItems.AddRange(items);

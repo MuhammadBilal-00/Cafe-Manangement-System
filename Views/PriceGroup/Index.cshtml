@@ -1,0 +1,68 @@
+@model List<Cafe.Models.PriceGroup>
+@{
+    ViewData["Title"] = "Price Groups";
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Price Groups</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Pricing tiers (Dine-In, Delivery, Wholesale…). Items can override price per group.</p>
+    </div>
+    <button class="btn btn-primary" onclick="pgEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Price Group</button>
+</div>
+
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Name</th><th>Description</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any())
+            { <tr><td colspan="4" style="text-align:center;padding:3rem;color:var(--text-secondary);">No price groups yet.</td></tr> }
+            @foreach (var p in Model)
+            {
+                <tr data-id="@p.Id" data-name="@p.Name" data-desc="@p.Description" data-active="@p.IsActive.ToString().ToLower()">
+                    <td style="font-weight:600;">@p.Name</td>
+                    <td><span class="caption">@p.Description</span></td>
+                    <td style="text-align:center;"><span class="badge @(p.IsActive ? "badge-success" : "badge-neutral")">@(p.IsActive ? "Active" : "Hidden")</span></td>
+                    <td><div style="display:flex;gap:0.4rem;">
+                        <button class="btn btn-ghost btn-sm" onclick="pgEditRow(this)"><i class="fas fa-edit"></i></button>
+                        @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="pgDelete(@p.Id)"><i class="fas fa-trash"></i></button> }
+                    </div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+
+<div id="pgModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:440px;width:100%;"><div class="card-body">
+        <h3 id="pgTitle" style="margin:0 0 1rem;">New Price Group</h3>
+        <input type="hidden" id="pgId" />
+        <div class="form-group"><label class="form-label">Name</label><input id="pgName" class="form-control" /></div>
+        <div class="form-group"><label class="form-label">Description</label><input id="pgDesc" class="form-control" /></div>
+        <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="pgActive" checked /> Active</label></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="pgSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('pgModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+function pgEdit(id, name, desc, active) {
+    document.getElementById('pgTitle').textContent = id ? 'Edit Price Group' : 'New Price Group';
+    document.getElementById('pgId').value = id; document.getElementById('pgName').value = name || '';
+    document.getElementById('pgDesc').value = desc || ''; document.getElementById('pgActive').checked = active !== false;
+    document.getElementById('pgModal').style.display = 'flex';
+}
+function pgEditRow(btn) { const r = btn.closest('tr'); pgEdit(r.dataset.id, r.dataset.name, r.dataset.desc, r.dataset.active === 'true'); }
+async function pgSave() {
+    const body = `id=${document.getElementById('pgId').value || 0}&name=${encodeURIComponent(document.getElementById('pgName').value)}&description=${encodeURIComponent(document.getElementById('pgDesc').value)}&isActive=${document.getElementById('pgActive').checked}`;
+    const d = await fetch('/PriceGroup/Save', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body }).then(r => r.json());
+    if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Price Group', d.message);
+}
+async function pgDelete(id) {
+    const go = async () => { const d = await fetch('/PriceGroup/Delete', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: 'id=' + id }).then(r => r.json()); if (d.success) location.reload(); };
+    if (window.ActionCard) ActionCard.confirm('Delete price group?', 'This cannot be undone.', go); else if (confirm('Delete?')) go();
+}
+</script>
+}

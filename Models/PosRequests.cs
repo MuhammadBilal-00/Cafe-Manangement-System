@@ -9,6 +9,9 @@ namespace Cafe.Models.Requests
         [Range(1, int.MaxValue)] public int Quantity { get; set; } = 1;
         [Range(0, double.MaxValue)] public decimal LineDiscount { get; set; } = 0;
         public string? Notes { get; set; }
+
+        /// <summary>Phase 2: selected modifier ids; their price deltas are added server-side.</summary>
+        public List<int> ModifierIds { get; set; } = new();
     }
 
     /// <summary>One tender in a (possibly split) payment.</summary>

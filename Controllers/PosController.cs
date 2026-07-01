@@ -56,15 +56,72 @@ namespace Cafe.Controllers
         public async Task<IActionResult> GetMenu(int branchId, string? search)
         {
             if (!CanAccessBranch(branchId)) return Forbid();
-            var q = _context.MenuItems.Include(m => m.Category)
+            var q = _context.MenuItems.Include(m => m.Category).Include(m => m.Brand)
                 .Where(m => m.BranchId == branchId && m.Availability);
             if (!string.IsNullOrWhiteSpace(search))
                 q = q.Where(m => m.Name.Contains(search) || (m.Sku != null && m.Sku == search));
 
-            var items = await q.OrderBy(m => m.Category.Name).ThenBy(m => m.Name)
-                .Select(m => new { id = m.Id, name = m.Name, price = m.Price, category = m.Category.Name, sku = m.Sku, available = m.Availability })
-                .ToListAsync();
+            var rows = await q.OrderBy(m => m.Category.Name).ThenBy(m => m.Name).ToListAsync();
+
+            // Phase 2: filter out items outside their time window / day mask right now.
+            var now = DateTime.Now;
+            var hasMods = await _context.MenuItemModifierGroups
+                .Where(x => rows.Select(r => r.Id).Contains(x.MenuItemId))
+                .Select(x => x.MenuItemId).Distinct().ToListAsync();
+
+            var items = rows.Where(m => MenuAvailability.IsAvailable(m, now)).Select(m => new
+            {
+                id = m.Id, name = m.Name, price = m.Price, category = m.Category.Name,
+                brand = m.Brand != null ? m.Brand.Name : null, sku = m.Sku, available = true,
+                hasModifiers = hasMods.Contains(m.Id)
+            });
             return Json(items);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetModifiers(int menuItemId)
+        {
+            var groups = await _context.MenuItemModifierGroups
+                .Where(x => x.MenuItemId == menuItemId)
+                .Join(_context.ModifierGroups.Where(g => g.IsActive), x => x.ModifierGroupId, g => g.Id, (x, g) => g)
+                .OrderBy(g => g.SortOrder).ThenBy(g => g.Name)
+                .Select(g => new
+                {
+                    id = g.Id, name = g.Name, min = g.MinSelect, max = g.MaxSelect, required = g.IsRequired,
+                    options = _context.Modifiers.Where(o => o.ModifierGroupId == g.Id && o.IsActive)
+                        .OrderBy(o => o.SortOrder).ThenBy(o => o.Name)
+                        .Select(o => new { id = o.Id, name = o.Name, priceDelta = o.PriceDelta }).ToList()
+                })
+                .ToListAsync();
+            return Json(groups);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetCombos(int branchId)
+        {
+            if (!CanAccessBranch(branchId)) return Forbid();
+            var combos = await _context.Combos
+                .Where(c => c.BranchId == branchId && c.IsActive)
+                .Select(c => new { c.Id, c.Name, c.Price }).ToListAsync();
+            return Json(combos);
+        }
+
+        /// <summary>Expand a combo to its component menu-item lines so inventory deducts correctly.
+        /// The discount (components' total − combo price) rides on the first line.</summary>
+        [HttpGet]
+        public async Task<IActionResult> ExpandCombo(int comboId)
+        {
+            var combo = await _context.Combos.Include(c => c.Items).ThenInclude(i => i.MenuItem)
+                .FirstOrDefaultAsync(c => c.Id == comboId && c.IsActive);
+            if (combo == null || !CanAccessBranch(combo.BranchId)) return NotFound();
+
+            var lines = combo.Items.Where(i => i.MenuItem != null).Select(i => new
+            {
+                menuItemId = i.MenuItemId, name = i.MenuItem!.Name, price = i.MenuItem.Price, quantity = i.Quantity
+            }).ToList();
+            var componentsTotal = lines.Sum(l => l.price * l.quantity);
+            var discount = Math.Max(0, componentsTotal - combo.Price);
+            return Json(new { name = combo.Name, comboPrice = combo.Price, componentsTotal, discount, lines });
         }
 
         [HttpGet]
@@ -113,14 +170,8 @@ namespace Cafe.Controllers
         {
             if (!CanAccessBranch(req.BranchId)) return Forbid();
 
-            decimal subtotal = 0;
-            foreach (var line in req.Items)
-            {
-                var mi = await _context.MenuItems.FirstOrDefaultAsync(m => m.Id == line.MenuItemId && m.BranchId == req.BranchId);
-                if (mi == null) continue;
-                var qty = Math.Max(1, line.Quantity);
-                subtotal += (mi.Price * qty) - Math.Clamp(line.LineDiscount, 0, mi.Price * qty);
-            }
+            // Server-authoritative subtotal incl. modifier deltas + line discounts.
+            var subtotal = await _pos.CartSubtotalAsync(req);
 
             var pricing = await _pricing.ComputePricingAsync(req.BranchId, subtotal, req.PromoCode, req.PartnershipId,
                 req.PackingCharge, req.ShippingCharge, req.TaxRateOverride);

@@ -1,0 +1,77 @@
+@model List<Cafe.Models.Brand>
+@{
+    ViewData["Title"] = "Brands";
+    var isOwner = Context.Session.GetString("UserRole") == "Owner";
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Brands</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Group products by brand for the register and menu.</p>
+    </div>
+    <button class="btn btn-primary" onclick="brandEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Brand</button>
+</div>
+
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Name</th><th>Description</th><th style="text-align:center;">Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="4" style="text-align:center;padding:3rem;color:var(--text-secondary);">No brands yet.</td></tr>
+            }
+            @foreach (var b in Model)
+            {
+                <tr data-id="@b.Id" data-name="@b.Name" data-desc="@b.Description" data-active="@b.IsActive.ToString().ToLower()">
+                    <td style="font-weight:600;">@b.Name</td>
+                    <td><span class="caption">@b.Description</span></td>
+                    <td style="text-align:center;"><span class="badge @(b.IsActive ? "badge-success" : "badge-neutral")">@(b.IsActive ? "Active" : "Hidden")</span></td>
+                    <td><div style="display:flex;gap:0.4rem;">
+                        <button class="btn btn-ghost btn-sm" onclick="brandEditRow(this)"><i class="fas fa-edit"></i></button>
+                        @if (isOwner)
+                        {
+                            <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="brandDelete(@b.Id)"><i class="fas fa-trash"></i></button>
+                        }
+                    </div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+
+<div id="brandModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:440px;width:100%;"><div class="card-body">
+        <h3 id="brandTitle" style="margin:0 0 1rem;">New Brand</h3>
+        <input type="hidden" id="bId" />
+        <div class="form-group"><label class="form-label">Name</label><input id="bName" class="form-control" /></div>
+        <div class="form-group"><label class="form-label">Description</label><input id="bDesc" class="form-control" /></div>
+        <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="bActive" checked /> Active</label></div>
+        <div style="display:flex;gap:0.5rem;"><button class="btn btn-primary" onclick="brandSave()">Save</button><button class="btn btn-secondary" onclick="document.getElementById('brandModal').style.display='none'">Cancel</button></div>
+    </div></div>
+</div>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+function brandEdit(id, name, desc, active) {
+    document.getElementById('brandTitle').textContent = id ? 'Edit Brand' : 'New Brand';
+    document.getElementById('bId').value = id; document.getElementById('bName').value = name || '';
+    document.getElementById('bDesc').value = desc || ''; document.getElementById('bActive').checked = active !== false;
+    document.getElementById('brandModal').style.display = 'flex';
+}
+function brandEditRow(btn) { const r = btn.closest('tr'); brandEdit(r.dataset.id, r.dataset.name, r.dataset.desc, r.dataset.active === 'true'); }
+async function brandSave() {
+    const body = `id=${document.getElementById('bId').value || 0}&name=${encodeURIComponent(document.getElementById('bName').value)}&description=${encodeURIComponent(document.getElementById('bDesc').value)}&isActive=${document.getElementById('bActive').checked}`;
+    const d = await fetch('/Brand/Save', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body }).then(r => r.json());
+    if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Brand', d.message);
+}
+async function brandDelete(id) {
+    if (window.ActionCard) { ActionCard.confirm('Delete brand?', 'This cannot be undone.', async () => { await doDel(id); }); }
+    else if (confirm('Delete?')) await doDel(id);
+}
+async function doDel(id) {
+    const d = await fetch('/Brand/Delete', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: 'id=' + id }).then(r => r.json());
+    if (d.success) location.reload();
+}
+</script>
+}
