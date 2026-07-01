@@ -54,6 +54,9 @@
                 <select id="posTable" class="form-select"><option value="">No table</option></select>
                 <select id="posStaff" class="form-select"><option value="">No staff</option></select>
             </div>
+            <div style="margin-bottom:0.75rem;">
+                <select id="posPriceGroup" class="form-select"><option value="">Standard pricing</option></select>
+            </div>
             <div style="margin-bottom:0.75rem;position:relative;">
                 <input id="posCustomer" class="form-control" placeholder="Walk-In customer (type to search)" autocomplete="off" />
                 <input type="hidden" id="posCustomerId" />
@@ -168,18 +171,21 @@
         await Promise.all([loadMenu(), loadPickers()]);
     }
     async function loadMenu() {
-        const r = await fetch('/Pos/GetMenu?branchId=' + bid()); menu = await r.json();
+        const pg = document.getElementById('posPriceGroup').value;
+        const r = await fetch('/Pos/GetMenu?branchId=' + bid() + (pg ? '&priceGroupId=' + pg : '')); menu = await r.json();
         renderCats(); renderTiles();
     }
     async function loadPickers() {
-        const [t, s, p] = await Promise.all([
+        const [t, s, p, g] = await Promise.all([
             fetch('/Pos/GetTables?branchId=' + bid()).then(x => x.json()),
             fetch('/Pos/GetServiceStaff?branchId=' + bid()).then(x => x.json()),
-            fetch('/Pos/GetPartnerships?branchId=' + bid()).then(x => x.json())
+            fetch('/Pos/GetPartnerships?branchId=' + bid()).then(x => x.json()),
+            fetch('/Pos/GetPriceGroups').then(x => x.json())
         ]);
         document.getElementById('posTable').innerHTML = '<option value="">No table</option>' + t.map(x => `<option value="${x.id}">${x.name}${x.zone ? ' · ' + x.zone : ''}</option>`).join('');
         document.getElementById('posStaff').innerHTML = '<option value="">No staff</option>' + s.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
         document.getElementById('posPartner').innerHTML = '<option value="">No card offer</option>' + p.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+        document.getElementById('posPriceGroup').innerHTML = '<option value="">Standard pricing</option>' + g.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
     }
 
     let activeCat = 'All';
@@ -313,6 +319,7 @@
             packingCharge: parseFloat(document.getElementById('posPacking').value) || 0,
             shippingCharge: parseFloat(document.getElementById('posShipping').value) || 0,
             taxRateOverride: document.getElementById('posTax').value === '' ? null : parseFloat(document.getElementById('posTax').value),
+            priceGroupId: document.getElementById('posPriceGroup').value ? parseInt(document.getElementById('posPriceGroup').value) : null,
             existingOrderId: window._posExisting || null,
             clientRef: window._posRef
         }, extra || {});
@@ -430,6 +437,7 @@
         if (d.found) { posAdd(d.id); e.target.value = ''; renderTiles(); }
     });
     branchEl?.addEventListener?.('change', () => { cart = []; renderCart(); boot(); });
+    document.getElementById('posPriceGroup').addEventListener('change', async () => { await loadMenu(); posQuote(); });
 
     boot();
 })();

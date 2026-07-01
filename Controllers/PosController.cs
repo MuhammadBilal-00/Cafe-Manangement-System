@@ -53,7 +53,7 @@ namespace Cafe.Controllers
         // ── Reference data for the register ──
 
         [HttpGet]
-        public async Task<IActionResult> GetMenu(int branchId, string? search)
+        public async Task<IActionResult> GetMenu(int branchId, string? search, int? priceGroupId)
         {
             if (!CanAccessBranch(branchId)) return Forbid();
             var q = _context.MenuItems.Include(m => m.Category).Include(m => m.Brand)
@@ -62,20 +62,37 @@ namespace Cafe.Controllers
                 q = q.Where(m => m.Name.Contains(search) || (m.Sku != null && m.Sku == search));
 
             var rows = await q.OrderBy(m => m.Category.Name).ThenBy(m => m.Name).ToListAsync();
+            var ids = rows.Select(r => r.Id).ToList();
 
             // Phase 2: filter out items outside their time window / day mask right now.
             var now = DateTime.Now;
             var hasMods = await _context.MenuItemModifierGroups
-                .Where(x => rows.Select(r => r.Id).Contains(x.MenuItemId))
+                .Where(x => ids.Contains(x.MenuItemId))
                 .Select(x => x.MenuItemId).Distinct().ToListAsync();
+
+            // Phase 2: tiered pricing — apply this price group's overrides where present.
+            var overrides = priceGroupId.HasValue
+                ? await _context.MenuItemPrices.Where(p => p.PriceGroupId == priceGroupId.Value && ids.Contains(p.MenuItemId))
+                    .ToDictionaryAsync(p => p.MenuItemId, p => p.Price)
+                : new Dictionary<int, decimal>();
 
             var items = rows.Where(m => MenuAvailability.IsAvailable(m, now)).Select(m => new
             {
-                id = m.Id, name = m.Name, price = m.Price, category = m.Category.Name,
+                id = m.Id, name = m.Name,
+                price = overrides.TryGetValue(m.Id, out var op) ? op : m.Price,
+                category = m.Category.Name,
                 brand = m.Brand != null ? m.Brand.Name : null, sku = m.Sku, available = true,
                 hasModifiers = hasMods.Contains(m.Id)
             });
             return Json(items);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPriceGroups()
+        {
+            var groups = await _context.PriceGroups.Where(p => p.IsActive).OrderBy(p => p.Name)
+                .Select(p => new { p.Id, p.Name }).ToListAsync();
+            return Json(groups);
         }
 
         [HttpGet]

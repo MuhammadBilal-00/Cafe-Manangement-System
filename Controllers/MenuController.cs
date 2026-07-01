@@ -120,6 +120,7 @@ namespace Cafe.Controllers
         public async Task<IActionResult> Create()
         {
             await PopulateDropdowns();
+            ViewBag.PriceOverrides = new Dictionary<int, decimal>();
 
             // Pre-populate branch for non-owners
             var model = new MenuItem();
@@ -198,6 +199,7 @@ namespace Cafe.Controllers
 
                 _context.Add(menuItem);
                 await _context.SaveChangesAsync();
+                await SavePriceOverridesAsync(menuItem.Id);
 
                 TempData["Success"] = "Menu item created successfully!";
                 return RedirectToAction(nameof(Index));
@@ -223,6 +225,9 @@ namespace Cafe.Controllers
             }
 
             await PopulateDropdowns();
+            ViewBag.PriceOverrides = await _context.MenuItemPrices
+                .Where(p => p.MenuItemId == menuItem.Id)
+                .ToDictionaryAsync(p => p.PriceGroupId, p => p.Price);
             return View(menuItem); // Fixed: return the view, not redirect
         }
 
@@ -256,6 +261,7 @@ namespace Cafe.Controllers
                     menuItem.LastUpdated = DateTime.Now;
                     _context.Update(menuItem);
                     await _context.SaveChangesAsync();
+                    await SavePriceOverridesAsync(menuItem.Id);
 
                     TempData["Success"] = "Menu item updated successfully!";
                 }
@@ -400,6 +406,26 @@ namespace Cafe.Controllers
                 .Select(b => new SelectListItem { Value = b.Id.ToString(), Text = b.Name }).ToListAsync();
             ViewBag.Units = await _context.Units.Where(u => u.IsActive).OrderBy(u => u.Name)
                 .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Name + " (" + u.Abbreviation + ")" }).ToListAsync();
+            ViewBag.PriceGroups = await _context.PriceGroups.Where(p => p.IsActive).OrderBy(p => p.Name).ToListAsync();
+        }
+
+        /// <summary>Upsert/clear per-item price-group overrides from the posted pg_{id} fields.</summary>
+        private async Task SavePriceOverridesAsync(int menuItemId)
+        {
+            var existing = await _context.MenuItemPrices.Where(p => p.MenuItemId == menuItemId).ToListAsync();
+            foreach (var key in Request.Form.Keys.Where(k => k.StartsWith("pg_")))
+            {
+                if (!int.TryParse(key.Substring(3), out var groupId)) continue;
+                decimal.TryParse(Request.Form[key], out var price);
+                var row = existing.FirstOrDefault(e => e.PriceGroupId == groupId);
+                if (price > 0)
+                {
+                    if (row == null) _context.MenuItemPrices.Add(new MenuItemPrice { MenuItemId = menuItemId, PriceGroupId = groupId, Price = price });
+                    else row.Price = price;
+                }
+                else if (row != null) _context.MenuItemPrices.Remove(row); // blank/0 clears the override
+            }
+            await _context.SaveChangesAsync();
         }
 
         private bool MenuItemExists(int id)

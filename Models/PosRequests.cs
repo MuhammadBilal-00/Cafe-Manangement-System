@@ -41,6 +41,9 @@ namespace Cafe.Models.Requests
         public decimal ShippingCharge { get; set; } = 0;
         public decimal? TaxRateOverride { get; set; }
 
+        /// <summary>Phase 2: pricing tier — line base prices use this group's override where set.</summary>
+        public int? PriceGroupId { get; set; }
+
         public List<PosPaymentRequest> Payments { get; set; } = new();
 
         /// <summary>Client-generated idempotency key to guard double-submits.</summary>

@@ -195,16 +195,17 @@ namespace Cafe.Services
             {
                 var mi = await _db.MenuItems.FirstOrDefaultAsync(m => m.Id == line.MenuItemId && m.BranchId == req.BranchId);
                 if (mi == null) continue;
-                var (unit, _) = await ResolveLineAsync(mi, line.ModifierIds);
+                var (unit, _) = await ResolveLineAsync(mi, line.ModifierIds, req.PriceGroupId);
                 var qty = Math.Max(1, line.Quantity);
                 sub += (unit * qty) - Math.Clamp(line.LineDiscount, 0, unit * qty);
             }
             return sub;
         }
 
-        /// <summary>Unit price incl. server-validated (tenant-scoped, active) modifier deltas + a note of their names.</summary>
-        private async Task<(decimal unitPrice, string? modNote)> ResolveLineAsync(MenuItem mi, List<int>? modifierIds)
+        /// <summary>Unit price = tier base price (price-group override or item base) + validated modifier deltas.</summary>
+        private async Task<(decimal unitPrice, string? modNote)> ResolveLineAsync(MenuItem mi, List<int>? modifierIds, int? priceGroupId)
         {
+            var basePrice = await EffectiveBaseAsync(mi.Id, mi.Price, priceGroupId);
             decimal delta = 0;
             string? note = null;
             if (modifierIds is { Count: > 0 })
@@ -213,7 +214,17 @@ namespace Cafe.Services
                 delta = mods.Sum(m => m.PriceDelta);
                 if (mods.Count > 0) note = string.Join(", ", mods.Select(m => m.Name));
             }
-            return (mi.Price + delta, note);
+            return (basePrice + delta, note);
+        }
+
+        /// <summary>Effective base price for a menu item under an optional price group (override or base).</summary>
+        private async Task<decimal> EffectiveBaseAsync(int menuItemId, decimal basePrice, int? priceGroupId)
+        {
+            if (priceGroupId is null) return basePrice;
+            var ov = await _db.MenuItemPrices
+                .Where(p => p.MenuItemId == menuItemId && p.PriceGroupId == priceGroupId.Value)
+                .Select(p => (decimal?)p.Price).FirstOrDefaultAsync();
+            return ov ?? basePrice;
         }
 
         // ── helpers ──
@@ -253,8 +264,8 @@ namespace Cafe.Services
                     && m.BranchId == req.BranchId && m.Availability);
                 if (mi == null) continue;
                 var qty = Math.Max(1, line.Quantity);
-                // Server-side price math: menu price + validated modifier deltas.
-                var (unitPrice, modNote) = await ResolveLineAsync(mi, line.ModifierIds);
+                // Server-side price math: tier base price + validated modifier deltas.
+                var (unitPrice, modNote) = await ResolveLineAsync(mi, line.ModifierIds, req.PriceGroupId);
                 var lineTotal = unitPrice * qty;
                 var discount = Math.Clamp(line.LineDiscount, 0, lineTotal); // never below zero
                 var notes = string.Join(" · ", new[] { modNote, line.Notes }.Where(s => !string.IsNullOrWhiteSpace(s)));
