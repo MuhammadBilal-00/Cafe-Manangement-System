@@ -1,0 +1,170 @@
+@model List<Cafe.Models.ViewModels.UserRowViewModel>
+@{
+    ViewData["Title"] = "Users";
+    var roles = (string[])ViewBag.Roles;
+    var selectedRole = (string?)ViewBag.SelectedRole;
+    var q = (string?)ViewBag.Query;
+    bool showInactive = ViewBag.ShowInactive;
+    int page = ViewBag.Page, totalPages = ViewBag.TotalPages, totalCount = ViewBag.TotalCount;
+    int currentUserId = ViewBag.CurrentUserId;
+}
+
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
+    <div>
+        <h1 class="page-title">Users</h1>
+        <p class="body-text mt-1">Create and manage your team's accounts, roles and branch assignments.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="fas fa-user-plus"></i> Add User
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-6">
+    <div class="card-body">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div class="form-group" style="flex:1;min-width:220px;margin:0;">
+                <label class="form-label">Search</label>
+                <input name="q" value="@q" type="text" placeholder="Name, email or phone..." class="form-control" />
+            </div>
+            <div class="form-group" style="min-width:180px;margin:0;">
+                <label class="form-label">Role</label>
+                <select name="role" class="form-select">
+                    <option value="">All Roles</option>
+                    @foreach (var r in roles)
+                    {
+                        <option value="@r" selected="@(r == selectedRole)">@Cafe.Helpers.AppRoles.Label(r)</option>
+                    }
+                </select>
+            </div>
+            <label class="flex items-center gap-2" style="font-size:0.85rem;color:var(--text-secondary);padding-bottom:0.6rem;cursor:pointer;">
+                <input type="checkbox" name="showInactive" value="true" checked="@showInactive" />
+                Include deactivated
+            </label>
+            <button type="submit" class="btn btn-secondary"><i class="fas fa-filter"></i> Apply</button>
+        </form>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="section-title">Team Accounts</h3>
+        <span class="badge badge-neutral">@totalCount users</span>
+    </div>
+    <div class="card-body card-body-flush">
+        @if (Model.Any())
+        {
+            <div class="overflow-x-auto">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Role</th>
+                            <th>Branch</th>
+                            <th>Status</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in Model)
+                        {
+                            <tr>
+                                <td style="font-weight:600;">
+                                    @u.Name
+                                    @if (u.Id == currentUserId)
+                                    {
+                                        <span class="badge badge-accent" style="margin-left:0.35rem;">You</span>
+                                    }
+                                </td>
+                                <td>@u.Email</td>
+                                <td>@u.Phone</td>
+                                <td><span class="badge badge-info">@Cafe.Helpers.AppRoles.Label(u.Role)</span></td>
+                                <td>@(u.BranchName ?? "—")</td>
+                                <td>
+                                    @if (u.IsActive)
+                                    {
+                                        <span class="badge badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">Deactivated</span>
+                                    }
+                                </td>
+                                <td style="text-align:right;white-space:nowrap;">
+                                    <a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-ghost btn-sm" title="Edit">
+                                        <i class="fas fa-pen"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-ghost btn-sm" title="Reset password"
+                                            onclick="resetPassword(@u.Id, '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(u.Name))')">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    @if (u.Id != currentUserId)
+                                    {
+                                        <form asp-action="ToggleActive" asp-route-id="@u.Id" method="post" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            @if (u.IsActive)
+                                            {
+                                                <button type="submit" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;" title="Deactivate — blocks sign-in, keeps data">
+                                                    <i class="fas fa-user-slash"></i> Deactivate
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="submit" class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;" title="Reactivate">
+                                                    <i class="fas fa-user-check"></i> Activate
+                                                </button>
+                                            }
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (totalPages > 1)
+            {
+                <div style="padding:1rem 1.5rem;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:0.25rem;">
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <a asp-action="Index" asp-route-page="@i" asp-route-role="@selectedRole" asp-route-q="@q"
+                           asp-route-showInactive="@(showInactive ? "true" : null)"
+                           class="btn btn-sm @(i == page ? "btn-primary" : "btn-ghost")" style="min-width:2rem;">@i</a>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div style="padding:3.5rem 1.5rem;text-align:center;">
+                <div style="font-size:2.25rem;color:var(--text-tertiary);margin-bottom:0.75rem;"><i class="fas fa-users"></i></div>
+                <div style="font-weight:600;margin-bottom:0.25rem;">No users found</div>
+                <p class="body-text" style="margin-bottom:1.25rem;">Try clearing the filters, or add a new team member.</p>
+                <a asp-action="Create" class="btn btn-primary"><i class="fas fa-user-plus"></i> Add User</a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function resetPassword(id, name) {
+            const pwd = await ActionCard.prompt('Reset Password',
+                `Set a new password for ${name}. Share it with them securely (not by email).`,
+                { placeholder: 'New password (min 6 characters)', okText: 'Reset' });
+            if (pwd === null) return;
+            if (!pwd || pwd.length < 6) { ActionCard.warning('Too short', 'Password must be at least 6 characters.'); return; }
+            const res = await fetch('/User/ResetPassword', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('[name="__RequestVerificationToken"]').value },
+                body: JSON.stringify({ id: id, newPassword: pwd })
+            }).then(r => r.json()).catch(() => ({ success: false, message: 'Network error.' }));
+            if (res.success) ActionCard.success('Password Reset', res.message, { autoDismiss: 3500 });
+            else ActionCard.error('Error', res.message);
+        }
+    </script>
+}

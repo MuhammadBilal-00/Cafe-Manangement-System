@@ -113,7 +113,7 @@
         var userName = Context.Session.GetString("UserName");
         var isOwner = userRole == "Owner";
         var isManager = userRole == "BranchManager";
-        var isStaff = userRole == "Staff";
+        var isStaff = Cafe.Helpers.AppRoles.IsStaffLevel(userRole);
         var isOwnerOrManager = isOwner || isManager;
         var isAuthenticated = Context.Session.GetString("UserId") != null;
     }
@@ -209,6 +209,14 @@
                             <span class="sidebar-link-icon"><i class="fas fa-users"></i></span>
                             <span class="sidebar-link-text">Staff</span>
                         </a>
+
+                        @if (isOwner)
+                        {
+                            <a asp-controller="User" asp-action="Index" class="sidebar-link" data-nav="Users">
+                                <span class="sidebar-link-icon"><i class="fas fa-user-shield"></i></span>
+                                <span class="sidebar-link-text">Users</span>
+                            </a>
+                        }
                     }
 
                     @if (userRole != "Customer")

@@ -25,7 +25,7 @@ namespace Cafe.Controllers
         {
             // People to message: staff/managers/owners in this tenant (excluding self).
             ViewBag.People = await _context.Users
-                .Where(u => u.Id != Me && (u.Role == "Owner" || u.Role == "BranchManager" || u.Role == "Staff"))
+                .Where(u => u.Id != Me && u.Role != "Customer" && u.Role != "PlatformAdmin" && u.IsActive)
                 .OrderBy(u => u.Name).Select(u => new { u.Id, u.Name, u.Role }).ToListAsync();
             ViewBag.Unread = await _context.Messages.CountAsync(m => m.ToUserId == Me && !m.IsRead);
             return View();

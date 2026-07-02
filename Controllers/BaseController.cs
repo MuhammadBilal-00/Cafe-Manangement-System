@@ -40,7 +40,7 @@ namespace Cafe.Controllers
                 return managedBranchId.HasValue && managedBranchId.Value == branchId;
             }
 
-            if (userRole == "Staff")
+            if (AppRoles.IsStaffLevel(userRole))
             {
                 var staffBranchId = HttpContext.Session.GetStaffBranchId();
                 return staffBranchId.HasValue && staffBranchId.Value == branchId;
@@ -83,7 +83,7 @@ namespace Cafe.Controllers
                     return await _context.Branches.Where(b => b.Id == branchId.Value && b.IsActive).ToListAsync();
             }
 
-            if (role == "Staff")
+            if (AppRoles.IsStaffLevel(role))
             {
                 var branchId = HttpContext.Session.GetStaffBranchId();
                 if (branchId.HasValue)
@@ -121,7 +121,7 @@ namespace Cafe.Controllers
                 if (branchId.HasValue)
                     query = query.Where(s => s.BranchId == branchId.Value);
             }
-            else if (role == "Staff")
+            else if (AppRoles.IsStaffLevel(role))
             {
                 var userId = GetCurrentUserId();
                 if (userId.HasValue)

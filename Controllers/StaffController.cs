@@ -65,6 +65,9 @@ namespace Cafe.Controllers
         }
 
         // GET: Staff/Create
+        // Creating a staff member also creates a LOGIN account, so this is Administrator-only
+        // (closed platform: nobody below the admin can create accounts).
+        [RequireOwner]
         public async Task<IActionResult> Create()
         {
             await PopulateDropdowns();
@@ -84,6 +87,7 @@ namespace Cafe.Controllers
         // POST: Staff/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RequireOwner]
         public async Task<IActionResult> Create(StaffCreateViewModel model)
         {
             // Enforce branch for Manager

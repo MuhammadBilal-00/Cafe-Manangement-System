@@ -36,7 +36,7 @@ namespace Cafe.Services
                     var role = session?.GetString("UserRole");
                     if (role == "BranchManager")
                         branchId = session?.GetManagedBranchId();
-                    else if (role == "Staff")
+                    else if (Cafe.Helpers.AppRoles.IsStaffLevel(role))
                         branchId = session?.GetStaffBranchId();
                 }
 

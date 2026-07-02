@@ -12,7 +12,8 @@ namespace Cafe.Attributes
             var session = context.HttpContext.Session;
             var userRole = session.GetUserRole();
 
-            if (userRole != "Owner" && userRole != "BranchManager" && userRole != "Staff")
+            // Staff-level covers all internal operational roles (Staff, HR, InventoryManager, Cashier).
+            if (userRole != AppRoles.Owner && userRole != AppRoles.BranchManager && !AppRoles.IsStaffLevel(userRole))
             {
                 context.Result = new RedirectToActionResult("AccessDenied", "Auth", null);
                 return;

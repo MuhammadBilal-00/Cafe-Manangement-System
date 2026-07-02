@@ -52,9 +52,10 @@ namespace Cafe.Helpers
             return session.GetUserRole() == "BranchManager";
         }
 
+        /// <summary>True for every staff-level operational role (Staff, HR, InventoryManager, Cashier).</summary>
         public static bool IsStaff(this ISession session)
         {
-            return session.GetUserRole() == "Staff";
+            return AppRoles.IsStaffLevel(session.GetUserRole());
         }
 
         public static bool IsCustomer(this ISession session)

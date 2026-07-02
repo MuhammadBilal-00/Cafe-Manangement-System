@@ -214,7 +214,7 @@ namespace Cafe.Interceptors
                 int? sessionBranchId = null;
                 if (userRole == "BranchManager")
                     sessionBranchId = session?.GetManagedBranchId();
-                else if (userRole == "Staff")
+                else if (Cafe.Helpers.AppRoles.IsStaffLevel(userRole))
                     sessionBranchId = session?.GetStaffBranchId();
 
                 foreach (var audit in _pendingAudits!)

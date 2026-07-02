@@ -29,7 +29,7 @@ namespace Cafe.Controllers
 
             if (userRole == "BranchManager")
                 scopedBranchId = HttpContext.Session.GetManagedBranchId();
-            else if (userRole == "Staff")
+            else if (Cafe.Helpers.AppRoles.IsStaffLevel(userRole))
                 scopedBranchId = HttpContext.Session.GetStaffBranchId();
 
             // Branch-scoped queries

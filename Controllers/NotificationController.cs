@@ -278,7 +278,7 @@ namespace Cafe.Controllers
             var role = GetCurrentUserRole();
             if (role == "BranchManager")
                 return HttpContext.Session.GetManagedBranchId();
-            if (role == "Staff")
+            if (Cafe.Helpers.AppRoles.IsStaffLevel(role))
                 return HttpContext.Session.GetStaffBranchId();
             return null;
         }

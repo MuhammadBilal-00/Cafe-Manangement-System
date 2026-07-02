@@ -90,7 +90,7 @@ namespace Cafe.Controllers
                             HttpContext.Session.SetInt32("ManagedBranchId", branch.Id);
                         }
                     }
-                    else if (user.Role == "Staff")
+                    else if (Cafe.Helpers.AppRoles.IsStaffLevel(user.Role))
                     {
                         var staff = await _context.Staff.FirstOrDefaultAsync(s => s.UserId == user.Id && s.IsActive);
                         if (staff != null)

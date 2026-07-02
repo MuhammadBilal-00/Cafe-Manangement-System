@@ -1,0 +1,69 @@
+@model Cafe.Models.ViewModels.UserFormViewModel
+@{
+    var roles = (string[])ViewBag.Roles;
+    var branches = (List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Branches;
+    var isEdit = Model.Id.HasValue;
+}
+
+<div asp-validation-summary="ModelOnly" style="color:#dc2626;font-size:0.85rem;margin-bottom:1rem;"></div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label asp-for="Name" class="form-label">Full Name</label>
+        <input asp-for="Name" class="form-control" placeholder="e.g. Sarah Johnson" />
+        <span asp-validation-for="Name" style="color:#dc2626;font-size:0.78rem;"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Email" class="form-label">Email (used to sign in)</label>
+        <input asp-for="Email" class="form-control" placeholder="name@business.com" />
+        <span asp-validation-for="Email" style="color:#dc2626;font-size:0.78rem;"></span>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label asp-for="Phone" class="form-label">Phone</label>
+        <input asp-for="Phone" class="form-control" placeholder="e.g. 0300-1234567" />
+        <span asp-validation-for="Phone" style="color:#dc2626;font-size:0.78rem;"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Role" class="form-label">Role</label>
+        <select asp-for="Role" class="form-select">
+            <option value="">Select role...</option>
+            @foreach (var r in roles)
+            {
+                <option value="@r">@Cafe.Helpers.AppRoles.Label(r)</option>
+            }
+        </select>
+        <span asp-validation-for="Role" style="color:#dc2626;font-size:0.78rem;"></span>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label asp-for="BranchId" class="form-label">Branch assignment</label>
+        <select asp-for="BranchId" class="form-select" asp-items="branches">
+            <option value="">No branch (e.g. Administrator)</option>
+        </select>
+        <span class="caption">Branch Managers manage this branch; staff-level roles work at it.</span>
+    </div>
+    @if (!isEdit)
+    {
+        <div class="form-group">
+            <label asp-for="Password" class="form-label">Initial password</label>
+            <input asp-for="Password" class="form-control" placeholder="Min 6 characters" autocomplete="new-password" />
+            <span asp-validation-for="Password" style="color:#dc2626;font-size:0.78rem;"></span>
+            <span class="caption">Share it with the user securely — they can change it in Settings.</span>
+        </div>
+    }
+    else
+    {
+        <div class="form-group">
+            <label class="form-label">Status</label>
+            <label class="flex items-center gap-2" style="font-size:0.88rem;padding:0.6rem 0;cursor:pointer;">
+                <input asp-for="IsActive" type="checkbox" />
+                Active (unchecked users cannot sign in; their data is kept)
+            </label>
+        </div>
+    }
+</div>

@@ -36,7 +36,7 @@ namespace Cafe.Controllers
 
             // Role-based filtering
             var userRole = GetCurrentUserRole();
-            if (userRole == "Staff")
+            if (Cafe.Helpers.AppRoles.IsStaffLevel(userRole))
             {
                 var currentStaffId = await GetCurrentStaffId();
                 if (currentStaffId.HasValue)
@@ -476,7 +476,7 @@ namespace Cafe.Controllers
                 .AsQueryable();
 
             var userRole = GetCurrentUserRole();
-            if (userRole == "Staff")
+            if (Cafe.Helpers.AppRoles.IsStaffLevel(userRole))
             {
                 var currentStaffId = await GetCurrentStaffId();
                 if (currentStaffId.HasValue)

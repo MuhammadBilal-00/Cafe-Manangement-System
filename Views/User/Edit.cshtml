@@ -1,0 +1,31 @@
+@model Cafe.Models.ViewModels.UserFormViewModel
+@{
+    ViewData["Title"] = "Edit User";
+}
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
+    <div>
+        <h1 class="page-title">Edit User</h1>
+        <p class="body-text mt-1">Change details, role or branch. Changes apply at the user's next sign-in.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back to Users</a>
+</div>
+
+<div class="card" style="max-width:760px;">
+    <div class="card-body">
+        <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <partial name="_UserForm" model="Model" />
+            <div class="divider"></div>
+            <div class="flex justify-end gap-3">
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

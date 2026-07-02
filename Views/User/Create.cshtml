@@ -1,0 +1,30 @@
+@model Cafe.Models.ViewModels.UserFormViewModel
+@{
+    ViewData["Title"] = "Add User";
+}
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
+    <div>
+        <h1 class="page-title">Add User</h1>
+        <p class="body-text mt-1">Provision an internal account. Only administrators can create users.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back to Users</a>
+</div>
+
+<div class="card" style="max-width:760px;">
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <partial name="_UserForm" model="Model" />
+            <div class="divider"></div>
+            <div class="flex justify-end gap-3">
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus"></i> Create User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
