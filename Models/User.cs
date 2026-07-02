@@ -33,6 +33,9 @@ namespace Cafe.Models
         [StringLength(255)]
         public string? PasswordHash { get; set; }
 
+        /// <summary>Closed platform: only active internal users may sign in. Deactivated users keep their data.</summary>
+        public bool IsActive { get; set; } = true;
+
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation Properties

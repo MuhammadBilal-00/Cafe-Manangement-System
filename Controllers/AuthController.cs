@@ -47,8 +47,24 @@ namespace Cafe.Controllers
                 using (_tenantContext.BypassFilter())
                     user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
 
+                // Customers are business-managed DATA records, never authentication identities.
+                // Reject with the standard invalid-credentials message (don't leak that the email exists).
+                if (user != null && user.Role == "Customer")
+                {
+                    ModelState.AddModelError("", "Invalid email or password");
+                    return View(model);
+                }
+
                 if (user != null && _authService.VerifyPassword(model.Password, user.PasswordHash ?? string.Empty))
                 {
+                    if (!user.IsActive)
+                    {
+                        await _auditLogService.LogAsync("LoginBlocked", "User", user.Id,
+                            $"Login blocked for deactivated account {user.Email}");
+                        ModelState.AddModelError("", "Your account is disabled. Contact your administrator.");
+                        return View(model);
+                    }
+
                     // Set session values
                     HttpContext.Session.SetInt32("UserId", user.Id);
                     HttpContext.Session.SetString("UserName", user.Name);
@@ -97,61 +113,13 @@ namespace Cafe.Controllers
             return View(model);
         }
 
-        // GET: /Auth/Register
+        // Closed platform: there is no self-registration. Accounts are provisioned by the
+        // tenant Administrator (Users) or the Platform Admin (tenants). Anything that still
+        // points at /Auth/Register lands back on the login page.
+        [HttpGet, HttpPost]
         public IActionResult Register()
         {
-            return View();
-        }
-
-        // POST: /Auth/Register
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                // Check if email already exists
-                if (await _context.Users.AnyAsync(u => u.Email == model.Email))
-                {
-                    ModelState.AddModelError("Email", "Email already exists");
-                    return View(model);
-                }
-
-                var user = new User
-                {
-                    Name = model.Name,
-                    Email = model.Email,
-                    Phone = model.Phone,
-                    Role = model.Role,
-                    PasswordHash = _authService.HashPassword(model.Password),
-                    CreatedDate = DateTime.Now
-                };
-
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-
-                // If registering as customer, create customer record
-                if (model.Role == "Customer")
-                {
-                    var customer = new Customer
-                    {
-                        UserId = user.Id,
-                        Address = model.Address,
-                        JoinDate = DateTime.Now,
-                        LoyaltyPoints = 0,
-                        IsActive = true
-                    };
-                    _context.Customers.Add(customer);
-                }
-
-                await _context.SaveChangesAsync();
-                await _auditLogService.LogAsync("Create", "User", user.Id, $"New user registered: {user.Name} ({user.Role})");
-
-                TempData["Success"] = "Registration successful! Please login.";
-                return RedirectToAction("Login");
-            }
-
-            return View(model);
+            return RedirectToAction(nameof(Login));
         }
 
         // POST: /Auth/Logout

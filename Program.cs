@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Cafe.Data;
 using Cafe.Services;
 using Cafe.Middleware;
@@ -133,59 +132,13 @@ builder.Services.AddLogging();
 
 var app = builder.Build();
 
-// Apply pending migrations automatically
+// Apply pending migrations automatically. Migrations are authoritative: if one fails,
+// startup fails loudly. (The old 2714 "reconciliation" loop could mark a migration as
+// applied without creating its tables, which broke seeding with missing-object errors.)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    try
-    {
-        db.Database.Migrate();
-    }
-    catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 2714) // 2714 = "There is already an object named '...' in the database"
-    {
-        // This occurs when the database was created before EF Core migrations were introduced.
-        logger.LogWarning(ex, "Database objects already exist. Reconciling migration history...");
-
-        // Ensure __EFMigrationsHistory table exists
-        db.Database.ExecuteSqlRaw(@"
-            IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '__EFMigrationsHistory')
-            CREATE TABLE [__EFMigrationsHistory] (
-                [MigrationId] nvarchar(150) NOT NULL,
-                [ProductVersion] nvarchar(32) NOT NULL,
-                CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
-            )");
-
-        // Apply each pending migration individually: migrations that create objects
-        // already in the database are marked as applied, while genuinely new migrations
-        // (e.g. AddAuditLogsTable) are executed normally.
-        var efVersion = System.Reflection.CustomAttributeExtensions
-            .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(typeof(DbContext).Assembly)
-            ?.InformationalVersion?.Split('+')[0] ?? "9.0.0";
-        var pending = db.Database.GetPendingMigrations().ToList();
-        var migrator = db.GetInfrastructure()
-            .GetRequiredService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>();
-        var reconciled = 0;
-
-        foreach (var migration in pending)
-        {
-            try
-            {
-                migrator.Migrate(migration);
-            }
-            catch (Microsoft.Data.SqlClient.SqlException mex) when (mex.Number == 2714)
-            {
-                // This migration creates objects that already exist, mark as applied
-                db.Database.ExecuteSqlRaw(
-                    "IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = {0}) " +
-                    "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ({0}, {1})",
-                    migration, efVersion);
-                reconciled++;
-            }
-        }
-
-        logger.LogInformation("Reconciled {Count} migrations with existing database schema.", reconciled);
-    }
+    db.Database.Migrate();
 }
 
 // Seed demo data

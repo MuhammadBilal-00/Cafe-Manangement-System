@@ -111,15 +111,14 @@
                         <input asp-for="RememberMe" class="accent-accent w-4 h-4" />
                         Remember me
                     </label>
-                    <a href="#" class="text-[0.8rem] text-accent font-medium hover:underline">Forgot password?</a>
+                    <span class="text-[0.75rem] text-gray-400">Forgot password? Contact your administrator.</span>
                 </div>
 
                 <button type="submit" class="w-full py-3 bg-accent text-white border-none rounded-xl font-sans text-[0.9rem] font-semibold cursor-pointer transition-all duration-300 hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(212,175,55,0.35)] active:scale-[0.98]">Sign in</button>
             </form>
 
             <p class="text-center mt-6 text-[0.8rem] text-gray-500">
-                Don't have an account?
-                <a asp-action="Register" class="text-accent font-semibold hover:underline">Register here</a>
+                Accounts are created by your administrator.
             </p>
 
             <div class="mt-6 p-4 bg-surface-alt border border-gray-200/60 rounded-xl text-center">

@@ -24,6 +24,7 @@ namespace Cafe.Data
             await EnsureTenantsHavePlanAsync(context); // any plan-less tenant (e.g. the migration's Demo) → Pro
             await EnsureWalkInCustomersAsync(context); // Phase 1: a Walk-In customer per tenant
             await EnsureChartOfAccountsAsync(context); // Phase 5: default CoA per tenant
+            await EnsureCustomersAreDataOnlyAsync(context); // Closed platform: customers never log in
 
             // If real tenant data already exists, don't seed demo data.
             if (await context.Users.AnyAsync(u => u.Role != "PlatformAdmin"))
@@ -79,11 +80,11 @@ namespace Cafe.Data
 
             var custUsers = new[]
             {
-                new User { Name = "Alice Brown",   Email = "alice@example.com",  Phone = "555-0301", Role = "Customer", PasswordHash = authService.HashPassword("cust123"), CreatedDate = DateTime.Now.AddMonths(-8) },
-                new User { Name = "Bob Martinez",  Email = "bob@example.com",    Phone = "555-0302", Role = "Customer", PasswordHash = authService.HashPassword("cust123"), CreatedDate = DateTime.Now.AddMonths(-6) },
-                new User { Name = "Carol Kim",     Email = "carol@example.com",  Phone = "555-0303", Role = "Customer", PasswordHash = authService.HashPassword("cust123"), CreatedDate = DateTime.Now.AddMonths(-5) },
-                new User { Name = "Daniel Smith",  Email = "daniel@example.com", Phone = "555-0304", Role = "Customer", PasswordHash = authService.HashPassword("cust123"), CreatedDate = DateTime.Now.AddMonths(-4) },
-                new User { Name = "Eva Green",     Email = "eva@example.com",    Phone = "555-0305", Role = "Customer", PasswordHash = authService.HashPassword("cust123"), CreatedDate = DateTime.Now.AddMonths(-3) },
+                new User { Name = "Alice Brown",   Email = "alice@example.com",  Phone = "555-0301", Role = "Customer", /* data-only: customers never log in */ CreatedDate = DateTime.Now.AddMonths(-8) },
+                new User { Name = "Bob Martinez",  Email = "bob@example.com",    Phone = "555-0302", Role = "Customer", /* data-only: customers never log in */ CreatedDate = DateTime.Now.AddMonths(-6) },
+                new User { Name = "Carol Kim",     Email = "carol@example.com",  Phone = "555-0303", Role = "Customer", /* data-only: customers never log in */ CreatedDate = DateTime.Now.AddMonths(-5) },
+                new User { Name = "Daniel Smith",  Email = "daniel@example.com", Phone = "555-0304", Role = "Customer", /* data-only: customers never log in */ CreatedDate = DateTime.Now.AddMonths(-4) },
+                new User { Name = "Eva Green",     Email = "eva@example.com",    Phone = "555-0305", Role = "Customer", /* data-only: customers never log in */ CreatedDate = DateTime.Now.AddMonths(-3) },
             };
 
             context.Users.Add(owner);
@@ -567,6 +568,18 @@ namespace Cafe.Data
                 context.Customers.Add(new Customer { UserId = user.Id, TenantId = t.Id, JoinDate = DateTime.Now, IsActive = true });
                 await context.SaveChangesAsync();
             }
+        }
+
+        /// <summary>
+        /// Closed platform: customers are business-managed data records, not logins. Strip any
+        /// password left over from the old self-service portal so a Customer row can never
+        /// authenticate, regardless of code paths. Idempotent set-based update.
+        /// </summary>
+        private static async Task EnsureCustomersAreDataOnlyAsync(ApplicationDbContext context)
+        {
+            await context.Users.IgnoreQueryFilters()
+                .Where(u => u.Role == "Customer" && u.PasswordHash != null)
+                .ExecuteUpdateAsync(s => s.SetProperty(u => u.PasswordHash, (string?)null));
         }
     }
 }

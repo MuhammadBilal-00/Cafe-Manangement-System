@@ -15,7 +15,10 @@
         {
             var path = context.Request.Path.Value?.ToLower();
 
-            var publicPaths = new[] { "/auth/login", "/auth/register", "/auth/accessdenied", "/onboarding", "/catalogue" };
+            // Closed platform: /auth/register redirects to login (kept public so old links
+            // resolve cleanly) and /onboarding is Platform-Admin-only (sales-led provisioning),
+            // so it must pass through the session gate like any other internal page.
+            var publicPaths = new[] { "/auth/login", "/auth/register", "/auth/accessdenied", "/catalogue" };
             var isPublicPath = path == "/" ||
                               publicPaths.Any(p => path?.StartsWith(p) == true) ||
                               path?.Contains("/css/") == true || path?.Contains("/js/") == true ||
