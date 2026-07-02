@@ -501,7 +501,7 @@ namespace Cafe.Controllers
                     Email = request.Email ?? $"{request.Phone}@customer.local",
                     Phone = request.Phone,
                     Role = "Customer",
-                    PasswordHash = "",
+                    PasswordHash = null, // data-only record — customers never log in
                     CreatedDate = DateTime.Now
                 };
                 _context.Users.Add(user);
