@@ -30,6 +30,11 @@ namespace Cafe.Models
         [StringLength(50)]
         public string? Icon { get; set; } // FontAwesome icon class
 
+        /// <summary>KOT routing: the kitchen station this category's items are prepared at
+        /// (e.g. "Kitchen", "Bar"). Null → routed to the branch's default kitchen printer.</summary>
+        [StringLength(40)]
+        public string? KotStation { get; set; }
+
         // Navigation Properties
         public ICollection<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
 

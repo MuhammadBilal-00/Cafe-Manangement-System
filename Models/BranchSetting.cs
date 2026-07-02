@@ -32,6 +32,9 @@ namespace Cafe.Models
         [StringLength(300)]
         public string? InvoiceFooterNote { get; set; }
 
+        /// <summary>When true, a Kitchen Order Ticket auto-prints on order placement (per station).</summary>
+        public bool AutoPrintKot { get; set; } = true;
+
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
         // Navigation

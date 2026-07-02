@@ -123,6 +123,10 @@ namespace Cafe.Data
         public DbSet<Shipment> Shipments { get; set; }
         public DbSet<PosProfile> PosProfiles { get; set; }
 
+        // Kitchen printing (KOT)
+        public DbSet<KitchenPrinter> KitchenPrinters { get; set; }
+        public DbSet<KotPrintLog> KotPrintLogs { get; set; }
+
         // Inventory Management
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
@@ -178,7 +182,21 @@ namespace Cafe.Data
             ConfigurePhase7Hr(modelBuilder);
             ConfigurePhase8Essentials(modelBuilder);
             ConfigurePhase9Logistics(modelBuilder);
+            ConfigureKitchenPrinting(modelBuilder);
             ConfigureMultiTenancy(modelBuilder);
+        }
+
+        /// <summary>Kitchen Order Ticket (KOT) printing: printers, dispatch log. FKs never cascade.</summary>
+        private void ConfigureKitchenPrinting(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<KitchenPrinter>().HasOne(p => p.Branch).WithMany().HasForeignKey(p => p.BranchId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<KitchenPrinter>().ToTable(t => t.HasCheckConstraint("CK_KitchenPrinter_ConnType", "[ConnectionType] IN ('Network','Browser')"));
+            modelBuilder.Entity<KitchenPrinter>().HasIndex(p => new { p.TenantId, p.BranchId, p.IsActive });
+
+            modelBuilder.Entity<KotPrintLog>().HasOne(l => l.Order).WithMany().HasForeignKey(l => l.OrderId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<KotPrintLog>().HasOne(l => l.KitchenPrinter).WithMany().HasForeignKey(l => l.KitchenPrinterId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<KotPrintLog>().ToTable(t => t.HasCheckConstraint("CK_KotPrintLog_Status", "[Status] IN ('Printed','Browser','Queued','Failed','Test')"));
+            modelBuilder.Entity<KotPrintLog>().HasIndex(l => new { l.TenantId, l.OrderId });
         }
 
         /// <summary>Phase 9 (platform/system): delivery/rider, shipments, POS profiles.</summary>
