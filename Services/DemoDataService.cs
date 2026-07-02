@@ -371,6 +371,47 @@ namespace Cafe.Services
                     new PosProfile { Name = "Thermal 80mm", PaperSize = "Thermal80", ShowLogo = false, ShowTaxBreakdown = true, BranchId = b1 });
             });
 
+            // ─────────────── Recipes: link menu items → raw stock so orders consume inventory ───────────────
+            await Block("Recipe mappings (menu → inventory)", async () =>
+            {
+                if (await _db.InventoryRecipeMappings.AnyAsync()) return;
+                // Map each menu item to a raw inventory item IN THE SAME BRANCH, so ordering it deducts stock
+                // (the deduction path only consumes branch-local inventory).
+                var menuItems = await _db.MenuItems.Select(m => new { m.Id, m.BranchId }).ToListAsync();
+                var invByBranch = (await _db.InventoryItems.Select(i => new { i.Id, i.BranchId }).ToListAsync())
+                    .GroupBy(i => i.BranchId).ToDictionary(g => g.Key, g => g.Select(x => x.Id).ToList());
+                foreach (var m in menuItems)
+                    if (invByBranch.TryGetValue(m.BranchId, out var list) && list.Count > 0)
+                        _db.InventoryRecipeMappings.Add(new InventoryRecipeMapping
+                        {
+                            MenuItemId = m.Id, InventoryItemId = list[m.Id % list.Count], QuantityRequired = 1, Unit = "pc"
+                        });
+            });
+
+            // ─────────────── Kitchen printers + station routing (KOT) ───────────────
+            await Block("Kitchen printers", async () =>
+            {
+                if (await _db.KitchenPrinters.AnyAsync()) return;
+                // Browser printers render a visible KOT (works without hardware). Network is also supported
+                // via the admin screen (IP:9100 ESC/POS). Default catches unrouted categories.
+                _db.KitchenPrinters.AddRange(
+                    new KitchenPrinter { BranchId = b1, Name = "Main Kitchen", ConnectionType = "Browser", Station = "Kitchen", IsDefault = true, IsActive = true },
+                    new KitchenPrinter { BranchId = b1, Name = "Bar", ConnectionType = "Browser", Station = "Bar", IsActive = true });
+            });
+
+            await Block("Category → station routing", async () =>
+            {
+                // Route drink categories to the Bar; everything else falls to the default (Kitchen) printer.
+                var drinkWords = new[] { "beverage", "drink", "coffee", "tea", "juice", "shake", "smoothie", "bar" };
+                var cats = await _db.Categories.ToListAsync();
+                var changed = false;
+                foreach (var c in cats.Where(c => string.IsNullOrWhiteSpace(c.KotStation)))
+                {
+                    if (drinkWords.Any(w => c.Name.ToLower().Contains(w))) { c.KotStation = "Bar"; changed = true; }
+                }
+                if (!changed) log.Add("   → (no drink categories matched; items route to default Kitchen printer)");
+            });
+
             log.Add($"Done. {log.Count(l => l.StartsWith("✓"))} module blocks seeded.");
             return log;
         }
