@@ -102,6 +102,21 @@
                         <textarea name="invoiceFooterNote" rows="2" class="form-control" maxlength="300" placeholder="e.g. Thank you for dining with us! · FBR POS #12345">@Model.InvoiceFooterNote</textarea>
                     </div>
                 </div>
+
+                <div class="card" style="flex:1; min-width:280px;"><div class="card-body">
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                        <div style="width:38px; height:38px; border-radius:10px; background:rgba(59,130,246,0.12); color:#3b82f6; display:flex; align-items:center; justify-content:center;"><i class="fas fa-print"></i></div>
+                        <div>
+                            <div style="font-weight:700;">Auto-print KOT</div>
+                            <div class="caption">Send a Kitchen Order Ticket to the station printer when an order is placed.</div>
+                        </div>
+                    </div>
+                    <label style="display:flex; gap:0.6rem; align-items:center; font-weight:600;">
+                        <input type="checkbox" name="autoPrintKot" value="true" @(Model.AutoPrintKot ? "checked" : "") />
+                        <input type="hidden" name="autoPrintKot" value="false" disabled id="kotFalse" />
+                        Enabled
+                    </label>
+                </div></div>
             </div>
 
             <div style="display:flex; justify-content:flex-end;">
@@ -127,11 +142,14 @@
         // Enable the "false" fallback only when the checkbox is unchecked, so exactly one value posts.
         (function () {
             const form = document.querySelector('form[action$="Save"]') || document.querySelector('form');
-            const cb = document.querySelector('input[name="hardwareTerminalEnabled"][type="checkbox"]');
-            const hidden = document.getElementById('hwFalse');
-            if (!form || !cb || !hidden) return;
+            if (!form) return;
+            const pairs = [['hardwareTerminalEnabled', 'hwFalse'], ['autoPrintKot', 'kotFalse']];
             form.addEventListener('submit', function () {
-                hidden.disabled = cb.checked; // if checked, drop the false; if unchecked, send false
+                pairs.forEach(([name, hiddenId]) => {
+                    const cb = document.querySelector(`input[name="${name}"][type="checkbox"]`);
+                    const hidden = document.getElementById(hiddenId);
+                    if (cb && hidden) hidden.disabled = cb.checked;
+                });
             });
         })();
     </script>

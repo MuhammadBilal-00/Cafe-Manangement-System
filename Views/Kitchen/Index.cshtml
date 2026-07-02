@@ -75,12 +75,32 @@
                         · <span style="color:${c};font-weight:700;">${t.ageMinutes}m</span>
                     </div>
                     <ul style="list-style:none;padding:0;margin:0 0 0.75rem;font-size:0.85rem;">${rows}</ul>
-                    ${next ? `<button class="btn btn-primary btn-sm" style="width:100%;" onclick="kdsAdvance(${t.orderId},'${next}')">
-                        <i class="fas fa-arrow-right" style="margin-right:0.4rem;"></i> Mark ${next}</button>` : ''}
+                    <div style="display:flex;gap:0.4rem;">
+                        ${next ? `<button class="btn btn-primary btn-sm" style="flex:1;" onclick="kdsAdvance(${t.orderId},'${next}')">
+                            <i class="fas fa-arrow-right" style="margin-right:0.4rem;"></i> Mark ${next}</button>` : '<span style="flex:1;"></span>'}
+                        <button class="btn btn-ghost btn-sm" title="Reprint KOT" onclick="kdsReprint(${t.orderId})"><i class="fas fa-print"></i></button>
+                    </div>
                 </div>
             </div>`;
         }).join('');
     }
+
+    window.kdsReprint = async function (orderId) {
+        try {
+            const d = await fetch('/Kitchen/ReprintKot', {
+                method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
+                body: 'orderId=' + orderId
+            }).then(r => r.json());
+            (d.browserKots || []).forEach(k => {
+                const f = document.createElement('iframe');
+                f.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;';
+                f.src = k.url; document.body.appendChild(f);
+                setTimeout(() => { try { f.remove(); } catch (e) {} }, 20000);
+            });
+            (d.warnings || []).forEach(w => { if (window.ActionCard) ActionCard.error('Kitchen print', w); });
+            if (window.ActionCard && d.success && !(d.warnings || []).length) ActionCard.success('KOT', d.networkPrinted ? 'Reprinted to printer.' : 'KOT reprinted.');
+        } catch (e) { if (window.ActionCard) ActionCard.error('KOT', 'Reprint failed.'); }
+    };
 
     async function load() {
         const bid = branchId(); if (!bid) return;

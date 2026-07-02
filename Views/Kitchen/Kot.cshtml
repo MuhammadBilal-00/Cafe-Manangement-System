@@ -1,0 +1,57 @@
+@model Cafe.Services.KotSlipVm
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KOT @Model.Header.OrderNumber — @Model.Station</title>
+    <style>
+        /* 80mm thermal, monospace, big item text — optimized for a kitchen print. */
+        @@page { size: 80mm auto; margin: 0; }
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 6px 8px; width: 80mm; font-family: 'Consolas', 'Courier New', monospace; color: #000; background: #fff; }
+        .center { text-align: center; }
+        .station { font-size: 20px; font-weight: 800; letter-spacing: 1px; margin: 2px 0 4px; }
+        .rule { border-top: 1px dashed #000; margin: 6px 0; }
+        .meta { font-size: 12px; line-height: 1.5; }
+        .meta b { display: inline-block; min-width: 54px; }
+        .item { font-size: 18px; font-weight: 800; margin-top: 8px; line-height: 1.2; }
+        .qty { display: inline-block; min-width: 30px; }
+        .notes { font-size: 13px; font-weight: 600; margin: 2px 0 0 30px; }
+        .foot { font-size: 12px; margin-top: 10px; }
+        @@media print { .noprint { display: none !important; } }
+    </style>
+</head>
+<body onload="setTimeout(function(){ window.print(); }, 120);">
+    <div class="center station">KITCHEN — @Model.Station.ToUpper()</div>
+    <div class="rule"></div>
+    <div class="meta">
+        <div><b>Order:</b> @Model.Header.OrderNumber</div>
+        @if (!string.IsNullOrWhiteSpace(Model.Header.TableName)) { <div><b>Table:</b> @Model.Header.TableName</div> }
+        <div><b>Type:</b> @Model.Header.ServiceType</div>
+        @if (!string.IsNullOrWhiteSpace(Model.Header.Waiter)) { <div><b>Waiter:</b> @Model.Header.Waiter</div> }
+        <div><b>Time:</b> @Model.Header.Time.ToString("dd MMM HH:mm")</div>
+    </div>
+    <div class="rule"></div>
+
+    @if (!Model.Lines.Any())
+    {
+        <div class="item">— no items for this station —</div>
+    }
+    @foreach (var l in Model.Lines)
+    {
+        <div class="item"><span class="qty">@l.Quantity ×</span> @l.Name</div>
+        @if (!string.IsNullOrWhiteSpace(l.Notes)) { <div class="notes">» @l.Notes</div> }
+    }
+
+    <div class="rule"></div>
+    <div class="center foot">@Model.Lines.Sum(x => x.Quantity) item(s) · KOT</div>
+
+    <div class="center noprint" style="margin-top:16px;">
+        <button onclick="window.print()" style="padding:8px 16px;font-size:14px;">Print</button>
+    </div>
+</body>
+</html>

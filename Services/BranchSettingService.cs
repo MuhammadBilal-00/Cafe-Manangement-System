@@ -11,7 +11,7 @@ namespace Cafe.Services
         /// <summary>Returns the branch's settings row, creating a default one on first access.</summary>
         Task<BranchSetting> GetOrCreateAsync(int branchId);
 
-        Task<BranchSetting> UpdateAsync(int branchId, bool hardwareTerminalEnabled, decimal taxRatePercent, string? invoiceFooterNote);
+        Task<BranchSetting> UpdateAsync(int branchId, bool hardwareTerminalEnabled, decimal taxRatePercent, string? invoiceFooterNote, bool autoPrintKot = true);
     }
 
     public class BranchSettingService : IBranchSettingService
@@ -52,12 +52,13 @@ namespace Cafe.Services
             return setting;
         }
 
-        public async Task<BranchSetting> UpdateAsync(int branchId, bool hardwareTerminalEnabled, decimal taxRatePercent, string? invoiceFooterNote)
+        public async Task<BranchSetting> UpdateAsync(int branchId, bool hardwareTerminalEnabled, decimal taxRatePercent, string? invoiceFooterNote, bool autoPrintKot = true)
         {
             var setting = await GetOrCreateAsync(branchId);
             setting.HardwareTerminalEnabled = hardwareTerminalEnabled;
             setting.TaxRatePercent = Math.Clamp(taxRatePercent, 0, 100);
             setting.InvoiceFooterNote = invoiceFooterNote;
+            setting.AutoPrintKot = autoPrintKot;
             setting.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
             return setting;

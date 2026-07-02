@@ -246,6 +246,14 @@
                             </a>
                         }
 
+                        @if (isOwnerOrManager)
+                        {
+                            <a asp-controller="KitchenPrinter" asp-action="Index" class="sidebar-link" data-nav="KitchenPrinter">
+                                <span class="sidebar-link-icon"><i class="fas fa-print"></i></span>
+                                <span class="sidebar-link-text">Kitchen Printers</span>
+                            </a>
+                        }
+
                         @if (canFeature(Cafe.Services.FeatureCatalog.Invoicing))
                         {
                             <a asp-controller="Invoice" asp-action="Index" class="sidebar-link" data-nav="Invoice">

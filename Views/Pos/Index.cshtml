@@ -379,10 +379,25 @@
         if (!d.success) { if (window.ActionCard) ActionCard.error(T.sale, d.message); return; }
         if (window.ActionCard) ActionCard.success(T.saleComplete, `#${d.orderNumber} · ${money(d.total)} · ${d.paymentStatus}${d.change > 0 ? ' · ' + T.change + ' ' + money(d.change) : ''}`);
         document.getElementById('payModal').style.display = 'none';
+        // Auto-print KOT(s) for browser printers, then open the customer bill; surface any print warnings.
+        printKots(d.kotBrowser);
+        (d.kotWarnings || []).forEach(w => { if (window.ActionCard) ActionCard.error('Kitchen print', w); });
+        if (d.pdfUrl) { try { window.open(d.pdfUrl, '_blank'); } catch (e) {} }
         cart = []; tenders = []; window._posRef = null; window._posExisting = null;
         document.getElementById('posPromo').value = ''; document.getElementById('posPacking').value = 0; document.getElementById('posShipping').value = 0; document.getElementById('posTax').value = '';
         document.getElementById('posCustomer').value = ''; document.getElementById('posCustomerId').value = '';
         renderCart();
+    };
+
+    // Open each browser-printer KOT in a hidden iframe; the KOT view auto-calls window.print() on load.
+    window.printKots = list => {
+        (list || []).forEach((k, i) => {
+            const f = document.createElement('iframe');
+            f.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;';
+            f.src = k.url;
+            document.body.appendChild(f);
+            setTimeout(() => { try { f.remove(); } catch (e) {} }, 20000);
+        });
     };
 
     // ── hold / draft ──

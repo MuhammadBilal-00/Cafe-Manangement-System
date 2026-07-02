@@ -25,11 +25,14 @@ namespace Cafe.Controllers
         private readonly IInvoiceService _invoices;
         private readonly IHubContext<KitchenHub> _kitchenHub;
         private readonly INotificationService _notifications;
+        private readonly IKotPrintService _kot;
+        private readonly IBranchSettingService _branchSettings;
         private readonly ILogger<PosController> _logger;
 
         public PosController(ApplicationDbContext context, IPosService pos, ICheckoutPricingService pricing,
             ITableService tables, IKitchenService kitchen, IInvoiceService invoices,
-            IHubContext<KitchenHub> kitchenHub, INotificationService notifications, ILogger<PosController> logger)
+            IHubContext<KitchenHub> kitchenHub, INotificationService notifications,
+            IKotPrintService kot, IBranchSettingService branchSettings, ILogger<PosController> logger)
             : base(context)
         {
             _pos = pos;
@@ -39,6 +42,8 @@ namespace Cafe.Controllers
             _invoices = invoices;
             _kitchenHub = kitchenHub;
             _notifications = notifications;
+            _kot = kot;
+            _branchSettings = branchSettings;
             _logger = logger;
         }
 
@@ -222,6 +227,22 @@ namespace Cafe.Controllers
             }
             catch (Exception ex) { _logger.LogWarning(ex, "POS post-finalize push failed"); }
 
+            // Auto-print the Kitchen Order Ticket(s) — per station. NEVER blocks/voids the sale:
+            // network failures come back as warnings; browser printers come back as URLs to open.
+            var kotBrowser = new List<object>();
+            var kotWarnings = new List<string>();
+            try
+            {
+                var setting = await _branchSettings.GetOrCreateAsync(req.BranchId);
+                if (setting.AutoPrintKot && result.OrderId.HasValue)
+                {
+                    var kr = await _kot.PrintForOrderAsync(result.OrderId.Value);
+                    kotBrowser = kr.BrowserKots.Select(b => (object)new { station = b.Station, printerName = b.PrinterName, url = b.Url }).ToList();
+                    kotWarnings = kr.Warnings;
+                }
+            }
+            catch (Exception ex) { _logger.LogWarning(ex, "KOT auto-print failed (sale unaffected)"); }
+
             return Json(new
             {
                 success = true,
@@ -232,7 +253,9 @@ namespace Cafe.Controllers
                 paid = result.Paid,
                 change = result.Change,
                 paymentStatus = result.PaymentStatus,
-                pdfUrl = result.PdfUrl
+                pdfUrl = result.PdfUrl,
+                kotBrowser,
+                kotWarnings
             });
         }
 

@@ -1,0 +1,144 @@
+@model List<Cafe.Models.KitchenPrinter>
+@{
+    ViewData["Title"] = "Kitchen Printers";
+    var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new();
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+    var categories = ViewBag.Categories as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var stations = ViewBag.Stations as List<string> ?? new();
+    (string, string) Badge(string s) => s == "Network" ? ("badge-info", "Network") : ("badge-neutral", "Browser");
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 class="page-title" style="margin:0;">Kitchen Printers</h1>
+        <p class="body-text" style="margin-top:0.25rem;">Auto-print Kitchen Order Tickets (KOT) to a station's printer. Route food to the kitchen and drinks to the bar.</p>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+        @if (branches.Count > 1)
+        {
+            <select class="form-select" style="min-width:160px;" onchange="location.href='/KitchenPrinter/Index?branchId='+this.value">
+                @foreach (var b in branches)
+                { <option value="@b.Id" selected="@(selectedBranchId == b.Id)">@b.Name</option> }
+            </select>
+        }
+        <button class="btn btn-primary" onclick="kpEdit(0)"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> New Printer</button>
+    </div>
+</div>
+
+<div class="card"><div class="card-body card-body-flush"><div style="overflow-x:auto;">
+    <table class="premium-table">
+        <thead><tr><th>Name</th><th>Station</th><th>Type</th><th>Address</th><th style="text-align:center;">Default</th><th style="text-align:center;">Active</th><th>Actions</th></tr></thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--text-secondary);">
+                    <i class="fas fa-print" style="font-size:2rem;display:block;margin-bottom:0.75rem;color:var(--border-light);"></i>
+                    No printers yet. Add one to auto-print KOT slips to the kitchen.
+                </td></tr>
+            }
+            @foreach (var p in Model)
+            {
+                var b = Badge(p.ConnectionType);
+                <tr data-id="@p.Id" data-branch="@p.BranchId" data-name="@p.Name" data-conn="@p.ConnectionType" data-ip="@p.IpAddress" data-port="@p.Port" data-station="@p.Station" data-default="@p.IsDefault.ToString().ToLower()" data-active="@p.IsActive.ToString().ToLower()">
+                    <td style="font-weight:600;">@p.Name</td>
+                    <td><span class="badge badge-accent">@p.Station</span></td>
+                    <td><span class="badge @b.Item1">@b.Item2</span></td>
+                    <td style="font-family:ui-monospace,monospace;">@(p.ConnectionType == "Network" ? $"{p.IpAddress}:{p.Port}" : "—")</td>
+                    <td style="text-align:center;">@(p.IsDefault ? "<span class=\"badge badge-success\">Default</span>" : "—")</td>
+                    <td style="text-align:center;">@(p.IsActive ? "✓" : "—")</td>
+                    <td><div style="display:flex;gap:0.4rem;">
+                        <button class="btn btn-ghost btn-sm" title="Test slip" onclick="kpTest(@p.Id)"><i class="fas fa-vial"></i></button>
+                        <button class="btn btn-ghost btn-sm" title="Edit" onclick="kpEditRow(this)"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-ghost btn-sm" style="color:#dc2626;" title="Delete" onclick="kpDel(@p.Id)"><i class="fas fa-trash"></i></button>
+                    </div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div></div>
+
+<!-- Category → station routing -->
+<div class="card" style="margin-top:1.25rem;"><div class="card-body">
+    <h2 style="margin:0 0 0.35rem;font-size:1.05rem;">Station routing</h2>
+    <p class="body-text" style="margin-top:0;">Which station prepares each menu category. Blank → the branch's default printer.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.75rem;margin-top:0.75rem;">
+        @foreach (var c in categories)
+        {
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="flex:1;font-weight:600;">@c.Name</span>
+                <input list="stationList" class="form-control cat-station" data-cat="@c.Id" value="@c.KotStation" placeholder="default" style="max-width:130px;" onchange="kpRoute(this)">
+            </div>
+        }
+        @if (!categories.Any()) { <span class="body-text" style="color:var(--text-secondary);">No categories yet.</span> }
+    </div>
+    <datalist id="stationList">@foreach (var s in stations) { <option value="@s"></option> }</datalist>
+</div></div>
+
+<!-- Editor modal -->
+<div id="kpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="max-width:500px;width:100%;max-height:90vh;overflow:auto;"><div class="card-body">
+        <h3 style="margin:0 0 1rem;">Kitchen Printer</h3>
+        <input type="hidden" id="kId" />
+        <div class="form-group"><label class="form-label">Name</label><input id="kName" class="form-control" placeholder="e.g. Kitchen Epson"></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Station</label><input id="kStation" list="stationList" class="form-control" placeholder="Kitchen"></div>
+            <div class="form-group"><label class="form-label">Connection</label>
+                <select id="kConn" class="form-select" onchange="kpConnChanged()"><option value="Network">Network (TCP/ESC-POS)</option><option value="Browser">Browser (USB/local)</option></select>
+            </div>
+        </div>
+        <div class="form-row" id="kNetRow">
+            <div class="form-group"><label class="form-label">IP address</label><input id="kIp" class="form-control" placeholder="192.168.1.50"></div>
+            <div class="form-group"><label class="form-label">Port</label><input id="kPort" type="number" class="form-control" value="9100"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="kDefault"> Default printer</label></div>
+            <div class="form-group"><label style="display:flex;gap:0.5rem;align-items:center;"><input type="checkbox" id="kActive" checked> Active</label></div>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-primary" onclick="kpSave()">Save</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('kpModal').style.display='none'">Cancel</button>
+        </div>
+    </div></div>
+</div>
+
+<iframe id="kpPrintFrame" style="display:none;"></iframe>
+
+@section Scripts {
+<script>
+const _tok = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+const _branch = @(selectedBranchId ?? 0);
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': _tok }, body: b }).then(r => r.json());
+function kpConnChanged() { document.getElementById('kNetRow').style.display = document.getElementById('kConn').value === 'Network' ? 'flex' : 'none'; }
+function kpEdit(id, branch, name, conn, ip, port, station, def, active) {
+    document.getElementById('kId').value = id;
+    document.getElementById('kName').value = name || '';
+    document.getElementById('kConn').value = conn || 'Network';
+    document.getElementById('kIp').value = ip || '';
+    document.getElementById('kPort').value = port || 9100;
+    document.getElementById('kStation').value = station || 'Kitchen';
+    document.getElementById('kDefault').checked = def === true;
+    document.getElementById('kActive').checked = active !== false;
+    kpConnChanged();
+    document.getElementById('kpModal').style.display = 'flex';
+}
+function kpEditRow(btn) { const r = btn.closest('tr'); kpEdit(r.dataset.id, r.dataset.branch, r.dataset.name, r.dataset.conn, r.dataset.ip, r.dataset.port, r.dataset.station, r.dataset.default === 'true', r.dataset.active === 'true'); }
+async function kpSave() {
+    const body = `id=${document.getElementById('kId').value || 0}&branchId=${_branch}&name=${encodeURIComponent(document.getElementById('kName').value)}&connectionType=${document.getElementById('kConn').value}&ipAddress=${encodeURIComponent(document.getElementById('kIp').value)}&port=${document.getElementById('kPort').value || 9100}&station=${encodeURIComponent(document.getElementById('kStation').value)}&isDefault=${document.getElementById('kDefault').checked}&isActive=${document.getElementById('kActive').checked}`;
+    const d = await post('/KitchenPrinter/Save', body);
+    if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Printer', d.message);
+}
+async function kpDel(id) {
+    const go = async () => { const d = await post('/KitchenPrinter/Delete', 'id=' + id); if (d.success) location.reload(); else if (window.ActionCard) ActionCard.error('Printer', d.message); };
+    window.ActionCard ? ActionCard.confirm('Delete printer?', '', go) : (confirm('Delete?') && go());
+}
+async function kpTest(id) {
+    const d = await post('/KitchenPrinter/Test', 'id=' + id);
+    if (d.browserUrl) { const f = document.getElementById('kpPrintFrame'); f.src = d.browserUrl; f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} }; }
+    if (window.ActionCard) d.success ? ActionCard.success('Test slip', d.message) : ActionCard.error('Test slip', d.message);
+}
+async function kpRoute(input) {
+    const d = await post('/KitchenPrinter/SetCategoryStation', `categoryId=${input.dataset.cat}&station=${encodeURIComponent(input.value)}`);
+    if (window.ActionCard) d.success ? ActionCard.success('Routing', 'Saved') : ActionCard.error('Routing', d.message);
+}
+</script>
+}

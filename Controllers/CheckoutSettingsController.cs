@@ -43,12 +43,12 @@ namespace Cafe.Controllers
         // POST: CheckoutSettings/Save
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Save(int branchId, bool hardwareTerminalEnabled, decimal taxRatePercent, string? invoiceFooterNote)
+        public async Task<IActionResult> Save(int branchId, bool hardwareTerminalEnabled, decimal taxRatePercent, string? invoiceFooterNote, bool autoPrintKot = true)
         {
             if (!CanAccessBranch(branchId))
                 return AccessDenied();
 
-            await _settings.UpdateAsync(branchId, hardwareTerminalEnabled, taxRatePercent, invoiceFooterNote);
+            await _settings.UpdateAsync(branchId, hardwareTerminalEnabled, taxRatePercent, invoiceFooterNote, autoPrintKot);
             SetSuccessMessage("Checkout settings saved.");
             return RedirectToAction(nameof(Index), new { branchId });
         }
