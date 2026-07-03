@@ -5,8 +5,11 @@
 }
 
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem;">
-    <div style="display:flex;align-items:center;gap:0.75rem;">
-        <h1 class="page-title" style="margin:0;">@L["Register"]</h1>
+    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+        <div>
+            <h1 class="page-title" style="margin:0;">@L["Register"]</h1>
+            <p class="body-text" style="margin:0.15rem 0 0;">@L["Take and create orders"]</p>
+        </div>
         @if (branches.Count > 1)
         {
             <select id="posBranch" class="form-select" style="min-width:170px;">

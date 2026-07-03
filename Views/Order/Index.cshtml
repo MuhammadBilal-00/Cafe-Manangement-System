@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Order Management";
 }
 
@@ -6,18 +6,21 @@
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
     <div>
         <h1 class="page-title" style="margin:0;">Order Management</h1>
-        <p class="body-text" style="margin-top:0.25rem;">Create, track and manage all customer orders.</p>
+        <p class="body-text" style="margin-top:0.25rem;">Track, filter and manage existing orders.</p>
     </div>
-    <div style="display:flex;gap:0.5rem;">
+    @* The "New Order" action is a plain server-rendered link to the POS register — the single
+       order-taking screen. It is OUTSIDE every tab/filter/JS render path on purpose so no
+       status tab, filter, empty result or selection state can ever hide it. *@
+    <div style="display:flex;gap:0.5rem;flex-shrink:0;">
         @if (Context.Session.GetString("UserRole") == "Owner")
         {
             <a asp-controller="Order" asp-action="ExportCsv" class="btn btn-secondary btn-sm">
                 <i class="fas fa-download"></i> Export
             </a>
         }
-        <button id="createOrderBtn" class="btn btn-primary btn-sm">
+        <a asp-controller="Pos" asp-action="Index" id="newOrderBtn" class="btn btn-primary btn-sm" title="Opens the POS register">
             <i class="fas fa-plus"></i> New Order
-        </button>
+        </a>
     </div>
 </div>
 
@@ -96,691 +99,235 @@
     </div>
 </div>
 
-<!-- Create Order Modal -->
-<div id="createOrderModal"
-     style="position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem;">
-    <div class="card max-w-[800px] w-full max-h-[90vh] overflow-y-auto">
-        <div class="card-header flex justify-between items-center">
-            <span class="font-bold">Create New Order</span>
-            <button onclick="closeModal('createOrderModal')"
-                    style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--text-tertiary);">&times;</button>
-        </div>
-        <div class="card-body flex flex-col gap-4">
-            <!-- Branch -->
-            <div class="form-group" style="margin:0;">
-                <label class="form-label">Branch *</label>
-                <select id="branchSelect" class="form-select">
-                    <option value="">Select Branch</option>
-                </select>
-            </div>
+@section Scripts {
+    <script>
+        let currentStatus = "all-orders";
+        let currentPage = 1;
 
-            <!-- Customer Autocomplete -->
-            <div class="form-group" style="margin:0;">
-                <label class="form-label">Customer *</label>
-                <div style="position:relative;">
-                    <input id="customerSearch" type="text" placeholder="Start typing customer name, email or phone..."
-                           class="form-control" autocomplete="off" />
-                    <input id="customerId" type="hidden" value="" />
-                    <div id="customerResults" class="hidden"
-                         style="position:absolute;z-index:10;width:100%;background:#fff;border:1px solid var(--border-light);border-radius:0 0 12px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.1);max-height:200px;overflow-y:auto;">
-                    </div>
-                </div>
-                <div id="selectedCustomer" class="hidden"
-                     style="margin-top:0.5rem;padding:0.5rem 0.75rem;background:var(--accent-light);border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
-                    <span id="selectedCustomerName"
-                          style="font-size:0.85rem;font-weight:600;color:var(--accent);"></span>
-                    <button onclick="clearCustomer()"
-                            style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:0.8rem;">
-                        <i class="fas fa-times"></i> Clear
-                    </button>
-                </div>
-                <button id="quickCreateBtn" onclick="showQuickCreate()" class="hidden"
-                        style="margin-top:0.25rem;background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;">
-                    <i class="fas fa-plus-circle"></i> Create new customer
-                </button>
-            </div>
+        document.addEventListener("DOMContentLoaded", function () {
+            loadBranches();
+            loadOrders();
 
-            <!-- Quick Create Customer -->
-            <div id="quickCreateSection" class="hidden"
-                 style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:1rem;">
-                <h4 style="font-size:0.85rem;font-weight:700;color:#16a34a;margin-bottom:0.75rem;"><i
-                    class="fas fa-user-plus" style="margin-right:0.3rem;"></i> Quick Create Customer</h4>
-                    <div class="form-row">
-                        <div class="form-group" style="margin:0;">
-                            <input id="newCustName" type="text" placeholder="Full Name *" class="form-control" />
-                        </div>
-                        <div class="form-group" style="margin:0;">
-                            <input id="newCustPhone" type="text" placeholder="Phone *" class="form-control" />
-                        </div>
-                    </div>
-                    <div class="form-group" style="margin:0.5rem 0 0;">
-                        <input id="newCustEmail" type="text" placeholder="Email (optional)" class="form-control" />
-                    </div>
-                    <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
-                        <button onclick="quickCreateCustomer()" class="btn btn-primary btn-sm"><i class="fas fa-check"></i>
-                            Create & Select</button>
-                            <button onclick="hideQuickCreate()" class="btn btn-secondary btn-sm">Cancel</button>
-                        </div>
-                    </div>
+            document.querySelectorAll(".tab-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    currentStatus = btn.dataset.status;
+                    loadOrders();
+                });
+            });
 
-                    <!-- Menu Item Selection -->
-                    <div style="border-top:1px solid var(--border-light);padding-top:1rem;">
-                        <label class="form-label">Order Items *</label>
-                        <div style="display:flex;gap:0.5rem;">
-                            <select id="menuItemSelect" class="form-select" style="flex:1;">
-                                <option value="">Select Menu Item</option>
-                            </select>
-                            <input id="itemQuantity" type="number" min="1" value="1" class="form-control" style="width:80px;"
-                                   placeholder="Qty" />
-                            <button onclick="addOrderItem()" class="btn btn-primary btn-sm">
-                                <i class="fas fa-plus"></i> Add
-                            </button>
-                        </div>
-                    </div>
+            document.getElementById("search").addEventListener("input", () => loadOrders());
+            document.getElementById("branchFilter").addEventListener("change", () => loadOrders());
+            document.getElementById("dateFilter").addEventListener("change", () => loadOrders());
+        });
 
-                    <!-- Order Items Table -->
-                    <div id="orderItemsContainer" class="hidden">
-                        <table class="premium-table">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th style="text-align:center;">Qty</th>
-                                    <th style="text-align:right;">Price</th>
-                                    <th style="text-align:right;">Subtotal</th>
-                                    <th style="text-align:center;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="orderItemsBody"></tbody>
-                            <tfoot>
-                                <tr style="background:var(--bg-body);">
-                                    <td colspan="3" style="text-align:right;font-weight:700;padding:0.75rem 1rem;">Total:</td>
-                                    <td id="orderTotal"
-                                        style="text-align:right;font-weight:700;color:#16a34a;padding:0.75rem 1rem;">$0.00</td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+        function loadBranches() {
+            fetch("/Order/GetBranches").then(r => r.json()).then(data => {
+                const branchFilter = document.getElementById("branchFilter");
+                data.forEach(b => {
+                    branchFilter.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
+                });
+            }).catch(() => { });
+        }
 
-                    <!-- Discounts & Payment -->
-                    <div id="checkoutSection" class="hidden" style="border-top:1px solid var(--border-light);padding-top:1rem;display:flex;flex-direction:column;gap:0.85rem;">
-                        <div class="form-row" style="margin:0;">
-                            <div class="form-group" style="margin:0;">
-                                <label class="form-label">Promo Code</label>
-                                <div style="display:flex;gap:0.5rem;">
-                                    <input id="promoInput" type="text" class="form-control" placeholder="e.g. SAVE15" style="text-transform:uppercase;letter-spacing:0.5px;" />
-                                    <button type="button" id="applyPromoBtn" onclick="applyPromo()" class="btn btn-secondary btn-sm" style="white-space:nowrap;">Apply</button>
-                                </div>
-                                <div id="promoMsg" class="caption" style="margin-top:0.35rem;"></div>
-                            </div>
-                            <div class="form-group" style="margin:0;">
-                                <label class="form-label">Card Partnership</label>
-                                <select id="partnershipSelect" class="form-select" onchange="refreshQuote()">
-                                    <option value="">None</option>
-                                </select>
-                                <div class="caption" style="margin-top:0.35rem;">Bank/card-tier discount if the customer presents an eligible card.</div>
-                            </div>
-                        </div>
+        // Forward-only workflow: each non-terminal status advances exactly one step
+        // (Pending → Preparing → Ready → Completed). Cancel is allowed from any
+        // non-terminal state and NEVER shown on Completed/Cancelled rows.
+        const FORWARD_STEP = {
+            'Pending':   { next: 'Preparing', label: 'Start',  icon: 'fa-fire-burner' },
+            'Preparing': { next: 'Ready',     label: 'Ready',  icon: 'fa-bell' },
+            'Ready':     { next: 'Completed', label: 'Done',   icon: 'fa-check' }
+        };
 
-                        <div class="form-group" style="margin:0;max-width:220px;">
-                            <label class="form-label">Payment Method</label>
-                            <select id="paymentMethod" class="form-select">
-                                <option value="Cash">Cash</option>
-                                <option value="Card">Card</option>
-                            </select>
-                        </div>
+        function rowActions(o) {
+            const step = FORWARD_STEP[o.status];
+            const terminal = o.status === 'Completed' || o.status === 'Cancelled';
+            let html = `<button onclick="viewOrder(${o.id})" class="btn btn-ghost btn-sm">View</button>`;
+            html += `<button onclick="printBill(${o.id})" class="btn btn-ghost btn-sm" title="Print bill"><i class="fas fa-print"></i> Bill</button>`;
+            html += `<button onclick="reprintKot(${o.id})" class="btn btn-ghost btn-sm" title="Print KOT"><i class="fas fa-utensils"></i> KOT</button>`;
+            if (step) {
+                html += `<button onclick="updateOrderStatus(${o.id}, '${step.next}')" class="btn btn-sm"
+                                 style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;" title="Advance to ${step.next}">
+                             <i class="fas ${step.icon}"></i> ${step.label}</button>`;
+            }
+            if (!terminal) {
+                html += `<button onclick="cancelOrder(${o.id})" class="btn btn-sm"
+                                 style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">Cancel</button>`;
+            }
+            return html;
+        }
 
-                        <!-- Live totals breakdown -->
-                        <div id="totalsBreakdown" style="background:var(--bg-body);border-radius:12px;padding:0.95rem 1.15rem;font-size:0.9rem;"></div>
-                    </div>
-
-                    <!-- Notes -->
-                    <div class="form-group" style="margin:0;">
-                        <label class="form-label">Order Notes</label>
-                        <textarea id="orderNotes" placeholder="Optional notes..." class="form-control" rows="2"></textarea>
-                    </div>
-                </div>
-                <div
-                    style="padding:1rem 1.5rem;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:0.75rem;">
-                    <button class="btn btn-secondary" onclick="closeModal('createOrderModal')">Cancel</button>
-                    <button id="saveOrderBtn" class="btn btn-primary" onclick="createOrder()">
-                        <i class="fas fa-save"></i> Create Order
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        @section Scripts {
-            <script>
-                    let currentStatus = "all-orders";
-                    let currentPage = 1;
-                    let orderItems = [];
-                    let menuItemsCache = [];
-                    let customerSearchTimeout = null;
-                    let appliedPromo = null;   // validated promo code string, or null
-                    let quoteTimer = null;
-                    let quoteSeq = 0;          // guards against out-of-order quote responses
-
-                    function money(n) { return 'Rs. ' + (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-                    function cartSubtotal() { return orderItems.reduce((s, i) => s + i.price * i.quantity, 0); }
-
-                    document.addEventListener("DOMContentLoaded", function () {
-                        loadBranches();
-                        loadOrders();
-
-                        document.querySelectorAll(".tab-btn").forEach(btn => {
-                            btn.addEventListener("click", () => {
-                                document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-                                btn.classList.add("active");
-                                currentStatus = btn.dataset.status;
-                                loadOrders();
-                            });
-                        });
-
-                        document.getElementById("branchSelect").addEventListener("change", function () {
-                            const branchId = this.value;
-                            clearPromo();
-                            if (branchId) { loadMenuItems(branchId); loadPartnerships(branchId); }
-                            else {
-                                document.getElementById("menuItemSelect").innerHTML = '<option value="">Select Menu Item</option>';
-                                document.getElementById("partnershipSelect").innerHTML = '<option value="">None</option>';
-                                menuItemsCache = [];
-                            }
-                            refreshQuote();
-                        });
-
-                        const searchInput = document.getElementById("customerSearch");
-                        searchInput.addEventListener("input", function () {
-                            clearTimeout(customerSearchTimeout);
-                            const term = this.value.trim();
-                            if (term.length < 2) {
-                                hideCustomerResults();
-                                document.getElementById("quickCreateBtn").classList.add("hidden");
-                                return;
-                            }
-                            customerSearchTimeout = setTimeout(() => searchCustomers(term), 300);
-                        });
-                        searchInput.addEventListener("blur", () => setTimeout(hideCustomerResults, 200));
-                        searchInput.addEventListener("focus", function () {
-                            if (this.value.trim().length >= 2) searchCustomers(this.value.trim());
-                        });
-
-                        document.getElementById("search").addEventListener("input", loadOrders);
-                        document.getElementById("branchFilter").addEventListener("change", loadOrders);
-                        document.getElementById("dateFilter").addEventListener("change", loadOrders);
-                        document.getElementById("createOrderBtn").addEventListener("click", () => {
-                            resetCreateForm();
-                            openModal('createOrderModal');
-                        });
+        function loadOrders(page = 1) {
+            currentPage = page;
+            const tbody = document.getElementById("ordersTable");
+            tbody.innerHTML = '<tr><td colspan="8" style="padding:2rem;text-align:center;color:var(--text-tertiary);"><i class="fas fa-circle-notch fa-spin"></i> Loading orders…</td></tr>';
+            const search = document.getElementById("search").value;
+            const branchId = document.getElementById("branchFilter").value;
+            const date = document.getElementById("dateFilter").value;
+            fetch(`/Order/GetOrders?status=${currentStatus}&search=${encodeURIComponent(search)}&branchId=${branchId}&orderDate=${date}&page=${page}`)
+                .then(r => r.json()).then(data => {
+                    tbody.innerHTML = "";
+                    if (data.orders.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" style="padding:2.5rem;text-align:center;color:var(--text-tertiary);"><i class="fas fa-receipt" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>No orders found for this view.<br/><span style="font-size:0.8rem;">Use <b>New Order</b> (top right) to take one at the register.</span></td></tr>';
+                    }
+                    data.orders.forEach(o => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="font-weight:600;">${escapeHtml(o.orderNumber)}</td>
+                                <td>${escapeHtml(o.customerName)}</td>
+                                <td>${escapeHtml(o.branchName)}</td>
+                                <td>${o.orderDate}</td>
+                                <td style="text-align:center;">${o.itemCount}</td>
+                                <td style="font-weight:600;">${money(o.totalAmount)}</td>
+                                <td>${getStatusBadge(o.status)}</td>
+                                <td style="white-space:nowrap;">${rowActions(o)}</td>
+                            </tr>`;
                     });
-
-                    function searchCustomers(term) {
-                        fetch(`/Order/SearchCustomers?term=${encodeURIComponent(term)}`)
-                            .then(r => r.json())
-                            .then(data => {
-                                const container = document.getElementById("customerResults");
-                                container.innerHTML = "";
-                                if (data.length === 0) {
-                                    container.innerHTML = '<div style="padding:0.75rem;font-size:0.85rem;color:var(--text-tertiary);">No customers found</div>';
-                                    document.getElementById("quickCreateBtn").classList.remove("hidden");
-                                } else {
-                                    document.getElementById("quickCreateBtn").classList.add("hidden");
-                                    data.forEach(c => {
-                                        const div = document.createElement("div");
-                                        div.className = "px-3 py-2 cursor-pointer border-b border-[var(--border-light)] text-sm transition-colors duration-150 hover:bg-[var(--accent-light)]";
-                                        div.innerHTML = `<span style="font-weight:600;">${escapeHtml(c.name)}</span> <span style="color:var(--text-tertiary);">- ${escapeHtml(c.email || '')} / ${escapeHtml(c.phone || '')}</span>`;
-                                        div.onclick = () => selectCustomer(c);
-                                        container.appendChild(div);
-                                    });
-                                }
-                                container.classList.remove("hidden");
-                            });
+                    document.getElementById("orderCount").innerText = `Showing ${data.orders.length} of ${data.totalCount} orders`;
+                    const pag = document.getElementById("pagination");
+                    pag.innerHTML = "";
+                    for (let i = 1; i <= data.totalPages; i++) {
+                        const active = i === data.currentPage;
+                        pag.innerHTML += `<button onclick="loadOrders(${i})" class="btn btn-sm ${active ? 'btn-primary' : 'btn-ghost'}" style="min-width:2rem;">${i}</button>`;
                     }
-
-                    function selectCustomer(customer) {
-                        document.getElementById("customerId").value = customer.id;
-                        document.getElementById("customerSearch").value = customer.name;
-                        document.getElementById("customerSearch").classList.add("hidden");
-                        document.getElementById("selectedCustomer").classList.remove("hidden");
-                        document.getElementById("selectedCustomerName").textContent =
-                            `${customer.name} (${customer.email || ''} / ${customer.phone || ''})`;
-                        hideCustomerResults();
-                        document.getElementById("quickCreateBtn").classList.add("hidden");
-                    }
-
-                    function clearCustomer() {
-                        document.getElementById("customerId").value = "";
-                        document.getElementById("customerSearch").value = "";
-                        document.getElementById("customerSearch").classList.remove("hidden");
-                        document.getElementById("selectedCustomer").classList.add("hidden");
-                        document.getElementById("customerSearch").focus();
-                    }
-
-                    function hideCustomerResults() {
-                        document.getElementById("customerResults").classList.add("hidden");
-                    }
-
-                    function showQuickCreate() {
-                        const name = document.getElementById("customerSearch").value.trim();
-                        document.getElementById("newCustName").value = name;
-                        document.getElementById("quickCreateSection").classList.remove("hidden");
-                        document.getElementById("quickCreateBtn").classList.add("hidden");
-                    }
-
-                    function hideQuickCreate() {
-                        document.getElementById("quickCreateSection").classList.add("hidden");
-                    }
-
-                    function quickCreateCustomer() {
-                        const name = document.getElementById("newCustName").value.trim();
-                        const phone = document.getElementById("newCustPhone").value.trim();
-                        const email = document.getElementById("newCustEmail").value.trim();
-                        if (!name || !phone) { ActionCard.warning('Missing Information', 'Name and Phone are required.'); return; }
-                        fetch("/Order/QuickCreateCustomer", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                            body: JSON.stringify({ name, phone, email: email || null })
-                        }).then(r => r.json()).then(res => {
-                            if (res.success) {
-                                selectCustomer({ id: res.id, name: res.name, email: email, phone: phone });
-                                hideQuickCreate();
-                            } else ActionCard.error('Error', res.message);
-                        });
-                    }
-
-                    function addOrderItem() {
-                        const select = document.getElementById("menuItemSelect");
-                        const menuItemId = parseInt(select.value);
-                        const quantity = parseInt(document.getElementById("itemQuantity").value);
-                        if (!menuItemId) { ActionCard.warning('Missing Item', 'Please select a menu item.'); return; }
-                        if (!quantity || quantity < 1) { ActionCard.warning('Invalid Quantity', 'Quantity must be at least 1.'); return; }
-                        const menuItem = menuItemsCache.find(m => m.id === menuItemId);
-                        if (!menuItem) return;
-                        const existingIdx = orderItems.findIndex(i => i.menuItemId === menuItemId);
-                        if (existingIdx >= 0) orderItems[existingIdx].quantity += quantity;
-                        else orderItems.push({ menuItemId: menuItem.id, name: menuItem.name, price: menuItem.price, quantity: quantity });
-                        renderOrderItems();
-                        select.value = "";
-                        document.getElementById("itemQuantity").value = 1;
-                    }
-
-                    function removeOrderItem(index) { orderItems.splice(index, 1); renderOrderItems(); }
-
-                    function updateItemQuantity(index, newQty) {
-                        if (newQty < 1) { removeOrderItem(index); return; }
-                        orderItems[index].quantity = newQty;
-                        renderOrderItems();
-                    }
-
-                    function renderOrderItems() {
-                        const container = document.getElementById("orderItemsContainer");
-                        const checkout = document.getElementById("checkoutSection");
-                        const tbody = document.getElementById("orderItemsBody");
-                        tbody.innerHTML = "";
-                        if (orderItems.length === 0) {
-                            container.classList.add("hidden");
-                            checkout.classList.add("hidden");
-                            refreshQuote();
-                            return;
-                        }
-                        container.classList.remove("hidden");
-                        checkout.classList.remove("hidden");
-                        let total = 0;
-                        orderItems.forEach((item, idx) => {
-                            const subtotal = item.price * item.quantity;
-                            total += subtotal;
-                            tbody.innerHTML += `
-                                <tr>
-                                    <td style="padding:0.6rem 1rem;">${escapeHtml(item.name)}</td>
-                                    <td style="text-align:center;padding:0.6rem 0.5rem;">
-                                        <input type="number" value="${item.quantity}" min="1"
-                                               class="form-control" style="width:60px;display:inline-block;text-align:center;padding:0.3rem;"
-                                               onchange="updateItemQuantity(${idx}, parseInt(this.value))">
-                                    </td>
-                                    <td style="text-align:right;padding:0.6rem 1rem;">${money(item.price)}</td>
-                                    <td style="text-align:right;padding:0.6rem 1rem;font-weight:600;">${money(subtotal)}</td>
-                                    <td style="text-align:center;padding:0.6rem 0.5rem;">
-                                        <button onclick="removeOrderItem(${idx})" class="btn btn-ghost btn-sm" style="color:#dc2626;">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>`;
-                        });
-                        document.getElementById("orderTotal").textContent = money(total);
-                        refreshQuote();
-                    }
-
-                    // ── Checkout: promos, partnerships, live totals ──
-                    function loadPartnerships(branchId) {
-                        const sel = document.getElementById("partnershipSelect");
-                        sel.innerHTML = '<option value="">None</option>';
-                        fetch(`/Checkout/GetActivePartnerships?branchId=${branchId}`)
-                            .then(r => r.json())
-                            .then(list => {
-                                (list || []).forEach(p => {
-                                    sel.innerHTML += `<option value="${p.id}">${escapeHtml(p.displayName)} — ${p.discountPercentage}%</option>`;
-                                });
-                            }).catch(() => { });
-                    }
-
-                    function clearPromo() {
-                        appliedPromo = null;
-                        const input = document.getElementById("promoInput");
-                        const msg = document.getElementById("promoMsg");
-                        if (input) input.value = "";
-                        if (msg) { msg.textContent = ""; msg.style.color = ""; }
-                    }
-
-                    function applyPromo() {
-                        const code = document.getElementById("promoInput").value.trim().toUpperCase();
-                        const branchId = parseInt(document.getElementById("branchSelect").value);
-                        const msg = document.getElementById("promoMsg");
-                        if (!branchId) { msg.style.color = "#dc2626"; msg.textContent = "Select a branch first."; return; }
-                        if (!code) { msg.style.color = "#dc2626"; msg.textContent = "Enter a promo code."; appliedPromo = null; refreshQuote(); return; }
-
-                        const btn = document.getElementById("applyPromoBtn");
-                        btn.disabled = true; btn.textContent = "...";
-                        fetch("/Checkout/ValidatePromo", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                            body: JSON.stringify({ code, branchId, subtotal: cartSubtotal() })
-                        }).then(r => r.json()).then(res => {
-                            btn.disabled = false; btn.textContent = "Apply";
-                            if (res.success) {
-                                appliedPromo = code;
-                                msg.style.color = "#16a34a";
-                                msg.innerHTML = '<i class="fas fa-check-circle"></i> ' + escapeHtml(res.message);
-                            } else {
-                                appliedPromo = null;
-                                msg.style.color = "#dc2626";
-                                msg.innerHTML = '<i class="fas fa-times-circle"></i> ' + escapeHtml(res.message);
-                            }
-                            refreshQuote();
-                        }).catch(() => { btn.disabled = false; btn.textContent = "Apply"; });
-                    }
-
-                    function refreshQuote() {
-                        const breakdown = document.getElementById("totalsBreakdown");
-                        if (!breakdown) return;
-                        const branchId = parseInt(document.getElementById("branchSelect").value);
-                        const subtotal = cartSubtotal();
-                        if (!branchId || subtotal <= 0) { breakdown.innerHTML = ""; return; }
-
-                        const partnershipId = document.getElementById("partnershipSelect").value || null;
-                        clearTimeout(quoteTimer);
-                        quoteTimer = setTimeout(() => {
-                            const seq = ++quoteSeq;
-                            fetch("/Checkout/Quote", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                                body: JSON.stringify({ branchId, subtotal, promoCode: appliedPromo, partnershipId: partnershipId ? parseInt(partnershipId) : null })
-                            }).then(r => r.json()).then(q => {
-                                if (seq !== quoteSeq) return;          // a newer request superseded this one
-                                if (!q.success) { breakdown.innerHTML = ""; return; }
-                                renderBreakdown(q);
-                            }).catch(() => { });
-                        }, 200);
-                    }
-
-                    function lineRow(label, value, color) {
-                        return `<div style="display:flex;justify-content:space-between;padding:0.2rem 0;">
-                                    <span style="color:var(--text-secondary);">${label}</span>
-                                    <span style="font-weight:600;${color ? 'color:' + color + ';' : ''}">${value}</span>
-                                </div>`;
-                    }
-
-                    function renderBreakdown(q) {
-                        const breakdown = document.getElementById("totalsBreakdown");
-                        let html = lineRow("Subtotal", money(q.subtotal));
-                        if (q.promoDiscount > 0) html += lineRow(`Promo${q.promoCodeText ? ' (' + escapeHtml(q.promoCodeText) + ')' : ''}`, "− " + money(q.promoDiscount), "#16a34a");
-                        if (q.partnershipDiscount > 0) html += lineRow(escapeHtml(q.partnershipText || "Card discount"), "− " + money(q.partnershipDiscount), "#16a34a");
-                        if (q.taxAmount > 0) html += lineRow(`Tax (${q.taxRate}%)`, money(q.taxAmount));
-                        html += `<div style="display:flex;justify-content:space-between;border-top:1px solid var(--border-light);margin-top:0.4rem;padding-top:0.5rem;">
-                                    <span style="font-weight:800;">Total</span>
-                                    <span style="font-weight:800;font-size:1.05rem;color:var(--accent);">${money(q.total)}</span>
-                                 </div>`;
-                        breakdown.innerHTML = html;
-                    }
-
-                    function resetCreateForm() {
-                        orderItems = [];
-                        renderOrderItems();
-                        clearCustomer();
-                        document.getElementById("branchSelect").value = "";
-                        document.getElementById("menuItemSelect").innerHTML = '<option value="">Select Menu Item</option>';
-                        document.getElementById("orderNotes").value = "";
-                        document.getElementById("itemQuantity").value = 1;
-                        hideQuickCreate();
-                        menuItemsCache = [];
-                        clearPromo();
-                        document.getElementById("partnershipSelect").innerHTML = '<option value="">None</option>';
-                        document.getElementById("paymentMethod").value = "Cash";
-                        document.getElementById("totalsBreakdown").innerHTML = "";
-                    }
-
-                    function loadBranches() {
-                        fetch("/Order/GetBranches").then(r => r.json()).then(data => {
-                            const branchFilter = document.getElementById("branchFilter");
-                            const createBranch = document.getElementById("branchSelect");
-                            data.forEach(b => {
-                                branchFilter.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
-                                createBranch.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
-                            });
-                        });
-                    }
-
-                    function loadMenuItems(branchId) {
-                        fetch(`/Order/GetMenuItems?branchId=${branchId}`)
-                            .then(r => r.json())
-                            .then(data => {
-                                menuItemsCache = data;
-                                const select = document.getElementById("menuItemSelect");
-                                select.innerHTML = '<option value="">Select Menu Item</option>';
-                                data.forEach(m => {
-                                    select.innerHTML += `<option value="${m.id}">${escapeHtml(m.name)} (${escapeHtml(m.category)}) - $${m.price.toFixed(2)}</option>`;
-                                });
-                            });
-                    }
-
-                    function loadOrders(page = 1) {
-                        currentPage = page;
-                        const search = document.getElementById("search").value;
-                        const branchId = document.getElementById("branchFilter").value;
-                        const date = document.getElementById("dateFilter").value;
-                        fetch(`/Order/GetOrders?status=${currentStatus}&search=${encodeURIComponent(search)}&branchId=${branchId}&orderDate=${date}&page=${page}`)
-                            .then(r => r.json()).then(data => {
-                                const tbody = document.getElementById("ordersTable");
-                                tbody.innerHTML = "";
-                                if (data.orders.length === 0) {
-                                    tbody.innerHTML = '<tr><td colspan="8" style="padding:2rem;text-align:center;color:var(--text-tertiary);">No orders found</td></tr>';
-                                }
-                                data.orders.forEach(o => {
-                                    const statusBadge = getStatusBadge(o.status);
-                                    tbody.innerHTML += `
-                                        <tr>
-                                            <td style="font-weight:600;">${escapeHtml(o.orderNumber)}</td>
-                                            <td>${escapeHtml(o.customerName)}</td>
-                                            <td>${escapeHtml(o.branchName)}</td>
-                                            <td>${o.orderDate}</td>
-                                            <td style="text-align:center;">${o.itemCount}</td>
-                                            <td style="font-weight:600;">$${o.totalAmount.toFixed(2)}</td>
-                                            <td>${statusBadge}</td>
-                                            <td style="white-space:nowrap;">
-                                                <button onclick="viewOrder(${o.id})" class="btn btn-ghost btn-sm">View</button>
-                                                ${o.status !== 'Completed' && o.status !== 'Cancelled' ? `
-                                                    <button onclick="updateOrderStatus(${o.id}, 'Completed')" class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;">Done</button>
-                                                    <button onclick="cancelOrder(${o.id})" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">Cancel</button>
-                                                ` : ''}
-                                            </td>
-                                        </tr>`;
-                                });
-                                document.getElementById("orderCount").innerText = `Showing ${data.orders.length} of ${data.totalCount} orders`;
-                                const pag = document.getElementById("pagination");
-                                pag.innerHTML = "";
-                                for (let i = 1; i <= data.totalPages; i++) {
-                                    const active = i === data.currentPage;
-                                    pag.innerHTML += `<button onclick="loadOrders(${i})" class="btn btn-sm ${active ? 'btn-primary' : 'btn-ghost'}" style="min-width:2rem;">${i}</button>`;
-                                }
-                            });
-                    }
-
-                    function getStatusBadge(status) {
-                        const classes = {
-                            'Pending': 'badge badge-warning',
-                            'Preparing': 'badge badge-info',
-                            'Ready': 'badge badge-accent',
-                            'Completed': 'badge badge-success',
-                            'Cancelled': 'badge badge-danger'
-                        };
-                        const cls = classes[status] || 'badge badge-neutral';
-                        return `<span class="${cls}">${status}</span>`;
-                    }
-
-                    function viewOrder(id) {
-                        fetch(`/Order/GetOrderDetails/${id}`).then(r => r.json()).then(o => {
-                            const details = document.getElementById("orderDetails");
-                            let itemsHtml = '';
-                            if (o.items && o.items.length > 0) {
-                                itemsHtml = `<table class="premium-table" style="margin-top:0.75rem;">
-                                    <thead><tr><th>Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Price</th><th style="text-align:right;">Subtotal</th></tr></thead><tbody>`;
-                                o.items.forEach(i => {
-                                    itemsHtml += `<tr>
-                                        <td>${escapeHtml(i.name)}</td>
-                                        <td style="text-align:center;">${i.quantity}</td>
-                                        <td style="text-align:right;">$${i.unitPrice.toFixed(2)}</td>
-                                        <td style="text-align:right;font-weight:600;">$${i.subtotal.toFixed(2)}</td>
-                                    </tr>`;
-                                });
-                                itemsHtml += `</tbody></table>`;
-                            }
-                            details.innerHTML = `
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-                                    <p><strong>Order #:</strong> ${escapeHtml(o.orderNumber)}</p>
-                                    <p><strong>Status:</strong> ${getStatusBadge(o.status)}</p>
-                                    <p><strong>Customer:</strong> ${escapeHtml(o.customer.name)}</p>
-                                    <p><strong>Phone:</strong> ${escapeHtml(o.customer.phone || 'N/A')}</p>
-                                    <p><strong>Branch:</strong> ${escapeHtml(o.branch)}</p>
-                                    <p><strong>Date:</strong> ${o.orderDate}</p>
-                                </div>
-                                <div style="margin-top:1rem;"><strong>Items:</strong>${itemsHtml}</div>
-                                <div style="margin-top:0.75rem;text-align:right;font-size:1.1rem;font-weight:700;color:var(--accent);">Total: $${o.totalAmount.toFixed(2)}</div>
-                                ${o.notes ? `<p style="margin-top:0.5rem;color:var(--text-tertiary);font-size:0.85rem;"><strong>Notes:</strong> ${escapeHtml(o.notes)}</p>` : ''}
-                            `;
-                            openModal('viewOrderModal');
-                        });
-                    }
-
-                    function createOrder() {
-                        const customerId = document.getElementById("customerId").value;
-                        const branchId = document.getElementById("branchSelect").value;
-                        if (!customerId) { ActionCard.warning('Missing Customer', 'Please select a customer.'); return; }
-                        if (!branchId) { ActionCard.warning('Missing Branch', 'Please select a branch.'); return; }
-                        if (orderItems.length === 0) { ActionCard.warning('No Items', 'Please add at least one item to the order.'); return; }
-                        const partnershipVal = document.getElementById("partnershipSelect").value;
-                        const request = {
-                            customerId: parseInt(customerId),
-                            branchId: parseInt(branchId),
-                            notes: document.getElementById("orderNotes").value,
-                            items: orderItems.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
-                            promoCode: appliedPromo,
-                            partnershipId: partnershipVal ? parseInt(partnershipVal) : null,
-                            paymentMethod: document.getElementById("paymentMethod").value
-                        };
-                        document.getElementById("saveOrderBtn").disabled = true;
-                        document.getElementById("saveOrderBtn").textContent = "Creating...";
-                        fetch("/Order/CreateOrder", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                            body: JSON.stringify(request)
-                        }).then(r => r.json()).then(res => {
-                            document.getElementById("saveOrderBtn").disabled = false;
-                            document.getElementById("saveOrderBtn").innerHTML = '<i class="fas fa-save"></i> Create Order';
-                            if (res.success) {
-                                closeModal('createOrderModal');
-                                loadOrders();
-                                showBillResult(res);
-                            } else ActionCard.error('Order Failed', res.message);
-                        }).catch(() => {
-                            document.getElementById("saveOrderBtn").disabled = false;
-                            document.getElementById("saveOrderBtn").innerHTML = '<i class="fas fa-save"></i> Create Order';
-                        });
-                    }
-
-                    function showBillResult(res) {
-                        const b = res.bill;
-                        if (!b) { ActionCard.success('Order Created', `Order ${escapeHtml(res.orderNumber)} has been created.`, { autoDismiss: 3000 }); return; }
-                        let html = '<div style="text-align:left;font-size:0.88rem;line-height:1.85;max-width:300px;margin:0 auto;">';
-                        html += `<div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Invoice</span><b style="font-family:ui-monospace,monospace;">${escapeHtml(b.invoiceNumber)}</b></div>`;
-                        html += `<div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Subtotal</span><span>${money(b.subtotal)}</span></div>`;
-                        if (b.promoDiscount > 0) html += `<div style="display:flex;justify-content:space-between;color:#16a34a;"><span>Promo</span><span>− ${money(b.promoDiscount)}</span></div>`;
-                        if (b.partnershipDiscount > 0) html += `<div style="display:flex;justify-content:space-between;color:#16a34a;"><span>Card discount</span><span>− ${money(b.partnershipDiscount)}</span></div>`;
-                        if (b.taxAmount > 0) html += `<div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Tax</span><span>${money(b.taxAmount)}</span></div>`;
-                        html += `<div style="display:flex;justify-content:space-between;border-top:1px solid #e5e7eb;margin-top:6px;padding-top:6px;"><b>Total</b><b style="color:var(--accent);">${money(b.total)}</b></div>`;
-                        if (b.awaitingTerminal) html += `<div style="margin-top:10px;color:#d97706;font-size:0.8rem;text-align:center;"><i class="fas fa-clock"></i> Awaiting card terminal confirmation…</div>`;
-                        if (b.pdfUrl) html += `<div style="margin-top:14px;text-align:center;"><a href="${b.pdfUrl}" target="_blank" class="btn btn-primary btn-sm"><i class="fas fa-file-pdf" style="margin-right:0.3rem;"></i> Download Bill</a></div>`;
-                        html += '</div>';
-                        ActionCard.success(`Order ${escapeHtml(res.orderNumber)} placed`, html);
-                    }
-
-                    async function updateOrderStatus(id, status) {
-                        const ok = await ActionCard.confirm('Update Status', `Are you sure you want to mark this order as ${status}?`, { okText: 'Yes, Update' });
-                        if (!ok) return;
-                        fetch("/Order/UpdateOrderStatus", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                            body: JSON.stringify({ orderId: id, newStatus: status })
-                        }).then(r => r.json()).then(res => {
-                            if (res.success) { loadOrders(); ActionCard.success('Status Updated', `Order status changed to ${status}.`, { autoDismiss: 2500 }); }
-                            else ActionCard.error('Error', res.message);
-                        });
-                    }
-
-                    async function cancelOrder(id) {
-                        const reason = await ActionCard.prompt('Cancel Order', 'Please provide a reason for cancellation:', { placeholder: 'Reason...', okText: 'Cancel Order' });
-                        if (reason === null) return;
-                        fetch("/Order/CancelOrder", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
-                            body: JSON.stringify({ orderId: id, reason: reason || "Cancelled by staff" })
-                        }).then(r => r.json()).then(res => {
-                            if (res.success) { loadOrders(); ActionCard.success('Order Cancelled', 'The order has been cancelled.', { autoDismiss: 2500 }); }
-                            else ActionCard.error('Error', res.message);
-                        });
-                    }
-
-                    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-                    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-                    function getToken() { return document.querySelector('[name="__RequestVerificationToken"]').value; }
-                    function escapeHtml(text) {
-                        if (!text) return '';
-                        const div = document.createElement('div');
-                        div.appendChild(document.createTextNode(text));
-                        return div.innerHTML;
-                    }
-            </script>
+                })
+                .catch(() => {
+                    tbody.innerHTML = '<tr><td colspan="8" style="padding:2.5rem;text-align:center;color:var(--text-tertiary);"><i class="fas fa-triangle-exclamation" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;color:#d97706;"></i>Could not load orders. <button class="btn btn-ghost btn-sm" onclick="loadOrders(currentPage)">Retry</button></td></tr>';
+                });
         }
 
-        @section Styles {
-            <style>
-                .tab-btn {
-                    padding: 0.4rem 0.9rem;
-                    border-radius: 8px;
-                    border: 1px solid var(--border-light);
-                    background: var(--bg-surface);
-                    color: var(--text-secondary);
-                    font-size: 0.8rem;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                .tab-btn:hover {
-                    background: var(--bg-body);
-                }
+        function money(n) { return 'Rs. ' + (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
-                .tab-btn.active {
-                    background: var(--accent);
-                    color: #fff;
-                    border-color: var(--accent);
-                }
-            </style>
+        function getStatusBadge(status) {
+            const classes = {
+                'Pending': 'badge badge-warning',
+                'Preparing': 'badge badge-info',
+                'Ready': 'badge badge-accent',
+                'Completed': 'badge badge-success',
+                'Cancelled': 'badge badge-danger'
+            };
+            const cls = classes[status] || 'badge badge-neutral';
+            return `<span class="${cls}">${status}</span>`;
         }
+
+        function printBill(id) {
+            window.open(`/Order/GenerateReceipt/${id}`, '_blank');
+        }
+
+        async function reprintKot(orderId) {
+            try {
+                const d = await fetch('/Kitchen/ReprintKot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': getToken() },
+                    body: 'orderId=' + orderId
+                }).then(r => r.json());
+                (d.browserKots || []).forEach(k => {
+                    const f = document.createElement('iframe');
+                    f.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;';
+                    f.src = k.url; document.body.appendChild(f);
+                    setTimeout(() => { try { f.remove(); } catch (e) { } }, 20000);
+                });
+                (d.warnings || []).forEach(w => ActionCard.error('Kitchen print', w));
+                if (d.success && !(d.warnings || []).length)
+                    ActionCard.success('KOT', d.networkPrinted ? 'Sent to kitchen printer.' : 'KOT printed.', { autoDismiss: 2500 });
+                if (!d.success && d.message) ActionCard.error('KOT', d.message);
+            } catch (e) { ActionCard.error('KOT', 'Print failed.'); }
+        }
+
+        function viewOrder(id) {
+            fetch(`/Order/GetOrderDetails/${id}`).then(r => r.json()).then(o => {
+                const details = document.getElementById("orderDetails");
+                let itemsHtml = '';
+                if (o.items && o.items.length > 0) {
+                    itemsHtml = `<table class="premium-table" style="margin-top:0.75rem;">
+                        <thead><tr><th>Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Price</th><th style="text-align:right;">Subtotal</th></tr></thead><tbody>`;
+                    o.items.forEach(i => {
+                        itemsHtml += `<tr>
+                            <td>${escapeHtml(i.name)}</td>
+                            <td style="text-align:center;">${i.quantity}</td>
+                            <td style="text-align:right;">${money(i.unitPrice)}</td>
+                            <td style="text-align:right;font-weight:600;">${money(i.subtotal)}</td>
+                        </tr>`;
+                    });
+                    itemsHtml += `</tbody></table>`;
+                }
+                details.innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                        <p><strong>Order #:</strong> ${escapeHtml(o.orderNumber)}</p>
+                        <p><strong>Status:</strong> ${getStatusBadge(o.status)}</p>
+                        <p><strong>Customer:</strong> ${escapeHtml(o.customer.name)}</p>
+                        <p><strong>Phone:</strong> ${escapeHtml(o.customer.phone || 'N/A')}</p>
+                        <p><strong>Branch:</strong> ${escapeHtml(o.branch)}</p>
+                        <p><strong>Date:</strong> ${o.orderDate}</p>
+                    </div>
+                    <div style="margin-top:1rem;"><strong>Items:</strong>${itemsHtml}</div>
+                    <div style="margin-top:0.75rem;text-align:right;font-size:1.1rem;font-weight:700;color:var(--accent);">Total: ${money(o.totalAmount)}</div>
+                    ${o.notes ? `<p style="margin-top:0.5rem;color:var(--text-tertiary);font-size:0.85rem;"><strong>Notes:</strong> ${escapeHtml(o.notes)}</p>` : ''}
+                `;
+                openModal('viewOrderModal');
+            });
+        }
+
+        async function updateOrderStatus(id, status) {
+            const ok = await ActionCard.confirm('Update Status', `Move this order to ${status}?`, { okText: 'Yes, Update' });
+            if (!ok) return;
+            fetch("/Order/UpdateOrderStatus", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
+                body: JSON.stringify({ orderId: id, newStatus: status })
+            }).then(r => r.json()).then(res => {
+                if (res.success) { loadOrders(currentPage); ActionCard.success('Status Updated', `Order moved to ${status}.`, { autoDismiss: 2500 }); }
+                else ActionCard.error('Error', res.message);
+            });
+        }
+
+        async function cancelOrder(id) {
+            const reason = await ActionCard.prompt('Cancel Order', 'Please provide a reason for cancellation:', { placeholder: 'Reason...', okText: 'Cancel Order' });
+            if (reason === null) return;
+            fetch("/Order/CancelOrder", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "RequestVerificationToken": getToken() },
+                body: JSON.stringify({ orderId: id, reason: reason || "Cancelled by staff" })
+            }).then(r => r.json()).then(res => {
+                if (res.success) { loadOrders(currentPage); ActionCard.success('Order Cancelled', 'The order has been cancelled.', { autoDismiss: 2500 }); }
+                else ActionCard.error('Error', res.message);
+            });
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function getToken() { return document.querySelector('[name="__RequestVerificationToken"]').value; }
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(text));
+            return div.innerHTML;
+        }
+    </script>
+}
+
+@section Styles {
+    <style>
+        .tab-btn {
+            padding: 0.4rem 0.9rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover {
+            background: var(--bg-body);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+    </style>
+}

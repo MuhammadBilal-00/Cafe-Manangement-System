@@ -15,22 +15,14 @@ namespace Cafe.Controllers
     [RequireStaffOrAbove]
     public class OrderController : BaseController
     {
-        private readonly IInventoryService _inventoryService;
         private readonly INotificationService _notificationService;
-        private readonly IMemoryCache _cache;
         private readonly ILogger<OrderController> _logger;
-        private readonly IInvoiceService _invoiceService;
-        private readonly IBranchSettingService _branchSettings;
         private readonly IExportService _export;
 
-        public OrderController(ApplicationDbContext context, IInventoryService inventoryService, INotificationService notificationService, IMemoryCache cache, ILogger<OrderController> logger, IInvoiceService invoiceService, IBranchSettingService branchSettings, IExportService export) : base(context)
+        public OrderController(ApplicationDbContext context, INotificationService notificationService, ILogger<OrderController> logger, IExportService export) : base(context)
         {
-            _inventoryService = inventoryService;
             _notificationService = notificationService;
-            _cache = cache;
             _logger = logger;
-            _invoiceService = invoiceService;
-            _branchSettings = branchSettings;
             _export = export;
         }
 
@@ -109,8 +101,8 @@ namespace Cafe.Controllers
                 {
                     id = o.Id,
                     orderNumber = o.OrderNumber,
-                    customerName = o.Customer.Name,
-                    customerPhone = o.Customer.Phone,
+                    customerName = o.Customer != null ? o.Customer.Name : "Walk-In",
+                    customerPhone = o.Customer != null ? o.Customer.Phone : null,
                     branchName = o.Branch.Name,
                     orderDate = o.OrderDate.ToString("yyyy-MM-dd HH:mm"),
                     totalAmount = o.TotalAmount,
@@ -151,9 +143,9 @@ namespace Cafe.Controllers
                 orderNumber = order.OrderNumber,
                 customer = new
                 {
-                    name = order.Customer.Name,
-                    email = order.Customer.Email,
-                    phone = order.Customer.Phone
+                    name = order.Customer?.Name ?? "Walk-In",
+                    email = order.Customer?.Email,
+                    phone = order.Customer?.Phone
                 },
                 branch = order.Branch.Name,
                 orderDate = order.OrderDate.ToString("yyyy-MM-dd HH:mm"),
@@ -199,187 +191,9 @@ namespace Cafe.Controllers
             return Json(counts);
         }
 
-        // Create New Order
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [RequireManagerOrOwner]
-        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
-        {
-            try
-            {
-                if (request == null || !ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                    return Json(new { success = false, message = string.Join(" ", errors).Trim() is { Length: > 0 } msg ? msg : "Invalid order request." });
-                }
-
-                if (!CanAccessBranch(request.BranchId))
-                {
-                    return Json(new { success = false, message = "Access denied to this branch" });
-                }
-
-                // Double-click / network-retry guard: an identical cart from the same user
-                // and branch within a short window is treated as a duplicate submission,
-                // not a second order.
-                var itemsFingerprint = string.Join(",", request.Items
-                    .OrderBy(i => i.MenuItemId)
-                    .Select(i => $"{i.MenuItemId}x{i.Quantity}"));
-                var dedupeKey = $"order-create:{GetCurrentUserId()}:{request.BranchId}:{request.CustomerId}:{itemsFingerprint}";
-                if (_cache.TryGetValue(dedupeKey, out _))
-                {
-                    return Json(new { success = false, message = "This order was already submitted moments ago." });
-                }
-                _cache.Set(dedupeKey, true, TimeSpan.FromSeconds(10));
-
-                // Check inventory availability for all items before creating order
-                foreach (var item in request.Items)
-                {
-                    var hasInventory = await _inventoryService.CheckInventoryAvailability(
-                        item.MenuItemId, 
-                        item.Quantity, 
-                        request.BranchId
-                    );
-
-                    if (!hasInventory)
-                    {
-                        var menuItem = await _context.MenuItems.FindAsync(item.MenuItemId);
-                        return Json(new { 
-                            success = false, 
-                            message = $"Insufficient inventory for {menuItem?.Name}. Please check stock levels." 
-                        });
-                    }
-                }
-
-                var order = new Order
-                {
-                    OrderNumber = await GenerateOrderNumber(request.BranchId),
-                    CustomerId = request.CustomerId,
-                    BranchId = request.BranchId,
-                    OrderDate = DateTime.Now,
-                    Status = "Pending",
-                    Notes = request.Notes,
-                    TotalAmount = 0
-                };
-
-                // Calculate total and create order items
-                decimal total = 0;
-                var orderItems = new List<OrderItem>();
-
-                foreach (var item in request.Items)
-                {
-                    var menuItem = await _context.MenuItems.FindAsync(item.MenuItemId);
-                    if (menuItem != null && menuItem.Availability && menuItem.BranchId == request.BranchId)
-                    {
-                        var orderItem = new OrderItem
-                        {
-                            MenuItemId = item.MenuItemId,
-                            Quantity = item.Quantity,
-                            Price = menuItem.Price
-                        };
-                        orderItems.Add(orderItem);
-                        total += orderItem.Price * orderItem.Quantity;
-                    }
-                }
-
-                if (!orderItems.Any())
-                {
-                    return Json(new { success = false, message = "No valid items found" });
-                }
-
-                order.TotalAmount = total;
-                _context.Orders.Add(order);
-                await _context.SaveChangesAsync();
-
-                // Add order items
-                foreach (var item in orderItems)
-                {
-                    item.OrderId = order.Id;
-                    _context.OrderItems.Add(item);
-                }
-
-                await _context.SaveChangesAsync();
-
-                // Deduct inventory
-                var userName = HttpContext.Session.GetUserName() ?? "System";
-                var inventoryDeducted = await _inventoryService.DeductInventoryForOrder(
-                    order.Id, 
-                    request.BranchId, 
-                    userName
-                );
-
-                if (!inventoryDeducted)
-                {
-                    // Stock could have been consumed by a concurrent order between the
-                    // pre-check above and this deduction. Don't leave a phantom order with
-                    // no stock behind it — undo the order and tell the caller why.
-                    _context.OrderItems.RemoveRange(orderItems);
-                    _context.Orders.Remove(order);
-                    await _context.SaveChangesAsync();
-
-                    return Json(new
-                    {
-                        success = false,
-                        message = "Insufficient inventory to fulfill this order. Stock levels changed — please check availability and try again."
-                    });
-                }
-
-                // Generate the bill (invoice) for this order, applying any promo/partnership.
-                // The server re-validates the discount, so a tampered client can't fake one.
-                // Payment status follows the branch's hardware toggle: with a terminal the
-                // bill stays Pending until the payment webhook confirms (Step 5); without one
-                // the cashier's click closes it immediately as Paid.
-                object? billInfo = null;
-                try
-                {
-                    var setting = await _branchSettings.GetOrCreateAsync(request.BranchId);
-                    var paymentStatus = setting.HardwareTerminalEnabled ? "Pending" : "Paid";
-                    var invoice = await _invoiceService.CreateForOrderAsync(
-                        order.Id, request.PromoCode, request.PartnershipId,
-                        string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod,
-                        paymentStatus, GetCurrentUserId());
-
-                    // Order amount reflects net sales (after discounts, before tax) so revenue stays correct.
-                    order.TotalAmount = invoice.Subtotal - invoice.TotalDiscount;
-                    await _context.SaveChangesAsync();
-
-                    billInfo = new
-                    {
-                        invoiceNumber = invoice.InvoiceNumber,
-                        subtotal = invoice.Subtotal,
-                        promoDiscount = invoice.PromoDiscount,
-                        partnershipDiscount = invoice.PartnershipDiscount,
-                        taxAmount = invoice.TaxAmount,
-                        total = invoice.TotalAmount,
-                        paymentStatus = invoice.PaymentStatus,
-                        pdfUrl = invoice.PdfPath,
-                        awaitingTerminal = setting.HardwareTerminalEnabled
-                    };
-                }
-                catch (Exception billEx)
-                {
-                    // A bill failure must never void a completed sale — the order stands and
-                    // the invoice can be regenerated from Bill History.
-                    _logger.LogError(billEx, "Invoice generation failed for order {OrderId}", order.Id);
-                }
-
-                // Notification: new order created
-                await _notificationService.CreateNotificationAsync(
-                    "New Order Created",
-                    $"Order #{order.OrderNumber} for {order.TotalAmount:C} has been placed.",
-                    "Success", NotificationCategory.Order,
-                    branchId: request.BranchId,
-                    createdBy: GetCurrentUserId(),
-                    redirectUrl: $"/Order/Index",
-                    icon: "fas fa-receipt");
-
-                return Json(new { success = true, orderId = order.Id, orderNumber = order.OrderNumber, bill = billInfo });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating order for branch {BranchId}", request?.BranchId);
-                return Json(new { success = false, message = "Something went wrong while creating the order. Please try again." });
-            }
-        }
+        // NOTE: order CREATION lives in the POS register (PosController.Finalize) — the single
+        // source of truth. The old duplicate create-order endpoint + modal were retired when
+        // Order Management became a tracking-only screen.
 
         // Update Order Status
         [HttpPost]
@@ -426,33 +240,6 @@ namespace Cafe.Controllers
                 _logger.LogError(ex, "Error updating status for order {OrderId}", request?.OrderId);
                 return Json(new { success = false, message = "Something went wrong while updating the order status. Please try again." });
             }
-        }
-
-        // Get Menu Items for Branch (for Create Order modal)
-        [HttpGet]
-        public async Task<IActionResult> GetMenuItems(int branchId)
-        {
-            if (!CanAccessBranch(branchId))
-            {
-                return Forbid();
-            }
-
-            var menuItems = await _context.MenuItems
-                .Include(m => m.Category)
-                .Where(m => m.BranchId == branchId && m.Availability)
-                .Select(m => new
-                {
-                    id = m.Id,
-                    name = m.Name,
-                    price = m.Price,
-                    category = m.Category.Name,
-                    description = m.Description
-                })
-                .OrderBy(m => m.category)
-                .ThenBy(m => m.name)
-                .ToListAsync();
-
-            return Json(menuItems);
         }
 
         // Search Customers for autocomplete
@@ -590,23 +377,30 @@ namespace Cafe.Controllers
             }
         }
 
-        // Generate Receipt
+        // Print bill for an order. There is exactly ONE receipt implementation — the
+        // thermal invoice PDF — so this resolves the order's bill and hands off to it.
+        // (The old View("Receipt") had no view behind it and 500'd.)
         [HttpGet]
         public async Task<IActionResult> GenerateReceipt(int id)
         {
-            var order = await _context.Orders
-                .Include(o => o.Customer)
-                .Include(o => o.Branch)
-                .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.MenuItem)
-                .FirstOrDefaultAsync(o => o.Id == id);
-
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id);
             if (order == null || !CanAccessBranch(order.BranchId))
             {
                 return NotFound();
             }
 
-            return View("Receipt", order);
+            var invoiceId = await _context.Invoices
+                .Where(i => i.OrderId == id)
+                .OrderByDescending(i => i.Id)
+                .Select(i => (int?)i.Id)
+                .FirstOrDefaultAsync();
+
+            if (invoiceId == null)
+            {
+                return Content("No bill has been generated for this order yet. Bills are created when the sale is finalized at the POS register.");
+            }
+
+            return RedirectToAction("Thermal", "Invoice", new { id = invoiceId.Value });
         }
 
         // ===== HELPER METHODS =====

@@ -4,34 +4,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Cafe.Models.Requests
 {
-    public class CreateOrderRequest
-    {
-        [Range(1, int.MaxValue, ErrorMessage = "A valid customer is required.")]
-        public int CustomerId { get; set; }
-
-        [Range(1, int.MaxValue, ErrorMessage = "A valid branch is required.")]
-        public int BranchId { get; set; }
-
-        public string? Notes { get; set; }
-
-        [Required(ErrorMessage = "An order must contain at least one item.")]
-        [MinLength(1, ErrorMessage = "An order must contain at least one item.")]
-        public List<OrderItemRequest> Items { get; set; } = new List<OrderItemRequest>();
-
-        // ── Checkout: discounts + payment (all optional) ──
-        public string? PromoCode { get; set; }
-        public int? PartnershipId { get; set; }
-        public string? PaymentMethod { get; set; }
-    }
-
-    public class OrderItemRequest
-    {
-        [Range(1, int.MaxValue, ErrorMessage = "A valid menu item is required.")]
-        public int MenuItemId { get; set; }
-
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1.")]
-        public int Quantity { get; set; }
-    }
+    // CreateOrderRequest/OrderItemRequest removed: order creation is POS-only
+    // (PosSaleRequest) — Order Management tracks existing orders.
 
     public class UpdateStatusRequest
     {
