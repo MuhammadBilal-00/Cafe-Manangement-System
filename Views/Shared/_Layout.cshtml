@@ -551,6 +551,18 @@
                 </div>
 
                 <div class="header-right">
+                    @* POS quick-launch: one click to the register from any page. Shown only to
+                       roles that can actually open the POS (Staff and above — mirrors
+                       PosController's [RequireStaffOrAbove]) and only when the plan enables the
+                       POS/Orders feature, the same gate the sidebar Register link lives under. *@
+                    @if (isAuthenticated && !isPlatform && (isOwnerOrManager || isStaff)
+                         && canFeature(Cafe.Services.FeatureCatalog.Orders))
+                    {
+                        <a href="/Pos" id="posQuickBtn" class="header-icon-btn" data-tooltip="New Sale (POS)"
+                           style="text-decoration:none;color:var(--accent);">
+                            <i class="fas fa-cash-register"></i>
+                        </a>
+                    }
                     <!-- Notification Bell -->
                     @if (isAuthenticated)
                     {
@@ -821,6 +833,12 @@
                     const primaryBtn = document.querySelector('.btn-primary[href], a.btn-primary');
                     if (primaryBtn) { e.preventDefault(); primaryBtn.click(); }
                 }
+                // P = open the POS register (only when the quick-launch icon is rendered,
+                // i.e. the user's role + plan allow POS)
+                if (e.key === 'p' || e.key === 'P') {
+                    const posBtn = document.getElementById('posQuickBtn');
+                    if (posBtn) { e.preventDefault(); window.location.href = posBtn.href; }
+                }
                 // Escape = click Cancel link/button
                 if (e.key === 'Escape') {
                     const cancelBtn = document.querySelector('a.btn-secondary[href*="Index"], a.btn[href*="Index"]');
@@ -838,6 +856,7 @@
                         ActionCard.info('Keyboard Shortcuts',
                             '<div style="text-align:left;font-size:0.875rem;line-height:2;">' +
                             '<b>N</b> — New / Add record<br>' +
+                            '<b>P</b> — Open POS register<br>' +
                             '<b>Esc</b> — Cancel / Back<br>' +
                             '<b>/</b> — Focus search<br>' +
                             '<b>?</b> — Show this help' +
