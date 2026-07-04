@@ -29,14 +29,6 @@ namespace Cafe.Services
         private readonly ApplicationDbContext _db;
         public KitchenService(ApplicationDbContext db) => _db = db;
 
-        private static readonly Dictionary<string, string[]> Allowed = new()
-        {
-            ["New"] = new[] { "Cooking", "Ready", "Served" },
-            ["Cooking"] = new[] { "Ready", "Served" },
-            ["Ready"] = new[] { "Served" },
-            ["Served"] = Array.Empty<string>()
-        };
-
         public async Task<List<KitchenTicketDto>> GetTicketsAsync(int branchId)
         {
             var orders = await _db.Orders
@@ -68,10 +60,15 @@ namespace Cafe.Services
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.MenuItem)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
             if (order == null) return null;
-            if (!Allowed.TryGetValue(order.KitchenStatus, out var next) || !next.Contains(newStatus))
+            // Cancelled/completed orders are off the kitchen's plate — nothing left to advance.
+            if (order.Status == "Cancelled" || order.Status == "Completed") return null;
+            if (!OrderWorkflow.CanTransitionKitchen(order.KitchenStatus, newStatus))
                 return null;
 
             order.KitchenStatus = newStatus;
+            // Keep Order Management in agreement (Ready → Ready, Served → Completed) — one
+            // SaveChanges so ticket + order status move atomically.
+            OrderWorkflow.SyncOrderFromKitchen(order);
             await _db.SaveChangesAsync();
             return ToDto(order);
         }

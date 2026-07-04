@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Caching.Memory;
@@ -18,12 +19,32 @@ namespace Cafe.Controllers
         private readonly INotificationService _notificationService;
         private readonly ILogger<OrderController> _logger;
         private readonly IExportService _export;
+        private readonly IKitchenService _kitchen;
+        private readonly Microsoft.AspNetCore.SignalR.IHubContext<Cafe.Hubs.KitchenHub> _kitchenHub;
 
-        public OrderController(ApplicationDbContext context, INotificationService notificationService, ILogger<OrderController> logger, IExportService export) : base(context)
+        public OrderController(ApplicationDbContext context, INotificationService notificationService,
+            ILogger<OrderController> logger, IExportService export, IKitchenService kitchen,
+            Microsoft.AspNetCore.SignalR.IHubContext<Cafe.Hubs.KitchenHub> kitchenHub) : base(context)
         {
             _notificationService = notificationService;
             _logger = logger;
             _export = export;
+            _kitchen = kitchen;
+            _kitchenHub = kitchenHub;
+        }
+
+        /// <summary>Push the order's kitchen ticket to every KDS watching its branch so the
+        /// boards reflect Order Management changes instantly (best-effort, never blocks).</summary>
+        private async Task PushTicketToKdsAsync(int orderId, int branchId)
+        {
+            try
+            {
+                var ticket = await _kitchen.GetTicketAsync(orderId);
+                if (ticket != null)
+                    await _kitchenHub.Clients.Group($"kitchen_branch_{branchId}")
+                        .SendAsync("TicketUpdated", ticket);
+            }
+            catch (Exception ex) { _logger.LogWarning(ex, "KDS push failed for order {OrderId}", orderId); }
         }
 
         // Phase 9 (59): Excel export via the reusable IExportService.
@@ -213,14 +234,18 @@ namespace Cafe.Controllers
                     return Json(new { success = false, message = "Order not found or access denied" });
                 }
 
-                // Validate status transition
-                if (!IsValidStatusTransition(order.Status, request.NewStatus))
+                // Validate status transition (central forward-only workflow)
+                if (!OrderWorkflow.CanTransitionOrder(order.Status, request.NewStatus))
                 {
                     return Json(new { success = false, message = "Invalid status transition" });
                 }
 
                 order.Status = request.NewStatus;
+                // Pull the kitchen ticket forward too (Ready → Ready, Completed → Served) so
+                // the KDS and Order Management never disagree — one atomic SaveChanges.
+                OrderWorkflow.SyncKitchenFromOrder(order);
                 await _context.SaveChangesAsync();
+                await PushTicketToKdsAsync(order.Id, order.BranchId);
 
                 // Notification: order status changed
                 await _notificationService.CreateNotificationAsync(
@@ -352,11 +377,14 @@ namespace Cafe.Controllers
                 }
 
                 order.Status = "Cancelled";
+                // Close the kitchen ticket so the KDS drops it immediately (nothing to cook).
+                OrderWorkflow.SyncKitchenFromOrder(order);
                 order.Notes = string.IsNullOrEmpty(order.Notes)
                     ? $"Cancelled: {request.Reason}"
                     : $"{order.Notes}\nCancelled: {request.Reason}";
 
                 await _context.SaveChangesAsync();
+                await PushTicketToKdsAsync(order.Id, order.BranchId);
 
                 // Notification: order cancelled
                 await _notificationService.CreateNotificationAsync(
@@ -439,47 +467,9 @@ namespace Cafe.Controllers
             };
         }
 
-        // Forward-only kitchen workflow: Pending -> Preparing -> Ready -> Completed.
-        // Cancellation is allowed from any non-terminal state. No backward or
-        // skip-ahead transitions (e.g. Ready -> Pending, or Pending -> Completed).
-        private static readonly Dictionary<string, string[]> OrderAllowedTransitions = new()
-        {
-            ["Pending"]   = ["Preparing", "Cancelled"],
-            ["Preparing"] = ["Ready", "Cancelled"],
-            ["Ready"]     = ["Completed", "Cancelled"],
-            ["Completed"] = [],
-            ["Cancelled"] = []
-        };
-
-        private bool IsValidStatusTransition(string currentStatus, string newStatus)
-        {
-            return OrderAllowedTransitions.TryGetValue(currentStatus, out var allowed)
-                && allowed.Contains(newStatus);
-        }
-
-        private async Task<string> GenerateOrderNumber(int branchId)
-        {
-            var branch = await _context.Branches.FindAsync(branchId);
-            var branchCode = branch?.Name.Substring(0, Math.Min(3, branch.Name.Length)).ToUpper() ?? "ORD";
-            var today = DateTime.Now.ToString("yyyyMMdd");
-
-            var lastOrder = await _context.Orders
-                .Where(o => o.OrderNumber.StartsWith($"{branchCode}{today}"))
-                .OrderByDescending(o => o.OrderNumber)
-                .FirstOrDefaultAsync();
-
-            int sequence = 1;
-            if (lastOrder != null)
-            {
-                var lastSequence = lastOrder.OrderNumber.Substring($"{branchCode}{today}".Length);
-                if (int.TryParse(lastSequence, out int lastSeq))
-                {
-                    sequence = lastSeq + 1;
-                }
-            }
-
-            return $"{branchCode}{today}{sequence:D3}";
-        }
+        // Status transitions live in Services/OrderWorkflow.cs — the single source of truth
+        // shared with the KDS (KitchenService) and the POS. (Order-number generation lives in
+        // PosService, where orders are created.)
 
         private async Task PopulateViewBagData(int? branchId)
         {

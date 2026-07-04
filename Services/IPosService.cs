@@ -74,7 +74,10 @@ namespace Cafe.Services
             var entity = order.entity;
             entity.HoldState = "Active";
             entity.KitchenStatus = "New";
-            entity.Status = "Pending";
+            // A committed POS sale is fired to the kitchen the moment it exists, so it is born
+            // "Preparing" — atomically with order creation, KOT printing is best-effort after.
+            // "Pending" is reserved for orders NOT yet fired (held/suspended/drafts).
+            entity.Status = "Preparing";
             await _db.SaveChangesAsync();
 
             // Atomic stock deduction (InventoryService uses a conditional-update transaction).
