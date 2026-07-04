@@ -558,8 +558,8 @@
                     @if (isAuthenticated && !isPlatform && (isOwnerOrManager || isStaff)
                          && canFeature(Cafe.Services.FeatureCatalog.Orders))
                     {
-                        <a href="/Pos" id="posQuickBtn" class="header-icon-btn" data-tooltip="New Sale (POS)"
-                           style="text-decoration:none;color:var(--accent);">
+                        <a asp-controller="Pos" asp-action="Index" id="posQuickBtn" class="header-icon-btn"
+                           data-tooltip="New Sale (POS)" style="text-decoration:none;color:var(--accent);">
                             <i class="fas fa-cash-register"></i>
                         </a>
                     }
