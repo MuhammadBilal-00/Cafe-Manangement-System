@@ -28,9 +28,11 @@ namespace Cafe.Services
         public async Task EarnAsync(int customerUserId, int? invoiceId, int points, string? note)
         {
             if (points == 0) return;
-            var customer = await _db.Customers.FirstOrDefaultAsync(c => c.UserId == customerUserId);
-            if (customer == null) return;
-            customer.LoyaltyPoints = Math.Max(0, customer.LoyaltyPoints + points);
+            // Atomic balance move: mirrors the ledger row without a read-modify-write race
+            // (two concurrent earns/adjusts must both land, never overwrite each other).
+            var rows = await _db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE Customers SET LoyaltyPoints = CASE WHEN LoyaltyPoints + {points} < 0 THEN 0 ELSE LoyaltyPoints + {points} END WHERE UserId = {customerUserId}");
+            if (rows == 0) return; // no customer record
             _db.LoyaltyTransactions.Add(new LoyaltyTransaction { CustomerUserId = customerUserId, InvoiceId = invoiceId, Points = points, Type = points >= 0 ? "Earn" : "Adjust", Note = note });
             await _db.SaveChangesAsync();
         }
@@ -38,10 +40,16 @@ namespace Cafe.Services
         public async Task<(bool, string)> RedeemAsync(int customerUserId, int points, int? invoiceId)
         {
             if (points <= 0) return (false, "Points must be positive.");
-            var customer = await _db.Customers.FirstOrDefaultAsync(c => c.UserId == customerUserId);
+            var customer = await _db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.UserId == customerUserId);
             if (customer == null) return (false, "Customer not found.");
             if (customer.LoyaltyPoints < points) return (false, $"Only {customer.LoyaltyPoints} points available.");
-            customer.LoyaltyPoints -= points;
+
+            // Conditional debit: the availability check and the deduction happen in one UPDATE,
+            // so two simultaneous redemptions can never spend the same points twice.
+            var rows = await _db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE Customers SET LoyaltyPoints = LoyaltyPoints - {points} WHERE UserId = {customerUserId} AND LoyaltyPoints >= {points}");
+            if (rows == 0) return (false, "Points balance changed — please retry.");
+
             _db.LoyaltyTransactions.Add(new LoyaltyTransaction { CustomerUserId = customerUserId, InvoiceId = invoiceId, Points = -points, Type = "Redeem", Note = "Redeemed at checkout" });
             await _db.SaveChangesAsync();
             return (true, $"Redeemed {points} points.");

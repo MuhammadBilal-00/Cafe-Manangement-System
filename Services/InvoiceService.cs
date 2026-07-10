@@ -81,10 +81,26 @@ namespace Cafe.Services
 
         public async Task<bool> MarkPaidAsync(int invoiceId, string? reference)
         {
-            var inv = await _context.Invoices.FindAsync(invoiceId);
+            var inv = await _context.Invoices.Include(i => i.Payments).FirstOrDefaultAsync(i => i.Id == invoiceId);
             if (inv == null) return false;
             if (inv.PaymentStatus == "Cancelled") return false;
             if (inv.PaymentStatus == "Paid") return true; // idempotent — webhooks may retry
+
+            // The terminal settled the outstanding balance: record it as a tender so Payments
+            // stays the single source of truth for money received (receivables, Z-reports and
+            // the ledger's AR-clearing all read Payments, not just the status flag).
+            var outstanding = Math.Round(inv.TotalAmount - inv.Payments.Sum(p => p.Amount), 2);
+            if (outstanding > 0)
+            {
+                _context.Payments.Add(new Payment
+                {
+                    InvoiceId = inv.Id,
+                    Method = "Terminal",
+                    Amount = outstanding,
+                    Reference = reference,
+                    PaidAt = DateTime.Now
+                });
+            }
 
             inv.PaymentStatus = "Paid";
             inv.PaidAt = DateTime.Now;
@@ -119,16 +135,23 @@ namespace Cafe.Services
             if (invoice.PaymentStatus == "Cancelled")
                 return new PaymentResult(false, "This bill has been cancelled.", 0, 0, "Cancelled");
 
+            // Cap the recorded tender at what is actually owed — change handed back is not a
+            // payment, and booking it would overstate takings and push receivables negative.
+            var paidSoFar = invoice.Payments.Sum(p => p.Amount);
+            var apply = Math.Min(Math.Round(amount, 2), Math.Max(0, invoice.TotalAmount - paidSoFar));
+            if (apply <= 0)
+                return new PaymentResult(false, "This bill is already fully paid.", paidSoFar, 0, invoice.PaymentStatus);
+
             _context.Payments.Add(new Payment
             {
                 InvoiceId = invoice.Id,
                 Method = string.IsNullOrWhiteSpace(method) ? "Cash" : method,
-                Amount = Math.Round(amount, 2),
+                Amount = apply,
                 Reference = reference,
                 PaidAt = DateTime.Now
             });
 
-            var totalPaid = invoice.Payments.Sum(p => p.Amount) + Math.Round(amount, 2);
+            var totalPaid = paidSoFar + apply;
             var due = Math.Max(0, invoice.TotalAmount - totalPaid);
             var fullyPaid = totalPaid + 0.01m >= invoice.TotalAmount;
 
@@ -187,15 +210,31 @@ namespace Cafe.Services
                 CreatedAt = DateTime.Now
             };
 
-            // Count a redemption against the promo's usage limit.
+            // Count a redemption against the promo's usage limit — atomically, so two registers
+            // applying the same code at once both count (a tracked += would lose one).
             if (pricing.PromoCodeId.HasValue)
             {
-                var promo = await _context.PromoCodes.FindAsync(pricing.PromoCodeId.Value);
-                if (promo != null) promo.TimesUsed += 1;
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"UPDATE PromoCodes SET TimesUsed = TimesUsed + 1 WHERE Id = {pricing.PromoCodeId.Value}");
             }
 
             _context.Invoices.Add(invoice);
-            await _context.SaveChangesAsync();
+            // The per-tenant unique index on InvoiceNumber is the real referee — on the rare
+            // concurrent clash, regenerate and retry instead of surfacing a 500 at the register.
+            for (var attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    break;
+                }
+                catch (DbUpdateException ex) when (attempt < 3
+                    && ex.InnerException is Microsoft.Data.SqlClient.SqlException sql
+                    && (sql.Number == 2601 || sql.Number == 2627))
+                {
+                    invoice.InvoiceNumber = await GenerateInvoiceNumberAsync(order.BranchId);
+                }
+            }
 
             // Generate the PDF after we have an Id/number; failure here must not void the sale.
             try

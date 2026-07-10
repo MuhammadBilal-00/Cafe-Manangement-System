@@ -48,11 +48,23 @@ namespace Cafe.Services
             var apply = Math.Min(Math.Round(amount, 2), card.Balance);
             if (apply <= 0) return new GiftRedeemResult(false, "Gift card has no balance.", 0, 0);
 
-            card.Balance -= apply;
+            // Conditional debit at the DB level: two registers redeeming the same card at the
+            // same instant can't both spend the same balance — a read-modify-write here would
+            // let both pass the in-memory check and double-redeem on last-write-wins.
+            var rows = await _db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE GiftCards SET Balance = Balance - {apply} WHERE Id = {card.Id} AND Balance >= {apply} AND IsActive = 1");
+            if (rows == 0)
+            {
+                await tx.RollbackAsync();
+                return new GiftRedeemResult(false, "Gift card balance changed — please retry.", 0, 0);
+            }
+
             _db.GiftCardTransactions.Add(new GiftCardTransaction { GiftCardId = card.Id, Amount = -apply, InvoiceId = invoiceId, Note = "Redeemed" });
             await _db.SaveChangesAsync();
             await tx.CommitAsync();
-            return new GiftRedeemResult(true, $"Applied Rs. {apply:N0}. Balance Rs. {card.Balance:N0}.", apply, card.Balance);
+
+            var remaining = await _db.GiftCards.AsNoTracking().Where(g => g.Id == card.Id).Select(g => g.Balance).FirstAsync();
+            return new GiftRedeemResult(true, $"Applied Rs. {apply:N0}. Balance Rs. {remaining:N0}.", apply, remaining);
         }
 
         private async Task<string> GenCodeAsync()

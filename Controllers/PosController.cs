@@ -296,8 +296,13 @@ namespace Cafe.Controllers
         [HttpGet]
         public async Task<IActionResult> Resume(int id)
         {
+            // Authorize BEFORE mutating: ResumeAsync flips the hold state, so the branch check
+            // must come first or a foreign-branch id could still alter the order.
+            var branchId = await _context.Orders.Where(o => o.Id == id).Select(o => (int?)o.BranchId).FirstOrDefaultAsync();
+            if (branchId == null || !CanAccessBranch(branchId.Value)) return NotFound();
+
             var order = await _pos.ResumeAsync(id);
-            if (order == null || !CanAccessBranch(order.BranchId)) return NotFound();
+            if (order == null) return NotFound();
             return Json(new
             {
                 id = order.Id,
@@ -337,6 +342,11 @@ namespace Cafe.Controllers
             if (string.IsNullOrWhiteSpace(title) || amount <= 0)
                 return Json(new { success = false, message = "Title and a positive amount are required." });
 
+            // A cashier's petty-cash entry still goes through the manager approval gate — only
+            // approved expenses reach the books (dashboards + accounting auto-post read
+            // ApprovalStatus). Managers/owners recording their own expense skip the queue.
+            var role = GetCurrentUserRole();
+            var autoApproved = role == "Owner" || role == "BranchManager";
             _context.Expenses.Add(new Expense
             {
                 BranchId = branchId,
@@ -345,12 +355,12 @@ namespace Cafe.Controllers
                 Amount = Math.Round(amount, 2),
                 ExpenseDate = DateTime.Now,
                 PaymentMethod = "Cash",
-                ApprovalStatus = "Approved",
+                ApprovalStatus = autoApproved ? "Approved" : "Pending",
                 CreatedById = GetCurrentUserId(),
                 CreatedAt = DateTime.Now
             });
             await _context.SaveChangesAsync();
-            return Json(new { success = true, message = "Expense recorded." });
+            return Json(new { success = true, message = autoApproved ? "Expense recorded." : "Expense submitted for approval." });
         }
 
         [HttpGet]
