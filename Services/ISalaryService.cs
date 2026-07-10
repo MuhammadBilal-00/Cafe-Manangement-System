@@ -4,13 +4,19 @@ using Cafe.Models;
 
 namespace Cafe.Services
 {
+    /// <summary>
+    /// Outcome of a payroll run. Staff without a configured base salary are never paid an
+    /// invented amount — they are skipped and reported by name so HR can fix the setup.
+    /// </summary>
+    public record SalaryRunResult(List<SalaryRecord> Records, List<string> SkippedStaff);
+
     public interface ISalaryService
     {
         // -- Preview (no DB insert) --
-        Task<List<SalaryRecord>> PreviewMonthlySalariesAsync(int year, int month, int? branchId, int? generatedById);
+        Task<SalaryRunResult> PreviewMonthlySalariesAsync(int year, int month, int? branchId, int? generatedById);
 
         // -- Generation (writes to DB) --
-        Task<List<SalaryRecord>> GenerateMonthlySalariesAsync(int year, int month, int? branchId, int? generatedById);
+        Task<SalaryRunResult> GenerateMonthlySalariesAsync(int year, int month, int? branchId, int? generatedById);
 
         // -- Lookups --
         Task<SalaryRecord?> GetSalaryRecordAsync(int id);

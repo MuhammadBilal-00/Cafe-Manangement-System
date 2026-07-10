@@ -26,6 +26,10 @@ namespace Cafe.Services
         public async Task<SalaryRecord> CalculateSalaryAsync(Staff staff, int year, int month, int? generatedById)
         {
             var baseSalary = await GetEffectiveBaseSalaryAsync(staff.Id, year, month);
+            if (baseSalary <= 0)
+                throw new InvalidOperationException(
+                    $"No base salary is configured for {staff.User?.Name ?? $"staff #{staff.Id}"} — set one on the staff profile or the role before running payroll.");
+
             var policy = await GetEffectivePolicyAsync(year, month);
             var stats = await _attendanceService.GetStaffMonthlyStatsAsync(staff.Id, year, month);
 
@@ -153,7 +157,9 @@ namespace Cafe.Services
             if (staff?.StaffRole != null && staff.StaffRole.DefaultMonthlySalary > 0)
                 return staff.StaffRole.DefaultMonthlySalary;
 
-            return 30000m; // Ultimate fallback
+            // No salary record and no role default: 0 = "not configured". Payroll must never
+            // invent a number — callers skip (and report) this staff member instead.
+            return 0m;
         }
 
         // ────────────────────────────────────────────────────────

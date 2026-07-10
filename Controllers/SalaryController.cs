@@ -145,13 +145,17 @@ namespace Cafe.Controllers
                     model.BranchId = managedBranchId.Value;
                 }
 
-                var previewRecords = await _salaryService.PreviewMonthlySalariesAsync(
+                var run = await _salaryService.PreviewMonthlySalariesAsync(
                     model.Year, model.Month, model.BranchId, GetCurrentUserId());
 
-                model.PreviewRecords = previewRecords;
+                model.PreviewRecords = run.Records;
                 model.IsPreview = true;
                 model.Branches = await GetAccessibleBranches();
                 model.ActivePolicy = await _policyService.GetActivePolicyAsync();
+
+                if (run.SkippedStaff.Count > 0)
+                    SetErrorMessage($"No base salary configured for: {string.Join(", ", run.SkippedStaff)}. " +
+                        "They are excluded from this run — set their salary on the staff profile first.");
 
                 return View("Generate", model);
             }
@@ -177,8 +181,9 @@ namespace Cafe.Controllers
                     model.BranchId = managedBranchId.Value;
                 }
 
-                var results = await _salaryService.GenerateMonthlySalariesAsync(
+                var run = await _salaryService.GenerateMonthlySalariesAsync(
                     model.Year, model.Month, model.BranchId, GetCurrentUserId());
+                var results = run.Records;
 
                 int newCount = results.Count(r => r.GeneratedAt.Date == DateTime.Today);
 
@@ -193,6 +198,9 @@ namespace Cafe.Controllers
                     icon: "fas fa-calculator");
 
                 SetSuccessMessage($"Salary records generated successfully! {results.Count} total ({newCount} new). All records start as Draft.");
+                if (run.SkippedStaff.Count > 0)
+                    SetErrorMessage($"Skipped (no base salary configured): {string.Join(", ", run.SkippedStaff)}. " +
+                        "Set their salary on the staff profile, then generate again for this month.");
             }
             catch (Exception ex)
             {

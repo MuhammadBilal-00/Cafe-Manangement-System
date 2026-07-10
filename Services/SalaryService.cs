@@ -23,11 +23,14 @@ namespace Cafe.Services
         //  PREVIEW (read-only, no DB writes)
         // ================================================================
 
-        public async Task<List<SalaryRecord>> PreviewMonthlySalariesAsync(
+        public async Task<SalaryRunResult> PreviewMonthlySalariesAsync(
             int year, int month, int? branchId, int? generatedById)
         {
+            GuardNotFutureMonth(year, month);
+
             var staffList = await GetActiveStaffAsync(branchId);
             var previews = new List<SalaryRecord>();
+            var skipped = new List<string>();
 
             foreach (var staff in staffList)
             {
@@ -40,22 +43,31 @@ namespace Cafe.Services
                     continue;
                 }
 
+                if (!await HasConfiguredSalaryAsync(staff, year, month))
+                {
+                    skipped.Add(staff.User?.Name ?? $"Staff #{staff.Id}");
+                    continue;
+                }
+
                 var preview = await _calcService.CalculateSalaryAsync(staff, year, month, generatedById);
                 previews.Add(preview);
             }
 
-            return previews;
+            return new SalaryRunResult(previews, skipped);
         }
 
         // ================================================================
         //  GENERATE (writes to DB inside transaction)
         // ================================================================
 
-        public async Task<List<SalaryRecord>> GenerateMonthlySalariesAsync(
+        public async Task<SalaryRunResult> GenerateMonthlySalariesAsync(
             int year, int month, int? branchId, int? generatedById)
         {
+            GuardNotFutureMonth(year, month);
+
             var staffList = await GetActiveStaffAsync(branchId);
             var results = new List<SalaryRecord>();
+            var skipped = new List<string>();
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -68,6 +80,12 @@ namespace Cafe.Services
                     if (existing != null)
                     {
                         results.Add(existing);
+                        continue;
+                    }
+
+                    if (!await HasConfiguredSalaryAsync(staff, year, month))
+                    {
+                        skipped.Add(staff.User?.Name ?? $"Staff #{staff.Id}");
                         continue;
                     }
 
@@ -85,8 +103,24 @@ namespace Cafe.Services
                 throw;
             }
 
-            return results;
+            return new SalaryRunResult(results, skipped);
         }
+
+        /// <summary>
+        /// Payroll for a month nobody has worked yet would pay full base + attendance bonus
+        /// (zero recorded absences) — a month must have started before it can be run.
+        /// </summary>
+        private static void GuardNotFutureMonth(int year, int month)
+        {
+            var monthStart = new DateTime(year, month, 1);
+            if (monthStart > DateTime.Today)
+                throw new InvalidOperationException(
+                    $"Salaries for {monthStart:MMMM yyyy} can't be generated before the month begins.");
+        }
+
+        /// <summary>True when the staff member resolves to a real configured base salary.</summary>
+        private async Task<bool> HasConfiguredSalaryAsync(Staff staff, int year, int month)
+            => await _calcService.GetEffectiveBaseSalaryAsync(staff.Id, year, month) > 0;
 
         // ================================================================
         //  RECALCULATION (after adjustments, Draft only)
