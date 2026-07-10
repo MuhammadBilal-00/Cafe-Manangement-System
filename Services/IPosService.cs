@@ -21,6 +21,14 @@ namespace Cafe.Services
         /// <summary>Persist a Suspended (hold) or Draft order — no stock deduction, no invoice.</summary>
         Task<PosSaleResult> SaveHoldOrDraftAsync(PosSaleRequest req, string holdState, int? userId);
 
+        /// <summary>
+        /// Cancel an order together with its financial and stock side effects: void the unpaid
+        /// invoice, mirror-reverse its ledger journal, restock ingredients when the kitchen never
+        /// started, and free the table. Paid/partially-paid orders are refused — money already
+        /// taken must be refunded through a Sell Return, never silently voided.
+        /// </summary>
+        Task<(bool ok, string message)> CancelSaleAsync(int orderId, string? reason, int? userId, string userName);
+
         /// <summary>Resume a held/draft order back to Active and return it (with items) for the cart.</summary>
         Task<Order?> ResumeAsync(int orderId);
 
@@ -39,12 +47,13 @@ namespace Cafe.Services
         private readonly IBranchSettingService _branchSettings;
         private readonly ILoyaltyService _loyalty;
         private readonly IGiftCardService _giftCards;
+        private readonly IAccountingService _accounting;
         private readonly IMemoryCache _cache;
         private readonly ILogger<PosService> _logger;
 
         public PosService(ApplicationDbContext db, IInventoryService inventory, IInvoiceService invoices,
             IBranchSettingService branchSettings, ILoyaltyService loyalty, IGiftCardService giftCards,
-            IMemoryCache cache, ILogger<PosService> logger)
+            IAccountingService accounting, IMemoryCache cache, ILogger<PosService> logger)
         {
             _db = db;
             _inventory = inventory;
@@ -52,6 +61,7 @@ namespace Cafe.Services
             _branchSettings = branchSettings;
             _loyalty = loyalty;
             _giftCards = giftCards;
+            _accounting = accounting;
             _cache = cache;
             _logger = logger;
         }
@@ -227,6 +237,55 @@ namespace Cafe.Services
 
         private static bool IsUniqueViolation(DbUpdateException ex) =>
             ex.InnerException is Microsoft.Data.SqlClient.SqlException sql && (sql.Number == 2601 || sql.Number == 2627);
+
+        public async Task<(bool ok, string message)> CancelSaleAsync(int orderId, string? reason, int? userId, string userName)
+        {
+            var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order == null) return (false, "Order not found.");
+            if (order.Status == "Cancelled") return (true, "Order is already cancelled.");
+            if (order.Status == "Completed") return (false, "Completed orders can't be cancelled — process a Sell Return instead.");
+
+            var invoice = await _db.Invoices.Include(i => i.Payments).FirstOrDefaultAsync(i => i.OrderId == orderId);
+            if (invoice != null)
+            {
+                // Money already taken can't be silently voided — the refund (cash back, stock in,
+                // AR credit) belongs to the Sell Return flow where it is explicit and auditable.
+                if (invoice.PaymentStatus == "Paid" || invoice.Payments.Sum(p => p.Amount) > 0)
+                    return (false, "This bill has payments against it. Refund it through a Sell Return instead of cancelling.");
+
+                invoice.PaymentStatus = "Cancelled";
+                // If the nightly/manual auto-post already journaled this bill as a receivable,
+                // mirror-reverse it so the ledger nets to zero for this sale.
+                try { await _accounting.ReverseInvoiceJournalAsync(invoice.Id, userId); }
+                catch (Exception ex) { _logger.LogError(ex, "Invoice reversal failed for invoice {InvoiceId}", invoice.Id); }
+            }
+
+            // Ingredients come back only if the kitchen never started this ticket. Once cooking
+            // began they are physically consumed — the Order Usage ledger rows stay attributed
+            // to this order as traceable wastage.
+            var kitchenUntouched = order.KitchenStatus == "New";
+            var hadStockDeducted = await _db.InventoryTransactions
+                .AnyAsync(t => t.OrderId == orderId && t.TransactionType == "Order Usage");
+            if (kitchenUntouched && hadStockDeducted)
+                await _inventory.RestockOrderAsync(orderId, "Order cancelled before preparation", userName);
+
+            order.Status = "Cancelled";
+            OrderWorkflow.SyncKitchenFromOrder(order); // closes the ticket so the KDS drops it
+            if (!string.IsNullOrWhiteSpace(reason))
+                order.Notes = string.IsNullOrEmpty(order.Notes) ? $"Cancelled: {reason}" : $"{order.Notes}\nCancelled: {reason}";
+
+            // A cancelled dine-in frees its table for the next guests.
+            if (order.TableId.HasValue)
+                await _db.RestaurantTables.Where(t => t.Id == order.TableId.Value && t.Status == "Occupied")
+                    .ExecuteUpdateAsync(s => s.SetProperty(t => t.Status, "Available"));
+
+            await _db.SaveChangesAsync();
+
+            var details = !hadStockDeducted ? ""
+                : kitchenUntouched ? " Ingredients were returned to stock."
+                : " Ingredients already in preparation were recorded as wastage.";
+            return (true, $"Order cancelled.{(invoice != null ? " The bill was voided." : "")}{details}");
+        }
 
         public async Task<PosSaleResult> SaveHoldOrDraftAsync(PosSaleRequest req, string holdState, int? userId)
         {

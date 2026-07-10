@@ -20,16 +20,18 @@ namespace Cafe.Controllers
         private readonly ILogger<OrderController> _logger;
         private readonly IExportService _export;
         private readonly IKitchenService _kitchen;
+        private readonly IPosService _pos;
         private readonly Microsoft.AspNetCore.SignalR.IHubContext<Cafe.Hubs.KitchenHub> _kitchenHub;
 
         public OrderController(ApplicationDbContext context, INotificationService notificationService,
-            ILogger<OrderController> logger, IExportService export, IKitchenService kitchen,
+            ILogger<OrderController> logger, IExportService export, IKitchenService kitchen, IPosService pos,
             Microsoft.AspNetCore.SignalR.IHubContext<Cafe.Hubs.KitchenHub> kitchenHub) : base(context)
         {
             _notificationService = notificationService;
             _logger = logger;
             _export = export;
             _kitchen = kitchen;
+            _pos = pos;
             _kitchenHub = kitchenHub;
         }
 
@@ -371,19 +373,16 @@ namespace Cafe.Controllers
                     return Json(new { success = false, message = "Order not found or access denied" });
                 }
 
-                if (order.Status == "Completed")
+                // Cancellation is a business event, not a status flip: the service voids the
+                // unpaid bill, reverses its ledger journal, restocks un-cooked ingredients and
+                // frees the table — or refuses when money was already taken (Sell Return instead).
+                var (ok, message) = await _pos.CancelSaleAsync(order.Id, request.Reason,
+                    GetCurrentUserId(), HttpContext.Session.GetUserName() ?? "System");
+                if (!ok)
                 {
-                    return Json(new { success = false, message = "Cannot cancel completed orders" });
+                    return Json(new { success = false, message });
                 }
 
-                order.Status = "Cancelled";
-                // Close the kitchen ticket so the KDS drops it immediately (nothing to cook).
-                OrderWorkflow.SyncKitchenFromOrder(order);
-                order.Notes = string.IsNullOrEmpty(order.Notes)
-                    ? $"Cancelled: {request.Reason}"
-                    : $"{order.Notes}\nCancelled: {request.Reason}";
-
-                await _context.SaveChangesAsync();
                 await PushTicketToKdsAsync(order.Id, order.BranchId);
 
                 // Notification: order cancelled
@@ -396,7 +395,7 @@ namespace Cafe.Controllers
                     redirectUrl: $"/Order/Index",
                     icon: "fas fa-ban");
 
-                return Json(new { success = true, message = "Order cancelled successfully" });
+                return Json(new { success = true, message });
             }
             catch (Exception ex)
             {

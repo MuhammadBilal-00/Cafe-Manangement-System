@@ -19,6 +19,13 @@ namespace Cafe.Services
         /// <summary>Auto-post journals for the current tenant's unposted invoices &amp; expenses (idempotent).</summary>
         Task<int> AutoPostAsync(int? userId);
 
+        /// <summary>
+        /// Mirror-reverse the journal previously auto-posted for an invoice (used when an
+        /// invoiced order is cancelled before settlement). Idempotent: posts nothing if the
+        /// invoice was never journaled or was already reversed.
+        /// </summary>
+        Task<bool> ReverseInvoiceJournalAsync(int invoiceId, int? userId);
+
         Task<List<TrialRow>> TrialBalanceAsync(DateTime? from, DateTime? to);
         Task<PnL> ProfitAndLossAsync(DateTime from, DateTime to);
         Task<BalanceSheet> BalanceSheetAsync(DateTime asOf);
@@ -47,12 +54,32 @@ namespace Cafe.Services
                 BranchId = branchId, Date = date, Memo = memo, SourceType = sourceType, SourceId = sourceId,
                 Status = "Posted", CreatedById = userId, CreatedAt = DateTime.Now
             };
+            foreach (var l in list)
+                entry.Lines.Add(new JournalLine { AccountId = l.accountId, Debit = Math.Round(l.debit, 2), Credit = Math.Round(l.credit, 2), Description = l.desc });
+            // Header + lines land in ONE SaveChanges: a failure can't leave a posted entry
+            // with no lines behind (which would silently unbalance the trial balance).
             _db.JournalEntries.Add(entry);
             await _db.SaveChangesAsync();
-            foreach (var l in list)
-                _db.JournalLines.Add(new JournalLine { JournalEntryId = entry.Id, AccountId = l.accountId, Debit = Math.Round(l.debit, 2), Credit = Math.Round(l.credit, 2), Description = l.desc });
-            await _db.SaveChangesAsync();
             return entry;
+        }
+
+        public async Task<bool> ReverseInvoiceJournalAsync(int invoiceId, int? userId)
+        {
+            var original = await _db.JournalEntries.Include(j => j.Lines)
+                .FirstOrDefaultAsync(j => j.SourceType == "Invoice" && j.SourceId == invoiceId && j.Status == "Posted");
+            if (original == null) return false; // never journaled — nothing to undo
+
+            var alreadyReversed = await _db.JournalEntries
+                .AnyAsync(j => j.SourceType == "InvoiceReversal" && j.SourceId == invoiceId);
+            if (alreadyReversed) return false;
+
+            // Mirror image: swap every debit and credit so the net effect on all accounts is zero.
+            var lines = original.Lines
+                .Select(l => (l.AccountId, l.Credit, l.Debit, (string?)$"Reversal: {l.Description}"))
+                .ToList();
+            await PostJournalAsync(original.BranchId, DateTime.Now, $"Reversal of {original.Memo} (order cancelled)",
+                "InvoiceReversal", invoiceId, lines, userId);
+            return true;
         }
 
         public async Task<int> AutoPostAsync(int? userId)
@@ -70,8 +97,12 @@ namespace Cafe.Services
                     .Select(j => j.SourceId!.Value).ToListAsync()).ToHashSet();
 
             // ── Sales invoices: Dr Cash/AR, Cr Sales (+ Cr Tax Payable) ──
+            // Cancelled orders never reach the ledger (their invoices are voided on cancel;
+            // the Order.Status guard also covers rows cancelled before voiding existed).
             var doneInvSet = await DoneAsync("Invoice");
-            var invoices = await _db.Invoices.Where(i => i.PaymentStatus == "Paid" || i.PaymentStatus == "Pending").ToListAsync();
+            var invoices = await _db.Invoices
+                .Where(i => (i.PaymentStatus == "Paid" || i.PaymentStatus == "Pending") && i.Order.Status != "Cancelled")
+                .ToListAsync();
             foreach (var inv in invoices.Where(i => !doneInvSet.Contains(i.Id)))
             {
                 var net = Math.Round(inv.TotalAmount - inv.TaxAmount, 2);
@@ -84,6 +115,53 @@ namespace Cafe.Services
                 if (inv.TaxAmount > 0) lines.Add((TaxPay, 0, inv.TaxAmount, "Tax payable"));
                 await PostJournalAsync(inv.BranchId, inv.CreatedAt, $"Invoice {inv.InvoiceNumber}", "Invoice", inv.Id, lines, userId);
                 posted++;
+            }
+
+            // ── Customer payments that settle an on-account (AR) invoice: Dr Cash, Cr AR ──
+            // An invoice journaled while Pending debited AR for its full amount; the tenders
+            // that later settle it must move that balance into Cash or ledger-AR grows forever
+            // while the receivables screen (computed from Payments) says the customer is clear.
+            // Invoices journaled as Paid already debited Cash, so their tenders must NOT repost:
+            // only payments against AR-journaled invoices qualify.
+            var arInvoiceIds = (await _db.JournalLines
+                .Where(l => l.JournalEntry!.SourceType == "Invoice" && l.JournalEntry.SourceId != null
+                    && l.AccountId == AR && l.Debit > 0)
+                .Select(l => l.JournalEntry!.SourceId!.Value).ToListAsync()).ToHashSet();
+            if (arInvoiceIds.Count > 0)
+            {
+                var donePayments = await DoneAsync("Payment");
+                var arPayments = await _db.Payments
+                    .Where(p => arInvoiceIds.Contains(p.InvoiceId))
+                    .Select(p => new { p.Id, p.Amount, p.PaidAt, p.Method, p.Invoice.BranchId, p.Invoice.InvoiceNumber })
+                    .ToListAsync();
+                foreach (var p in arPayments.Where(x => !donePayments.Contains(x.Id) && x.Amount > 0))
+                {
+                    await PostJournalAsync(p.BranchId, p.PaidAt, $"Payment on {p.InvoiceNumber}", "Payment", p.Id,
+                        new List<(int, decimal, decimal, string?)>
+                        {
+                            (Cash, p.Amount, 0, p.Method),
+                            (AR, 0, p.Amount, $"Settles {p.InvoiceNumber}")
+                        }, userId);
+                    posted++;
+                }
+            }
+
+            // ── Paid salaries: Dr Payroll expense, Cr Cash — wages must reach the P&L ──
+            if (acc.TryGetValue("6100", out var Payroll))
+            {
+                var doneSal = await DoneAsync("Salary");
+                var paidSalaries = await _db.SalaryRecords.Where(s => s.PaymentStatus == "Paid").ToListAsync();
+                foreach (var s in paidSalaries.Where(x => !doneSal.Contains(x.Id) && x.FinalSalary > 0))
+                {
+                    await PostJournalAsync(s.BranchId, s.PaidDate ?? DateTime.Now,
+                        $"Salary {s.Year}-{s.Month:D2} (staff #{s.StaffId})", "Salary", s.Id,
+                        new List<(int, decimal, decimal, string?)>
+                        {
+                            (Payroll, s.FinalSalary, 0, $"Net pay {s.Year}-{s.Month:D2}"),
+                            (Cash, 0, s.FinalSalary, "Salary paid")
+                        }, userId);
+                    posted++;
+                }
             }
 
             // ── Approved expenses: Dr OpEx, Cr Cash ──
