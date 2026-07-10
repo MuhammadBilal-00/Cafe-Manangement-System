@@ -637,6 +637,10 @@ namespace Cafe.Data
                 .Property(i => i.ReorderLevel)
                 .HasPrecision(10, 2);
 
+            modelBuilder.Entity<InventoryItem>()
+                .Property(i => i.MinimumStock)
+                .HasPrecision(10, 2);
+
             modelBuilder.Entity<InventoryTransaction>()
                 .Property(it => it.Quantity)
                 .HasPrecision(10, 2);

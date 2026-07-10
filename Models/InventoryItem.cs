@@ -15,9 +15,12 @@ namespace Cafe.Models
         [StringLength(100)]
         public string Name { get; set; } = null!;
 
+        // Stock is measured in the item's Unit (kg, L, pcs, …) and may be fractional —
+        // recipes consume fractional amounts per serving, so an integer column would
+        // silently round every deduction (0.2 kg → 0) and drift from the transaction ledger.
         [Required]
-        [Range(0, int.MaxValue, ErrorMessage = "Quantity cannot be negative.")]
-        public int Quantity { get; set; }
+        [Range(0, double.MaxValue, ErrorMessage = "Quantity cannot be negative.")]
+        public decimal Quantity { get; set; }
 
         [Required]
         [StringLength(20)]
@@ -27,11 +30,11 @@ namespace Cafe.Models
         public int BranchId { get; set; }
 
         [Required]
-        [Range(0, int.MaxValue, ErrorMessage = "Reorder level cannot be negative.")]
-        public int ReorderLevel { get; set; }
+        [Range(0, double.MaxValue, ErrorMessage = "Reorder level cannot be negative.")]
+        public decimal ReorderLevel { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Minimum stock cannot be negative.")]
-        public int MinimumStock { get; set; } = 0;
+        [Range(0, double.MaxValue, ErrorMessage = "Minimum stock cannot be negative.")]
+        public decimal MinimumStock { get; set; } = 0;
 
         [StringLength(100)]
         public string? StorageLocation { get; set; }

@@ -247,6 +247,19 @@ namespace Cafe.Controllers
             var inventoryItem = await _context.InventoryItems.FindAsync(id);
             if (inventoryItem != null)
             {
+                // An item with movement history or references is part of the audit trail —
+                // deleting it would orphan the stock ledger, purchases and recipes. Block it;
+                // dead items are simply zeroed out and stop appearing in reorder reports.
+                var hasHistory = await _context.InventoryTransactions.AnyAsync(t => t.InventoryItemId == id)
+                    || await _context.Purchases.AnyAsync(p => p.ItemId == id)
+                    || await _context.InventoryRecipeMappings.AnyAsync(r => r.InventoryItemId == id);
+                if (hasHistory)
+                {
+                    TempData["Error"] = "This item has stock history, purchases or recipe links and cannot be deleted. " +
+                        "Adjust its quantity to 0 and remove its recipe links instead.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var itemName = inventoryItem.Name;
                 var itemBranch = inventoryItem.BranchId;
                 _context.InventoryItems.Remove(inventoryItem);
@@ -359,12 +372,11 @@ namespace Cafe.Controllers
             if (!CanAccessItem(inventoryItem))
                 return Json(new { success = false, message = "Access denied" });
 
-            int qty = (int)Math.Round(newQuantity, MidpointRounding.AwayFromZero);
-            if (qty < 0)
+            if (newQuantity < 0)
                 return Json(new { success = false, message = "Quantity cannot be negative." });
 
             var performedBy = HttpContext.Session.GetUserName() ?? "System";
-            var adjusted = await _inventoryService.AdjustStockAsync(id, qty, reason, performedBy);
+            var adjusted = await _inventoryService.AdjustStockAsync(id, newQuantity, reason, performedBy);
             if (!adjusted)
                 return Json(new { success = false, message = "Stock adjustment failed." });
 
