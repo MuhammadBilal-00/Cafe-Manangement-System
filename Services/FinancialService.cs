@@ -10,6 +10,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cafe.Services
 {
+    /// <summary>
+    /// Operational P&amp;L for the financial dashboard. Revenue is recognized from INVOICES
+    /// (net of discounts, before tax) — the financial document created the moment a sale is
+    /// finalized — not from the order's kitchen status. A paid ticket still being cooked is
+    /// revenue; a cancelled order (whose invoice is voided) never is. This keeps the dashboard
+    /// consistent with Receivables and the accounting auto-post, which read the same documents.
+    /// </summary>
     public class FinancialService : IFinancialService
     {
         private readonly ApplicationDbContext _context;
@@ -19,6 +26,10 @@ namespace Cafe.Services
             _context = context;
         }
 
+        /// <summary>Invoices that count as sales: everything not voided/declined.</summary>
+        private IQueryable<Invoice> RecognizedInvoices() =>
+            _context.Invoices.Where(i => i.PaymentStatus != "Cancelled" && i.PaymentStatus != "Failed");
+
         public async Task<FinancialDashboardViewModel> GetDashboardAsync(int year, int month, int? branchId)
         {
             var startDate = new DateTime(year, month, 1);
@@ -26,67 +37,59 @@ namespace Cafe.Services
 
             var branches = await _context.Branches.Where(b => b.IsActive).ToListAsync();
 
-            // Revenue from completed orders
-            var ordersQuery = _context.Orders
-                .Where(o => o.OrderDate >= startDate && o.OrderDate < endDate && o.Status == "Completed");
+            // ── Whole-month aggregates, one grouped query per source ──
+            var revenueByBranch = await RecognizedInvoices()
+                .Where(i => i.CreatedAt >= startDate && i.CreatedAt < endDate)
+                .GroupBy(i => i.BranchId)
+                .Select(g => new
+                {
+                    BranchId = g.Key,
+                    Net = g.Sum(i => i.Subtotal - i.PromoDiscount - i.PartnershipDiscount),
+                    Count = g.Count()
+                })
+                .ToDictionaryAsync(x => x.BranchId, x => new { x.Net, x.Count });
 
-            // Salary expense from salary records
-            var salaryQuery = _context.SalaryRecords
-                .Where(sr => sr.Year == year && sr.Month == month);
+            var cogsByBranch = await CogsByBranchAsync(startDate, endDate);
 
-            // Expenses
-            var expenseQuery = _context.Expenses
-                .Where(e => e.ExpenseDate >= startDate && e.ExpenseDate < endDate && e.ApprovalStatus == "Approved");
+            var salaryByBranch = await _context.SalaryRecords
+                .Where(sr => sr.Year == year && sr.Month == month)
+                .GroupBy(sr => sr.BranchId)
+                .Select(g => new { BranchId = g.Key, V = g.Sum(x => x.FinalSalary) })
+                .ToDictionaryAsync(x => x.BranchId, x => x.V);
 
-            if (branchId.HasValue)
-            {
-                ordersQuery = ordersQuery.Where(o => o.BranchId == branchId.Value);
-                salaryQuery = salaryQuery.Where(sr => sr.BranchId == branchId.Value);
-                expenseQuery = expenseQuery.Where(e => e.BranchId == branchId.Value);
-            }
+            var expenseByBranch = await _context.Expenses
+                .Where(e => e.ExpenseDate >= startDate && e.ExpenseDate < endDate && e.ApprovalStatus == "Approved")
+                .GroupBy(e => e.BranchId)
+                .Select(g => new { BranchId = g.Key, V = g.Sum(x => x.Amount) })
+                .ToDictionaryAsync(x => x.BranchId, x => x.V);
 
-            var totalRevenue = await ordersQuery.SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
-            var totalSalaryExpense = await salaryQuery.SumAsync(sr => (decimal?)sr.FinalSalary) ?? 0;
-            var totalOtherExpenses = await expenseQuery.SumAsync(e => (decimal?)e.Amount) ?? 0;
-            var totalCogs = await GetCogsAsync(startDate, endDate, branchId);
-
-            // Branch-level summaries
-            var branchSummaries = new List<BranchFinancialSummary>();
             var targetBranches = branchId.HasValue
                 ? branches.Where(b => b.Id == branchId.Value).ToList()
                 : branches;
 
-            foreach (var branch in targetBranches)
+            var branchSummaries = targetBranches.Select(branch =>
             {
-                var branchRevenue = await _context.Orders
-                    .Where(o => o.BranchId == branch.Id && o.OrderDate >= startDate && o.OrderDate < endDate && o.Status == "Completed")
-                    .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
-
-                var branchSalary = await _context.SalaryRecords
-                    .Where(sr => sr.BranchId == branch.Id && sr.Year == year && sr.Month == month)
-                    .SumAsync(sr => (decimal?)sr.FinalSalary) ?? 0;
-
-                var branchExpenses = await _context.Expenses
-                    .Where(e => e.BranchId == branch.Id && e.ExpenseDate >= startDate && e.ExpenseDate < endDate && e.ApprovalStatus == "Approved")
-                    .SumAsync(e => (decimal?)e.Amount) ?? 0;
-
-                var branchOrders = await _context.Orders
-                    .CountAsync(o => o.BranchId == branch.Id && o.OrderDate >= startDate && o.OrderDate < endDate && o.Status == "Completed");
-
-                var branchCogs = await GetCogsAsync(startDate, endDate, branch.Id);
-
-                branchSummaries.Add(new BranchFinancialSummary
+                var rev = revenueByBranch.TryGetValue(branch.Id, out var r) ? r : null;
+                var cogs = cogsByBranch.GetValueOrDefault(branch.Id);
+                var sal = salaryByBranch.GetValueOrDefault(branch.Id);
+                var exp = expenseByBranch.GetValueOrDefault(branch.Id);
+                return new BranchFinancialSummary
                 {
                     BranchId = branch.Id,
                     BranchName = branch.Name,
-                    Revenue = branchRevenue,
-                    CostOfGoodsSold = branchCogs,
-                    SalaryExpense = branchSalary,
-                    OtherExpenses = branchExpenses,
-                    NetProfit = branchRevenue - branchCogs - branchSalary - branchExpenses,
-                    TotalOrders = branchOrders
-                });
-            }
+                    Revenue = rev?.Net ?? 0,
+                    CostOfGoodsSold = cogs,
+                    SalaryExpense = sal,
+                    OtherExpenses = exp,
+                    NetProfit = (rev?.Net ?? 0) - cogs - sal - exp,
+                    TotalOrders = rev?.Count ?? 0
+                };
+            }).ToList();
+
+            var totalRevenue = branchSummaries.Sum(b => b.Revenue);
+            var totalCogs = branchSummaries.Sum(b => b.CostOfGoodsSold);
+            var totalSalaryExpense = branchSummaries.Sum(b => b.SalaryExpense);
+            var totalOtherExpenses = branchSummaries.Sum(b => b.OtherExpenses);
 
             // Expense breakdown by category
             var expenseCategories = await _context.Expenses
@@ -119,49 +122,64 @@ namespace Cafe.Services
             };
         }
 
-        // Cost of goods sold: sum of (quantity * MenuItem.CostPrice) for completed orders in range.
-        private async Task<decimal> GetCogsAsync(DateTime startDate, DateTime endDate, int? branchId)
+        // Cost of goods sold per branch: Σ(quantity × MenuItem.CostPrice) over the order lines
+        // of invoiced (recognized) sales in the range.
+        private async Task<Dictionary<int, decimal>> CogsByBranchAsync(DateTime startDate, DateTime endDate)
         {
-            var query = _context.OrderItems
-                .Include(oi => oi.MenuItem)
-                .Include(oi => oi.Order)
-                .Where(oi => oi.Order.OrderDate >= startDate && oi.Order.OrderDate < endDate && oi.Order.Status == "Completed");
-
-            if (branchId.HasValue)
-                query = query.Where(oi => oi.Order.BranchId == branchId.Value);
-
-            return await query.SumAsync(oi => (decimal?)(oi.Quantity * oi.MenuItem.CostPrice)) ?? 0;
+            return await _context.OrderItems
+                .Where(oi => _context.Invoices.Any(i => i.OrderId == oi.OrderId
+                    && i.PaymentStatus != "Cancelled" && i.PaymentStatus != "Failed"
+                    && i.CreatedAt >= startDate && i.CreatedAt < endDate))
+                .GroupBy(oi => oi.Order.BranchId)
+                .Select(g => new { BranchId = g.Key, V = g.Sum(oi => oi.Quantity * oi.MenuItem.CostPrice) })
+                .ToDictionaryAsync(x => x.BranchId, x => x.V);
         }
 
         public async Task<List<MonthlyTrendItem>> GetMonthlyTrendsAsync(int year, int? branchId)
         {
-            var trends = new List<MonthlyTrendItem>();
+            var yearStart = new DateTime(year, 1, 1);
+            var yearEnd = yearStart.AddYears(1);
 
+            // One grouped query per source for the whole year (previously 4 queries × 12 months).
+            var revenueByMonth = await RecognizedInvoices()
+                .Where(i => i.CreatedAt >= yearStart && i.CreatedAt < yearEnd)
+                .Where(i => !branchId.HasValue || i.BranchId == branchId.Value)
+                .GroupBy(i => i.CreatedAt.Month)
+                .Select(g => new { Month = g.Key, V = g.Sum(i => i.Subtotal - i.PromoDiscount - i.PartnershipDiscount) })
+                .ToDictionaryAsync(x => x.Month, x => x.V);
+
+            var cogsByMonth = await _context.OrderItems
+                .Where(oi => _context.Invoices.Any(i => i.OrderId == oi.OrderId
+                    && i.PaymentStatus != "Cancelled" && i.PaymentStatus != "Failed"
+                    && i.CreatedAt >= yearStart && i.CreatedAt < yearEnd
+                    && (!branchId.HasValue || i.BranchId == branchId.Value)))
+                .GroupBy(oi => oi.Order.OrderDate.Month)
+                .Select(g => new { Month = g.Key, V = g.Sum(oi => oi.Quantity * oi.MenuItem.CostPrice) })
+                .ToDictionaryAsync(x => x.Month, x => x.V);
+
+            var salaryByMonth = await _context.SalaryRecords
+                .Where(sr => sr.Year == year)
+                .Where(sr => !branchId.HasValue || sr.BranchId == branchId.Value)
+                .GroupBy(sr => sr.Month)
+                .Select(g => new { Month = g.Key, V = g.Sum(x => x.FinalSalary) })
+                .ToDictionaryAsync(x => x.Month, x => x.V);
+
+            var expenseByMonth = await _context.Expenses
+                .Where(e => e.ExpenseDate >= yearStart && e.ExpenseDate < yearEnd && e.ApprovalStatus == "Approved")
+                .Where(e => !branchId.HasValue || e.BranchId == branchId.Value)
+                .GroupBy(e => e.ExpenseDate.Month)
+                .Select(g => new { Month = g.Key, V = g.Sum(x => x.Amount) })
+                .ToDictionaryAsync(x => x.Month, x => x.V);
+
+            var trends = new List<MonthlyTrendItem>();
             for (int m = 1; m <= 12; m++)
             {
-                var start = new DateTime(year, m, 1);
-                var end = start.AddMonths(1);
+                if (new DateTime(year, m, 1) > DateTime.Now) break;
 
-                if (start > DateTime.Now) break;
-
-                var revenueQuery = _context.Orders
-                    .Where(o => o.OrderDate >= start && o.OrderDate < end && o.Status == "Completed");
-                var salaryQuery = _context.SalaryRecords
-                    .Where(sr => sr.Year == year && sr.Month == m);
-                var expenseQuery = _context.Expenses
-                    .Where(e => e.ExpenseDate >= start && e.ExpenseDate < end && e.ApprovalStatus == "Approved");
-
-                if (branchId.HasValue)
-                {
-                    revenueQuery = revenueQuery.Where(o => o.BranchId == branchId.Value);
-                    salaryQuery = salaryQuery.Where(sr => sr.BranchId == branchId.Value);
-                    expenseQuery = expenseQuery.Where(e => e.BranchId == branchId.Value);
-                }
-
-                var rev = await revenueQuery.SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
-                var sal = await salaryQuery.SumAsync(sr => (decimal?)sr.FinalSalary) ?? 0;
-                var exp = await expenseQuery.SumAsync(e => (decimal?)e.Amount) ?? 0;
-                var cogs = await GetCogsAsync(start, end, branchId);
+                var rev = revenueByMonth.GetValueOrDefault(m);
+                var cogs = cogsByMonth.GetValueOrDefault(m);
+                var sal = salaryByMonth.GetValueOrDefault(m);
+                var exp = expenseByMonth.GetValueOrDefault(m);
 
                 trends.Add(new MonthlyTrendItem
                 {

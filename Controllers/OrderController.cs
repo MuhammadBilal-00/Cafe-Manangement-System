@@ -160,6 +160,11 @@ namespace Cafe.Controllers
                 return NotFound();
             }
 
+            // The invoice is the financial truth for this order (discounts, tax, final total).
+            // Holds/drafts have none yet — they show the running item total with zero tax.
+            var invoice = await _context.Invoices
+                .FirstOrDefaultAsync(i => i.OrderId == order.Id);
+
             var orderDetails = new
             {
                 id = order.Id,
@@ -182,13 +187,13 @@ namespace Cafe.Controllers
                     subtotal = oi.Quantity * oi.Price,
                     description = oi.MenuItem.Description
                 }).ToList(),
-                // No tax/service charge is actually applied anywhere in order creation —
-                // subtotal must equal totalAmount so the receipt math is never inconsistent
-                // with what was actually charged.
-                subtotal = order.TotalAmount,
-                tax = 0m,
-                serviceCharge = 0m,
-                totalAmount = order.TotalAmount
+                subtotal = invoice?.Subtotal ?? order.TotalAmount,
+                discount = invoice?.TotalDiscount ?? 0m,
+                tax = invoice?.TaxAmount ?? 0m,
+                serviceCharge = (invoice?.PackingCharge ?? 0m) + (invoice?.ShippingCharge ?? 0m),
+                totalAmount = invoice?.TotalAmount ?? order.TotalAmount,
+                invoiceNumber = invoice?.InvoiceNumber,
+                paymentStatus = invoice?.PaymentStatus
             };
 
             return Json(orderDetails);

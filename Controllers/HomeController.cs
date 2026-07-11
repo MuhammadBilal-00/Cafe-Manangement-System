@@ -67,17 +67,24 @@ namespace Cafe.Controllers
                 menuItemQuery = menuItemQuery.Where(m => m.BranchId == scopedBranchId.Value);
             var totalMenuItems = await menuItemQuery.CountAsync();
 
-            var completedOrderQuery = orderQuery.Where(o => o.Status == "Completed");
-            var averageOrderValue = await completedOrderQuery
-                .AverageAsync(o => (double?)o.TotalAmount) ?? 0;
+            // Revenue is recognized from invoices (net of discounts, before tax) — the moment
+            // of sale — not from the order's kitchen progress. A paid ticket still being
+            // cooked counts; a cancelled (voided) one never does.
+            var invoiceQuery = _context.Invoices
+                .Where(i => i.PaymentStatus != "Cancelled" && i.PaymentStatus != "Failed");
+            if (scopedBranchId.HasValue)
+                invoiceQuery = invoiceQuery.Where(i => i.BranchId == scopedBranchId.Value);
+
+            var averageOrderValue = await invoiceQuery
+                .AverageAsync(i => (double?)(i.Subtotal - i.PromoDiscount - i.PartnershipDiscount)) ?? 0;
 
             // Monthly revenue (last 12 months) scoped
             var twelveMonthsAgo = DateTime.Today.AddMonths(-11).Date;
             twelveMonthsAgo = new DateTime(twelveMonthsAgo.Year, twelveMonthsAgo.Month, 1);
-            var monthlyRevenue = await completedOrderQuery
-                .Where(o => o.OrderDate >= twelveMonthsAgo)
-                .GroupBy(o => new { o.OrderDate.Year, o.OrderDate.Month })
-                .Select(g => new { g.Key.Year, g.Key.Month, Revenue = g.Sum(o => (decimal?)o.TotalAmount) ?? 0m })
+            var monthlyRevenue = await invoiceQuery
+                .Where(i => i.CreatedAt >= twelveMonthsAgo)
+                .GroupBy(i => new { i.CreatedAt.Year, i.CreatedAt.Month })
+                .Select(g => new { g.Key.Year, g.Key.Month, Revenue = g.Sum(i => (decimal?)(i.Subtotal - i.PromoDiscount - i.PartnershipDiscount)) ?? 0m })
                 .OrderBy(g => g.Year).ThenBy(g => g.Month)
                 .ToListAsync();
 
@@ -126,29 +133,42 @@ namespace Cafe.Controllers
                 .Take(5)
                 .ToListAsync();
 
-            // Recent orders scoped
+            // Recent orders scoped. Left-join the customer: most POS sales are walk-ins
+            // (CustomerId null) and an inner join silently hid them from the feed.
             var recentOrders = await orderQuery
                 .OrderByDescending(o => o.OrderDate)
                 .Take(5)
-                .Join(_context.Users,
-                    order => order.CustomerId,
-                    user => user.Id,
-                    (order, user) => new
-                    {
-                        order.OrderNumber,
-                        CustomerName = user.Name,
-                        order.TotalAmount,
-                        order.Status
-                    })
+                .Select(o => new
+                {
+                    o.OrderNumber,
+                    CustomerName = o.Customer != null ? o.Customer.Name : "Walk-In",
+                    o.TotalAmount,
+                    o.Status
+                })
                 .ToListAsync();
+
+            // "Popular" means actually sold: top items by units in the last 30 days. A brand-new
+            // branch with no sales yet falls back to the first available items.
+            var thirtyDaysAgo = DateTime.Today.AddDays(-30);
+            var popularItemIds = await _context.OrderItems
+                .Where(oi => oi.Order.OrderDate >= thirtyDaysAgo && oi.Order.Status != "Cancelled")
+                .Where(oi => !scopedBranchId.HasValue || oi.Order.BranchId == scopedBranchId.Value)
+                .GroupBy(oi => oi.MenuItemId)
+                .OrderByDescending(g => g.Sum(x => x.Quantity))
+                .Take(6)
+                .Select(g => g.Key)
+                .ToListAsync();
+
+            var popularItems = popularItemIds.Count > 0
+                ? (await menuItemQuery.Include(m => m.Category)
+                        .Where(m => popularItemIds.Contains(m.Id)).ToListAsync())
+                    .OrderBy(m => popularItemIds.IndexOf(m.Id)).ToList()
+                : await menuItemQuery.Include(m => m.Category).Take(6).ToListAsync();
 
             var dashboardData = new
             {
                 TotalBranches = totalBranches,
-                PopularItems = await menuItemQuery
-                    .Include(m => m.Category)
-                    .Take(6)
-                    .ToListAsync(),
+                PopularItems = popularItems,
                 Branches = await branchQuery.ToListAsync()
             };
 

@@ -262,7 +262,14 @@
                         <p><strong>Date:</strong> ${o.orderDate}</p>
                     </div>
                     <div style="margin-top:1rem;"><strong>Items:</strong>${itemsHtml}</div>
-                    <div style="margin-top:0.75rem;text-align:right;font-size:1.1rem;font-weight:700;color:var(--accent);">Total: ${money(o.totalAmount)}</div>
+                    <div style="margin-top:0.75rem;text-align:right;font-size:0.9rem;color:var(--text-secondary);">
+                        <div>Subtotal: ${money(o.subtotal)}</div>
+                        ${o.discount > 0 ? `<div>Discount: −${money(o.discount)}</div>` : ''}
+                        ${o.serviceCharge > 0 ? `<div>Charges: ${money(o.serviceCharge)}</div>` : ''}
+                        ${o.tax > 0 ? `<div>Tax: ${money(o.tax)}</div>` : ''}
+                    </div>
+                    <div style="margin-top:0.35rem;text-align:right;font-size:1.1rem;font-weight:700;color:var(--accent);">Total: ${money(o.totalAmount)}</div>
+                    ${o.invoiceNumber ? `<div style="text-align:right;font-size:0.8rem;color:var(--text-tertiary);">Bill ${escapeHtml(o.invoiceNumber)} · ${escapeHtml(o.paymentStatus || '')}</div>` : ''}
                     ${o.notes ? `<p style="margin-top:0.5rem;color:var(--text-tertiary);font-size:0.85rem;"><strong>Notes:</strong> ${escapeHtml(o.notes)}</p>` : ''}
                 `;
                 openModal('viewOrderModal');

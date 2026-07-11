@@ -57,10 +57,15 @@ namespace Cafe.Controllers
             var filtered = query
                 .Where(o => o.OrderDate >= start && o.OrderDate < end);
 
-            var completed = filtered.Where(o => o.Status == "Completed");
+            // Revenue = invoiced sales (net of discounts, before tax), regardless of kitchen
+            // progress. Cancelled orders have voided invoices, so they drop out here naturally.
+            var invoiced = _context.Invoices
+                .Where(i => i.PaymentStatus != "Cancelled" && i.PaymentStatus != "Failed")
+                .Where(i => i.CreatedAt >= start && i.CreatedAt < end)
+                .Where(i => !effectiveBranchId.HasValue || i.BranchId == effectiveBranchId.Value);
 
-            var totalRevenue = await completed.SumAsync(o => (decimal?)o.TotalAmount) ?? 0m;
-            var totalOrders = await completed.CountAsync();
+            var totalRevenue = await invoiced.SumAsync(i => (decimal?)(i.Subtotal - i.PromoDiscount - i.PartnershipDiscount)) ?? 0m;
+            var totalOrders = await invoiced.CountAsync();
             var averageOrderValue = totalOrders == 0 ? 0m : totalRevenue / totalOrders;
 
             // recent orders for table (limit)
@@ -74,12 +79,12 @@ namespace Cafe.Controllers
                 : null;
 
             // ==== ANALYTICS: revenue by day ====
-            var daily = await completed
-                .GroupBy(o => o.OrderDate.Date)
+            var daily = await invoiced
+                .GroupBy(i => i.CreatedAt.Date)
                 .Select(g => new
                 {
                     Date = g.Key,
-                    Revenue = g.Sum(o => (decimal?)o.TotalAmount) ?? 0m,
+                    Revenue = g.Sum(i => (decimal?)(i.Subtotal - i.PromoDiscount - i.PartnershipDiscount)) ?? 0m,
                     Orders = g.Count()
                 })
                 .OrderBy(g => g.Date)
@@ -98,14 +103,16 @@ namespace Cafe.Controllers
                 .OrderByDescending(x => x.Count)
                 .ToListAsync();
 
-            // ==== ANALYTICS: top items ====
+            // ==== ANALYTICS: top items ==== (lines of invoiced sales, same recognition rule)
             var topItems = await _context.OrderItems
                 .Include(oi => oi.Order)
                 .Include(oi => oi.MenuItem)
                 .ThenInclude(m => m.Category)
                 .Where(oi => oi.Order.OrderDate >= start
                              && oi.Order.OrderDate < end
-                             && oi.Order.Status == "Completed")
+                             && oi.Order.Status != "Cancelled"
+                             && _context.Invoices.Any(i => i.OrderId == oi.OrderId
+                                 && i.PaymentStatus != "Cancelled" && i.PaymentStatus != "Failed"))
                 // respect same branch filter
                 .Where(oi => !effectiveBranchId.HasValue || oi.Order.BranchId == effectiveBranchId.Value)
                 .GroupBy(oi => oi.MenuItem)
@@ -126,7 +133,9 @@ namespace Cafe.Controllers
                 .Select(g => new
                 {
                     Branch = g.Key,
-                    Revenue = g.Where(o => o.Status == "Completed")
+                    Revenue = g.Where(o => o.Status != "Cancelled"
+                                   && _context.Invoices.Any(i => i.OrderId == o.Id
+                                       && i.PaymentStatus != "Cancelled" && i.PaymentStatus != "Failed"))
                                .Sum(o => (decimal?)o.TotalAmount) ?? 0m,
                     Orders = g.Count()
                 })
@@ -156,7 +165,7 @@ namespace Cafe.Controllers
 
         // ===== helpers =====
 
-        // Wide default so dummy data shows (last 12 months)
+        // Default window = the last 12 months, so a first visit shows meaningful history.
         private (DateTime start, DateTime end) GetDateRangeOrDefault(DateTime? from, DateTime? to)
         {
             var today = DateTime.Today;
@@ -254,7 +263,8 @@ namespace Cafe.Controllers
             var filtered = baseQuery
                 .Where(o => o.OrderDate >= start && o.OrderDate < end);
 
-            // group by branch (orders)
+            // group by branch (orders). Revenue counts invoiced (non-voided) sales — the same
+            // recognition rule as the sales overview and the financial dashboard.
             var grouped = await filtered
                 .GroupBy(o => o.Branch)
                 .Select(g => new
@@ -262,9 +272,13 @@ namespace Cafe.Controllers
                     Branch = g.Key,
                     TotalOrders = g.Count(),
                     CompletedOrders = g.Count(o => o.Status == "Completed"),
-                    Revenue = g.Where(o => o.Status == "Completed")
+                    Revenue = g.Where(o => o.Status != "Cancelled"
+                                   && _context.Invoices.Any(i => i.OrderId == o.Id
+                                       && i.PaymentStatus != "Cancelled" && i.PaymentStatus != "Failed"))
                                .Sum(o => (decimal?)o.TotalAmount) ?? 0m,
-                    AvgOrderValue = g.Where(o => o.Status == "Completed")
+                    AvgOrderValue = g.Where(o => o.Status != "Cancelled"
+                                   && _context.Invoices.Any(i => i.OrderId == o.Id
+                                       && i.PaymentStatus != "Cancelled" && i.PaymentStatus != "Failed"))
                                      .Average(o => (decimal?)o.TotalAmount) ?? 0m
                 })
                 .OrderByDescending(x => x.Revenue)
@@ -450,10 +464,10 @@ namespace Cafe.Controllers
                 ws.Cell(row, 10).Value = r.OrderCount;
                 ws.Cell(row, 11).Value = r.IsAvailable ? "Active" : "Inactive";
 
-                ws.Cell(row, 4).Style.NumberFormat.Format = "$#,##0.00";
-                ws.Cell(row, 5).Style.NumberFormat.Format = "$#,##0.00";
-                ws.Cell(row, 7).Style.NumberFormat.Format = "$#,##0.00";
-                ws.Cell(row, 8).Style.NumberFormat.Format = "$#,##0.00";
+                ws.Cell(row, 4).Style.NumberFormat.Format = "\"Rs. \"#,##0.00";
+                ws.Cell(row, 5).Style.NumberFormat.Format = "\"Rs. \"#,##0.00";
+                ws.Cell(row, 7).Style.NumberFormat.Format = "\"Rs. \"#,##0.00";
+                ws.Cell(row, 8).Style.NumberFormat.Format = "\"Rs. \"#,##0.00";
                 ws.Cell(row, 9).Style.NumberFormat.Format = "0.0\"%\"";
                 row++;
             }
