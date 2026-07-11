@@ -55,8 +55,12 @@ namespace Cafe.Controllers
 
             var purchases = await query.OrderByDescending(p => p.CreatedAt).Take(100).ToListAsync();
 
-            // Single aggregated query for KPI status counts — more efficient and consistent than 4 separate COUNT calls.
-            var statusCounts = await _context.Purchases
+            // Single aggregated query for KPI status counts — scoped to the same branches as
+            // the list below, so a branch manager's tiles never count other branches' orders.
+            var countQuery = _context.Purchases.AsQueryable();
+            if (effectiveBranchId.HasValue)
+                countQuery = countQuery.Where(p => p.BranchId == effectiveBranchId.Value || p.Item.BranchId == effectiveBranchId.Value);
+            var statusCounts = await countQuery
                 .GroupBy(p => p.Status)
                 .Select(g => new { Status = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Status, x => x.Count);

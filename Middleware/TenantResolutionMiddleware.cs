@@ -75,8 +75,10 @@ namespace Cafe.Middleware
                 }
             }
 
-            // 6 — no tenant resolved: leave filter bypassed (login/public). Data endpoints are
-            //     still gated by AuthenticationMiddleware, so this never leaks tenant data.
+            // 6 — no tenant resolved (login/public pages): FAIL CLOSED. SetTenant(null, false)
+            //     keeps the query filter active with no matching tenant, so tenant-owned data
+            //     is invisible rather than exposed; AuthenticationMiddleware additionally gates
+            //     every data endpoint.
             tenantContext.SetTenant(null, isPlatformAdmin: false);
             await _next(context);
         }

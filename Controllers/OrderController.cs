@@ -309,15 +309,27 @@ namespace Cafe.Controllers
                 if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Phone))
                     return Json(new { success = false, message = "Name and Phone are required." });
 
-                // Check for existing user with same phone
-                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Phone == request.Phone);
+                // Uniqueness is a per-tenant business rule. User rows are NOT tenant-filtered
+                // (nullable TenantId), so an unscoped phone check would both leak other
+                // tenants' customers and wrongly block this tenant from using the number.
+                var tenantId = HttpContext.Session.GetTenantId();
+                var existingUser = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Phone == request.Phone && u.TenantId == tenantId);
                 if (existingUser != null)
                     return Json(new { success = false, message = "A user with this phone number already exists." });
+
+                // Synthetic emails carry the tenant id: User.Email is GLOBALLY unique, so a bare
+                // "<phone>@customer.local" would collide when two tenants share a phone number.
+                var email = string.IsNullOrWhiteSpace(request.Email)
+                    ? $"{request.Phone}@t{tenantId ?? 0}.customer.local"
+                    : request.Email;
+                if (await _context.Users.AnyAsync(u => u.Email == email))
+                    return Json(new { success = false, message = "A user with this email already exists." });
 
                 var user = new User
                 {
                     Name = request.Name,
-                    Email = request.Email ?? $"{request.Phone}@customer.local",
+                    Email = email,
                     Phone = request.Phone,
                     Role = "Customer",
                     PasswordHash = null, // data-only record — customers never log in
