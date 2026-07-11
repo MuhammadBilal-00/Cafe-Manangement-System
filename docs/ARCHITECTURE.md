@@ -164,12 +164,19 @@ Everything above is **tenant-scoped automatically** (Phase 0 filter) and **audit
 
 ## 6. Correctness patterns used throughout
 
-- **Atomic money/stock** — conditional SQL updates inside transactions; no read-modify-write races on quantity or balance.
-- **Idempotency** — client refs on sales; unique `(TenantId, SourceType, SourceId)` on auto-posted journals; one loyalty earn per invoice; "seed only if empty" in the demo seeder.
+- **Atomic money/stock** — conditional SQL updates inside transactions; no read-modify-write races on quantity or balance. This covers inventory *and* gift-card balances, loyalty points and promo usage counters.
+- **Decimal stock** — `InventoryItem.Quantity` is `decimal(10,2)`: recipes consume fractional amounts (0.25 kg per serving) and every deduction matches the `InventoryTransaction` ledger exactly.
+- **Capped tenders** — every POS tender is capped at the amount still due. A gift card can never be redeemed past the bill (no cash-out through the register) and cash change is returned, not booked — `Payments` never exceed the invoice total, so receivables can't go negative and takings reports never overstate.
+- **Compensation on failure** — if checkout fails after stock was deducted, the deduction is reversed from the ledger and the cart is kept as a retryable draft. Stock is never silently lost.
+- **Cancellation is a business event** — `IPosService.CancelSaleAsync` voids the unpaid invoice, mirror-reverses its journal if already auto-posted, restocks ingredients only when the kitchen never started (started = traceable wastage), frees the table and closes the KDS ticket. **Paid/partially-paid orders are refused** — taken money is refunded through a Sell Return, never silently voided.
+- **Revenue recognition** — every dashboard/report recognizes revenue from **invoices** (net of discounts, before tax), not from the order's kitchen status. A paid ticket still being cooked is revenue; a cancelled (voided) one never is. Order-status counts remain purely operational metrics.
+- **Idempotency** — client refs on sales; unique `(TenantId, SourceType, SourceId)` on auto-posted journals; one loyalty earn per invoice; "seed only if empty" in the demo seeder. Order/invoice numbers regenerate-and-retry on a concurrent unique-index clash.
 - **Server-authoritative pricing** — the register never trusts client totals; the server recomputes from the menu, modifiers, combos, promos and tax.
-- **Double-entry integrity** — journals must balance or they don't post.
-- **Provider abstractions** — `IBillingProvider` (Manual/Stripe), `ITaxInvoiceProvider` (Null/PakFbr), `ISmsProvider` (logging stub) — swap a real gateway without touching callers.
+- **Double-entry integrity** — journals must balance or they don't post; header + lines land in one `SaveChanges`. The auto-post closes the full loop: sales (Cash/AR), **customer payments that settle AR** (Dr Cash / Cr AR), expenses, purchases, supplier payments, both return directions, and **paid salaries** (Dr Payroll / Cr Cash).
+- **Payroll guards** — a staff member with no configured base salary is skipped and reported, never paid an invented amount; payroll cannot run for a month that hasn't begun.
+- **Provider abstractions** — `IBillingProvider` (Manual/Stripe), `ITaxInvoiceProvider` (Null/PakFbr), `ISmsProvider` (logging stub) — swap a real gateway without touching callers. The payment webhook requires the `X-Tenant` header (or a tenant subdomain) and authenticates with a constant-time shared-secret comparison.
 - **Additive migrations** — one per phase, never destructive; new non-null columns get sensible defaults behind check constraints.
+- **Connected modules** — sales deductions raise a low-stock alert the moment an item *crosses* its reorder/minimum threshold (one actionable ping for purchasing, no spam); staff quick-expenses enter the approval queue; deleting inventory with movement history is blocked to protect the audit trail.
 
 ---
 
