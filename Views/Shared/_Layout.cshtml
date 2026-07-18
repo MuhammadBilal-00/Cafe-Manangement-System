@@ -153,365 +153,289 @@
 
             <!-- Navigation -->
             <nav class="sidebar-nav">
+                @{
+                    // One link, one place: every module lives in exactly one group below.
+                    void NavLink(string controller, string action, string icon, string label, string nav)
+                    {
+                        <a href="@Url.Action(action, controller)" class="sidebar-link" data-nav="@nav">
+                            <span class="sidebar-link-icon"><i class="fas @icon"></i></span>
+                            <span class="sidebar-link-text">@label</span>
+                        </a>
+                    }
+                }
                 @if (isPlatform)
                 {
                     <!-- ═══ PLATFORM ADMIN NAV ═══ -->
                     <div class="sidebar-section-label">Platform</div>
-                    <a asp-controller="Platform" asp-action="Index" class="sidebar-link" data-nav="PlatformIndex">
-                        <span class="sidebar-link-icon"><i class="fas fa-gauge-high"></i></span>
-                        <span class="sidebar-link-text">Console</span>
-                    </a>
-                    <a asp-controller="Platform" asp-action="Tenants" class="sidebar-link" data-nav="PlatformTenants">
-                        <span class="sidebar-link-icon"><i class="fas fa-building"></i></span>
-                        <span class="sidebar-link-text">Tenants</span>
-                    </a>
-                    <a asp-controller="Platform" asp-action="Plans" class="sidebar-link" data-nav="PlatformPlans">
-                        <span class="sidebar-link-icon"><i class="fas fa-layer-group"></i></span>
-                        <span class="sidebar-link-text">Plans</span>
-                    </a>
+                    NavLink("Platform", "Index", "fa-gauge-high", "Console", "PlatformIndex");
+                    NavLink("Platform", "Tenants", "fa-building", "Tenants", "PlatformTenants");
+                    NavLink("Platform", "Plans", "fa-layer-group", "Plans", "PlatformPlans");
 
                     <div class="sidebar-section-label">System</div>
-                    <a asp-controller="AuditLog" asp-action="Index" class="sidebar-link" data-nav="AuditLog">
-                        <span class="sidebar-link-icon"><i class="fas fa-shield-halved"></i></span>
-                        <span class="sidebar-link-text">Audit Logs</span>
-                    </a>
+                    NavLink("AuditLog", "Index", "fa-shield-halved", "Audit Logs", "AuditLog");
                 }
                 else
                 {
-                    <!-- ═══ TENANT NAV (feature-gated by plan) ═══ -->
-                    <div class="sidebar-section-label">Main</div>
+                    <!-- ═══ TENANT NAV ═══
+                         Grouped by business domain the way an owner / manager / accountant /
+                         cashier thinks, not by code structure. Role checks and plan feature
+                         gates are identical to the controllers they link to. -->
 
-                    <a asp-controller="Home" asp-action="Index" class="sidebar-link" data-nav="Home">
-                        <span class="sidebar-link-icon"><i class="fas fa-gauge-high"></i></span>
-                        <span class="sidebar-link-text">Dashboard</span>
-                    </a>
+                    NavLink("Home", "Index", "fa-gauge-high", "Dashboard", "Home");
 
-                    @* Customer portal links removed: customers never log in on the closed platform
-                       (the Shop module stays in the codebase behind a disabled feature flag). *@
-                    @if (isOwnerOrManager)
-                    {
-                        <a asp-controller="Branch" asp-action="Index" class="sidebar-link" data-nav="Branch">
-                            <span class="sidebar-link-icon"><i class="fas fa-store"></i></span>
-                            <span class="sidebar-link-text">Branches</span>
-                        </a>
-
-                        <a asp-controller="Staff" asp-action="Index" class="sidebar-link" data-nav="Staff">
-                            <span class="sidebar-link-icon"><i class="fas fa-users"></i></span>
-                            <span class="sidebar-link-text">Staff</span>
-                        </a>
-
-                        @if (isOwner)
-                        {
-                            <a asp-controller="User" asp-action="Index" class="sidebar-link" data-nav="Users">
-                                <span class="sidebar-link-icon"><i class="fas fa-user-shield"></i></span>
-                                <span class="sidebar-link-text">Users</span>
-                            </a>
-                        }
-                    }
-
+                    @* ── Point of Sale — the cashier's daily loop ── *@
                     @if (userRole != "Customer")
                     {
-                        <div class="sidebar-section-label">Operations</div>
-
-                        <a asp-controller="MenuItem" asp-action="Index" class="sidebar-link" data-nav="MenuItem">
-                            <span class="sidebar-link-icon"><i class="fas fa-utensils"></i></span>
-                            <span class="sidebar-link-text">Menu</span>
-                        </a>
-
-                        <a asp-controller="Pos" asp-action="Index" class="sidebar-link" data-nav="Pos">
-                            <span class="sidebar-link-icon"><i class="fas fa-cash-register"></i></span>
-                            <span class="sidebar-link-text">Register</span>
-                        </a>
-
-                        <a asp-controller="Order" asp-action="Index" class="sidebar-link" data-nav="Order">
-                            <span class="sidebar-link-icon"><i class="fas fa-receipt"></i></span>
-                            <span class="sidebar-link-text">Orders</span>
-                        </a>
-
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Kds))
-                        {
-                            <a asp-controller="Kitchen" asp-action="Index" class="sidebar-link" data-nav="Kitchen">
-                                <span class="sidebar-link-icon"><i class="fas fa-fire-burner"></i></span>
-                                <span class="sidebar-link-text">Kitchen (KDS)</span>
-                            </a>
-                        }
-
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Tables))
-                        {
-                            <a asp-controller="Table" asp-action="Index" class="sidebar-link" data-nav="Table">
-                                <span class="sidebar-link-icon"><i class="fas fa-chair"></i></span>
-                                <span class="sidebar-link-text">Tables</span>
-                            </a>
-                        }
-
-                        @if (isOwnerOrManager)
-                        {
-                            <a asp-controller="KitchenPrinter" asp-action="Index" class="sidebar-link" data-nav="KitchenPrinter">
-                                <span class="sidebar-link-icon"><i class="fas fa-print"></i></span>
-                                <span class="sidebar-link-text">Kitchen Printers</span>
-                            </a>
-                        }
-
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Invoicing))
-                        {
-                            <a asp-controller="Invoice" asp-action="Index" class="sidebar-link" data-nav="Invoice">
-                                <span class="sidebar-link-icon"><i class="fas fa-file-invoice-dollar"></i></span>
-                                <span class="sidebar-link-text">Bill History</span>
-                            </a>
-                        }
+                        <div class="sidebar-group" data-group="pos">
+                            <button type="button" class="sidebar-group-header">
+                                <span class="sidebar-link-icon"><i class="fas fa-cash-register"></i></span>
+                                <span class="sidebar-link-text">Point of Sale</span>
+                                <span class="sidebar-group-chevron"><i class="fas fa-chevron-right"></i></span>
+                            </button>
+                            <div class="sidebar-submenu"><div class="sidebar-submenu-inner">
+                                @{ NavLink("Pos", "Index", "fa-cash-register", "Register", "Pos"); }
+                                @{ NavLink("Order", "Index", "fa-receipt", "Orders", "Order"); }
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Kds))
+                                {
+                                    NavLink("Kitchen", "Index", "fa-fire-burner", "Kitchen Display", "Kitchen");
+                                }
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Tables))
+                                {
+                                    NavLink("Table", "Index", "fa-chair", "Tables", "Table");
+                                }
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Invoicing))
+                                {
+                                    NavLink("Invoice", "Index", "fa-file-invoice-dollar", "Bill History", "Invoice");
+                                }
+                            </div></div>
+                        </div>
                     }
 
+                    @* ── Sales — quotes, dispatch and targets ── *@
                     @if (isOwnerOrManager)
                     {
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Inventory))
-                        {
-                            <a asp-controller="InventoryItem" asp-action="Index" class="sidebar-link" data-nav="InventoryItem">
+                        <div class="sidebar-group" data-group="sales">
+                            <button type="button" class="sidebar-group-header">
+                                <span class="sidebar-link-icon"><i class="fas fa-handshake"></i></span>
+                                <span class="sidebar-link-text">Sales</span>
+                                <span class="sidebar-group-chevron"><i class="fas fa-chevron-right"></i></span>
+                            </button>
+                            <div class="sidebar-submenu"><div class="sidebar-submenu-inner">
+                                @{ NavLink("Quotation", "Index", "fa-file-signature", "Quotations", "Quotation"); }
+                                @{ NavLink("Delivery", "Index", "fa-motorcycle", "Delivery & Riders", "Delivery"); }
+                                @{ NavLink("Shipment", "Index", "fa-box", "Shipments", "Shipment"); }
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Inventory))
+                                {
+                                    NavLink("SellReturn", "Index", "fa-rotate-left", "Sell Returns", "SellReturn");
+                                }
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Analytics))
+                                {
+                                    NavLink("SalesTarget", "Index", "fa-bullseye", "Sales Targets", "SalesTarget");
+                                }
+                            </div></div>
+                        </div>
+                    }
+
+                    @* ── Menu & Catalog — what the business sells ── *@
+                    @if (userRole != "Customer")
+                    {
+                        <div class="sidebar-group" data-group="catalog">
+                            <button type="button" class="sidebar-group-header">
+                                <span class="sidebar-link-icon"><i class="fas fa-utensils"></i></span>
+                                <span class="sidebar-link-text">Menu & Catalog</span>
+                                <span class="sidebar-group-chevron"><i class="fas fa-chevron-right"></i></span>
+                            </button>
+                            <div class="sidebar-submenu"><div class="sidebar-submenu-inner">
+                                @{ NavLink("MenuItem", "Index", "fa-utensils", "Menu Items", "MenuItem"); }
+                                @if (isOwnerOrManager)
+                                {
+                                    NavLink("Modifier", "Index", "fa-sliders", "Modifiers", "Modifier");
+                                    NavLink("Combo", "Index", "fa-gift", "Combos", "Combo");
+                                    NavLink("Brand", "Index", "fa-copyright", "Brands", "Brand");
+                                    NavLink("Unit", "Index", "fa-ruler", "Units", "Unit");
+                                    NavLink("PriceGroup", "Index", "fa-layer-group", "Price Groups", "PriceGroup");
+                                    NavLink("TaxGroup", "Index", "fa-percent", "Tax Groups", "TaxGroup");
+                                }
+                            </div></div>
+                        </div>
+                    }
+
+                    @* ── Inventory — stock on hand and how it moves ── *@
+                    @if (isOwnerOrManager && canFeature(Cafe.Services.FeatureCatalog.Inventory))
+                    {
+                        <div class="sidebar-group" data-group="inventory">
+                            <button type="button" class="sidebar-group-header">
                                 <span class="sidebar-link-icon"><i class="fas fa-boxes-stacked"></i></span>
                                 <span class="sidebar-link-text">Inventory</span>
-                            </a>
-                        }
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Suppliers))
-                        {
-                            <a asp-controller="Supplier" asp-action="Index" class="sidebar-link" data-nav="Supplier">
-                                <span class="sidebar-link-icon"><i class="fas fa-truck"></i></span>
-                                <span class="sidebar-link-text">Suppliers</span>
-                            </a>
-                        }
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Purchases))
-                        {
-                            <a asp-controller="Purchase" asp-action="Index" class="sidebar-link" data-nav="Purchase">
-                                <span class="sidebar-link-icon"><i class="fas fa-shopping-cart"></i></span>
-                                <span class="sidebar-link-text">Purchases</span>
-                            </a>
-                        }
-
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Inventory))
-                        {
-                            <a asp-controller="StockTransfer" asp-action="Index" class="sidebar-link" data-nav="StockTransfer">
-                                <span class="sidebar-link-icon"><i class="fas fa-right-left"></i></span>
-                                <span class="sidebar-link-text">Stock Transfers</span>
-                            </a>
-                            <a asp-controller="StockAdjustment" asp-action="Index" class="sidebar-link" data-nav="StockAdjustment">
-                                <span class="sidebar-link-icon"><i class="fas fa-scale-balanced"></i></span>
-                                <span class="sidebar-link-text">Stock Adjustments</span>
-                            </a>
-                            <a asp-controller="Production" asp-action="Index" class="sidebar-link" data-nav="Production">
-                                <span class="sidebar-link-icon"><i class="fas fa-industry"></i></span>
-                                <span class="sidebar-link-text">Production</span>
-                            </a>
-                            <a asp-controller="SellReturn" asp-action="Index" class="sidebar-link" data-nav="SellReturn">
-                                <span class="sidebar-link-icon"><i class="fas fa-rotate-left"></i></span>
-                                <span class="sidebar-link-text">Sell Returns</span>
-                            </a>
-                            <a asp-controller="PurchaseReturn" asp-action="Index" class="sidebar-link" data-nav="PurchaseReturn">
-                                <span class="sidebar-link-icon"><i class="fas fa-truck-ramp-box"></i></span>
-                                <span class="sidebar-link-text">Purchase Returns</span>
-                            </a>
-                        }
-
-                        <div class="sidebar-section-label">Sales</div>
-                        <a asp-controller="Quotation" asp-action="Index" class="sidebar-link" data-nav="Quotation">
-                            <span class="sidebar-link-icon"><i class="fas fa-file-signature"></i></span>
-                            <span class="sidebar-link-text">Quotations</span>
-                        </a>
-                        <a asp-controller="Delivery" asp-action="Index" class="sidebar-link" data-nav="Delivery">
-                            <span class="sidebar-link-icon"><i class="fas fa-motorcycle"></i></span>
-                            <span class="sidebar-link-text">Delivery &amp; Riders</span>
-                        </a>
-                        <a asp-controller="Shipment" asp-action="Index" class="sidebar-link" data-nav="Shipment">
-                            <span class="sidebar-link-icon"><i class="fas fa-box"></i></span>
-                            <span class="sidebar-link-text">Shipments</span>
-                        </a>
+                                <span class="sidebar-group-chevron"><i class="fas fa-chevron-right"></i></span>
+                            </button>
+                            <div class="sidebar-submenu"><div class="sidebar-submenu-inner">
+                                @{ NavLink("InventoryItem", "Index", "fa-boxes-stacked", "Stock Items", "InventoryItem"); }
+                                @{ NavLink("StockTransfer", "Index", "fa-right-left", "Stock Transfers", "StockTransfer"); }
+                                @{ NavLink("StockAdjustment", "Index", "fa-scale-balanced", "Stock Adjustments", "StockAdjustment"); }
+                                @{ NavLink("Production", "Index", "fa-industry", "Production", "Production"); }
+                            </div></div>
+                        </div>
                     }
 
-                    @if (isOwnerOrManager)
+                    @* ── Purchasing — suppliers and inbound goods ── *@
+                    @if (isOwnerOrManager && (canFeature(Cafe.Services.FeatureCatalog.Suppliers)
+                                              || canFeature(Cafe.Services.FeatureCatalog.Purchases)
+                                              || canFeature(Cafe.Services.FeatureCatalog.Inventory)))
                     {
-                        <div class="sidebar-section-label">Catalog</div>
-
-                        <a asp-controller="Modifier" asp-action="Index" class="sidebar-link" data-nav="Modifier">
-                            <span class="sidebar-link-icon"><i class="fas fa-sliders"></i></span>
-                            <span class="sidebar-link-text">Modifiers</span>
-                        </a>
-                        <a asp-controller="Combo" asp-action="Index" class="sidebar-link" data-nav="Combo">
-                            <span class="sidebar-link-icon"><i class="fas fa-gift"></i></span>
-                            <span class="sidebar-link-text">Combos</span>
-                        </a>
-                        <a asp-controller="Brand" asp-action="Index" class="sidebar-link" data-nav="Brand">
-                            <span class="sidebar-link-icon"><i class="fas fa-copyright"></i></span>
-                            <span class="sidebar-link-text">Brands</span>
-                        </a>
-                        <a asp-controller="Unit" asp-action="Index" class="sidebar-link" data-nav="Unit">
-                            <span class="sidebar-link-icon"><i class="fas fa-ruler"></i></span>
-                            <span class="sidebar-link-text">Units</span>
-                        </a>
-                        <a asp-controller="PriceGroup" asp-action="Index" class="sidebar-link" data-nav="PriceGroup">
-                            <span class="sidebar-link-icon"><i class="fas fa-layer-group"></i></span>
-                            <span class="sidebar-link-text">Price Groups</span>
-                        </a>
-                        <a asp-controller="TaxGroup" asp-action="Index" class="sidebar-link" data-nav="TaxGroup">
-                            <span class="sidebar-link-icon"><i class="fas fa-percent"></i></span>
-                            <span class="sidebar-link-text">Tax Groups</span>
-                        </a>
+                        <div class="sidebar-group" data-group="purchasing">
+                            <button type="button" class="sidebar-group-header">
+                                <span class="sidebar-link-icon"><i class="fas fa-truck"></i></span>
+                                <span class="sidebar-link-text">Purchasing</span>
+                                <span class="sidebar-group-chevron"><i class="fas fa-chevron-right"></i></span>
+                            </button>
+                            <div class="sidebar-submenu"><div class="sidebar-submenu-inner">
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Suppliers))
+                                {
+                                    NavLink("Supplier", "Index", "fa-truck", "Suppliers", "Supplier");
+                                }
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Purchases))
+                                {
+                                    NavLink("Purchase", "Index", "fa-shopping-cart", "Purchases", "Purchase");
+                                }
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Inventory))
+                                {
+                                    NavLink("PurchaseReturn", "Index", "fa-truck-ramp-box", "Purchase Returns", "PurchaseReturn");
+                                }
+                            </div></div>
+                        </div>
                     }
 
+                    @* ── Finance — the accountant's home ── *@
+                    @if (isOwnerOrManager && canFeature(Cafe.Services.FeatureCatalog.Analytics))
+                    {
+                        <div class="sidebar-group" data-group="finance">
+                            <button type="button" class="sidebar-group-header">
+                                <span class="sidebar-link-icon"><i class="fas fa-coins"></i></span>
+                                <span class="sidebar-link-text">Finance</span>
+                                <span class="sidebar-group-chevron"><i class="fas fa-chevron-right"></i></span>
+                            </button>
+                            <div class="sidebar-submenu"><div class="sidebar-submenu-inner">
+                                @{ NavLink("Financial", "Dashboard", "fa-chart-pie", "Financial Dashboard", "Financial"); }
+                                @{ NavLink("Reports", "Index", "fa-chart-line", "Reports", "Reports"); }
+                                @{ NavLink("Accounting", "Index", "fa-book", "Accounting", "Accounting"); }
+                                @{ NavLink("Receivables", "Index", "fa-scale-unbalanced", "Receivables & Payables", "Receivables"); }
+                                @{ NavLink("Budget", "Index", "fa-sack-dollar", "Budgets", "Budget"); }
+                                @{ NavLink("PaymentAccount", "Index", "fa-building-columns", "Payment Accounts", "PaymentAccount"); }
+                            </div></div>
+                        </div>
+                    }
+
+                    @* ── Human Resources — staff see Attendance; managers see it all ── *@
                     @if (userRole != "Customer")
                     {
-                        <div class="sidebar-section-label">People</div>
-
-                        <a asp-controller="Attendance" asp-action="Index" class="sidebar-link" data-nav="Attendance">
-                            <span class="sidebar-link-icon"><i class="fas fa-calendar-check"></i></span>
-                            <span class="sidebar-link-text">Attendance</span>
-                        </a>
-
-                        <div class="sidebar-section-label">Essentials</div>
-                        <a asp-controller="Essentials" asp-action="Index" class="sidebar-link" data-nav="Essentials">
-                            <span class="sidebar-link-icon"><i class="fas fa-clipboard-list"></i></span>
-                            <span class="sidebar-link-text">Workspace</span>
-                        </a>
-                        <a asp-controller="Message" asp-action="Index" class="sidebar-link" data-nav="Message">
-                            <span class="sidebar-link-icon"><i class="fas fa-comments"></i></span>
-                            <span class="sidebar-link-text">Messages</span>
-                        </a>
+                        <div class="sidebar-group" data-group="hr">
+                            <button type="button" class="sidebar-group-header">
+                                <span class="sidebar-link-icon"><i class="fas fa-users"></i></span>
+                                <span class="sidebar-link-text">Human Resources</span>
+                                <span class="sidebar-group-chevron"><i class="fas fa-chevron-right"></i></span>
+                            </button>
+                            <div class="sidebar-submenu"><div class="sidebar-submenu-inner">
+                                @if (isOwnerOrManager)
+                                {
+                                    NavLink("Staff", "Index", "fa-users", "Staff", "Staff");
+                                }
+                                @{ NavLink("Attendance", "Index", "fa-calendar-check", "Attendance", "Attendance"); }
+                                @if (isOwnerOrManager)
+                                {
+                                    if (canFeature(Cafe.Services.FeatureCatalog.Payroll))
+                                    {
+                                        NavLink("Salary", "Index", "fa-wallet", "Payroll", "Salary");
+                                        NavLink("Leave", "Index", "fa-plane-departure", "Leave", "Leave");
+                                    }
+                                    if (isOwner)
+                                    {
+                                        NavLink("SalaryPolicy", "Index", "fa-file-contract", "Salary Policies", "SalaryPolicy");
+                                    }
+                                    NavLink("Holiday", "Index", "fa-calendar-day", "Holidays", "Holiday");
+                                    NavLink("Department", "Index", "fa-network-wired", "Departments", "Department");
+                                    NavLink("EmployeeDocument", "Index", "fa-folder-open", "Documents", "EmployeeDocument");
+                                }
+                            </div></div>
+                        </div>
                     }
 
+                    @* ── Customers & Marketing — loyalty, promotions, CRM, feedback ── *@
+                    @if (isOwnerOrManager && (canFeature(Cafe.Services.FeatureCatalog.Marketing)
+                                              || canFeature(Cafe.Services.FeatureCatalog.Feedback)))
+                    {
+                        <div class="sidebar-group" data-group="marketing">
+                            <button type="button" class="sidebar-group-header">
+                                <span class="sidebar-link-icon"><i class="fas fa-bullhorn"></i></span>
+                                <span class="sidebar-link-text">Customers & Marketing</span>
+                                <span class="sidebar-group-chevron"><i class="fas fa-chevron-right"></i></span>
+                            </button>
+                            <div class="sidebar-submenu"><div class="sidebar-submenu-inner">
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Marketing))
+                                {
+                                    NavLink("Crm", "Index", "fa-user-group", "CRM", "Crm");
+                                    NavLink("Loyalty", "Index", "fa-star", "Loyalty", "Loyalty");
+                                    NavLink("GiftCard", "Index", "fa-gift", "Gift Cards", "GiftCard");
+                                    NavLink("PromoCode", "Index", "fa-tags", "Promo Codes", "PromoCode");
+                                    NavLink("Partnership", "Index", "fa-credit-card", "Card Partnerships", "Partnership");
+                                    NavLink("NotificationTemplate", "Index", "fa-envelope-open-text", "Message Templates", "NotificationTemplate");
+                                }
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Feedback))
+                                {
+                                    NavLink("Feedback", "Index", "fa-message", "Feedback", "Feedback");
+                                }
+                            </div></div>
+                        </div>
+                    }
+
+                    @* ── Workspace — internal collaboration ── *@
+                    @if (userRole != "Customer")
+                    {
+                        <div class="sidebar-group" data-group="workspace">
+                            <button type="button" class="sidebar-group-header">
+                                <span class="sidebar-link-icon"><i class="fas fa-clipboard-list"></i></span>
+                                <span class="sidebar-link-text">Workspace</span>
+                                <span class="sidebar-group-chevron"><i class="fas fa-chevron-right"></i></span>
+                            </button>
+                            <div class="sidebar-submenu"><div class="sidebar-submenu-inner">
+                                @{ NavLink("Essentials", "Index", "fa-clipboard-list", "Team Workspace", "Essentials"); }
+                                @{ NavLink("Message", "Index", "fa-comments", "Messages", "Message"); }
+                            </div></div>
+                        </div>
+                    }
+
+                    @* ── Administration — org structure, devices, billing, system ── *@
                     @if (isOwnerOrManager)
                     {
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Payroll))
-                        {
-                            <a asp-controller="Salary" asp-action="Index" class="sidebar-link" data-nav="Salary">
-                                <span class="sidebar-link-icon"><i class="fas fa-wallet"></i></span>
-                                <span class="sidebar-link-text">Payroll</span>
-                            </a>
-                            <a asp-controller="Leave" asp-action="Index" class="sidebar-link" data-nav="Leave">
-                                <span class="sidebar-link-icon"><i class="fas fa-plane-departure"></i></span>
-                                <span class="sidebar-link-text">Leave</span>
-                            </a>
-                        }
-                        <a asp-controller="Holiday" asp-action="Index" class="sidebar-link" data-nav="Holiday">
-                            <span class="sidebar-link-icon"><i class="fas fa-calendar-day"></i></span>
-                            <span class="sidebar-link-text">Holidays</span>
-                        </a>
-                        <a asp-controller="Department" asp-action="Index" class="sidebar-link" data-nav="Department">
-                            <span class="sidebar-link-icon"><i class="fas fa-network-wired"></i></span>
-                            <span class="sidebar-link-text">Departments</span>
-                        </a>
-                        <a asp-controller="EmployeeDocument" asp-action="Index" class="sidebar-link" data-nav="EmployeeDocument">
-                            <span class="sidebar-link-icon"><i class="fas fa-folder-open"></i></span>
-                            <span class="sidebar-link-text">Documents</span>
-                        </a>
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Analytics))
-                        {
-                            <a asp-controller="SalesTarget" asp-action="Index" class="sidebar-link" data-nav="SalesTarget">
-                                <span class="sidebar-link-icon"><i class="fas fa-bullseye"></i></span>
-                                <span class="sidebar-link-text">Sales Targets</span>
-                            </a>
-                        }
-
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Analytics))
-                        {
-                            <div class="sidebar-section-label">Analytics</div>
-
-                            <a asp-controller="Financial" asp-action="Dashboard" class="sidebar-link" data-nav="Financial">
-                                <span class="sidebar-link-icon"><i class="fas fa-chart-pie"></i></span>
-                                <span class="sidebar-link-text">Financials</span>
-                            </a>
-
-                            <a asp-controller="Reports" asp-action="Index" class="sidebar-link" data-nav="Reports">
-                                <span class="sidebar-link-icon"><i class="fas fa-chart-line"></i></span>
-                                <span class="sidebar-link-text">Reports</span>
-                            </a>
-
-                            <a asp-controller="Receivables" asp-action="Index" class="sidebar-link" data-nav="Receivables">
-                                <span class="sidebar-link-icon"><i class="fas fa-scale-unbalanced"></i></span>
-                                <span class="sidebar-link-text">Receivables / Payables</span>
-                            </a>
-
-                            <a asp-controller="Accounting" asp-action="Index" class="sidebar-link" data-nav="Accounting">
-                                <span class="sidebar-link-icon"><i class="fas fa-book"></i></span>
-                                <span class="sidebar-link-text">Accounting</span>
-                            </a>
-                        }
-
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Feedback))
-                        {
-                            <a asp-controller="Feedback" asp-action="Index" class="sidebar-link" data-nav="Feedback">
-                                <span class="sidebar-link-icon"><i class="fas fa-message"></i></span>
-                                <span class="sidebar-link-text">Feedback</span>
-                            </a>
-                        }
-
-                        @if (canFeature(Cafe.Services.FeatureCatalog.Marketing))
-                        {
-                            <div class="sidebar-section-label">Marketing</div>
-
-                            <a asp-controller="PromoCode" asp-action="Index" class="sidebar-link" data-nav="PromoCode">
-                                <span class="sidebar-link-icon"><i class="fas fa-tags"></i></span>
-                                <span class="sidebar-link-text">Promo Codes</span>
-                            </a>
-
-                            <a asp-controller="Partnership" asp-action="Index" class="sidebar-link" data-nav="Partnership">
-                                <span class="sidebar-link-icon"><i class="fas fa-credit-card"></i></span>
-                                <span class="sidebar-link-text">Card Partnerships</span>
-                            </a>
-
-                            <a asp-controller="Loyalty" asp-action="Index" class="sidebar-link" data-nav="Loyalty">
-                                <span class="sidebar-link-icon"><i class="fas fa-star"></i></span>
-                                <span class="sidebar-link-text">Loyalty</span>
-                            </a>
-                            <a asp-controller="GiftCard" asp-action="Index" class="sidebar-link" data-nav="GiftCard">
-                                <span class="sidebar-link-icon"><i class="fas fa-gift"></i></span>
-                                <span class="sidebar-link-text">Gift Cards</span>
-                            </a>
-                            <a asp-controller="Crm" asp-action="Index" class="sidebar-link" data-nav="Crm">
-                                <span class="sidebar-link-icon"><i class="fas fa-user-group"></i></span>
-                                <span class="sidebar-link-text">CRM</span>
-                            </a>
-                            <a asp-controller="NotificationTemplate" asp-action="Index" class="sidebar-link" data-nav="NotificationTemplate">
-                                <span class="sidebar-link-icon"><i class="fas fa-envelope-open-text"></i></span>
-                                <span class="sidebar-link-text">Templates</span>
-                            </a>
-
-                            <a asp-controller="CheckoutSettings" asp-action="Index" class="sidebar-link" data-nav="CheckoutSettings">
-                                <span class="sidebar-link-icon"><i class="fas fa-cash-register"></i></span>
-                                <span class="sidebar-link-text">Checkout Settings</span>
-                            </a>
-                            <a asp-controller="PosProfile" asp-action="Index" class="sidebar-link" data-nav="PosProfile">
-                                <span class="sidebar-link-icon"><i class="fas fa-receipt"></i></span>
-                                <span class="sidebar-link-text">POS &amp; Receipts</span>
-                            </a>
-                        }
-                    }
-
-                    @if (isOwner)
-                    {
-                        <div class="sidebar-section-label">Workspace</div>
-
-                        <a asp-controller="Subscription" asp-action="Index" class="sidebar-link" data-nav="Subscription">
-                            <span class="sidebar-link-icon"><i class="fas fa-gem"></i></span>
-                            <span class="sidebar-link-text">Plan &amp; Billing</span>
-                        </a>
-
-                        <a asp-controller="TenantSettings" asp-action="Branding" class="sidebar-link" data-nav="TenantSettings">
-                            <span class="sidebar-link-icon"><i class="fas fa-palette"></i></span>
-                            <span class="sidebar-link-text">Branding</span>
-                        </a>
-
-                        <a asp-controller="Setup" asp-action="Index" class="sidebar-link" data-nav="Setup">
-                            <span class="sidebar-link-icon"><i class="fas fa-wand-magic-sparkles"></i></span>
-                            <span class="sidebar-link-text">Setup Wizard</span>
-                        </a>
-
-                        <div class="sidebar-section-label">System</div>
-
-                        <a asp-controller="Notification" asp-action="Index" class="sidebar-link" data-nav="Notification">
-                            <span class="sidebar-link-icon"><i class="fas fa-bell"></i></span>
-                            <span class="sidebar-link-text">Notifications</span>
-                        </a>
-
-                        <a asp-controller="AuditLog" asp-action="Index" class="sidebar-link" data-nav="AuditLog">
-                            <span class="sidebar-link-icon"><i class="fas fa-shield-halved"></i></span>
-                            <span class="sidebar-link-text">Audit Logs</span>
-                        </a>
+                        <div class="sidebar-group" data-group="admin">
+                            <button type="button" class="sidebar-group-header">
+                                <span class="sidebar-link-icon"><i class="fas fa-gear"></i></span>
+                                <span class="sidebar-link-text">Administration</span>
+                                <span class="sidebar-group-chevron"><i class="fas fa-chevron-right"></i></span>
+                            </button>
+                            <div class="sidebar-submenu"><div class="sidebar-submenu-inner">
+                                @{ NavLink("Branch", "Index", "fa-store", "Branches", "Branch"); }
+                                @if (isOwner)
+                                {
+                                    NavLink("User", "Index", "fa-user-shield", "Users & Roles", "Users");
+                                }
+                                @{ NavLink("KitchenPrinter", "Index", "fa-print", "Kitchen Printers", "KitchenPrinter"); }
+                                @{ NavLink("PosProfile", "Index", "fa-receipt", "POS & Receipts", "PosProfile"); }
+                                @if (canFeature(Cafe.Services.FeatureCatalog.Marketing))
+                                {
+                                    NavLink("CheckoutSettings", "Index", "fa-cash-register", "Checkout Settings", "CheckoutSettings");
+                                }
+                                @if (isOwner)
+                                {
+                                    NavLink("Subscription", "Index", "fa-gem", "Plan & Billing", "Subscription");
+                                    NavLink("TenantSettings", "Branding", "fa-palette", "Branding", "TenantSettings");
+                                    NavLink("Setup", "Index", "fa-wand-magic-sparkles", "Setup Wizard", "Setup");
+                                    NavLink("Demo", "Index", "fa-flask", "Demo Data", "Demo");
+                                    NavLink("Notification", "Index", "fa-bell", "Notifications", "Notification");
+                                    NavLink("AuditLog", "Index", "fa-shield-halved", "Audit Logs", "AuditLog");
+                                }
+                            </div></div>
+                        </div>
                     }
                 }
             </nav>
@@ -691,6 +615,22 @@
         </div>
     </div>
 
+    @if (isAuthenticated)
+    {
+        <!-- ═══ COMMAND PALETTE (Ctrl+K) — indexes the rendered nav, so it only
+             ever offers pages this user's role and plan can actually open ═══ -->
+        <div class="cmdk-overlay" id="cmdkOverlay">
+            <div class="cmdk-panel">
+                <div class="cmdk-input-row">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <input type="text" class="cmdk-input" id="cmdkInput" placeholder="Go to a module or action..." autocomplete="off" />
+                    <span class="cmdk-hint">Esc</span>
+                </div>
+                <div class="cmdk-list" id="cmdkList"></div>
+            </div>
+        </div>
+    }
+
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/actioncard.js"></script>
@@ -717,16 +657,131 @@
                 overlay.classList.remove('visible');
             });
 
-            // ── Active Nav Highlight ──
+            // ── Collapsible Groups — open state persists per user in localStorage ──
+            const GROUP_KEY = 'cafenav-open-groups';
+            let openGroups = [];
+            try { openGroups = JSON.parse(localStorage.getItem(GROUP_KEY)) || []; } catch (e) { openGroups = []; }
+
+            document.querySelectorAll('.sidebar-group').forEach(group => {
+                const key = group.getAttribute('data-group');
+                if (openGroups.includes(key)) group.classList.add('open');
+                group.querySelector('.sidebar-group-header')?.addEventListener('click', function () {
+                    group.classList.toggle('open');
+                    const open = group.classList.contains('open');
+                    openGroups = openGroups.filter(k => k !== key);
+                    if (open) openGroups.push(key);
+                    localStorage.setItem(GROUP_KEY, JSON.stringify(openGroups));
+                });
+            });
+
+            // ── Active Nav Highlight — longest href-prefix wins, falling back to
+            //    matching the controller segment (so /Financial/Reports still lights
+            //    up the "Financial Dashboard" entry) ──
             const currentPath = window.location.pathname.toLowerCase();
-            document.querySelectorAll('.sidebar-link[data-nav]').forEach(link => {
+            const links = Array.from(document.querySelectorAll('.sidebar-link[data-nav]'));
+            let best = null, bestLen = -1;
+            links.forEach(link => {
+                const href = (link.getAttribute('href') || '').toLowerCase();
+                if (!href) return;
+                if ((href === '/' && currentPath === '/') ||
+                    (href !== '/' && currentPath.startsWith(href))) {
+                    if (href.length > bestLen) { best = link; bestLen = href.length; }
+                }
+            });
+            if (!best && currentPath !== '/') {
+                const seg = currentPath.split('/')[1];
+                if (seg) {
+                    best = links.find(link => {
+                        const href = (link.getAttribute('href') || '').toLowerCase();
+                        return href.split('/')[1] === seg;
+                    }) || null;
+                }
+            }
+            if (best) {
+                best.classList.add('active');
+                // Reveal the group that owns the current page, without persisting it
+                const group = best.closest('.sidebar-group');
+                if (group) group.classList.add('open', 'has-active');
+            }
+        })();
+
+        // ── Command Palette — Ctrl+K / header search: jump anywhere in two keys ──
+        (function() {
+            const overlay = document.getElementById('cmdkOverlay');
+            const input = document.getElementById('cmdkInput');
+            const listEl = document.getElementById('cmdkList');
+            if (!overlay || !input || !listEl) return;
+
+            // Build the index from the sidebar + footer links actually rendered
+            const items = [];
+            document.querySelectorAll('.sidebar-nav .sidebar-link[data-nav], .sidebar-footer .sidebar-link[data-nav]').forEach(link => {
+                const label = link.querySelector('.sidebar-link-text')?.textContent.trim();
                 const href = link.getAttribute('href');
-                if (href) {
-                    const hrefLower = href.toLowerCase();
-                    if ((hrefLower === '/' && currentPath === '/') ||
-                        (hrefLower !== '/' && currentPath.startsWith(hrefLower))) {
-                        link.classList.add('active');
+                if (!label || !href) return;
+                const group = link.closest('.sidebar-group');
+                const groupLabel = group
+                    ? group.querySelector('.sidebar-group-header .sidebar-link-text')?.textContent.trim() || ''
+                    : (link.closest('.sidebar-footer') ? 'Account' : 'General');
+                const icon = link.querySelector('.sidebar-link-icon i')?.className || 'fas fa-link';
+                items.push({ label, href, group: groupLabel, icon });
+            });
+
+            let selected = 0, filtered = items;
+
+            function render() {
+                if (filtered.length === 0) {
+                    listEl.innerHTML = '<div class="cmdk-empty"><i class="fas fa-magnifying-glass" style="display:block;margin-bottom:0.5rem;opacity:0.4;"></i>No matching pages</div>';
+                    return;
+                }
+                let html = '', lastGroup = null;
+                filtered.forEach((it, i) => {
+                    if (it.group !== lastGroup) {
+                        html += `<div class="cmdk-section">${it.group}</div>`;
+                        lastGroup = it.group;
                     }
+                    html += `<a class="cmdk-item ${i === selected ? 'selected' : ''}" data-idx="${i}" href="${it.href}">
+                        <span class="cmdk-item-icon"><i class="${it.icon}"></i></span>
+                        <span>${it.label}</span>
+                        <span class="cmdk-item-group">${it.group}</span>
+                    </a>`;
+                });
+                listEl.innerHTML = html;
+                listEl.querySelector('.cmdk-item.selected')?.scrollIntoView({ block: 'nearest' });
+            }
+
+            function filter(q) {
+                q = q.trim().toLowerCase();
+                filtered = !q ? items : items.filter(it =>
+                    it.label.toLowerCase().includes(q) || it.group.toLowerCase().includes(q));
+                selected = 0;
+                render();
+            }
+
+            window.openCmdk = function() {
+                overlay.classList.add('open');
+                input.value = '';
+                filter('');
+                setTimeout(() => input.focus(), 30);
+            };
+            function closeCmdk() { overlay.classList.remove('open'); }
+
+            document.getElementById('globalSearchBtn')?.addEventListener('click', window.openCmdk);
+            overlay.addEventListener('click', e => { if (e.target === overlay) closeCmdk(); });
+            input.addEventListener('input', () => filter(input.value));
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown') { e.preventDefault(); selected = Math.min(selected + 1, filtered.length - 1); render(); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); selected = Math.max(selected - 1, 0); render(); }
+                else if (e.key === 'Enter') { e.preventDefault(); if (filtered[selected]) window.location.href = filtered[selected].href; }
+                else if (e.key === 'Escape') { closeCmdk(); }
+            });
+            listEl.addEventListener('mousemove', function(e) {
+                const item = e.target.closest('.cmdk-item');
+                if (item) { selected = parseInt(item.dataset.idx, 10); render(); }
+            });
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+                    e.preventDefault();
+                    overlay.classList.contains('open') ? closeCmdk() : window.openCmdk();
                 }
             });
         })();
@@ -844,10 +899,11 @@
                     const cancelBtn = document.querySelector('a.btn-secondary[href*="Index"], a.btn[href*="Index"]');
                     if (cancelBtn) { e.preventDefault(); cancelBtn.click(); }
                 }
-                // / = focus search input if present
+                // / = focus the page's search input; fall back to the command palette
                 if (e.key === '/') {
                     const searchInput = document.querySelector('input[type="search"], input[placeholder*="Search"], input[placeholder*="search"]');
                     if (searchInput) { e.preventDefault(); searchInput.focus(); }
+                    else if (window.openCmdk) { e.preventDefault(); window.openCmdk(); }
                 }
                 // ? = show keyboard shortcuts help
                 if (e.key === '?') {
@@ -855,6 +911,7 @@
                     if (window.ActionCard) {
                         ActionCard.info('Keyboard Shortcuts',
                             '<div style="text-align:left;font-size:0.875rem;line-height:2;">' +
+                            '<b>Ctrl+K</b> — Go to any module<br>' +
                             '<b>N</b> — New / Add record<br>' +
                             '<b>P</b> — Open POS register<br>' +
                             '<b>Esc</b> — Cancel / Back<br>' +
