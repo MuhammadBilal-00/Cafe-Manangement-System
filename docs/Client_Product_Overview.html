@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Cafe Management System — Product Overview</title>
+<style>
+  :root {
+    --navy: #1e2a3a;
+    --gold: #d4af37;
+    --gold-dark: #b8942a;
+    --ink: #26303b;
+    --muted: #5b6773;
+    --line: #e3e0da;
+    --paper: #ffffff;
+    --alt: #faf8f4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    font-size: 10.5pt;
+    line-height: 1.55;
+  }
+  .page { max-width: 800px; margin: 0 auto; padding: 40px 48px; }
+
+  /* ── Cover ── */
+  .cover {
+    background: linear-gradient(150deg, #16202e 0%, var(--navy) 55%, #2a3b52 100%);
+    color: #fff;
+    border-radius: 0;
+    padding: 110px 64px 90px;
+    page-break-after: always;
+  }
+  .cover .mark {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; margin-bottom: 42px;
+  }
+  .cover h1 { font-size: 34pt; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+  .cover h1 span { color: var(--gold); }
+  .cover .tagline { font-size: 13pt; color: #c8d2de; margin-top: 18px; max-width: 560px; }
+  .cover .meta { margin-top: 70px; font-size: 9.5pt; color: #8b98a8; letter-spacing: 0.12em; text-transform: uppercase; }
+  .cover .chips { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .cover .chip {
+    border: 1px solid rgba(212,175,55,0.45); color: #e8d9a8;
+    font-size: 8.5pt; padding: 5px 12px; border-radius: 999px; letter-spacing: 0.04em;
+  }
+
+  /* ── Typography ── */
+  h2 {
+    font-size: 17pt; font-weight: 800; color: var(--navy);
+    letter-spacing: -0.01em; margin: 44px 0 6px;
+    page-break-after: avoid;
+  }
+  h2 .num { color: var(--gold); margin-right: 10px; }
+  .rule { height: 3px; width: 56px; background: var(--gold); border-radius: 2px; margin: 0 0 18px; }
+  h3 { font-size: 12pt; font-weight: 700; color: var(--navy); margin: 22px 0 8px; page-break-after: avoid; }
+  p { margin-bottom: 10px; }
+  p.lead { font-size: 11.5pt; color: var(--muted); }
+  strong { color: var(--navy); }
+
+  /* ── Value grid ── */
+  .value-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .value-card {
+    border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+    background: var(--alt); page-break-inside: avoid;
+  }
+  .value-card .vc-title { font-weight: 700; color: var(--navy); margin-bottom: 4px; font-size: 10.5pt; }
+  .value-card .vc-body { font-size: 9.5pt; color: var(--muted); }
+
+  /* ── Role table ── */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; page-break-inside: avoid; }
+  th {
+    text-align: left; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.08em;
+    color: #fff; background: var(--navy); padding: 9px 14px;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 9.5pt; vertical-align: top; }
+  tr:nth-child(even) td { background: var(--alt); }
+  td:first-child { font-weight: 700; color: var(--navy); white-space: nowrap; }
+
+  /* ── Module sections ── */
+  .domain { margin-top: 30px; page-break-inside: avoid; }
+  .domain-head {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--navy); color: #fff; border-radius: 12px 12px 0 0;
+    padding: 13px 18px;
+  }
+  .domain-head .d-icon {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--gold);
+    color: var(--navy); font-weight: 800; display: flex; align-items: center; justify-content: center;
+    font-size: 12pt; flex-shrink: 0;
+  }
+  .domain-head .d-title { font-size: 12.5pt; font-weight: 800; }
+  .domain-head .d-sub { font-size: 8.5pt; color: #b9c4d2; margin-top: 1px; }
+  .domain-body { border: 1px solid var(--line); border-top: none; border-radius: 0 0 12px 12px; }
+  .module { display: flex; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--line); page-break-inside: avoid; }
+  .module:last-child { border-bottom: none; }
+  .module .m-name { flex: 0 0 150px; font-weight: 700; color: var(--navy); font-size: 9.8pt; padding-top: 1px; }
+  .module .m-desc { flex: 1; font-size: 9.5pt; color: var(--ink); }
+  .module .m-desc .benefit { display: block; color: var(--gold-dark); font-size: 9pt; margin-top: 3px; font-weight: 600; }
+
+  /* ── Callout ── */
+  .callout {
+    border-left: 4px solid var(--gold); background: var(--alt);
+    border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 18px 0;
+    font-size: 9.8pt; page-break-inside: avoid;
+  }
+  .callout b { color: var(--navy); }
+
+  ul.tick { list-style: none; margin: 10px 0 16px; }
+  ul.tick li { padding-left: 26px; position: relative; margin-bottom: 7px; font-size: 9.8pt; }
+  ul.tick li::before {
+    content: "✓"; position: absolute; left: 0; top: 0;
+    color: var(--gold-dark); font-weight: 800;
+  }
+
+  .footer-note {
+    margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
+    font-size: 8.5pt; color: var(--muted); text-align: center;
+  }
+
+  @media print {
+    .page { max-width: none; padding: 0 10mm; }
+    @page { margin: 14mm 8mm; }
+    .cover { margin: -14mm -8mm 0; padding: 100px 60px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ COVER ═══════════ -->
+<div class="cover">
+  <div class="mark">☕</div>
+  <h1>Cafe Management<br /><span>System</span></h1>
+  <div class="tagline">A complete, enterprise-grade ERP for restaurants, cafés and food businesses — point of sale, kitchen, inventory, purchasing, finance, HR, and marketing in one beautifully organized platform.</div>
+  <div class="chips">
+    <span class="chip">Point of Sale</span>
+    <span class="chip">Kitchen Display &amp; Printing</span>
+    <span class="chip">Multi-Branch</span>
+    <span class="chip">Inventory &amp; Purchasing</span>
+    <span class="chip">Accounting &amp; Reports</span>
+    <span class="chip">Payroll &amp; HR</span>
+    <span class="chip">Loyalty &amp; Gift Cards</span>
+    <span class="chip">English + اردو</span>
+  </div>
+  <div class="meta">Product Overview &nbsp;·&nbsp; Prepared July 2026</div>
+</div>
+
+<div class="page">
+
+<!-- ═══════════ 1. EXECUTIVE SUMMARY ═══════════ -->
+<h2><span class="num">1</span>Executive Summary</h2>
+<div class="rule"></div>
+<p class="lead">The Cafe Management System is a single platform that runs an entire food business — from the moment a cashier rings up an order, through the kitchen, the stock room, the accounts ledger, and the payroll run at the end of the month.</p>
+<p>Most restaurants juggle separate tools: one app for billing, spreadsheets for stock, a diary for attendance, and an accountant who re-enters everything at month-end. Every hand-off loses time and introduces errors. This system replaces all of that with <strong>one connected platform</strong> where a sale at the register automatically updates orders, the kitchen screen, stock levels, the general ledger, and your sales reports — with no re-typing and no reconciliation gaps.</p>
+
+<div class="value-grid">
+  <div class="value-card">
+    <div class="vc-title">One system, zero re-entry</div>
+    <div class="vc-body">A POS sale drives the kitchen ticket, deducts recipe ingredients from stock, posts to the accounting ledger, and appears in reports — automatically.</div>
+  </div>
+  <div class="value-card">
+    <div class="vc-title">Built for multiple branches</div>
+    <div class="vc-body">Run every location from one dashboard: per-branch menus, stock transfers between branches, branch-level reports and targets.</div>
+  </div>
+  <div class="value-card">
+    <div class="vc-title">Enterprise-grade navigation</div>
+    <div class="vc-body">Modules are organized the way your team actually works — cashier, kitchen, accountant, HR — with instant search (Ctrl+K) to jump anywhere in two keystrokes.</div>
+  </div>
+  <div class="value-card">
+    <div class="vc-title">Trustworthy numbers</div>
+    <div class="vc-body">Revenue is recognized from real invoices, every stock movement is traceable, and a full audit log records who did what, when.</div>
+  </div>
+</div>
+
+<!-- ═══════════ 2. EVERY ROLE ═══════════ -->
+<h2><span class="num">2</span>Designed Around Your Team</h2>
+<div class="rule"></div>
+<p>Each person who logs in sees only what their role needs — a cashier gets a fast, focused register; the owner gets everything. Permissions are enforced throughout the system, not just hidden in menus.</p>
+
+<table>
+  <tr><th>Role</th><th>What they see and do</th></tr>
+  <tr><td>Owner</td><td>Full control: every module, all branches, user &amp; role management, billing, branding, salary policies, audit logs, and system settings.</td></tr>
+  <tr><td>Branch Manager</td><td>Day-to-day operations: sales, kitchen, inventory, purchasing, finance dashboards, staff attendance and payroll, marketing tools for their scope.</td></tr>
+  <tr><td>Cashier / Staff</td><td>A clean, minimal workspace: the POS register, orders, kitchen display, tables, bill history, their own attendance, and team messaging — nothing to get lost in.</td></tr>
+  <tr><td>Kitchen</td><td>A live Kitchen Display screen and automatic printed kitchen tickets, per station (grill, bar, dessert…), the instant an order is placed.</td></tr>
+  <tr><td>Accountant</td><td>A dedicated Finance area: financial dashboard, double-entry accounting, receivables &amp; payables, budgets, payment accounts and exportable reports.</td></tr>
+</table>
+
+<div class="callout"><b>Closed, secure platform.</b> There is no public self-signup. Every account is created by the owner, can be deactivated instantly, and every sensitive action is written to a tamper-evident audit log.</div>
+
+<!-- ═══════════ 3. MODULE CATALOG ═══════════ -->
+<h2><span class="num">3</span>The Complete Module Catalog</h2>
+<div class="rule"></div>
+<p>Everything below ships in the product today, organized exactly as it appears in the application's navigation.</p>
+
+<!-- POS -->
+<div class="domain">
+  <div class="domain-head">
+    <div class="d-icon">₨</div>
+    <div><div class="d-title">Point of Sale</div><div class="d-sub">The cashier's daily loop — fast, keyboard-friendly, mistake-proof</div></div>
+  </div>
+  <div class="domain-body">
+    <div class="module"><div class="m-name">Register (POS)</div><div class="m-desc">Touch-friendly sales screen with category browsing, item modifiers, combo deals and per-branch pricing. Accepts multiple payment types in one bill — cash, card, <em>gift cards and loyalty points</em> — applies promo codes, and supports order holds. Opens from any page with one click or the “P” key.<span class="benefit">Faster queues, fewer billing errors, every tender type your customers expect.</span></div></div>
+    <div class="module"><div class="m-name">Orders</div><div class="m-desc">Live order board with a disciplined status workflow (new sales are born “Preparing”; holds are kept separate) that stays perfectly in sync with the kitchen screen.<span class="benefit">Managers always know exactly what is cooking, ready, or delayed.</span></div></div>
+    <div class="module"><div class="m-name">Kitchen Display (KDS)</div><div class="m-desc">A real-time screen for the kitchen: incoming orders appear instantly, staff mark items as prepared, and the front-of-house is notified the moment food is ready.<span class="benefit">No shouting, no paper chits lost — shorter ticket times.</span></div></div>
+    <div class="module"><div class="m-name">Tables</div><div class="m-desc">Dine-in table management so servers can seat guests, attach orders to tables, and track occupancy.<span class="benefit">Smooth dine-in service and clear table turnover.</span></div></div>
+    <div class="module"><div class="m-name">Bill History</div><div class="m-desc">A searchable archive of every invoice with printable/PDF bills, tied to the exact order, payments and taxes behind it.<span class="benefit">Instant answers for customer queries, refunds, and tax filing.</span></div></div>
+  </div>
+</div>
+
+<!-- Kitchen printing callout -->
+<div class="callout"><b>Automatic kitchen ticket printing (KOT).</b> The moment a sale completes, kitchen order tickets print automatically on network thermal printers, routed <b>per station</b> — drinks to the bar printer, mains to the grill — with a browser-print fallback and one-click reprint. Printers are managed by admins in a simple screen.</div>
+
+<!-- Sales -->
+<div class="domain">
+  <div class="domain-head">
+    <div class="d-icon">✦</div>
+    <div><div class="d-title">Sales</div><div class="d-sub">Beyond the counter — quotes, dispatch and performance</div></div>
+  </div>
+  <div class="domain-body">
+    <div class="module"><div class="m-name">Quotations</div><div class="m-desc">Prepare and send priced quotations for catering and corporate orders, then convert them when the client confirms.<span class="benefit">Win larger, planned orders — not just walk-ins.</span></div></div>
+    <div class="module"><div class="m-name">Delivery &amp; Riders</div><div class="m-desc">Manage your delivery fleet: assign riders to orders and track delivery status through to hand-over.<span class="benefit">Own your delivery channel without third-party commissions.</span></div></div>
+    <div class="module"><div class="m-name">Shipments</div><div class="m-desc">Track outbound shipments for wholesale or inter-city orders from packing to delivery.<span class="benefit">Visibility on every order that leaves the building.</span></div></div>
+    <div class="module"><div class="m-name">Sell Returns</div><div class="m-desc">Process customer returns with the refund and the stock adjustment handled together, fully traceably.<span class="benefit">Refunds that never silently leak money or stock.</span></div></div>
+    <div class="module"><div class="m-name">Sales Targets</div><div class="m-desc">Set monthly targets per branch or team and watch actual performance tracked against them.<span class="benefit">Turns sales into a managed, motivated activity.</span></div></div>
+  </div>
+</div>
+
+<!-- Catalog -->
+<div class="domain">
+  <div class="domain-head">
+    <div class="d-icon">✎</div>
+    <div><div class="d-title">Menu &amp; Catalog</div><div class="d-sub">Everything the business sells, defined once, priced smartly</div></div>
+  </div>
+  <div class="domain-body">
+    <div class="module"><div class="m-name">Menu Items</div><div class="m-desc">The heart of the catalog: items with photos, categories, availability control and <em>recipes linked to inventory ingredients</em>, so every sale knows its true cost.<span class="benefit">Real dish-level profitability, not guesswork.</span></div></div>
+    <div class="module"><div class="m-name">Modifiers</div><div class="m-desc">Options and add-ons (size, extra shot, toppings) with their own pricing, attached to any item.<span class="benefit">Upsells captured cleanly on every ticket.</span></div></div>
+    <div class="module"><div class="m-name">Combos</div><div class="m-desc">Bundle items into meal deals with special pricing.<span class="benefit">Higher average order value through packaged offers.</span></div></div>
+    <div class="module"><div class="m-name">Brands &amp; Units</div><div class="m-desc">Reference data for product brands and measurement units (kg, litre, pieces — including fractional stock quantities).<span class="benefit">Accurate purchasing and stock counting in real-world units.</span></div></div>
+    <div class="module"><div class="m-name">Price Groups</div><div class="m-desc">Different price lists for different contexts — branches, channels, or customer segments.<span class="benefit">One menu, tuned pricing everywhere it sells.</span></div></div>
+    <div class="module"><div class="m-name">Tax Groups</div><div class="m-desc">Configure tax rates once and apply them consistently across the catalog and billing.<span class="benefit">Compliant, consistent tax on every invoice.</span></div></div>
+  </div>
+</div>
+
+<div class="callout"><b>Free bonus — QR digital menu.</b> Every branch gets a public, read-only digital menu page reachable from a QR code on the table. Customers browse the live menu on their phones; you change it once in the catalog and it is instantly up to date.</div>
+
+<!-- Inventory -->
+<div class="domain">
+  <div class="domain-head">
+    <div class="d-icon">▤</div>
+    <div><div class="d-title">Inventory</div><div class="d-sub">Know what you have, where it is, and where it went</div></div>
+  </div>
+  <div class="domain-body">
+    <div class="module"><div class="m-name">Stock Items</div><div class="m-desc">Central stock register with quantities per branch, low-stock alerts on the dashboard, and support for fractional quantities (2.5&nbsp;kg, 0.75&nbsp;L).<span class="benefit">Never 86 a best-seller mid-shift because stock ran out silently.</span></div></div>
+    <div class="module"><div class="m-name">Stock Transfers</div><div class="m-desc">Move stock between branches with a documented, two-sided transfer record.<span class="benefit">Branch-to-branch movement without disputes or losses.</span></div></div>
+    <div class="module"><div class="m-name">Stock Adjustments</div><div class="m-desc">Record wastage, spillage, and count corrections with reasons — every change leaves a trail.<span class="benefit">Shrinkage becomes visible and manageable.</span></div></div>
+    <div class="module"><div class="m-name">Production</div><div class="m-desc">Convert raw ingredients into prepared items (sauces, doughs, syrups) with stock moved automatically from inputs to outputs.<span class="benefit">Accurate costing for everything made in-house.</span></div></div>
+  </div>
+</div>
+
+<!-- Purchasing -->
+<div class="domain">
+  <div class="domain-head">
+    <div class="d-icon">⛟</div>
+    <div><div class="d-title">Purchasing</div><div class="d-sub">Suppliers and inbound goods, under control</div></div>
+  </div>
+  <div class="domain-body">
+    <div class="module"><div class="m-name">Suppliers</div><div class="m-desc">A directory of your vendors with contact details and full purchase history per supplier.<span class="benefit">Negotiate from data — you know exactly what you buy from whom.</span></div></div>
+    <div class="module"><div class="m-name">Purchases</div><div class="m-desc">Record purchase orders and goods received; stock and costs update automatically, and payables flow into Finance.<span class="benefit">Purchase costs land in stock and books without re-typing.</span></div></div>
+    <div class="module"><div class="m-name">Purchase Returns</div><div class="m-desc">Return substandard goods to suppliers with stock and supplier balances corrected together.<span class="benefit">No more paying for goods you sent back.</span></div></div>
+  </div>
+</div>
+
+<!-- Finance -->
+<div class="domain">
+  <div class="domain-head">
+    <div class="d-icon">Σ</div>
+    <div><div class="d-title">Finance</div><div class="d-sub">The accountant's home — from daily takings to the trial balance</div></div>
+  </div>
+  <div class="domain-body">
+    <div class="module"><div class="m-name">Financial Dashboard</div><div class="m-desc">A live picture of the business: revenue, expenses, profitability and trends across branches. Revenue figures come from actual invoices, so what you see is what you billed.<span class="benefit">A truthful daily P&amp;L pulse without waiting for month-end.</span></div></div>
+    <div class="module"><div class="m-name">Reports</div><div class="m-desc">A library of operational and financial reports — sales by period/branch/item, taxes, attendance, stock — ready to review or export.<span class="benefit">Every recurring management question answered in two clicks.</span></div></div>
+    <div class="module"><div class="m-name">Accounting</div><div class="m-desc">A real double-entry general ledger. Sales, purchases, payroll, and even order cancellations post automatically to the correct accounts.<span class="benefit">Books that are always current — your accountant reviews instead of re-enters.</span></div></div>
+    <div class="module"><div class="m-name">Receivables &amp; Payables</div><div class="m-desc">Track what customers owe you and what you owe suppliers, with aging and settlement recording.<span class="benefit">Cash-flow control: collect on time, pay on time.</span></div></div>
+    <div class="module"><div class="m-name">Budgets</div><div class="m-desc">Set spending budgets by category and monitor actuals against them.<span class="benefit">Costs get a ceiling before they become a surprise.</span></div></div>
+    <div class="module"><div class="m-name">Payment Accounts</div><div class="m-desc">Manage your cash drawers and bank accounts and see money movement per account.<span class="benefit">Reconciling the till and the bank stops being a mystery.</span></div></div>
+  </div>
+</div>
+
+<!-- HR -->
+<div class="domain">
+  <div class="domain-head">
+    <div class="d-icon">♟</div>
+    <div><div class="d-title">Human Resources</div><div class="d-sub">From the duty roster to the salary slip</div></div>
+  </div>
+  <div class="domain-body">
+    <div class="module"><div class="m-name">Staff</div><div class="m-desc">Complete employee profiles — role, branch, contact details, joining data — feeding every other HR module.<span class="benefit">One accurate source of truth for your team.</span></div></div>
+    <div class="module"><div class="m-name">Attendance</div><div class="m-desc">Daily attendance with ten statuses including paid/sick/casual leave, work-from-home, holidays and overtime; public holidays are applied automatically.<span class="benefit">Payroll-ready attendance without a paper register.</span></div></div>
+    <div class="module"><div class="m-name">Leave</div><div class="m-desc">Leave requests and approvals connected directly to attendance and payroll.<span class="benefit">Fair, documented leave — no verbal-agreement disputes.</span></div></div>
+    <div class="module"><div class="m-name">Payroll</div><div class="m-desc">Monthly salary runs driven by attendance and salary policies, with safeguards built in (no invented salaries, no accidental future-month runs). Payroll posts to accounting automatically.<span class="benefit">Salary day takes minutes and matches the books to the rupee.</span></div></div>
+    <div class="module"><div class="m-name">Salary Policies</div><div class="m-desc">Owner-defined rules for allowances, deductions and overtime that payroll applies consistently.<span class="benefit">Compensation is policy, not per-month improvisation.</span></div></div>
+    <div class="module"><div class="m-name">Holidays</div><div class="m-desc">The company holiday calendar, reflected automatically in attendance.<span class="benefit">Everyone plans around the same calendar.</span></div></div>
+    <div class="module"><div class="m-name">Departments</div><div class="m-desc">Organize staff into departments for structure and reporting.<span class="benefit">Clear org structure as the team grows.</span></div></div>
+    <div class="module"><div class="m-name">Documents</div><div class="m-desc">Store employee documents — contracts, IDs, certificates — securely against each profile.<span class="benefit">HR paperwork findable in seconds, not filing cabinets.</span></div></div>
+  </div>
+</div>
+
+<!-- Marketing -->
+<div class="domain">
+  <div class="domain-head">
+    <div class="d-icon">♥</div>
+    <div><div class="d-title">Customers &amp; Marketing</div><div class="d-sub">Turn first-time visitors into regulars</div></div>
+  </div>
+  <div class="domain-body">
+    <div class="module"><div class="m-name">CRM</div><div class="m-desc">Customer profiles with contact details and full purchase history, built up automatically from sales.<span class="benefit">Know your regulars — and who stopped coming.</span></div></div>
+    <div class="module"><div class="m-name">Loyalty</div><div class="m-desc">A points program where customers earn on purchases and redeem directly at the register as payment.<span class="benefit">A concrete reason to come back to you, not the café next door.</span></div></div>
+    <div class="module"><div class="m-name">Gift Cards</div><div class="m-desc">Sell and redeem gift cards, with balances tracked and accepted as a tender at the POS.<span class="benefit">Cash up-front today, guaranteed future visits.</span></div></div>
+    <div class="module"><div class="m-name">Promo Codes</div><div class="m-desc">Create discount campaigns with rules and validity windows, applied at checkout.<span class="benefit">Run promotions that are controlled, tracked, and end on time.</span></div></div>
+    <div class="module"><div class="m-name">Card Partnerships</div><div class="m-desc">Configure bank-card discount deals (e.g. 20% with a partner bank's card) applied automatically at billing.<span class="benefit">Bank partnerships bring their customers to your counter.</span></div></div>
+    <div class="module"><div class="m-name">Message Templates</div><div class="m-desc">Reusable SMS/notification templates, with an automatic background sender for customer messaging.<span class="benefit">Consistent, professional communication at scale.</span></div></div>
+    <div class="module"><div class="m-name">Feedback</div><div class="m-desc">Collect and review customer feedback and ratings in one place.<span class="benefit">Hear about a bad experience from the system, not from a public review.</span></div></div>
+  </div>
+</div>
+
+<!-- Workspace -->
+<div class="domain">
+  <div class="domain-head">
+    <div class="d-icon">✉</div>
+    <div><div class="d-title">Workspace</div><div class="d-sub">Internal collaboration, inside the same system</div></div>
+  </div>
+  <div class="domain-body">
+    <div class="module"><div class="m-name">Team Workspace</div><div class="m-desc">Shared documents, pinned memos, reminders and a knowledge base (recipes, SOPs, training material) for the whole team.<span class="benefit">Institutional knowledge survives staff turnover.</span></div></div>
+    <div class="module"><div class="m-name">Messages</div><div class="m-desc">Built-in team messaging so operational chatter stays connected to the work.<span class="benefit">Shift coordination without leaking business data into personal apps.</span></div></div>
+  </div>
+</div>
+
+<!-- Administration -->
+<div class="domain">
+  <div class="domain-head">
+    <div class="d-icon">⚙</div>
+    <div><div class="d-title">Administration</div><div class="d-sub">Structure, devices, billing and system control</div></div>
+  </div>
+  <div class="domain-body">
+    <div class="module"><div class="m-name">Branches</div><div class="m-desc">Create and manage locations; nearly every module is branch-aware — menus, stock, staff, reports.<span class="benefit">Expansion is a configuration task, not a software project.</span></div></div>
+    <div class="module"><div class="m-name">Users &amp; Roles</div><div class="m-desc">Owner-controlled accounts with a defined role catalog; deactivating a user locks them out instantly.<span class="benefit">Access control you can actually enforce.</span></div></div>
+    <div class="module"><div class="m-name">Kitchen Printers</div><div class="m-desc">Register network thermal printers and assign them to kitchen stations for automatic ticket routing.<span class="benefit">The right ticket at the right station, every time.</span></div></div>
+    <div class="module"><div class="m-name">POS &amp; Receipts</div><div class="m-desc">Configure receipt layout, branding and register behavior.<span class="benefit">Receipts that look like your brand, not a generic till roll.</span></div></div>
+    <div class="module"><div class="m-name">Checkout Settings</div><div class="m-desc">Fine-tune checkout rules — charges, rounding, and payment behavior.<span class="benefit">Billing policy set once, applied everywhere.</span></div></div>
+    <div class="module"><div class="m-name">Plan &amp; Billing</div><div class="m-desc">See your subscription plan and the features it enables.<span class="benefit">Pay for what you use; upgrade when you grow.</span></div></div>
+    <div class="module"><div class="m-name">Branding</div><div class="m-desc">White-label the system with your logo and brand colors — the whole interface adopts your identity.<span class="benefit">Your staff work in <em>your</em> system, not a vendor's.</span></div></div>
+    <div class="module"><div class="m-name">Setup Wizard &amp; Demo Data</div><div class="m-desc">A guided first-run setup, plus one-click realistic demo data for training and evaluation.<span class="benefit">From empty system to trained staff, fast.</span></div></div>
+    <div class="module"><div class="m-name">Notifications &amp; Audit Logs</div><div class="m-desc">Real-time in-app notifications (low stock, orders ready, approvals) and a complete audit trail of every significant action.<span class="benefit">Nothing important goes unnoticed — or unrecorded.</span></div></div>
+  </div>
+</div>
+
+<!-- ═══════════ 4. EXPERIENCE ═══════════ -->
+<h2><span class="num">4</span>A Premium, Modern Experience</h2>
+<div class="rule"></div>
+<ul class="tick">
+  <li><strong>ERP-grade navigation</strong> — modules grouped by business domain in a collapsible sidebar that remembers how each user likes it; a first-time manager finds anything in seconds.</li>
+  <li><strong>Instant search (Ctrl+K)</strong> — a command palette that jumps to any module the user is allowed to see, in two keystrokes.</li>
+  <li><strong>Keyboard-first operations</strong> — “P” opens the register from anywhere, “N” starts a new record, “/” jumps to search.</li>
+  <li><strong>Real-time everywhere</strong> — kitchen screens, order boards and notifications update live, without refreshing.</li>
+  <li><strong>English and Urdu (اردو)</strong> — full bilingual interface with proper right-to-left layout; switch languages in one click.</li>
+  <li><strong>Light and dark themes</strong> — comfortable at the morning till and the midnight close alike.</li>
+  <li><strong>Works on any device</strong> — responsive layout for desktops at the counter, tablets in the kitchen, phones on the floor.</li>
+</ul>
+
+<!-- ═══════════ 5. SECURITY ═══════════ -->
+<h2><span class="num">5</span>Security &amp; Reliability</h2>
+<div class="rule"></div>
+<ul class="tick">
+  <li><strong>Role-based permissions</strong> enforced on every action on the server — not just hidden buttons.</li>
+  <li><strong>Complete audit trail</strong> — logins, edits, payroll runs, cancellations and administrative changes are recorded with user, time and detail.</li>
+  <li><strong>Strict data isolation</strong> — built as a multi-tenant platform with automated tests proving one business can never see another's data.</li>
+  <li><strong>Honest accounting</strong> — cancellations reverse their ledger entries; revenue reports are built from issued invoices; payroll refuses invalid runs.</li>
+  <li><strong>Proven technology</strong> — Microsoft ASP.NET Core and SQL Server: mature, supported, and widely trusted in enterprise environments.</li>
+</ul>
+
+<!-- ═══════════ 6. NEXT STEPS ═══════════ -->
+<h2><span class="num">6</span>Seeing It Live</h2>
+<div class="rule"></div>
+<p>The fastest way to evaluate the system is a guided demonstration with realistic data — a full walkthrough of a working day takes about 45 minutes:</p>
+<ul class="tick">
+  <li>Ring up a sale at the register and watch it hit the kitchen screen and printer instantly.</li>
+  <li>Follow that same sale into stock deductions, the ledger, and the sales report.</li>
+  <li>Run attendance and a payroll cycle for a sample team.</li>
+  <li>Explore the owner's dashboard, budgets and audit trail.</li>
+</ul>
+<p>We would be glad to schedule a live demonstration at your convenience, tailored to your branches, menu and workflows.</p>
+
+<div class="footer-note">Cafe Management System · Product Overview · Confidential — prepared for prospective clients · July 2026</div>
+
+</div>
+</body>
+</html>
