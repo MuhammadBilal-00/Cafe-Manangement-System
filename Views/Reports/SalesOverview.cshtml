@@ -54,31 +54,21 @@
     </div>
 </form>
 
-<!-- KPI Hero (dark card) -->
-<div style="background:#16213e;border-radius:22px;padding:1.5rem 1.75rem;margin-bottom:1.5rem;position:relative;overflow:hidden;">
-    <div style="position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(212,175,55,0.16) 0%,transparent 70%);pointer-events:none;"></div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1.5rem;position:relative;z-index:1;">
-        <div>
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:4px;"><i class="fas fa-coins" style="color:#22c55e;margin-right:4px;"></i>Revenue</div>
-            <div style="font-size:1.65rem;font-weight:800;color:#22c55e;letter-spacing:-.02em;line-height:1.1;">@FormatCurrency(Model.TotalRevenue)</div>
-        </div>
-        <div style="width:1px;background:rgba(255,255,255,0.07);"></div>
-        <div>
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:4px;"><i class="fas fa-receipt" style="color:#3b82f6;margin-right:4px;"></i>Orders</div>
-            <div style="font-size:1.65rem;font-weight:800;color:#e2e8f0;letter-spacing:-.02em;line-height:1.1;">@Model.TotalOrders</div>
-        </div>
-        <div style="width:1px;background:rgba(255,255,255,0.07);"></div>
-        <div>
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:4px;"><i class="fas fa-chart-line" style="color:#d4af37;margin-right:4px;"></i>Avg Ticket</div>
-            <div style="font-size:1.65rem;font-weight:800;color:#d4af37;letter-spacing:-.02em;line-height:1.1;">@FormatCurrency(Model.AverageOrderValue)</div>
-        </div>
-        <div style="width:1px;background:rgba(255,255,255,0.07);"></div>
-        <div>
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:4px;"><i class="fas fa-calendar" style="color:#8b5cf6;margin-right:4px;"></i>Period</div>
-            <div style="font-size:1.1rem;font-weight:700;color:#e2e8f0;line-height:1.2;">@from.ToString("dd MMM") – @to.ToString("dd MMM")</div>
-            <div style="font-size:11px;color:#475569;margin-top:2px;">@Model.BranchName</div>
-        </div>
-    </div>
+<!-- KPI Row (conversion identity: tinted cards + trend framing) -->
+<div class="kpi-grid">
+    @await Html.PartialAsync("_KpiCard", new Cafe.Models.ViewModels.KpiCardVm {
+        Label = "Revenue", Value = FormatCurrency(Model.TotalRevenue), Icon = "fa-coins", Tint = "success"
+    })
+    @await Html.PartialAsync("_KpiCard", new Cafe.Models.ViewModels.KpiCardVm {
+        Label = "Orders", Value = Model.TotalOrders.ToString("N0"), Icon = "fa-receipt", Tint = "info"
+    })
+    @await Html.PartialAsync("_KpiCard", new Cafe.Models.ViewModels.KpiCardVm {
+        Label = "Avg Ticket", Value = FormatCurrency(Model.AverageOrderValue), Icon = "fa-chart-line", Tint = "accent"
+    })
+    @await Html.PartialAsync("_KpiCard", new Cafe.Models.ViewModels.KpiCardVm {
+        Label = Model.BranchName ?? "All branches",
+        Value = $"{from:dd MMM} – {to:dd MMM}", Icon = "fa-calendar", Countup = false
+    })
 </div>
 
 <!-- Charts Row -->
