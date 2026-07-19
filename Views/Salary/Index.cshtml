@@ -238,20 +238,9 @@ else if (isOwner)
 </div>
 
 <!-- Pagination -->
-@if (Model.TotalPages > 1)
-{
-    <div style="display:flex; justify-content:center; align-items:center; margin-top:1.5rem; gap:0.5rem;">
-        @for (int i = 1; i <= Model.TotalPages; i++)
-        {
-            <a asp-action="Index" asp-route-page="@i" asp-route-year="@Model.Year" asp-route-month="@Model.Month"
-               asp-route-branchId="@Model.BranchId" asp-route-paymentStatus="@Model.PaymentStatus"
-               asp-route-workflowStatus="@Model.WorkflowStatus"
-               class="btn @(i == Model.CurrentPage ? "btn-primary" : "btn-secondary") btn-sm">
-                @i
-            </a>
-        }
-    </div>
-}
+@await Html.PartialAsync("_Pagination", new Cafe.Models.ViewModels.PaginationVm {
+    CurrentPage = Model.CurrentPage, TotalPages = Model.TotalPages
+})
 
 <!-- Quick Actions -->
 <div class="card card-dark mt-8 border-none">

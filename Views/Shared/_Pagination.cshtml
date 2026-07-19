@@ -1,0 +1,45 @@
+@model Cafe.Models.ViewModels.PaginationVm
+@{
+    // Build page links preserving every other query-string parameter.
+    string PageUrl(int page)
+    {
+        var qs = new List<string>();
+        foreach (var kv in Context.Request.Query)
+        {
+            if (string.Equals(kv.Key, Model.PageParam, StringComparison.OrdinalIgnoreCase)) { continue; }
+            foreach (var v in kv.Value) { qs.Add($"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(v ?? "")}"); }
+        }
+        qs.Add($"{Model.PageParam}={page}");
+        return Context.Request.Path + "?" + string.Join("&", qs);
+    }
+
+    // Windowed page list: 1 … (c-1 c c+1) … N
+    var pages = new List<int>();
+    for (int p = 1; p <= Model.TotalPages; p++)
+    {
+        if (p == 1 || p == Model.TotalPages || Math.Abs(p - Model.CurrentPage) <= 1) { pages.Add(p); }
+        else if (pages.Count > 0 && pages[^1] != -1) { pages.Add(-1); }
+    }
+}
+@if (Model.TotalPages > 1)
+{
+    <div class="pagination" style="justify-content:center;padding:14px 0;">
+        <a class="pagination-btn @(Model.CurrentPage <= 1 ? "disabled" : "")"
+           href="@(Model.CurrentPage <= 1 ? "#" : PageUrl(Model.CurrentPage - 1))"
+           aria-label="Previous page"><i class="fas fa-chevron-left" style="font-size:11px;"></i></a>
+        @foreach (var p in pages)
+        {
+            if (p == -1)
+            {
+                <span style="padding:0 4px;color:var(--text-tertiary);">…</span>
+            }
+            else
+            {
+                <a class="pagination-btn @(p == Model.CurrentPage ? "active" : "")" href="@PageUrl(p)">@p</a>
+            }
+        }
+        <a class="pagination-btn @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")"
+           href="@(Model.CurrentPage >= Model.TotalPages ? "#" : PageUrl(Model.CurrentPage + 1))"
+           aria-label="Next page"><i class="fas fa-chevron-right" style="font-size:11px;"></i></a>
+    </div>
+}

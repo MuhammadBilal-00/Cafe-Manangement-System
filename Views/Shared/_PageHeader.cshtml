@@ -1,0 +1,31 @@
+@model Cafe.Models.ViewModels.PageHeaderVm
+<div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+        @if (!string.IsNullOrEmpty(Model.BackHref))
+        {
+            <a href="@Model.BackHref" class="btn btn-ghost btn-sm" style="flex-shrink:0;"><i class="fas fa-arrow-left"></i></a>
+        }
+        <div>
+            <h1 class="page-title" style="margin:0;">
+                @if (!string.IsNullOrEmpty(Model.Icon))
+                {
+                    <i class="fas @Model.Icon" style="color:var(--accent);margin-right:0.5rem;"></i>
+                }@Model.Title
+            </h1>
+            @if (!string.IsNullOrEmpty(Model.Subtitle))
+            {
+                <p class="body-text" style="margin-top:0.25rem;">@Model.Subtitle</p>
+            }
+        </div>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.ActionText) && !string.IsNullOrEmpty(Model.ActionHref))
+    {
+        <a href="@Model.ActionHref" class="btn btn-primary">
+            @if (!string.IsNullOrEmpty(Model.ActionIcon))
+            {
+                <i class="fas @Model.ActionIcon"></i>
+            }
+            @Model.ActionText
+        </a>
+    }
+</div>

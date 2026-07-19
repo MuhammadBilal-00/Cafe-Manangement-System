@@ -8,48 +8,38 @@
     var active = Model.Count(s => s.IsActive);
 }
 
-<!-- Page Header -->
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
-    <div>
-        <h1 class="page-title" style="margin:0;">Suppliers</h1>
-        <p class="body-text" style="margin-top:0.25rem;">Manage inventory suppliers and purchase contacts</p>
-    </div>
-    <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus" style="margin-right:0.5rem;"></i> Add Supplier</a>
-</div>
+@await Html.PartialAsync("_PageHeader", new Cafe.Models.ViewModels.PageHeaderVm {
+    Title = "Suppliers", Subtitle = "Manage inventory suppliers and purchase contacts",
+    ActionText = "Add Supplier", ActionIcon = "fa-plus", ActionHref = Url.Action("Create")
+})
+
+@{
+    var itemCountDict = ViewBag.ItemCounts as Dictionary<int, int>;
+    var totalLinked = itemCountDict != null ? itemCountDict.Values.Sum() : 0;
+}
 
 <!-- KPI Cards -->
-<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:2rem;">
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-truck"></i></div>
-        <div class="kpi-label">Total Suppliers</div>
-        <div class="kpi-value">@total</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-check-circle"></i></div>
-        <div class="kpi-label">Active</div>
-        <div class="kpi-value" style="color:#16a34a;">@active</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(239,68,68,0.1); color:#dc2626;"><i class="fas fa-pause-circle"></i></div>
-        <div class="kpi-label">Inactive</div>
-        <div class="kpi-value" style="color:#dc2626;">@(total - active)</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(212,175,55,0.1); color:var(--accent);"><i class="fas fa-boxes"></i></div>
-        <div class="kpi-label">Items Linked</div>
-        @{
-            var itemCountDict = ViewBag.ItemCounts as Dictionary<int, int>;
-            var totalLinked = itemCountDict != null ? itemCountDict.Values.Sum() : 0;
-        }
-        <div class="kpi-value">@totalLinked</div>
-    </div>
+<div class="kpi-grid">
+    @await Html.PartialAsync("_KpiCard", new Cafe.Models.ViewModels.KpiCardVm {
+        Label = "Total Suppliers", Value = total.ToString("N0"), Icon = "fa-truck", Tint = "info"
+    })
+    @await Html.PartialAsync("_KpiCard", new Cafe.Models.ViewModels.KpiCardVm {
+        Label = "Active", Value = active.ToString("N0"), Icon = "fa-check-circle", Tint = "success"
+    })
+    @await Html.PartialAsync("_KpiCard", new Cafe.Models.ViewModels.KpiCardVm {
+        Label = "Inactive", Value = (total - active).ToString("N0"), Icon = "fa-pause-circle",
+        Tint = total - active > 0 ? "danger" : "default"
+    })
+    @await Html.PartialAsync("_KpiCard", new Cafe.Models.ViewModels.KpiCardVm {
+        Label = "Items Linked", Value = totalLinked.ToString("N0"), Icon = "fa-boxes-stacked", Tint = "accent"
+    })
 </div>
 
 <!-- Filters -->
 <div class="card mb-6">
     <div class="card-body">
-        <form method="get" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
-            <div class="form-group" style="margin-bottom:0;">
+        <form method="get" class="filter-bar">
+            <div class="form-group">
                 <label class="form-label">Branch</label>
                 <select name="branchId" class="form-select">
                     <option value="">All Branches</option>
@@ -59,13 +49,13 @@
                     }
                 </select>
             </div>
-            <div class="form-group" style="margin-bottom:0; display:flex; align-items:flex-end; gap:0.5rem;">
+            <div class="filter-bar-actions">
                 <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; padding:0.4rem 0; font-size:0.85rem;">
                     <input type="checkbox" name="activeOnly" value="true" checked="@activeOnly" />
                     Active only
                 </label>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter" style="margin-right:0.5rem;"></i> Filter</button>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-filter" style="margin-right:0.5rem;"></i> Filter</button>
         </form>
     </div>
 </div>
@@ -73,7 +63,7 @@
 <!-- Suppliers Table -->
 <div class="card">
     <div class="card-body card-body-flush">
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
             <table class="premium-table">
                 <thead>
                     <tr>
@@ -91,13 +81,12 @@
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="7" style="text-align:center; padding:3rem 1rem;">
-                                <div>
-                                    <i class="fas fa-truck" style="font-size:2.5rem; color:var(--border-light); margin-bottom:1rem; display:block;"></i>
-                                    <p style="font-weight:600; margin:0 0 0.25rem; color:var(--text-secondary);">No suppliers found</p>
-                                    <p class="caption" style="margin:0 0 1rem;">Add your first supplier to start tracking inventory sources.</p>
-                                    <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> Add Supplier</a>
-                                </div>
+                            <td colspan="8" style="padding:0;">
+                                @await Html.PartialAsync("_EmptyState", new Cafe.Models.ViewModels.EmptyStateVm {
+                                    Icon = "fa-truck", Title = "No suppliers found",
+                                    Message = "Add your first supplier to start tracking inventory sources.",
+                                    ActionText = "Add Supplier", ActionHref = Url.Action("Create")
+                                })
                             </td>
                         </tr>
                     }

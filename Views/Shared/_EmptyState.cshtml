@@ -1,0 +1,13 @@
+@model Cafe.Models.ViewModels.EmptyStateVm
+<div class="empty-state">
+    <div class="empty-state-icon"><i class="fas @Model.Icon"></i></div>
+    <div class="empty-state-title">@Model.Title</div>
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <p class="empty-state-text">@Model.Message</p>
+    }
+    @if (!string.IsNullOrEmpty(Model.ActionText) && !string.IsNullOrEmpty(Model.ActionHref))
+    {
+        <a href="@Model.ActionHref" class="btn btn-primary btn-sm" style="margin-top:0.9rem;">@Model.ActionText</a>
+    }
+</div>

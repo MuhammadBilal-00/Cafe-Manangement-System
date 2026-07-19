@@ -698,8 +698,8 @@ form.card:hover {
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
 }
 
 .btn-primary {
@@ -711,18 +711,18 @@ form.card:hover {
 .btn-primary:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
-  box-shadow: 0 2px 8px rgba(212,175,55,0.3);
+  box-shadow: 0 2px 8px var(--ring);
 }
 
 .btn-secondary {
-  background: transparent;
+  background: var(--bg-surface);
   color: var(--text-primary);
   border-color: var(--border);
 }
 
 .btn-secondary:hover {
   background: var(--bg-inset);
-  border-color: #d1d5db;
+  border-color: var(--border-strong);
 }
 
 .btn-danger {
@@ -732,8 +732,8 @@ form.card:hover {
 }
 
 .btn-danger:hover {
-  background: #dc2626;
-  box-shadow: 0 2px 8px rgba(239,68,68,0.3);
+  background: color-mix(in srgb, var(--danger) 88%, #000);
+  box-shadow: 0 2px 8px var(--danger-light);
 }
 
 .btn-ghost {
@@ -790,7 +790,7 @@ form.card:hover {
 }
 
 .premium-table tbody td {
-  padding: 14px 16px;
+  padding: var(--table-row-py, 14px) 16px;
   font-size: var(--text-sm);
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-light);
@@ -807,6 +807,30 @@ form.card:hover {
 
 .premium-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* Opt-in scroll container with sticky header: wrap the table in
+   <div class="table-scroll"> instead of a bare overflow div. */
+.table-scroll {
+  overflow: auto;
+  max-height: 70vh;
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+}
+
+.table-scroll .premium-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Density toggle: add .table-dense on the table (or a wrapper) */
+.table-dense {
+  --table-row-py: 8px;
+}
+
+.premium-table td.num,
+.premium-table th.num {
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 /* ── Badges ────────────────────────────────────────────────── */
@@ -880,7 +904,7 @@ form.card:hover {
 .form-control:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-light);
+  box-shadow: 0 0 0 3px var(--ring);
 }
 
 .form-control::placeholder {
@@ -906,7 +930,7 @@ form.card:hover {
 .form-select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-light);
+  box-shadow: 0 0 0 3px var(--ring);
 }
 
 .form-hint {
@@ -969,9 +993,11 @@ form.card:hover {
   border-color: var(--accent);
 }
 
-.pagination-btn:disabled {
+.pagination-btn:disabled,
+.pagination-btn.disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ── Empty States ──────────────────────────────────────────── */
@@ -1795,4 +1821,138 @@ form.card:hover {
   font-weight: 700;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UI v3 — Shared shells: filter bar, modal, drawer, skeleton
+   ══════════════════════════════════════════════════════════════ */
+
+/* Filter bar: put inside a .card > .card-body (or standalone) */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.filter-bar .form-group {
+  margin: 0;
+  flex: 1;
+  min-width: 150px;
+}
+
+.filter-bar .filter-bar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Modal shell: <div class="modal-overlay" id="X"><div class="modal-card">…
+   open/close via UI.modal.open('X') / UI.modal.close('X') or .is-open */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--surface-overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-base);
+}
+
+.modal-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-card-lg);
+  box-shadow: var(--shadow-modal);
+  width: 100%;
+  max-width: 520px;
+  max-height: 86vh;
+  overflow-y: auto;
+  transform: translateY(10px) scale(0.98);
+  transition: transform var(--transition-base);
+}
+
+.modal-overlay.is-open .modal-card {
+  transform: translateY(0) scale(1);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border-light);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modal-body { padding: 20px 22px; }
+
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-surface-alt);
+  border-radius: 0 0 var(--radius-card-lg) var(--radius-card-lg);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 15px;
+  padding: 6px;
+  border-radius: var(--radius-xs);
+  transition: all var(--transition-fast);
+}
+
+.modal-close:hover { background: var(--bg-inset); color: var(--text-primary); }
+
+/* Drawer variant: slides from the inline-end edge */
+.modal-overlay.drawer {
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.modal-overlay.drawer .modal-card {
+  height: 100%;
+  max-height: none;
+  max-width: 440px;
+  border-radius: var(--radius-card-lg) 0 0 var(--radius-card-lg);
+  transform: translateX(30px);
+}
+
+.modal-overlay.drawer.is-open .modal-card {
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay, .modal-card { transition: none; }
+}
+
+/* Skeleton loader (moved from the layout inline styles) */
+.skeleton-pulse {
+  background: linear-gradient(90deg, var(--bg-inset) 25%, var(--surface-tint) 50%, var(--bg-inset) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.4s ease-in-out infinite;
+  border-radius: var(--radius-xs);
+}
+
+@keyframes skeleton-wave {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
