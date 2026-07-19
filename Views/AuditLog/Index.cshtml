@@ -33,7 +33,7 @@
         <span class="kpi-value">@totalItems</span>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:#dcfce7;color:#16a34a;">
+        <div class="kpi-icon" style="background:#dcfce7;color:var(--success);">
             <i class="fas fa-plus-circle"></i>
         </div>
         <span class="kpi-label">Creates</span>
@@ -47,7 +47,7 @@
         <span class="kpi-value">@Model.Count(l => l.Action == "Update")</span>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:#fee2e2;color:#dc2626;">
+        <div class="kpi-icon" style="background:#fee2e2;color:var(--danger);">
             <i class="fas fa-trash-alt"></i>
         </div>
         <span class="kpi-label">Deletes</span>

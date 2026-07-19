@@ -17,7 +17,7 @@
                 <tr data-id="@t.Id" data-key="@t.Key" data-name="@t.Name" data-channel="@t.Channel" data-subject="@t.Subject" data-body="@t.Body" data-active="@t.IsActive.ToString().ToLower()">
                     <td style="font-family:ui-monospace,monospace;">@t.Key</td><td>@t.Name</td><td><span class="badge badge-info">@t.Channel</span></td>
                     <td style="text-align:center;"><span class="badge @(t.IsActive ? "badge-success" : "badge-neutral")">@(t.IsActive ? "Active" : "Off")</span></td>
-                    <td><div style="display:flex;gap:0.4rem;"><button class="btn btn-ghost btn-sm" onclick="tmplEditRow(this)"><i class="fas fa-edit"></i></button>@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="tmplDel(@t.Id)"><i class="fas fa-trash"></i></button> }</div></td>
+                    <td><div style="display:flex;gap:0.4rem;"><button class="btn btn-ghost btn-sm" onclick="tmplEditRow(this)"><i class="fas fa-edit"></i></button>@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="tmplDel(@t.Id)"><i class="fas fa-trash"></i></button> }</div></td>
                 </tr>
             }
         </tbody>

@@ -82,7 +82,7 @@
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@t.Id" />
                                             <input type="hidden" name="status" value="Suspended" />
-                                            <button type="submit" class="btn btn-ghost btn-sm" title="Suspend" style="color:#dc2626;"><i class="fas fa-ban"></i></button>
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Suspend" style="color:var(--danger);"><i class="fas fa-ban"></i></button>
                                         </form>
                                     }
                                     else
@@ -91,7 +91,7 @@
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@t.Id" />
                                             <input type="hidden" name="status" value="Active" />
-                                            <button type="submit" class="btn btn-ghost btn-sm" title="Reactivate" style="color:#16a34a;"><i class="fas fa-circle-check"></i></button>
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Reactivate" style="color:var(--success);"><i class="fas fa-circle-check"></i></button>
                                         </form>
                                     }
                                 </div>

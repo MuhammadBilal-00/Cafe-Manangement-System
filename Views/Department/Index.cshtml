@@ -12,7 +12,7 @@
         <table class="premium-table"><tbody>
             @if (!Model.Any()) { <tr><td style="color:var(--text-secondary);padding:1rem;">No departments.</td></tr> }
             @foreach (var d in Model)
-            { <tr><td>@d.Name</td><td style="text-align:right;">@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="deptDel(@d.Id)"><i class="fas fa-trash"></i></button> }</td></tr> }
+            { <tr><td>@d.Name</td><td style="text-align:right;">@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="deptDel(@d.Id)"><i class="fas fa-trash"></i></button> }</td></tr> }
         </tbody></table>
     </div></div>
     <div class="card"><div class="card-body">
@@ -21,7 +21,7 @@
         <table class="premium-table"><tbody>
             @if (!designations.Any()) { <tr><td style="color:var(--text-secondary);padding:1rem;">No designations.</td></tr> }
             @foreach (var d in designations)
-            { <tr><td>@d.Name</td><td style="text-align:right;">@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="desigDel(@d.Id)"><i class="fas fa-trash"></i></button> }</td></tr> }
+            { <tr><td>@d.Name</td><td style="text-align:right;">@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="desigDel(@d.Id)"><i class="fas fa-trash"></i></button> }</td></tr> }
         </tbody></table>
     </div></div>
 </div>

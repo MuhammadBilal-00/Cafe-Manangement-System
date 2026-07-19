@@ -26,7 +26,7 @@
                 <div style="display:flex;gap:0.3rem;">
                     <button class="btn btn-ghost btn-sm" onclick="grpEdit(@g.Id,'@g.Name',@g.MinSelect,@g.MaxSelect,@g.IsRequired.ToString().ToLower(),@g.IsActive.ToString().ToLower())"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-ghost btn-sm" title="Assign to items" onclick="assignOpen(@g.Id,'@g.Name')"><i class="fas fa-link"></i></button>
-                    @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="grpDelete(@g.Id)"><i class="fas fa-trash"></i></button> }
+                    @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="grpDelete(@g.Id)"><i class="fas fa-trash"></i></button> }
                 </div>
             </div>
             <ul style="list-style:none;padding:0;margin:0.75rem 0;">
@@ -36,7 +36,7 @@
                         <span>@o.Name <span class="caption">@(o.PriceDelta >= 0 ? "+" : "")Rs. @o.PriceDelta.ToString("0.##")</span></span>
                         <span style="display:flex;gap:0.3rem;">
                             <button class="btn btn-ghost btn-sm" onclick="optEdit(@o.Id,@g.Id,'@o.Name',@o.PriceDelta,@o.IsActive.ToString().ToLower())"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="optDelete(@o.Id)"><i class="fas fa-xmark"></i></button>
+                            <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="optDelete(@o.Id)"><i class="fas fa-xmark"></i></button>
                         </span>
                     </li>
                 }

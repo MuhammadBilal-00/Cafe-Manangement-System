@@ -37,22 +37,22 @@
 <!-- KPI Cards -->
 <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:2rem;">
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(212,175,55,0.12); color:var(--accent);"><i class="fas fa-tags"></i></div>
+        <div class="kpi-icon" style="background:var(--accent-light); color:var(--accent);"><i class="fas fa-tags"></i></div>
         <div class="kpi-label">Total Codes</div>
         <div class="kpi-value">@total</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-circle-check"></i></div>
+        <div class="kpi-icon" style="background:var(--success-light); color:var(--success);"><i class="fas fa-circle-check"></i></div>
         <div class="kpi-label">Active Now</div>
-        <div class="kpi-value" style="color:#16a34a;">@activeNow</div>
+        <div class="kpi-value" style="color:var(--success);">@activeNow</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-clock"></i></div>
+        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:var(--info);"><i class="fas fa-clock"></i></div>
         <div class="kpi-label">Scheduled</div>
-        <div class="kpi-value" style="color:#3b82f6;">@scheduled</div>
+        <div class="kpi-value" style="color:var(--info);">@scheduled</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(99,102,241,0.1); color:#6366f1;"><i class="fas fa-receipt"></i></div>
+        <div class="kpi-icon" style="background:var(--info-light); color:var(--info);"><i class="fas fa-receipt"></i></div>
         <div class="kpi-label">Total Redemptions</div>
         <div class="kpi-value">@redemptions</div>
     </div>
@@ -146,7 +146,7 @@
                                     var pct = p.UsageLimit.Value == 0 ? 0 : Math.Min(100, (int)(100.0 * p.TimesUsed / p.UsageLimit.Value));
                                     <div style="font-weight:600; font-size:0.82rem;">@p.TimesUsed / @p.UsageLimit</div>
                                     <div style="height:5px; background:var(--border-light); border-radius:3px; overflow:hidden; margin-top:4px; width:70px; margin-left:auto; margin-right:auto;">
-                                        <div style="height:100%; width:@(pct)%; background:@(pct >= 100 ? "#dc2626" : "var(--accent)");"></div>
+                                        <div style="height:100%; width:@(pct)%; background:@(pct >= 100 ? "var(--danger)" : "var(--accent)");"></div>
                                     </div>
                                 }
                                 else
@@ -177,7 +177,7 @@
                                     </form>
                                     @if (isOwner)
                                     {
-                                        <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-ghost btn-sm" title="Delete" style="color:#dc2626;"><i class="fas fa-trash"></i></a>
+                                        <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-ghost btn-sm" title="Delete" style="color:var(--danger);"><i class="fas fa-trash"></i></a>
                                     }
                                 </div>
                             </td>

@@ -34,7 +34,7 @@
                         {
                             <div style="display:flex;gap:0.4rem;">
                                 <button class="btn btn-primary btn-sm" onclick="saApprove(@a.Id)"><i class="fas fa-check" style="margin-right:0.3rem;"></i> Approve</button>
-                                <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="saReject(@a.Id)">Reject</button>
+                                <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="saReject(@a.Id)">Reject</button>
                             </div>
                         }
                     </td>
@@ -80,7 +80,7 @@ async function saLoadItems() {
 function renderLines() {
     const map = Object.fromEntries(items.map(i => [i.id, i]));
     document.getElementById('saLines').innerHTML = lines.map((l, idx) =>
-        `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${map[l.inventoryItemId]?.name || '#' + l.inventoryItemId} — <b style="color:${l.quantityDelta < 0 ? '#dc2626' : '#16a34a'}">${l.quantityDelta > 0 ? '+' : ''}${l.quantityDelta}</b></span><a href="javascript:void(0)" onclick="saDel(${idx})" style="color:#dc2626;">×</a></div>`).join('');
+        `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${map[l.inventoryItemId]?.name || '#' + l.inventoryItemId} — <b style="color:${l.quantityDelta < 0 ? 'var(--danger)' : 'var(--success)'}">${l.quantityDelta > 0 ? '+' : ''}${l.quantityDelta}</b></span><a href="javascript:void(0)" onclick="saDel(${idx})" style="color:var(--danger);">×</a></div>`).join('');
 }
 window.saNew = async () => { lines = []; renderLines(); await saLoadItems(); document.getElementById('saModal').style.display = 'flex'; };
 window.saAdd = () => { const id = parseInt(document.getElementById('saItem').value); const d = parseFloat(document.getElementById('saDelta').value); if (!id || !d) return; const e = lines.find(l => l.inventoryItemId === id); if (e) e.quantityDelta = d; else lines.push({ inventoryItemId: id, quantityDelta: d }); renderLines(); };

@@ -42,7 +42,7 @@
             </ul>
             <div style="display:flex;gap:0.4rem;">
                 <button class="btn btn-secondary btn-sm" onclick='comboEdit(@c.Id,@Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.Name)),@Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.Description ?? "")),@c.Price,@Html.Raw(comp))'><i class="fas fa-edit" style="margin-right:0.3rem;"></i> Edit</button>
-                @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="comboDelete(@c.Id)"><i class="fas fa-trash"></i></button> }
+                @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="comboDelete(@c.Id)"><i class="fas fa-trash"></i></button> }
             </div>
         </div></div>
     }
@@ -86,7 +86,7 @@ function renderComps() {
     document.getElementById('compList').innerHTML = comps.map((c, idx) =>
         `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.3rem 0;border-bottom:1px solid var(--border-light);">
             <span><b>${c.quantity}×</b> ${map[c.menuItemId]?.name || '#' + c.menuItemId}</span>
-            <a href="javascript:void(0)" onclick="compDel(${idx})" style="color:#dc2626;">×</a></div>`).join('');
+            <a href="javascript:void(0)" onclick="compDel(${idx})" style="color:var(--danger);">×</a></div>`).join('');
     const total = comps.reduce((s, c) => s + (map[c.menuItemId]?.price || 0) * c.quantity, 0);
     const price = parseFloat(document.getElementById('cPrice').value) || 0;
     document.getElementById('compSummary').textContent = `Components total ${money(total)}${price ? ' · deal saves ' + money(Math.max(0, total - price)) : ''}`;

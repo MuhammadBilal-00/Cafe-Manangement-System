@@ -28,7 +28,7 @@
 <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
     <div>
         <h1 class="page-title" style="margin:0;">
-            <i class="fas fa-satellite-dish" style="color:#d4af37;margin-right:0.5rem;"></i>Notification Manager
+            <i class="fas fa-satellite-dish" style="color:var(--accent);margin-right:0.5rem;"></i>Notification Manager
         </h1>
         <p class="body-text" style="margin-top:0.25rem;color:var(--text-secondary);">
             Send notifications, monitor delivery, and view system analytics
@@ -42,31 +42,31 @@
 <!-- KPI Cards Row 1: Notifications -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
     <div class="card card-accent-info p-5 relative overflow-hidden">
-        <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-bell" style="color:#6366f1;font-size:1rem;"></i>
+        <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:var(--info-light);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-bell" style="color:var(--info);font-size:1rem;"></i>
         </div>
         <div class="caption" style="margin-bottom:0.3rem;">Total Notifications</div>
-        <div style="font-size:1.75rem;font-weight:800;color:#6366f1;line-height:1;">@notifTotal</div>
+        <div style="font-size:1.75rem;font-weight:800;color:var(--info);line-height:1;">@notifTotal</div>
         <div class="caption" style="margin-top:0.35rem;">
-            <span style="color:#16a34a;">@notifRead read</span> · <span style="color:#ef4444;">@notifUnread unread</span>
+            <span style="color:var(--success);">@notifRead read</span> · <span style="color:var(--danger);">@notifUnread unread</span>
         </div>
     </div>
     <div class="card card-accent-success p-5 relative overflow-hidden">
         <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:rgba(22,163,106,0.1);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-envelope-circle-check" style="color:#16a34a;font-size:1rem;"></i>
+            <i class="fas fa-envelope-circle-check" style="color:var(--success);font-size:1rem;"></i>
         </div>
         <div class="caption" style="margin-bottom:0.3rem;">Emails Sent</div>
-        <div style="font-size:1.75rem;font-weight:800;color:#16a34a;line-height:1;">@emailSent</div>
+        <div style="font-size:1.75rem;font-weight:800;color:var(--success);line-height:1;">@emailSent</div>
         <div class="caption" style="margin-top:0.35rem;">of @emailTotal total emails</div>
     </div>
     <div class="card card-accent-warning p-5 relative overflow-hidden">
         <div style="position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:rgba(217,119,6,0.1);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-clock-rotate-left" style="color:#d97706;font-size:1rem;"></i>
+            <i class="fas fa-clock-rotate-left" style="color:var(--warning);font-size:1rem;"></i>
         </div>
         <div class="caption" style="margin-bottom:0.3rem;">Queue Status</div>
-        <div style="font-size:1.75rem;font-weight:800;color:#d97706;line-height:1;">@emailPending</div>
+        <div style="font-size:1.75rem;font-weight:800;color:var(--warning);line-height:1;">@emailPending</div>
         <div class="caption" style="margin-top:0.35rem;">
-            pending · <span style="color:#dc2626;">@emailFailed failed</span>
+            pending · <span style="color:var(--danger);">@emailFailed failed</span>
         </div>
     </div>
 </div>
@@ -77,7 +77,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="section-title" style="font-size:0.8rem;">
-                <i class="fas fa-chart-pie" style="color:#6366f1;margin-right:0.35rem;"></i>Email Delivery
+                <i class="fas fa-chart-pie" style="color:var(--info);margin-right:0.35rem;"></i>Email Delivery
             </h3>
         </div>
         <div class="card-body relative h-[200px]">
@@ -89,7 +89,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="section-title" style="font-size:0.8rem;">
-                <i class="fas fa-chart-pie" style="color:#f59e0b;margin-right:0.35rem;"></i>Notification Types
+                <i class="fas fa-chart-pie" style="color:var(--warning);margin-right:0.35rem;"></i>Notification Types
             </h3>
         </div>
         <div class="card-body relative h-[200px]">
@@ -101,7 +101,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="section-title" style="font-size:0.8rem;">
-                <i class="fas fa-chart-pie" style="color:#10b981;margin-right:0.35rem;"></i>Target Audience
+                <i class="fas fa-chart-pie" style="color:var(--success);margin-right:0.35rem;"></i>Target Audience
             </h3>
         </div>
         <div class="card-body relative h-[200px]">
@@ -128,7 +128,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="section-title" style="font-size:0.85rem;">
-                <i class="fas fa-bullhorn" style="color:#d4af37;margin-right:0.4rem;"></i>Send Notification
+                <i class="fas fa-bullhorn" style="color:var(--accent);margin-right:0.4rem;"></i>Send Notification
             </h3>
         </div>
         <div class="card-body">
@@ -136,13 +136,13 @@
                 <div style="display:flex;flex-direction:column;gap:0.9rem;">
                     <!-- Title -->
                     <div>
-                        <label class="form-label" style="font-size:0.78rem;">Title <span style="color:#dc2626;">*</span></label>
+                        <label class="form-label" style="font-size:0.78rem;">Title <span style="color:var(--danger);">*</span></label>
                         <input type="text" name="title" class="form-control" required maxlength="200" placeholder="Notification title..." />
                     </div>
 
                     <!-- Message -->
                     <div>
-                        <label class="form-label" style="font-size:0.78rem;">Message <span style="color:#dc2626;">*</span></label>
+                        <label class="form-label" style="font-size:0.78rem;">Message <span style="color:var(--danger);">*</span></label>
                         <textarea name="message" class="form-control" required maxlength="1000" rows="3" placeholder="Notification message..."></textarea>
                     </div>
 
@@ -224,7 +224,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="section-title" style="font-size:0.85rem;">
-                <i class="fas fa-inbox" style="color:#3b82f6;margin-right:0.4rem;"></i>Recent Email Queue
+                <i class="fas fa-inbox" style="color:var(--info);margin-right:0.4rem;"></i>Recent Email Queue
             </h3>
         </div>
         <div class="card-body card-body-flush">
@@ -252,7 +252,7 @@
                         <tbody>
                             @foreach (var em in recentEmails)
                             {
-                                string statusColor = em.IsSent ? "#16a34a" : (em.RetryCount >= 3 ? "#dc2626" : "#d97706");
+                                string statusColor = em.IsSent ? "var(--success)" : (em.RetryCount >= 3 ? "var(--danger)" : "var(--warning)");
                                 string statusText = em.IsSent ? "Sent" : (em.RetryCount >= 3 ? "Failed" : "Pending");
                                 string statusIcon = em.IsSent ? "fa-check-circle" : (em.RetryCount >= 3 ? "fa-times-circle" : "fa-clock");
 

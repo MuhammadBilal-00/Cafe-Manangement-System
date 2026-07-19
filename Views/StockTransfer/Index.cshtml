@@ -34,7 +34,7 @@
                         {
                             <div style="display:flex;gap:0.4rem;">
                                 <button class="btn btn-primary btn-sm" onclick="stComplete(@t.Id)"><i class="fas fa-check" style="margin-right:0.3rem;"></i> Complete</button>
-                                <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="stCancel(@t.Id)">Cancel</button>
+                                <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="stCancel(@t.Id)">Cancel</button>
                             </div>
                         }
                     </td>
@@ -82,7 +82,7 @@ async function stLoadItems() {
 function renderLines() {
     const map = Object.fromEntries(items.map(i => [i.id, i]));
     document.getElementById('stLines').innerHTML = lines.map((l, idx) =>
-        `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${map[l.inventoryItemId]?.name || '#' + l.inventoryItemId} — <b>${l.quantity}</b></span><a href="javascript:void(0)" onclick="stDel(${idx})" style="color:#dc2626;">×</a></div>`).join('');
+        `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${map[l.inventoryItemId]?.name || '#' + l.inventoryItemId} — <b>${l.quantity}</b></span><a href="javascript:void(0)" onclick="stDel(${idx})" style="color:var(--danger);">×</a></div>`).join('');
 }
 window.stNew = async () => { lines = []; renderLines(); await stLoadItems(); document.getElementById('stModal').style.display = 'flex'; };
 window.stAdd = () => { const id = parseInt(document.getElementById('stItem').value); const q = parseFloat(document.getElementById('stQty').value); if (!id || !(q > 0)) return; const e = lines.find(l => l.inventoryItemId === id); if (e) e.quantity += q; else lines.push({ inventoryItemId: id, quantity: q }); renderLines(); };

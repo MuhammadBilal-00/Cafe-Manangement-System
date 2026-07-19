@@ -35,24 +35,24 @@
 <!-- KPI Cards -->
 <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:2rem;">
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(99,102,241,0.1); color:#6366f1;"><i class="fas fa-credit-card"></i></div>
+        <div class="kpi-icon" style="background:var(--info-light); color:var(--info);"><i class="fas fa-credit-card"></i></div>
         <div class="kpi-label">Total Partnerships</div>
         <div class="kpi-value">@total</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-bolt"></i></div>
+        <div class="kpi-icon" style="background:var(--success-light); color:var(--success);"><i class="fas fa-bolt"></i></div>
         <div class="kpi-label">Live Now</div>
-        <div class="kpi-value" style="color:#16a34a;">@activeNow</div>
+        <div class="kpi-value" style="color:var(--success);">@activeNow</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-clock"></i></div>
+        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:var(--info);"><i class="fas fa-clock"></i></div>
         <div class="kpi-label">Scheduled</div>
-        <div class="kpi-value" style="color:#3b82f6;">@scheduled</div>
+        <div class="kpi-value" style="color:var(--info);">@scheduled</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(239,68,68,0.1); color:#dc2626;"><i class="fas fa-hourglass-end"></i></div>
+        <div class="kpi-icon" style="background:var(--danger-light); color:var(--danger);"><i class="fas fa-hourglass-end"></i></div>
         <div class="kpi-label">Expired</div>
-        <div class="kpi-value" style="color:#dc2626;">@expired</div>
+        <div class="kpi-value" style="color:var(--danger);">@expired</div>
     </div>
 </div>
 
@@ -112,7 +112,7 @@
                         <tr>
                             <td>
                                 <div style="display:flex; align-items:center; gap:0.6rem;">
-                                    <div style="width:36px; height:36px; border-radius:9px; background:rgba(99,102,241,0.1); color:#6366f1; display:flex; align-items:center; justify-content:center;">
+                                    <div style="width:36px; height:36px; border-radius:9px; background:var(--info-light); color:var(--info); display:flex; align-items:center; justify-content:center;">
                                         <i class="fas fa-credit-card"></i>
                                     </div>
                                     <div>
@@ -122,7 +122,7 @@
                                 </div>
                             </td>
                             <td style="text-align:center;">
-                                <span style="font-weight:800; font-size:1.05rem; color:#16a34a;">@p.DiscountPercentage.ToString("0.##")%</span>
+                                <span style="font-weight:800; font-size:1.05rem; color:var(--success);">@p.DiscountPercentage.ToString("0.##")%</span>
                             </td>
                             <td>
                                 @if (p.MaxDiscountAmount.HasValue)
@@ -164,7 +164,7 @@
                                     </form>
                                     @if (isOwner)
                                     {
-                                        <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-ghost btn-sm" title="Delete" style="color:#dc2626;"><i class="fas fa-trash"></i></a>
+                                        <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-ghost btn-sm" title="Delete" style="color:var(--danger);"><i class="fas fa-trash"></i></a>
                                     }
                                 </div>
                             </td>

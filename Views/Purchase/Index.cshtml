@@ -31,10 +31,10 @@
 <!-- KPI Cards -->
 <div class="mb-6" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;">
     @foreach (var (label, count, color, icon, s) in new[] {
-        ("Pending",   (int)(ViewBag.PendingCount ?? 0),   "#f59e0b", "fa-clock",        "Pending"),
-        ("Approved",  (int)(ViewBag.ApprovedCount ?? 0),  "#3b82f6", "fa-thumbs-up",    "Approved"),
-        ("Received",  (int)(ViewBag.ReceivedCount ?? 0),  "#22c55e", "fa-check-circle", "Received"),
-        ("Cancelled", (int)(ViewBag.CancelledCount ?? 0), "#ef4444", "fa-times-circle", "Cancelled")
+        ("Pending",   (int)(ViewBag.PendingCount ?? 0),   "var(--warning)", "fa-clock",        "Pending"),
+        ("Approved",  (int)(ViewBag.ApprovedCount ?? 0),  "var(--info)", "fa-thumbs-up",    "Approved"),
+        ("Received",  (int)(ViewBag.ReceivedCount ?? 0),  "var(--success)", "fa-check-circle", "Received"),
+        ("Cancelled", (int)(ViewBag.CancelledCount ?? 0), "var(--danger)", "fa-times-circle", "Cancelled")
     })
     {
         <a asp-action="Index" asp-route-status="@s" style="text-decoration:none;">
@@ -155,11 +155,11 @@
                                     }
                                     @if (p.Status == "Received")
                                     {
-                                        <span class="caption" style="color:#16a34a;"><i class="fas fa-check"></i> Done</span>
+                                        <span class="caption" style="color:var(--success);"><i class="fas fa-check"></i> Done</span>
                                     }
                                     @if (p.Status == "Cancelled")
                                     {
-                                        <span class="caption" style="color:#ef4444;"><i class="fas fa-times"></i> Cancelled</span>
+                                        <span class="caption" style="color:var(--danger);"><i class="fas fa-times"></i> Cancelled</span>
                                     }
                                 </div>
                             </td>

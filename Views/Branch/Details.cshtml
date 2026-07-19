@@ -24,7 +24,7 @@
         <div class="flex items-center justify-between flex-wrap gap-4">
             <div>
                 <h2 style="font-size:1.5rem;font-weight:700;">@Model.Name</h2>
-                <p style="color:#94a3b8;margin-top:4px;">@Model.Location</p>
+                <p style="color:var(--text-tertiary);margin-top:4px;">@Model.Location</p>
             </div>
             <div class="text-right">
                 @if (Model.IsActive)
@@ -35,7 +35,7 @@
                 {
                     <span class="badge badge-neutral">Inactive</span>
                 }
-                <p style="color:#94a3b8;font-size:12px;margin-top:6px;">Created @Model.CreatedDate.ToString("MMM dd, yyyy")</p>
+                <p style="color:var(--text-tertiary);font-size:12px;margin-top:6px;">Created @Model.CreatedDate.ToString("MMM dd, yyyy")</p>
             </div>
         </div>
     </div>

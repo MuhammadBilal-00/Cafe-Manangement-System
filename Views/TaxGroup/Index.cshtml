@@ -16,7 +16,7 @@
                 <div><h3 style="margin:0;font-size:1.05rem;">@g.Name</h3><div class="caption">@(g.IsActive ? "active" : "hidden")</div></div>
                 <div style="display:flex;gap:0.3rem;">
                     <button class="btn btn-ghost btn-sm" onclick="tgEdit(@g.Id,'@g.Name',@g.IsActive.ToString().ToLower())"><i class="fas fa-edit"></i></button>
-                    @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="tgDel(@g.Id)"><i class="fas fa-trash"></i></button> }
+                    @if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="tgDel(@g.Id)"><i class="fas fa-trash"></i></button> }
                 </div>
             </div>
             <ul style="list-style:none;padding:0;margin:0.75rem 0;">
@@ -26,7 +26,7 @@
                         <span>@t.Name <span class="caption">@t.Rate.ToString("0.##")%@(t.IsCompound ? " · compound" : "")</span></span>
                         <span style="display:flex;gap:0.3rem;">
                             <button class="btn btn-ghost btn-sm" onclick="txEdit(@t.Id,@g.Id,'@t.Name',@t.Rate,@t.IsCompound.ToString().ToLower(),@t.SortOrder)"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="txDel(@t.Id)"><i class="fas fa-xmark"></i></button>
+                            <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="txDel(@t.Id)"><i class="fas fa-xmark"></i></button>
                         </span>
                     </li>
                 }

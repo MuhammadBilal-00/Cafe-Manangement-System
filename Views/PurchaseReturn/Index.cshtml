@@ -20,7 +20,7 @@
                     <td style="font-weight:600;">@r.ReturnNumber</td><td>@r.Branch?.Name</td><td>@(r.Supplier?.Name ?? "—")</td><td style="text-align:center;">@r.Lines.Count</td>
                     <td style="text-align:right;">Rs. @r.TotalAmount.ToString("N0")</td>
                     <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
-                    <td>@if (r.Status == "Pending"){<div style="display:flex;gap:0.4rem;"><button class="btn btn-primary btn-sm" onclick="prApprove(@r.Id)">Approve</button><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="prReject(@r.Id)">Reject</button></div>}</td>
+                    <td>@if (r.Status == "Pending"){<div style="display:flex;gap:0.4rem;"><button class="btn btn-primary btn-sm" onclick="prApprove(@r.Id)">Approve</button><button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="prReject(@r.Id)">Reject</button></div>}</td>
                 </tr>
             }
         </tbody>
@@ -60,7 +60,7 @@ async function prLoad() {
     document.getElementById('prSupplier').innerHTML = '<option value="">— none —</option>' + suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 }
 document.addEventListener('change', e => { if (e.target.id === 'prItem') document.getElementById('prCost').value = e.target.selectedOptions[0].dataset.cost; });
-function render() { const m = Object.fromEntries(items.map(i => [i.id, i])); document.getElementById('prLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${l.quantity}× ${m[l.inventoryItemId]?.name} @@ ${money(l.unitCost)}</span><a href="javascript:void(0)" onclick="prDel(${x})" style="color:#dc2626;">×</a></div>`).join(''); document.getElementById('prTot').textContent = 'Value ' + money(lines.reduce((s, l) => s + l.quantity * l.unitCost, 0)); }
+function render() { const m = Object.fromEntries(items.map(i => [i.id, i])); document.getElementById('prLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${l.quantity}× ${m[l.inventoryItemId]?.name} @@ ${money(l.unitCost)}</span><a href="javascript:void(0)" onclick="prDel(${x})" style="color:var(--danger);">×</a></div>`).join(''); document.getElementById('prTot').textContent = 'Value ' + money(lines.reduce((s, l) => s + l.quantity * l.unitCost, 0)); }
 window.prNew = async () => { lines = []; render(); await prLoad(); document.getElementById('prModal').style.display = 'flex'; };
 window.prAdd = () => { const id = parseInt(document.getElementById('prItem').value); const q = parseFloat(document.getElementById('prQty').value); const c = parseFloat(document.getElementById('prCost').value) || 0; if (!id || !(q > 0)) return; lines.push({ inventoryItemId: id, quantity: q, unitCost: c }); render(); };
 window.prDel = i => { lines.splice(i, 1); render(); };

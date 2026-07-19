@@ -49,7 +49,7 @@
 
     function branchId() { return parseInt(branchEl?.value || '0'); }
 
-    const ageColor = (m) => m >= 20 ? '#dc2626' : m >= 10 ? '#d97706' : '#16a34a';
+    const ageColor = (m) => m >= 20 ? 'var(--danger)' : m >= 10 ? 'var(--warning)' : 'var(--success)';
     const statusNext = { 'New': 'Cooking', 'Cooking': 'Ready', 'Ready': 'Served' };
     const statusBadge = { 'New': 'badge-info', 'Cooking': 'badge-warning', 'Ready': 'badge-success', 'Served': 'badge-neutral' };
 

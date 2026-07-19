@@ -48,10 +48,10 @@ const accMap = Object.fromEntries(accs.map(a => [a.id, a.label]));
 let lines = [];
 const money = v => 'Rs. ' + Math.round(v).toLocaleString();
 function render() {
-    document.getElementById('jLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${accMap[l.accountId]}</span><span>${l.debit ? 'Dr ' + money(l.debit) : 'Cr ' + money(l.credit)} <a href="javascript:void(0)" onclick="jDel(${x})" style="color:#dc2626;">×</a></span></div>`).join('');
+    document.getElementById('jLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${accMap[l.accountId]}</span><span>${l.debit ? 'Dr ' + money(l.debit) : 'Cr ' + money(l.credit)} <a href="javascript:void(0)" onclick="jDel(${x})" style="color:var(--danger);">×</a></span></div>`).join('');
     const dr = lines.reduce((s, l) => s + (+l.debit || 0), 0), cr = lines.reduce((s, l) => s + (+l.credit || 0), 0);
     const ok = dr === cr && dr > 0;
-    document.getElementById('jBal').innerHTML = `Debits ${money(dr)} · Credits ${money(cr)} — <b style="color:${ok ? '#16a34a' : '#dc2626'}">${ok ? 'balanced' : 'unbalanced'}</b>`;
+    document.getElementById('jBal').innerHTML = `Debits ${money(dr)} · Credits ${money(cr)} — <b style="color:${ok ? 'var(--success)' : 'var(--danger)'}">${ok ? 'balanced' : 'unbalanced'}</b>`;
 }
 window.jNew = () => { lines = []; render(); document.getElementById('jModal').style.display = 'flex'; };
 window.jAdd = () => { const id = parseInt(document.getElementById('jAcc').value); const dr = parseFloat(document.getElementById('jDr').value) || 0; const cr = parseFloat(document.getElementById('jCr').value) || 0; if (!id || (!dr && !cr)) return; lines.push({ accountId: id, debit: dr, credit: cr, description: null }); document.getElementById('jDr').value = ''; document.getElementById('jCr').value = ''; render(); };

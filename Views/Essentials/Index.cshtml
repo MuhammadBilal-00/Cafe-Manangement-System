@@ -16,7 +16,7 @@
     <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;"><button class="btn btn-primary btn-sm" onclick="docModal()"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> Add Document</button></div>
     <div class="card"><div class="card-body card-body-flush"><table class="premium-table"><thead><tr><th>Title</th><th>Category</th><th>File</th><th></th></tr></thead><tbody>
         @if (!documents.Any()) { <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary);">No documents.</td></tr> }
-        @foreach (var d in documents) { <tr><td>@d.Title</td><td><span class="caption">@d.Category</span></td><td>@if (!string.IsNullOrEmpty(d.FileUrl)){<a href="@d.FileUrl" target="_blank"><i class="fas fa-file"></i></a>}</td><td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="essDel('Document',@d.Id)"><i class="fas fa-trash"></i></button></td></tr> }
+        @foreach (var d in documents) { <tr><td>@d.Title</td><td><span class="caption">@d.Category</span></td><td>@if (!string.IsNullOrEmpty(d.FileUrl)){<a href="@d.FileUrl" target="_blank"><i class="fas fa-file"></i></a>}</td><td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="essDel('Document',@d.Id)"><i class="fas fa-trash"></i></button></td></tr> }
     </tbody></table></div></div>
 </div>
 
@@ -25,7 +25,7 @@
     <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;"><button class="btn btn-primary btn-sm" onclick="memoModal()"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> New Memo</button></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;">
         @if (!memos.Any()) { <div class="card"><div class="card-body" style="text-align:center;color:var(--text-secondary);">No memos.</div></div> }
-        @foreach (var m in memos) { <div class="card" style="@(m.Pinned ? "border-top:3px solid var(--accent);" : "")"><div class="card-body"><div style="display:flex;justify-content:space-between;"><b>@m.Title @(m.Pinned ? "📌" : "")</b><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="essDel('Memo',@m.Id)"><i class="fas fa-trash"></i></button></div><p style="font-size:0.85rem;color:var(--text-secondary);margin:0.5rem 0 0;white-space:pre-wrap;">@m.Body</p></div></div> }
+        @foreach (var m in memos) { <div class="card" style="@(m.Pinned ? "border-top:3px solid var(--accent);" : "")"><div class="card-body"><div style="display:flex;justify-content:space-between;"><b>@m.Title @(m.Pinned ? "📌" : "")</b><button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="essDel('Memo',@m.Id)"><i class="fas fa-trash"></i></button></div><p style="font-size:0.85rem;color:var(--text-secondary);margin:0.5rem 0 0;white-space:pre-wrap;">@m.Body</p></div></div> }
     </div>
 </div>
 
@@ -43,7 +43,7 @@
     <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;"><button class="btn btn-primary btn-sm" onclick="kbModal()"><i class="fas fa-plus" style="margin-right:0.4rem;"></i> New Article</button></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">
         @if (!articles.Any()) { <div class="card"><div class="card-body" style="text-align:center;color:var(--text-secondary);">No articles.</div></div> }
-        @foreach (var a in articles) { <div class="card"><div class="card-body"><div style="display:flex;justify-content:space-between;"><b>@a.Title</b><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="essDel('Article',@a.Id)"><i class="fas fa-trash"></i></button></div><div class="caption">@a.Category</div><p style="font-size:0.85rem;color:var(--text-secondary);margin:0.5rem 0 0;white-space:pre-wrap;">@(a.Body.Length > 200 ? a.Body[..200] + "…" : a.Body)</p></div></div> }
+        @foreach (var a in articles) { <div class="card"><div class="card-body"><div style="display:flex;justify-content:space-between;"><b>@a.Title</b><button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="essDel('Article',@a.Id)"><i class="fas fa-trash"></i></button></div><div class="caption">@a.Category</div><p style="font-size:0.85rem;color:var(--text-secondary);margin:0.5rem 0 0;white-space:pre-wrap;">@(a.Body.Length > 200 ? a.Body[..200] + "…" : a.Body)</p></div></div> }
     </div>
 </div>
 

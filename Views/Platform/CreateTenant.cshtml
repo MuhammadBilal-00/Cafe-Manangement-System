@@ -14,7 +14,7 @@
         <div class="card-body">
             <form asp-action="CreateTenant" method="post">
                 @Html.AntiForgeryToken()
-                <div asp-validation-summary="All" class="text-danger" style="margin-bottom:1rem;"></div>
+                <div asp-validation-summary="All" class="form-error" style="margin-bottom:1rem;"></div>
 
                 <div class="form-row">
                     <div class="form-group">

@@ -86,7 +86,7 @@
             <!-- totals -->
             <div style="border-top:1px solid var(--border-light);padding-top:0.6rem;font-size:0.9rem;">
                 <div style="display:flex;justify-content:space-between;"><span>@L["Subtotal"]</span><b id="tSub">Rs. 0</b></div>
-                <div style="display:flex;justify-content:space-between;color:#16a34a;"><span>@L["Discounts"]</span><b id="tDisc">Rs. 0</b></div>
+                <div style="display:flex;justify-content:space-between;color:var(--success);"><span>@L["Discounts"]</span><b id="tDisc">Rs. 0</b></div>
                 <div style="display:flex;justify-content:space-between;"><span>@L["Charges"]</span><b id="tChg">Rs. 0</b></div>
                 <div style="display:flex;justify-content:space-between;"><span>@L["Tax"] (<span id="tRate">0</span>%)</span><b id="tTax">Rs. 0</b></div>
                 <div style="display:flex;justify-content:space-between;font-size:1.15rem;margin-top:0.35rem;"><span>@L["Total"]</span><b id="tTotal" style="color:var(--accent);">Rs. 0</b></div>
@@ -240,7 +240,7 @@
         document.getElementById('modTitle').textContent = m.name;
         document.getElementById('modBody').innerHTML = _modGroups.map(g => `
             <div style="margin-bottom:0.9rem;">
-                <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.35rem;">${g.name} ${g.required ? '<span style="color:#dc2626;">*</span>' : ''} <span class="caption">(choose ${g.min}–${g.max})</span></div>
+                <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.35rem;">${g.name} ${g.required ? '<span style="color:var(--danger);">*</span>' : ''} <span class="caption">(choose ${g.min}–${g.max})</span></div>
                 ${g.options.map(o => `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;">
                     <input type="${g.max > 1 ? 'checkbox' : 'radio'}" name="mg_${g.id}" value="${o.id}" data-delta="${o.priceDelta}" data-name="${o.name}">
                     ${o.name} <span class="caption">${o.priceDelta >= 0 ? '+' : ''}Rs. ${o.priceDelta}</span></label>`).join('')}
@@ -294,7 +294,7 @@
                     <button class="btn btn-ghost btn-sm" onclick="posQty(${i},-1)">−</button>
                     <b>${l.qty}</b>
                     <button class="btn btn-ghost btn-sm" onclick="posQty(${i},1)">+</button>
-                    <button class="btn btn-ghost btn-sm" onclick="posRemove(${i})" style="color:#dc2626;"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-ghost btn-sm" onclick="posRemove(${i})" style="color:var(--danger);"><i class="fas fa-trash"></i></button>
                 </div>
             </div>`).join('');
         posQuote();
@@ -368,7 +368,7 @@
     function renderTenders() {
         const paid = tenders.reduce((s, t) => s + t.amount, 0);
         document.getElementById('payLines').innerHTML = tenders.map((t, i) =>
-            `<div style="display:flex;justify-content:space-between;padding:3px 0;"><span>${t.method}</span><span>${money(t.amount)} <a href="javascript:void(0)" onclick="payDel(${i})" style="color:#dc2626;">×</a></span></div>`).join('');
+            `<div style="display:flex;justify-content:space-between;padding:3px 0;"><span>${t.method}</span><span>${money(t.amount)} <a href="javascript:void(0)" onclick="payDel(${i})" style="color:var(--danger);">×</a></span></div>`).join('');
         document.getElementById('payRemaining').textContent = money(Math.max(0, quote.total - paid));
     }
     window.payDel = i => { tenders.splice(i, 1); renderTenders(); };

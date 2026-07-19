@@ -42,11 +42,11 @@
         <table class="premium-table"><tbody>
             <tr><td colspan="2" style="font-weight:700;color:var(--text-secondary);">Income</td></tr>
             @foreach (var l in pnl!.Income) { <tr><td>@l.Name</td><td style="text-align:right;">@m(l.Amount)</td></tr> }
-            <tr style="font-weight:700;"><td>Total income</td><td style="text-align:right;color:#16a34a;">@m(pnl.TotalIncome)</td></tr>
+            <tr style="font-weight:700;"><td>Total income</td><td style="text-align:right;color:var(--success);">@m(pnl.TotalIncome)</td></tr>
             <tr><td colspan="2" style="font-weight:700;color:var(--text-secondary);padding-top:0.75rem;">Expenses</td></tr>
             @foreach (var l in pnl.Expenses) { <tr><td>@l.Name</td><td style="text-align:right;">@m(l.Amount)</td></tr> }
-            <tr style="font-weight:700;"><td>Total expenses</td><td style="text-align:right;color:#dc2626;">@m(pnl.TotalExpense)</td></tr>
-            <tr style="font-weight:800;border-top:2px solid var(--border);"><td>Net profit</td><td style="text-align:right;color:@(pnl.NetProfit >= 0 ? "#16a34a" : "#dc2626");">@m(pnl.NetProfit)</td></tr>
+            <tr style="font-weight:700;"><td>Total expenses</td><td style="text-align:right;color:var(--danger);">@m(pnl.TotalExpense)</td></tr>
+            <tr style="font-weight:800;border-top:2px solid var(--border);"><td>Net profit</td><td style="text-align:right;color:@(pnl.NetProfit >= 0 ? "var(--success)" : "var(--danger)");">@m(pnl.NetProfit)</td></tr>
         </tbody></table>
     </div></div>
 

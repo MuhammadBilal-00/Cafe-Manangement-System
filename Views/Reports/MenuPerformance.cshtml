@@ -1,4 +1,4 @@
-﻿@model Cafe.Models.ViewModels.MenuPerformanceViewModel
+@model Cafe.Models.ViewModels.MenuPerformanceViewModel
 
 @{
     ViewData["Title"] = "Menu Performance";
@@ -22,7 +22,7 @@
     var categories = Model.AvailableCategories;
 
     // Build a consistent category-to-color map
-    string[] _palette = new[] { "#6366f1","#f59e0b","#10b981","#ef4444","#3b82f6","#ec4899","#8b5cf6","#14b8a6","#f97316","#06b6d4","#84cc16","#e11d48","#a855f7","#0ea5e9","#facc15" };
+    string[] _palette = new[] { "var(--info)","var(--warning)","var(--success)","var(--danger)","var(--info)","#ec4899","#8b5cf6","#14b8a6","#f97316","#06b6d4","#84cc16","#e11d48","#a855f7","var(--info)","#facc15" };
     var _catColorMap = new Dictionary<string, string>();
     int _palIdx = 0;
     foreach (var c in cats)
@@ -117,12 +117,12 @@
         <div class="kpi-value">@Model.TotalItemsSold.ToString("N0")</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-dollar-sign"></i></div>
+        <div class="kpi-icon" style="background:#dcfce7;color:var(--success);"><i class="fas fa-dollar-sign"></i></div>
         <div class="kpi-label">Menu Revenue</div>
         <div class="kpi-value">@FormatCurrency(Model.TotalMenuRevenue)</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-coins"></i></div>
+        <div class="kpi-icon" style="background:#fef3c7;color:var(--warning);"><i class="fas fa-coins"></i></div>
         <div class="kpi-label">Total Profit</div>
         <div class="kpi-value">@FormatCurrency(Model.TotalProfit)</div>
     </div>
@@ -185,7 +185,7 @@ else
                 @{
                     decimal catMaxRev = cats.Any() ? cats.Max(c => c.Revenue) : 1m;
                     if (catMaxRev <= 0) catMaxRev = 1;
-                    string[] cardPalette = new[] { "#6366f1","#f59e0b","#10b981","#ef4444","#3b82f6","#ec4899","#8b5cf6","#14b8a6","#f97316","#06b6d4","#84cc16","#e11d48" };
+                    string[] cardPalette = new[] { "var(--info)","var(--warning)","var(--success)","var(--danger)","var(--info)","#ec4899","#8b5cf6","#14b8a6","#f97316","#06b6d4","#84cc16","#e11d48" };
                     int catIdx = 0;
                 }
                 @foreach (var cat in cats)
@@ -218,7 +218,7 @@ else
         <!-- Top Selling -->
         <div class="card">
             <div class="card-header">
-                <h3 class="section-title"><i class="fas fa-trophy" style="color:#d4af37;margin-right:0.5rem;"></i>Top @Model.TopN Sellers (by Qty)</h3>
+                <h3 class="section-title"><i class="fas fa-trophy" style="color:var(--accent);margin-right:0.5rem;"></i>Top @Model.TopN Sellers (by Qty)</h3>
             </div>
             <div class="card-body card-body-flush">
                 @if (topSellers.Any())
@@ -228,7 +228,7 @@ else
                         int qPct = (int)Math.Round((decimal)item.QuantitySold / maxQty * 100m);
                         string catColor = CatColor(item.CategoryName, item.CategoryColor);
                         <div style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 1rem;border-bottom:1px solid var(--border-light);">
-                            <div style="width:26px;height:26px;border-radius:50%;background:@(idx < 3 ? "#d4af37" : "var(--bg-body)");color:@(idx < 3 ? "#fff" : "var(--text-secondary)");display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;flex-shrink:0;border:1px solid var(--border-light);">@(idx + 1)</div>
+                            <div style="width:26px;height:26px;border-radius:50%;background:@(idx < 3 ? "var(--accent)" : "var(--bg-body)");color:@(idx < 3 ? "#fff" : "var(--text-secondary)");display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;flex-shrink:0;border:1px solid var(--border-light);">@(idx + 1)</div>
                             <div style="flex:1;min-width:0;">
                                 <div style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@item.ItemName</div>
                                 <div style="font-size:0.68rem;color:var(--text-tertiary);">@item.CategoryName · @FormatCurrency(item.Revenue) rev</div>
@@ -246,7 +246,7 @@ else
         <!-- Least Selling -->
         <div class="card">
             <div class="card-header">
-                <h3 class="section-title"><i class="fas fa-arrow-down" style="color:#dc2626;margin-right:0.5rem;"></i>Least @Model.TopN Sellers (by Qty)</h3>
+                <h3 class="section-title"><i class="fas fa-arrow-down" style="color:var(--danger);margin-right:0.5rem;"></i>Least @Model.TopN Sellers (by Qty)</h3>
             </div>
             <div class="card-body card-body-flush">
                 @if (leastSellers.Any())
@@ -254,9 +254,9 @@ else
                     @foreach (var (item, idx) in leastSellers.Select((v, i) => (v, i)))
                     {
                         string catColor = CatColor(item.CategoryName, item.CategoryColor);
-                        string profitColor = item.ProfitMargin >= 20 ? "#16a34a" : item.ProfitMargin >= 0 ? "#d97706" : "#dc2626";
+                        string profitColor = item.ProfitMargin >= 20 ? "var(--success)" : item.ProfitMargin >= 0 ? "var(--warning)" : "var(--danger)";
                         <div style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 1rem;border-bottom:1px solid var(--border-light);">
-                            <div style="width:26px;height:26px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;flex-shrink:0;border:1px solid var(--border-light);">@(idx + 1)</div>
+                            <div style="width:26px;height:26px;border-radius:50%;background:#fee2e2;color:var(--danger);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;flex-shrink:0;border:1px solid var(--border-light);">@(idx + 1)</div>
                             <div style="flex:1;min-width:0;">
                                 <div style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@item.ItemName</div>
                                 <div style="font-size:0.68rem;color:var(--text-tertiary);">@item.CategoryName · @FormatCurrency(item.Revenue) rev</div>
@@ -301,7 +301,7 @@ else
                     @foreach (var item in items)
                     {
                         rank++;
-                        string profitColor = item.ProfitMargin >= 40 ? "#16a34a" : item.ProfitMargin >= 20 ? "#d97706" : "#dc2626";
+                        string profitColor = item.ProfitMargin >= 40 ? "var(--success)" : item.ProfitMargin >= 20 ? "var(--warning)" : "var(--danger)";
                         <tr>
                             <td style="color:var(--text-tertiary);">@rank</td>
                             <td style="font-weight:600;">@item.ItemName</td>

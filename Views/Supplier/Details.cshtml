@@ -97,7 +97,7 @@
                         <tr>
                             <td style="font-weight:500;">@item.Name</td>
                             <td class="caption">@item.Unit</td>
-                            <td style="text-align:center; font-weight:600; color:@(stockOk ? "#16a34a" : "#dc2626");">@item.Quantity</td>
+                            <td style="text-align:center; font-weight:600; color:@(stockOk ? "var(--success)" : "var(--danger)");">@item.Quantity</td>
                             <td style="text-align:center; color:var(--text-tertiary);">@item.ReorderLevel</td>
                             <td>Rs. @item.UnitPrice.ToString("N2")</td>
                             <td>

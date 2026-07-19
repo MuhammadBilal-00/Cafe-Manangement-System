@@ -28,7 +28,7 @@
                 @foreach (var l in ledger)
                 {
                     <tr><td><span class="caption">@l.CreatedAt.ToString("dd MMM HH:mm")</span></td><td>@l.Customer?.Name</td><td>@l.Type</td>
-                    <td style="text-align:right;color:@(l.Points >= 0 ? "#16a34a" : "#dc2626");font-weight:700;">@l.Points.ToString("+#;-#;0")</td></tr>
+                    <td style="text-align:right;color:@(l.Points >= 0 ? "var(--success)" : "var(--danger)");font-weight:700;">@l.Points.ToString("+#;-#;0")</td></tr>
                 }
             </tbody>
         </table></div>

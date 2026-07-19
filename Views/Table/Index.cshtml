@@ -5,7 +5,7 @@
     var selectedBranchId = ViewBag.SelectedBranchId as int?;
     var isManager = Context.Session.GetString("UserRole") is "Owner" or "BranchManager";
     var zones = Model.GroupBy(t => string.IsNullOrEmpty(t.Zone) ? "Main" : t.Zone!).OrderBy(g => g.Key);
-    string statusColor(string s) => s switch { "Available" => "#16a34a", "Occupied" => "#dc2626", "Reserved" => "#d97706", "Dirty" => "#6b7280", _ => "#6b7280" };
+    string statusColor(string s) => s switch { "Available" => "var(--success)", "Occupied" => "var(--danger)", "Reserved" => "var(--warning)", "Dirty" => "var(--text-secondary)", _ => "var(--text-secondary)" };
 }
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
@@ -89,7 +89,7 @@
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
     const branchId = @(selectedBranchId ?? 0);
     const order = ['Available', 'Occupied', 'Reserved', 'Dirty'];
-    const color = { Available: '#16a34a', Occupied: '#dc2626', Reserved: '#d97706', Dirty: '#6b7280' };
+    const color = { Available: 'var(--success)', Occupied: 'var(--danger)', Reserved: 'var(--warning)', Dirty: 'var(--text-secondary)' };
 
     window.cycleStatus = async function (id) {
         const card = document.querySelector(`.table-card[data-id="${id}"]`);

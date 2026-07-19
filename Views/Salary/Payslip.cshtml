@@ -54,8 +54,8 @@
                 <h3 class="section-title" style="margin-bottom:0.75rem;">Attendance Summary</h3>
                 <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(80px,1fr)); gap:0.75rem; text-align:center;">
                     <div><p class="caption" style="margin:0;">Working Days</p><p style="font-size:1.25rem; font-weight:700; margin:0;">@r.TotalWorkingDays</p></div>
-                    <div><p class="caption" style="margin:0;">Present</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:#16a34a;">@r.DaysPresent</p></div>
-                    <div><p class="caption" style="margin:0;">Absent</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:#dc2626;">@r.DaysAbsent</p></div>
+                    <div><p class="caption" style="margin:0;">Present</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:var(--success);">@r.DaysPresent</p></div>
+                    <div><p class="caption" style="margin:0;">Absent</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:var(--danger);">@r.DaysAbsent</p></div>
                     <div><p class="caption" style="margin:0;">Late</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:#ca8a04;">@r.DaysLate</p></div>
                     <div><p class="caption" style="margin:0;">Half-Day</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:#ea580c;">@r.DaysHalfDay</p></div>
                     <div><p class="caption" style="margin:0;">Overtime</p><p style="font-size:1.25rem; font-weight:700; margin:0; color:var(--accent);">@(r.OvertimeHours > 0 ? $"{r.OvertimeHours:F1}h" : "-")</p></div>
@@ -74,22 +74,22 @@
                     @if (r.OvertimePay > 0)
                     {
                         <tr>
-                            <td style="padding:0.75rem 0; color:#16a34a;"><i class="fas fa-clock" style="margin-right:0.5rem;"></i> Overtime Pay <span class="caption" style="display:block;">@r.OvertimeHours.ToString("F1")h x Hourly Rate x 1.5</span></td>
-                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#16a34a;">+ Rs. @r.OvertimePay.ToString("N2")</td>
+                            <td style="padding:0.75rem 0; color:var(--success);"><i class="fas fa-clock" style="margin-right:0.5rem;"></i> Overtime Pay <span class="caption" style="display:block;">@r.OvertimeHours.ToString("F1")h x Hourly Rate x 1.5</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:var(--success);">+ Rs. @r.OvertimePay.ToString("N2")</td>
                         </tr>
                     }
                     @if (r.AttendanceBonus > 0)
                     {
                         <tr>
-                            <td style="padding:0.75rem 0; color:#16a34a;"><i class="fas fa-star" style="margin-right:0.5rem;"></i> Attendance Bonus <span class="caption" style="display:block;">5% of Base (0 absent, &#8804;2 late)</span></td>
-                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#16a34a;">+ Rs. @r.AttendanceBonus.ToString("N2")</td>
+                            <td style="padding:0.75rem 0; color:var(--success);"><i class="fas fa-star" style="margin-right:0.5rem;"></i> Attendance Bonus <span class="caption" style="display:block;">5% of Base (0 absent, &#8804;2 late)</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:var(--success);">+ Rs. @r.AttendanceBonus.ToString("N2")</td>
                         </tr>
                     }
                     @foreach (var adj in Model.Adjustments.Where(a => a.Type == "Bonus"))
                     {
                         <tr>
-                            <td style="padding:0.75rem 0; color:#16a34a;"><i class="fas fa-gift" style="margin-right:0.5rem;"></i> @(adj.Reason ?? "Manual Bonus") <span class="caption" style="display:block;">By @(adj.CreatedBy?.Name ?? "System") on @adj.CreatedAt.ToString("dd MMM")</span></td>
-                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#16a34a;">+ Rs. @adj.Amount.ToString("N2")</td>
+                            <td style="padding:0.75rem 0; color:var(--success);"><i class="fas fa-gift" style="margin-right:0.5rem;"></i> @(adj.Reason ?? "Manual Bonus") <span class="caption" style="display:block;">By @(adj.CreatedBy?.Name ?? "System") on @adj.CreatedAt.ToString("dd MMM")</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:var(--success);">+ Rs. @adj.Amount.ToString("N2")</td>
                         </tr>
                     }
                     <tr style="background:rgba(59,130,246,0.05);">
@@ -99,34 +99,34 @@
                     @if (r.AbsenceDeduction > 0)
                     {
                         <tr>
-                            <td style="padding:0.75rem 0; color:#dc2626;"><i class="fas fa-calendar-times" style="margin-right:0.5rem;"></i> Absence Deduction <span class="caption" style="display:block;">@r.DaysAbsent day(s) x Daily Rate</span></td>
-                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#dc2626;">- Rs. @r.AbsenceDeduction.ToString("N2")</td>
+                            <td style="padding:0.75rem 0; color:var(--danger);"><i class="fas fa-calendar-times" style="margin-right:0.5rem;"></i> Absence Deduction <span class="caption" style="display:block;">@r.DaysAbsent day(s) x Daily Rate</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:var(--danger);">- Rs. @r.AbsenceDeduction.ToString("N2")</td>
                         </tr>
                     }
                     @if (r.HalfDayDeduction > 0)
                     {
                         <tr>
-                            <td style="padding:0.75rem 0; color:#dc2626;"><i class="fas fa-adjust" style="margin-right:0.5rem;"></i> Half-Day Deduction <span class="caption" style="display:block;">@r.DaysHalfDay day(s) x Daily Rate / 2</span></td>
-                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#dc2626;">- Rs. @r.HalfDayDeduction.ToString("N2")</td>
+                            <td style="padding:0.75rem 0; color:var(--danger);"><i class="fas fa-adjust" style="margin-right:0.5rem;"></i> Half-Day Deduction <span class="caption" style="display:block;">@r.DaysHalfDay day(s) x Daily Rate / 2</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:var(--danger);">- Rs. @r.HalfDayDeduction.ToString("N2")</td>
                         </tr>
                     }
                     @if (r.LatePenaltyDeduction > 0)
                     {
                         <tr>
-                            <td style="padding:0.75rem 0; color:#dc2626;"><i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i> Late Penalty <span class="caption" style="display:block;">@r.DaysLate late(s) = @(r.DaysLate / 3) half-day penalty</span></td>
-                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#dc2626;">- Rs. @r.LatePenaltyDeduction.ToString("N2")</td>
+                            <td style="padding:0.75rem 0; color:var(--danger);"><i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i> Late Penalty <span class="caption" style="display:block;">@r.DaysLate late(s) = @(r.DaysLate / 3) half-day penalty</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:var(--danger);">- Rs. @r.LatePenaltyDeduction.ToString("N2")</td>
                         </tr>
                     }
                     @foreach (var adj in Model.Adjustments.Where(a => a.Type == "Deduction"))
                     {
                         <tr>
-                            <td style="padding:0.75rem 0; color:#dc2626;"><i class="fas fa-minus-circle" style="margin-right:0.5rem;"></i> @(adj.Reason ?? "Manual Deduction") <span class="caption" style="display:block;">By @(adj.CreatedBy?.Name ?? "System") on @adj.CreatedAt.ToString("dd MMM")</span></td>
-                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:#dc2626;">- Rs. @adj.Amount.ToString("N2")</td>
+                            <td style="padding:0.75rem 0; color:var(--danger);"><i class="fas fa-minus-circle" style="margin-right:0.5rem;"></i> @(adj.Reason ?? "Manual Deduction") <span class="caption" style="display:block;">By @(adj.CreatedBy?.Name ?? "System") on @adj.CreatedAt.ToString("dd MMM")</span></td>
+                            <td style="padding:0.75rem 0; text-align:right; font-weight:600; color:var(--danger);">- Rs. @adj.Amount.ToString("N2")</td>
                         </tr>
                     }
                     <tr style="background:rgba(239,68,68,0.05);">
                         <td style="padding:0.75rem 0; font-weight:700;">Total Deductions</td>
-                        <td style="padding:0.75rem 0; text-align:right; font-weight:700; color:#dc2626;">- Rs. @r.TotalDeductions.ToString("N2")</td>
+                        <td style="padding:0.75rem 0; text-align:right; font-weight:700; color:var(--danger);">- Rs. @r.TotalDeductions.ToString("N2")</td>
                     </tr>
                     <tr style="background:rgba(147,51,234,0.05); border-top:3px solid var(--accent);">
                         <td style="padding:1rem 0; font-weight:700; font-size:1.15rem;">Net Payable</td>
@@ -144,10 +144,10 @@
 
             @if (r.PaidDate.HasValue)
             {
-                <div style="background:rgba(34,197,94,0.08); border-radius:var(--radius-card); padding:1rem; margin-top:0.75rem;">
+                <div style="background:var(--success-light); border-radius:var(--radius-card); padding:1rem; margin-top:0.75rem;">
                     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
                         <p class="caption" style="margin:0;">
-                            <i class="fas fa-check-circle" style="color:#16a34a; margin-right:0.5rem;"></i>
+                            <i class="fas fa-check-circle" style="color:var(--success); margin-right:0.5rem;"></i>
                             Paid on @r.PaidDate.Value.ToString("dd MMM yyyy")
                         </p>
                         @if (!string.IsNullOrEmpty(r.PaymentMethod))
@@ -160,7 +160,7 @@
                                 _               => "fa-credit-card"
                             };
                             <div style="display:flex; align-items:center; gap:0.5rem;">
-                                <span class="caption"><i class="fas @pmIcon" style="color:#16a34a; margin-right:0.25rem;"></i>@r.PaymentMethod</span>
+                                <span class="caption"><i class="fas @pmIcon" style="color:var(--success); margin-right:0.25rem;"></i>@r.PaymentMethod</span>
                                 @if (!string.IsNullOrEmpty(r.PaymentReference))
                                 {
                                     <span class="caption" style="background:rgba(0,0,0,0.06); padding:2px 8px; border-radius:4px;">@r.PaymentReference</span>
@@ -170,7 +170,7 @@
                     </div>
                     @if (!string.IsNullOrEmpty(r.PaymentNotes))
                     {
-                        <p class="caption" style="margin:0.5rem 0 0; color:#6b7280;"><i class="fas fa-sticky-note" style="margin-right:0.25rem;"></i>@r.PaymentNotes</p>
+                        <p class="caption" style="margin:0.5rem 0 0; color:var(--text-secondary);"><i class="fas fa-sticky-note" style="margin-right:0.25rem;"></i>@r.PaymentNotes</p>
                     }
                 </div>
             }

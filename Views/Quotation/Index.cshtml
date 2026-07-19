@@ -30,7 +30,7 @@
                         {
                             <div style="display:flex;gap:0.4rem;">
                                 <button class="btn btn-primary btn-sm" onclick="qConvert(@q.Id)"><i class="fas fa-right-to-bracket" style="margin-right:0.3rem;"></i> Convert</button>
-                                <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="qCancel(@q.Id)">Cancel</button>
+                                <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="qCancel(@q.Id)">Cancel</button>
                             </div>
                         }
                         else if (q.ConvertedOrderId != null) { <span class="caption">→ order #@q.ConvertedOrderId</span> }
@@ -64,7 +64,7 @@ const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'ap
 let items = [], lines = [];
 const money = v => 'Rs. ' + Math.round(v).toLocaleString();
 async function qLoad() { items = await fetch('/Quotation/GetMenu?branchId=' + document.getElementById('qBranch').value).then(r => r.json()); document.getElementById('qItem').innerHTML = items.map(i => `<option value="${i.id}">${i.name} · ${money(i.price)}</option>`).join(''); }
-function render() { const m = Object.fromEntries(items.map(i => [i.id, i])); document.getElementById('qLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${l.quantity}× ${m[l.menuItemId]?.name}</span><a href="javascript:void(0)" onclick="qDel(${x})" style="color:#dc2626;">×</a></div>`).join(''); document.getElementById('qTotal').textContent = 'Subtotal ' + money(lines.reduce((s, l) => s + l.price * l.quantity - l.lineDiscount, 0)); }
+function render() { const m = Object.fromEntries(items.map(i => [i.id, i])); document.getElementById('qLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${l.quantity}× ${m[l.menuItemId]?.name}</span><a href="javascript:void(0)" onclick="qDel(${x})" style="color:var(--danger);">×</a></div>`).join(''); document.getElementById('qTotal').textContent = 'Subtotal ' + money(lines.reduce((s, l) => s + l.price * l.quantity - l.lineDiscount, 0)); }
 window.qNew = async () => { lines = []; render(); await qLoad(); document.getElementById('qModal').style.display = 'flex'; };
 window.qAdd = () => { const id = parseInt(document.getElementById('qItem').value); const q = parseInt(document.getElementById('qQty').value) || 1; const m = items.find(i => i.id === id); if (!m) return; const e = lines.find(l => l.menuItemId === id); if (e) e.quantity += q; else lines.push({ menuItemId: id, quantity: q, price: m.price, lineDiscount: 0 }); render(); };
 window.qDel = i => { lines.splice(i, 1); render(); };

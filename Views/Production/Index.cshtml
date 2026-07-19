@@ -34,7 +34,7 @@
                         {
                             <div style="display:flex;gap:0.4rem;">
                                 <button class="btn btn-primary btn-sm" onclick="prComplete(@p.Id)"><i class="fas fa-industry" style="margin-right:0.3rem;"></i> Produce</button>
-                                <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="prCancel(@p.Id)">Cancel</button>
+                                <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="prCancel(@p.Id)">Cancel</button>
                             </div>
                         }
                     </td>
@@ -83,7 +83,7 @@ async function prLoadItems() {
 function renderInputs() {
     const map = Object.fromEntries(items.map(i => [i.id, i]));
     document.getElementById('prInputs').innerHTML = inputs.map((l, idx) =>
-        `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${map[l.inventoryItemId]?.name || '#' + l.inventoryItemId} — <b>${l.quantity}</b></span><a href="javascript:void(0)" onclick="prDel(${idx})" style="color:#dc2626;">×</a></div>`).join('');
+        `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${map[l.inventoryItemId]?.name || '#' + l.inventoryItemId} — <b>${l.quantity}</b></span><a href="javascript:void(0)" onclick="prDel(${idx})" style="color:var(--danger);">×</a></div>`).join('');
     const total = inputs.reduce((s, l) => s + (map[l.inventoryItemId]?.cost || 0) * l.quantity, 0);
     const oq = parseFloat(document.getElementById('prOutQty').value) || 0;
     document.getElementById('prCost').textContent = `Input cost ${money(total)}${oq ? ' · ≈ ' + money(total / oq) + '/unit' : ''}`;

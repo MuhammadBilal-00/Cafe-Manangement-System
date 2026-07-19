@@ -52,17 +52,17 @@
             <div class="kpi-value">@branches.Count</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-dollar-sign"></i></div>
+            <div class="kpi-icon" style="background:#dcfce7;color:var(--success);"><i class="fas fa-dollar-sign"></i></div>
             <div class="kpi-label">Top Revenue</div>
             <div class="kpi-value">@(branches.Any() ? FormatCurrency(branches.Max(b => b.Revenue)) : "$0.00")</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-star"></i></div>
+            <div class="kpi-icon" style="background:#fef3c7;color:var(--warning);"><i class="fas fa-star"></i></div>
             <div class="kpi-label">Avg Feedback</div>
             <div class="kpi-value">@overallAvgFeedback.ToString("0.0")/5</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-comment-dots"></i></div>
+            <div class="kpi-icon" style="background:#fee2e2;color:var(--danger);"><i class="fas fa-comment-dots"></i></div>
             <div class="kpi-label">Open Feedback</div>
             <div class="kpi-value">@totalOpenFeedback</div>
         </div>
@@ -97,7 +97,7 @@
             <!-- Completion Rate Chart -->
             <div class="card min-w-0">
                 <div class="card-header">
-                    <h3 class="section-title"><i class="fas fa-bullseye" style="color:#10b981;margin-right:0.5rem;"></i>Completion Rate by Branch</h3>
+                    <h3 class="section-title"><i class="fas fa-bullseye" style="color:var(--success);margin-right:0.5rem;"></i>Completion Rate by Branch</h3>
                 </div>
                 <div class="card-body relative h-[300px]">
                     <canvas id="branchCompletionChart"></canvas>
@@ -106,7 +106,7 @@
             <!-- Feedback Rating Chart -->
             <div class="card min-w-0">
                 <div class="card-header">
-                    <h3 class="section-title"><i class="fas fa-star" style="color:#f59e0b;margin-right:0.5rem;"></i>Feedback Ratings</h3>
+                    <h3 class="section-title"><i class="fas fa-star" style="color:var(--warning);margin-right:0.5rem;"></i>Feedback Ratings</h3>
                 </div>
                 <div class="card-body relative h-[300px]">
                     <canvas id="branchFeedbackChart"></canvas>
@@ -175,7 +175,7 @@
                                 </div>
                                 <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
                                     <div
-                                        style="height:100%;width:@(ordersPct)%;background:linear-gradient(90deg,#0ea5e9,#8b5cf6);border-radius:3px;">
+                                        style="height:100%;width:@(ordersPct)%;background:linear-gradient(90deg,var(--info),#8b5cf6);border-radius:3px;">
                                     </div>
                                 </div>
                             </div>
@@ -186,7 +186,7 @@
                                 </div>
                                 <div style="height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden;">
                                     <div
-                                        style="height:100%;width:@(completion)%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:3px;">
+                                        style="height:100%;width:@(completion)%;background:linear-gradient(90deg,var(--success),#06b6d4);border-radius:3px;">
                                     </div>
                                 </div>
                             </div>

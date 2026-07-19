@@ -7,7 +7,7 @@
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
     <div>
         <h1 class="page-title" style="margin:0;">
-            <i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i> Needs Attention
+            <i class="fas fa-exclamation-triangle" style="color:var(--danger);"></i> Needs Attention
         </h1>
         <p class="body-text" style="margin-top:0.25rem;">Low-rated (1-2 stars), unresolved feedback from the last 7
             days.</p>
@@ -31,7 +31,7 @@
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
                             <div style="flex:1;min-width:0;">
                                 <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.4rem;">
-                                    <span style="color:#dc2626;font-weight:700;font-size:0.9rem;">@ratingStars</span>
+                                    <span style="color:var(--danger);font-weight:700;font-size:0.9rem;">@ratingStars</span>
                                     <span class="caption">@f.Date.ToString("dd MMM yyyy HH:mm")</span>
                                     @if (f.Branch != null)
                                     {
@@ -56,7 +56,7 @@
     {
         <div class="card">
             <div class="empty-state">
-                <i class="fas fa-check-circle" style="font-size:2.5rem;color:#16a34a;margin-bottom:0.75rem;"></i>
+                <i class="fas fa-check-circle" style="font-size:2.5rem;color:var(--success);margin-bottom:0.75rem;"></i>
                 <p style="font-weight:600;color:var(--text-primary);">All clear!</p>
                 <p class="caption">No urgent feedback right now. Great job!</p>
             </div>

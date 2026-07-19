@@ -15,7 +15,7 @@
     {
         <div class="card card-accent mb-6">
             <div class="card-body flex items-center gap-3 card-body-compact">
-                <div class="kpi-icon" style="background:rgba(212,175,55,0.1); color:var(--accent); width:36px; height:36px; font-size:0.9rem;"><i class="fas fa-file-contract"></i></div>
+                <div class="kpi-icon" style="background:var(--accent-light); color:var(--accent); width:36px; height:36px; font-size:0.9rem;"><i class="fas fa-file-contract"></i></div>
                 <div>
                     <p class="body-text" style="font-weight:600; margin:0;">Policy: @Model.ActivePolicy.Name</p>
                     <p class="caption" style="margin:0;">
@@ -31,7 +31,7 @@
     {
         <div class="card card-accent-danger mb-6">
             <div class="card-body card-body-compact">
-                <p class="caption" style="margin:0; color:#dc2626;"><i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i> No active salary policy. Salary generation will fail. Please create a policy first.</p>
+                <p class="caption" style="margin:0; color:var(--danger);"><i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i> No active salary policy. Salary generation will fail. Please create a policy first.</p>
             </div>
         </div>
     }
@@ -129,16 +129,16 @@
                             {
                                 totalNet += p.FinalSalary;
                                 totalBase += p.BaseSalary;
-                                var pctColor = p.AttendancePercentage >= 90 ? "#16a34a" :
-                                               p.AttendancePercentage >= 70 ? "#ca8a04" : "#dc2626";
+                                var pctColor = p.AttendancePercentage >= 90 ? "var(--success)" :
+                                               p.AttendancePercentage >= 70 ? "#ca8a04" : "var(--danger)";
                                 <tr>
                                     <td style="font-weight:500;">@(p.Staff?.User?.Name ?? "Staff #" + p.StaffId)</td>
                                     <td style="text-align:right;">Rs. @p.BaseSalary.ToString("N0")</td>
                                     <td style="text-align:center;">@p.DaysPresent/@p.TotalWorkingDays</td>
                                     <td style="text-align:center; font-weight:700; color:@pctColor;">@p.AttendancePercentage%</td>
-                                    <td style="text-align:right; color:#3b82f6;">@(p.OvertimePay > 0 ? $"+{p.OvertimePay:N0}" : "-")</td>
-                                    <td style="text-align:right; color:#16a34a;">@(p.AttendanceBonus > 0 ? $"+{p.AttendanceBonus:N0}" : "-")</td>
-                                    <td style="text-align:right; color:#dc2626;">@(p.TotalDeductions > 0 ? $"-{p.TotalDeductions:N0}" : "-")</td>
+                                    <td style="text-align:right; color:var(--info);">@(p.OvertimePay > 0 ? $"+{p.OvertimePay:N0}" : "-")</td>
+                                    <td style="text-align:right; color:var(--success);">@(p.AttendanceBonus > 0 ? $"+{p.AttendanceBonus:N0}" : "-")</td>
+                                    <td style="text-align:right; color:var(--danger);">@(p.TotalDeductions > 0 ? $"-{p.TotalDeductions:N0}" : "-")</td>
                                     <td style="text-align:right; font-weight:700;">Rs. @p.FinalSalary.ToString("N0")</td>
                                 </tr>
                             }

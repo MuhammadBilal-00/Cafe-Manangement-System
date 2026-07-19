@@ -20,7 +20,7 @@
                 {
                     var actual = actuals.TryGetValue(l.AccountId * 10000 + b.Year, out var a) ? a : 0;
                     var variance = actual - l.Amount;
-                    <tr><td>@l.Account?.Name</td><td style="text-align:right;">@m(l.Amount)</td><td style="text-align:right;">@m(actual)</td><td style="text-align:right;color:@(variance >= 0 ? "#16a34a" : "#dc2626");">@m(variance)</td></tr>
+                    <tr><td>@l.Account?.Name</td><td style="text-align:right;">@m(l.Amount)</td><td style="text-align:right;">@m(actual)</td><td style="text-align:right;color:@(variance >= 0 ? "var(--success)" : "var(--danger)");">@m(variance)</td></tr>
                 }
             </tbody></table>
         </div></div>
@@ -45,7 +45,7 @@ const accs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(accounts.Select
 const accMap = Object.fromEntries(accs.map(a => [a.id, a.label]));
 let lines = [];
 const money = v => 'Rs. ' + Math.round(v).toLocaleString();
-function render() { document.getElementById('bLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${accMap[l.accountId]}</span><span>${money(l.amount)} <a href="javascript:void(0)" onclick="bDel(${x})" style="color:#dc2626;">×</a></span></div>`).join(''); }
+function render() { document.getElementById('bLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${accMap[l.accountId]}</span><span>${money(l.amount)} <a href="javascript:void(0)" onclick="bDel(${x})" style="color:var(--danger);">×</a></span></div>`).join(''); }
 window.bNew = () => { lines = []; render(); document.getElementById('bModal').style.display = 'flex'; };
 window.bAdd = () => { const id = parseInt(document.getElementById('bAcc').value); const amt = parseFloat(document.getElementById('bAmt').value) || 0; if (!id || !amt) return; const e = lines.find(l => l.accountId === id); if (e) e.amount = amt; else lines.push({ accountId: id, amount: amt }); document.getElementById('bAmt').value = ''; render(); };
 window.bDel = i => { lines.splice(i, 1); render(); };

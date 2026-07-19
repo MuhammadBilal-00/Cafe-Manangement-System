@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Cafe.Models.Branch>
+@model IEnumerable<Cafe.Models.Branch>
 @{
     ViewData["Title"] = "Branches";
     var isOwner = Context.Session.GetString("UserRole") == "Owner";
@@ -26,21 +26,21 @@
 <!-- KPI Cards -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(212,175,55,0.10);color:#d4af37;">
+        <div class="kpi-icon" style="background:var(--accent-light);color:var(--accent);">
             <i class="fas fa-store"></i>
         </div>
         <div class="kpi-label">Total Branches</div>
         <div class="kpi-value">@Model.Count()</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(34,197,94,0.10);color:#22c55e;">
+        <div class="kpi-icon" style="background:rgba(34,197,94,0.10);color:var(--success);">
             <i class="fas fa-check-circle"></i>
         </div>
         <div class="kpi-label">Active</div>
         <div class="kpi-value">@Model.Count(b => b.IsActive)</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(99,102,241,0.10);color:#6366f1;">
+        <div class="kpi-icon" style="background:rgba(99,102,241,0.10);color:var(--info);">
             <i class="fas fa-user-tie"></i>
         </div>
         <div class="kpi-label">Managed</div>

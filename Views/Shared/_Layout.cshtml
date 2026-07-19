@@ -1,4 +1,4 @@
-﻿@inject Cafe.Services.ITenantBrandingService Branding
+@inject Cafe.Services.ITenantBrandingService Branding
 @inject Cafe.Services.IFeatureGate FeatureGate
 @inject Cafe.Services.ITenantContext TenantCtx
 @{
@@ -72,10 +72,10 @@
 /* Skeleton loader lives in design-system.css (.skeleton-pulse) */
 
 /* ── Status Badges for all 10 attendance statuses ── */
-.badge-paid-leave   { background:rgba(212,175,55,0.15); color:#92400e; border:1px solid rgba(212,175,55,0.3); }
-.badge-sick-leave   { background:rgba(239,68,68,0.1);   color:#991b1b; border:1px solid rgba(239,68,68,0.2); }
+.badge-paid-leave   { background:var(--accent-light); color:#92400e; border:1px solid rgba(212,175,55,0.3); }
+.badge-sick-leave   { background:var(--danger-light);   color:#991b1b; border:1px solid rgba(239,68,68,0.2); }
 .badge-casual-leave { background:rgba(249,115,22,0.1);  color:#9a3412; border:1px solid rgba(249,115,22,0.2); }
-.badge-wfh          { background:rgba(99,102,241,0.12); color:#3730a3; border:1px solid rgba(99,102,241,0.2); }
+.badge-wfh          { background:var(--info-light); color:#3730a3; border:1px solid rgba(99,102,241,0.2); }
 .badge-holiday      { background:rgba(16,185,129,0.12); color:#065f46; border:1px solid rgba(16,185,129,0.2); }
 .badge-overtime     { background:rgba(234,179,8,0.12);  color:#713f12; border:1px solid rgba(234,179,8,0.2); }
 </style>
@@ -490,7 +490,7 @@
                         <div style="position:relative;" id="notifBellContainer">
                             <button class="header-icon-btn" data-tooltip="Notifications" id="notifBellBtn" onclick="toggleNotifDropdown(event)" style="position:relative;">
                                 <i class="fas fa-bell" id="notifBellIcon"></i>
-                                <span id="notifBadge" style="display:none;position:absolute;top:0;right:0;min-width:18px;height:18px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:0.6rem;font-weight:800;align-items:center;justify-content:center;padding:0 4px;line-height:1;box-shadow:0 2px 6px rgba(220,38,38,0.4);border:2px solid var(--surface);">0</span>
+                                <span id="notifBadge" style="display:none;position:absolute;top:0;right:0;min-width:18px;height:18px;border-radius:10px;background:linear-gradient(135deg,var(--danger),var(--danger));color:#fff;font-size:0.6rem;font-weight:800;align-items:center;justify-content:center;padding:0 4px;line-height:1;box-shadow:0 2px 6px rgba(220,38,38,0.4);border:2px solid var(--surface);">0</span>
                             </button>
 
                             <!-- Premium Dropdown -->
@@ -501,22 +501,22 @@
                                 <div style="padding:1rem 1.15rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface-alt);">
                                     <div style="display:flex;align-items:center;gap:0.5rem;">
                                         <span style="font-weight:800;font-size:0.92rem;color:var(--text-primary);">Notifications</span>
-                                        <span id="notifCountPill" style="display:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:0.55rem;font-weight:700;padding:2px 7px;border-radius:20px;"></span>
+                                        <span id="notifCountPill" style="display:none;background:linear-gradient(135deg,var(--info),#8b5cf6);color:#fff;font-size:0.55rem;font-weight:700;padding:2px 7px;border-radius:20px;"></span>
                                     </div>
-                                    <button onclick="markAllReadFromBell()" style="background:none;border:none;color:#6366f1;font-size:0.72rem;cursor:pointer;font-weight:600;padding:4px 8px;border-radius:6px;transition:background 0.15s;" onmouseenter="this.style.background='rgba(99,102,241,0.08)'" onmouseleave="this.style.background='none'">
+                                    <button onclick="markAllReadFromBell()" style="background:none;border:none;color:var(--info);font-size:0.72rem;cursor:pointer;font-weight:600;padding:4px 8px;border-radius:6px;transition:background 0.15s;" onmouseenter="this.style.background='var(--info-light)'" onmouseleave="this.style.background='none'">
                                         <i class="fas fa-check-double" style="margin-right:0.25rem;font-size:0.6rem;"></i>Mark all read
                                     </button>
                                 </div>
                                 <!-- Loading State -->
                                 <div id="notifLoading" style="display:none;text-align:center;padding:2rem;">
-                                    <div style="width:28px;height:28px;border:3px solid var(--border-light);border-top-color:#6366f1;border-radius:50%;animation:notifSpin 0.8s linear infinite;margin:0 auto;"></div>
+                                    <div style="width:28px;height:28px;border:3px solid var(--border-light);border-top-color:var(--info);border-radius:50%;animation:notifSpin 0.8s linear infinite;margin:0 auto;"></div>
                                     <div class="caption" style="margin-top:0.5rem;">Loading...</div>
                                 </div>
                                 <!-- Items -->
                                 <div id="notifDropdownList" style="max-height:380px;overflow-y:auto;scrollbar-width:thin;"></div>
                                 <!-- Footer -->
                                 <div style="padding:0.7rem 1rem;border-top:1px solid var(--border);text-align:center;background:var(--bg-surface-alt);">
-                                    <a href="/Notification/Index" style="color:#6366f1;font-size:0.78rem;font-weight:700;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:0.35rem;padding:4px 0;border-radius:6px;transition:background 0.15s;" onmouseenter="this.style.background='rgba(99,102,241,0.06)'" onmouseleave="this.style.background='transparent'">
+                                    <a href="/Notification/Index" style="color:var(--info);font-size:0.78rem;font-weight:700;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:0.35rem;padding:4px 0;border-radius:6px;transition:background 0.15s;" onmouseenter="this.style.background='rgba(99,102,241,0.06)'" onmouseleave="this.style.background='transparent'">
                                         View All Notifications <i class="fas fa-arrow-right" style="font-size:0.6rem;"></i>
                                     </a>
                                 </div>
@@ -580,7 +580,7 @@
             <main class="page-content">
                 @if (impersonatingId.HasValue)
                 {
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;background:linear-gradient(135deg,#7c3aed,#6366f1);color:#fff;padding:0.7rem 1.1rem;border-radius:12px;margin-bottom:1.25rem;box-shadow:0 4px 14px rgba(99,102,241,0.3);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;background:linear-gradient(135deg,#7c3aed,var(--info));color:#fff;padding:0.7rem 1.1rem;border-radius:12px;margin-bottom:1.25rem;box-shadow:0 4px 14px rgba(99,102,241,0.3);">
                         <div style="display:flex;align-items:center;gap:0.6rem;font-weight:600;font-size:0.9rem;">
                             <i class="fas fa-user-secret"></i>
                             Impersonating <b>@impersonatingName</b> — actions are audited.
@@ -821,17 +821,17 @@
                 document.querySelectorAll('input[required], select[required], textarea[required]').forEach(function(el) {
                     el.addEventListener('blur', function() {
                         if (!el.value.trim()) {
-                            el.style.borderColor = '#ef4444';
-                            el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                            el.style.borderColor = 'var(--danger)';
+                            el.style.boxShadow = '0 0 0 3px var(--danger-light)';
                         } else {
-                            el.style.borderColor = '#22c55e';
-                            el.style.boxShadow = '0 0 0 3px rgba(34,197,94,0.1)';
+                            el.style.borderColor = 'var(--success)';
+                            el.style.boxShadow = '0 0 0 3px var(--success-light)';
                         }
                     });
                     el.addEventListener('input', function() {
                         if (el.value.trim()) {
-                            el.style.borderColor = '#22c55e';
-                            el.style.boxShadow = '0 0 0 3px rgba(34,197,94,0.1)';
+                            el.style.borderColor = 'var(--success)';
+                            el.style.boxShadow = '0 0 0 3px var(--success-light)';
                         }
                     });
                 });
@@ -840,8 +840,8 @@
                     el.addEventListener('blur', function() {
                         const emailRe = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
                         if (el.value && !emailRe.test(el.value)) {
-                            el.style.borderColor = '#ef4444';
-                            el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                            el.style.borderColor = 'var(--danger)';
+                            el.style.boxShadow = '0 0 0 3px var(--danger-light)';
                         }
                     });
                 });
@@ -854,8 +854,8 @@
                         if (min !== null && parseFloat(el.value) < parseFloat(min)) invalid = true;
                         if (max !== null && parseFloat(el.value) > parseFloat(max)) invalid = true;
                         if (invalid && el.value !== '') {
-                            el.style.borderColor = '#ef4444';
-                            el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                            el.style.borderColor = 'var(--danger)';
+                            el.style.boxShadow = '0 0 0 3px var(--danger-light)';
                         }
                     });
                 });
@@ -976,10 +976,10 @@
             // ── Colors ──
             function typeColor(type) {
                 switch(type) {
-                    case 'Success': return '#16a34a';
-                    case 'Warning': return '#d97706';
-                    case 'Error':   return '#dc2626';
-                    default:        return '#6366f1';
+                    case 'Success': return 'var(--success)';
+                    case 'Warning': return 'var(--warning)';
+                    case 'Error':   return 'var(--danger)';
+                    default:        return 'var(--info)';
                 }
             }
             function typeBg(type) {
@@ -987,7 +987,7 @@
                     case 'Success': return 'rgba(22,163,106,0.08)';
                     case 'Warning': return 'rgba(217,119,6,0.08)';
                     case 'Error':   return 'rgba(220,38,38,0.08)';
-                    default:        return 'rgba(99,102,241,0.08)';
+                    default:        return 'var(--info-light)';
                 }
             }
 
@@ -1125,7 +1125,7 @@
                             <div style="text-align:center;padding:2rem;color:var(--text-tertiary);">
                                 <i class="fas fa-wifi" style="font-size:1.2rem;margin-bottom:0.5rem;display:block;opacity:0.4;"></i>
                                 <div style="font-size:0.78rem;">Unable to load notifications</div>
-                                <button onclick="loadNotifications(true)" style="margin-top:0.5rem;background:none;border:1px solid var(--border-light);color:#6366f1;font-size:0.72rem;padding:4px 12px;border-radius:6px;cursor:pointer;">Retry</button>
+                                <button onclick="loadNotifications(true)" style="margin-top:0.5rem;background:none;border:1px solid var(--border-light);color:var(--info);font-size:0.72rem;padding:4px 12px;border-radius:6px;cursor:pointer;">Retry</button>
                             </div>`;
                     }
                 }
@@ -1230,7 +1230,7 @@
             }
             .bell-ringing {
                 animation: bellRing 1.2s ease-in-out;
-                color: #d4af37 !important;
+                color: var(--accent) !important;
             }
             #notifDropdownList::-webkit-scrollbar { width: 4px; }
             #notifDropdownList::-webkit-scrollbar-track { background: transparent; }

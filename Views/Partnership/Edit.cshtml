@@ -20,18 +20,18 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="Id" />
                 <input type="hidden" asp-for="CreatedAt" />
-                <div asp-validation-summary="ModelOnly" class="caption" style="color:#dc2626;"></div>
+                <div asp-validation-summary="ModelOnly" class="caption" style="color:var(--danger);"></div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Partner / Bank Name *</label>
                         <input asp-for="PartnerName" class="form-control" required />
-                        <span asp-validation-for="PartnerName" class="caption" style="color:#dc2626;"></span>
+                        <span asp-validation-for="PartnerName" class="caption" style="color:var(--danger);"></span>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Card Tier *</label>
                         <input asp-for="CardTier" class="form-control" required />
-                        <span asp-validation-for="CardTier" class="caption" style="color:#dc2626;"></span>
+                        <span asp-validation-for="CardTier" class="caption" style="color:var(--danger);"></span>
                     </div>
                 </div>
 
@@ -39,7 +39,7 @@
                     <div class="form-group">
                         <label class="form-label">Discount Percentage *</label>
                         <input asp-for="DiscountPercentage" id="pct" type="number" step="0.01" min="0" max="100" class="form-control" required oninput="updatePreview()" />
-                        <span asp-validation-for="DiscountPercentage" class="caption" style="color:#dc2626;"></span>
+                        <span asp-validation-for="DiscountPercentage" class="caption" style="color:var(--danger);"></span>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Max Discount Cap (Rs.)</label>
@@ -82,7 +82,7 @@
                     <div class="form-group">
                         <label class="form-label">Valid Until *</label>
                         <input asp-for="ValidUntil" type="date" class="form-control" required />
-                        <span asp-validation-for="ValidUntil" class="caption" style="color:#dc2626;"></span>
+                        <span asp-validation-for="ValidUntil" class="caption" style="color:var(--danger);"></span>
                     </div>
                 </div>
 
@@ -92,7 +92,7 @@
                 </label>
 
                 <div style="margin-top:1.25rem; padding:0.9rem 1.1rem; background:rgba(99,102,241,0.07); border:1px dashed rgba(99,102,241,0.4); border-radius:12px; display:flex; align-items:center; gap:0.7rem;">
-                    <i class="fas fa-credit-card" style="color:#6366f1;"></i>
+                    <i class="fas fa-credit-card" style="color:var(--info);"></i>
                     <span style="font-size:0.88rem; color:var(--text-secondary);" id="previewText"></span>
                 </div>
 

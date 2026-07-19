@@ -5,18 +5,18 @@
     var isEdit = Model.Id.HasValue;
 }
 
-<div asp-validation-summary="ModelOnly" style="color:#dc2626;font-size:0.85rem;margin-bottom:1rem;"></div>
+<div asp-validation-summary="ModelOnly" style="color:var(--danger);font-size:0.85rem;margin-bottom:1rem;"></div>
 
 <div class="form-row">
     <div class="form-group">
         <label asp-for="Name" class="form-label">Full Name</label>
         <input asp-for="Name" class="form-control" placeholder="e.g. Sarah Johnson" />
-        <span asp-validation-for="Name" style="color:#dc2626;font-size:0.78rem;"></span>
+        <span asp-validation-for="Name" style="color:var(--danger);font-size:0.78rem;"></span>
     </div>
     <div class="form-group">
         <label asp-for="Email" class="form-label">Email (used to sign in)</label>
         <input asp-for="Email" class="form-control" placeholder="name@business.com" />
-        <span asp-validation-for="Email" style="color:#dc2626;font-size:0.78rem;"></span>
+        <span asp-validation-for="Email" style="color:var(--danger);font-size:0.78rem;"></span>
     </div>
 </div>
 
@@ -24,7 +24,7 @@
     <div class="form-group">
         <label asp-for="Phone" class="form-label">Phone</label>
         <input asp-for="Phone" class="form-control" placeholder="e.g. 0300-1234567" />
-        <span asp-validation-for="Phone" style="color:#dc2626;font-size:0.78rem;"></span>
+        <span asp-validation-for="Phone" style="color:var(--danger);font-size:0.78rem;"></span>
     </div>
     <div class="form-group">
         <label asp-for="Role" class="form-label">Role</label>
@@ -35,7 +35,7 @@
                 <option value="@r">@Cafe.Helpers.AppRoles.Label(r)</option>
             }
         </select>
-        <span asp-validation-for="Role" style="color:#dc2626;font-size:0.78rem;"></span>
+        <span asp-validation-for="Role" style="color:var(--danger);font-size:0.78rem;"></span>
     </div>
 </div>
 
@@ -52,7 +52,7 @@
         <div class="form-group">
             <label asp-for="Password" class="form-label">Initial password</label>
             <input asp-for="Password" class="form-control" placeholder="Min 6 characters" autocomplete="new-password" />
-            <span asp-validation-for="Password" style="color:#dc2626;font-size:0.78rem;"></span>
+            <span asp-validation-for="Password" style="color:var(--danger);font-size:0.78rem;"></span>
             <span class="caption">Share it with the user securely — they can change it in Settings.</span>
         </div>
     }

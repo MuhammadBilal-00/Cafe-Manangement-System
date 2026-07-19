@@ -22,7 +22,7 @@
                     <td><span class="caption">@r.FromDate.ToString("dd MMM") – @r.ToDate.ToString("dd MMM yyyy")</span></td>
                     <td style="text-align:center;">@r.Days</td><td><span class="caption">@r.Reason</span></td>
                     <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
-                    <td>@if (r.Status == "Pending"){<div style="display:flex;gap:0.4rem;"><button class="btn btn-primary btn-sm" onclick="reqApprove(@r.Id)">Approve</button><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="reqReject(@r.Id)">Reject</button></div>}</td>
+                    <td>@if (r.Status == "Pending"){<div style="display:flex;gap:0.4rem;"><button class="btn btn-primary btn-sm" onclick="reqApprove(@r.Id)">Approve</button><button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="reqReject(@r.Id)">Reject</button></div>}</td>
                 </tr>
             }
         </tbody>

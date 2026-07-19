@@ -23,7 +23,7 @@
 <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
     <div>
         <h1 class="page-title" style="margin:0;">
-            <i class="fas fa-bell" style="color:#d4af37;margin-right:0.5rem;"></i>Notifications
+            <i class="fas fa-bell" style="color:var(--accent);margin-right:0.5rem;"></i>Notifications
         </h1>
         <p class="body-text" style="margin-top:0.25rem;color:var(--text-secondary);">
             Real-time updates across your workspace
@@ -72,11 +72,11 @@
         <div class="caption mt-1.5">reviewed</div>
     </div>
     <div class="card p-5 relative overflow-hidden">
-        <div class="absolute -top-2 -right-2 w-[52px] h-[52px] rounded-full bg-[#d4af37]/10 flex items-center justify-center">
-            <i class="fas fa-tags text-[#d4af37] text-base"></i>
+        <div class="absolute -top-2 -right-2 w-[52px] h-[52px] rounded-full bg-[var(--accent)]/10 flex items-center justify-center">
+            <i class="fas fa-tags text-[var(--accent)] text-base"></i>
         </div>
         <div class="caption mb-1">Types</div>
-        <div class="text-[1.75rem] font-extrabold text-[#d4af37] leading-none">@typeLabels.Length</div>
+        <div class="text-[1.75rem] font-extrabold text-[var(--accent)] leading-none">@typeLabels.Length</div>
         <div class="caption mt-1.5">categories</div>
     </div>
 </div>
@@ -87,7 +87,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="section-title" style="font-size:0.85rem;">
-                <i class="fas fa-chart-pie" style="color:#6366f1;margin-right:0.4rem;"></i>Read vs Unread
+                <i class="fas fa-chart-pie" style="color:var(--info);margin-right:0.4rem;"></i>Read vs Unread
             </h3>
         </div>
         <div class="card-body relative h-[220px]">
@@ -99,7 +99,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="section-title" style="font-size:0.85rem;">
-                <i class="fas fa-chart-pie" style="color:#f59e0b;margin-right:0.4rem;"></i>By Type
+                <i class="fas fa-chart-pie" style="color:var(--warning);margin-right:0.4rem;"></i>By Type
             </h3>
         </div>
         <div class="card-body relative h-[220px]">
@@ -111,7 +111,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="section-title" style="font-size:0.85rem;">
-                <i class="fas fa-chart-line" style="color:#10b981;margin-right:0.4rem;"></i>7-Day Trend
+                <i class="fas fa-chart-line" style="color:var(--success);margin-right:0.4rem;"></i>7-Day Trend
             </h3>
         </div>
         <div class="card-body relative h-[220px]">
@@ -168,7 +168,7 @@
 <div class="card">
     <div class="card-header flex items-center justify-between">
         <h3 class="section-title" style="font-size:0.85rem;">
-            <i class="fas fa-stream" style="color:#6366f1;margin-right:0.4rem;"></i>Activity Feed
+            <i class="fas fa-stream" style="color:var(--info);margin-right:0.4rem;"></i>Activity Feed
         </h3>
         <span class="caption">Page @(page) of @totalPages</span>
     </div>
@@ -176,7 +176,7 @@
         @if (!notifications.Any())
         {
             <div style="text-align:center;padding:3.5rem 1rem;">
-                <div style="width:64px;height:64px;border-radius:16px;background:rgba(99,102,241,0.08);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                <div style="width:64px;height:64px;border-radius:16px;background:var(--info-light);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
                     <i class="fas fa-bell-slash" style="font-size:1.5rem;color:var(--text-tertiary);"></i>
                 </div>
                 <p style="font-weight:600;font-size:0.9rem;color:var(--text-secondary);margin:0 0 0.25rem;">No notifications found</p>
@@ -189,10 +189,10 @@
             {
                 string typeColor = n.Type switch
                 {
-                    "Success" => "#16a34a",
-                    "Warning" => "#d97706",
-                    "Error" => "#dc2626",
-                    _ => "#6366f1"
+                    "Success" => "var(--success)",
+                    "Warning" => "var(--warning)",
+                    "Error" => "var(--danger)",
+                    _ => "var(--info)"
                 };
                 string bgColor = n.IsRead ? "transparent" : "rgba(99,102,241,0.04)";
                 string borderLeft = n.IsRead ? "3px solid transparent" : $"3px solid {typeColor}";
@@ -225,7 +225,7 @@
                             <span class="caption"><i class="far fa-clock" style="margin-right:0.25rem;"></i>@n.TimeAgo</span>
                             @if (!string.IsNullOrEmpty(n.RedirectUrl))
                             {
-                                <span class="caption" style="color:#6366f1;"><i class="fas fa-external-link-alt" style="margin-right:0.2rem;font-size:0.55rem;"></i>View</span>
+                                <span class="caption" style="color:var(--info);"><i class="fas fa-external-link-alt" style="margin-right:0.2rem;font-size:0.55rem;"></i>View</span>
                             }
                         </div>
                     </div>
@@ -305,19 +305,16 @@
             }
         }
 
-        // ── Chart Colors ──
-        const typeColorMap = { 'Info': '#6366f1', 'Success': '#16a34a', 'Warning': '#d97706', 'Error': '#dc2626' };
-
         // ── Read vs Unread Doughnut ──
         const readData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(readPieData));
-        new Chart(document.getElementById('readPieChart'), {
+        CafeCharts.make('readPieChart', C => ({
             type: 'doughnut',
             data: {
                 labels: ['Unread', 'Read'],
                 datasets: [{
                     data: readData,
-                    backgroundColor: ['#ef4444cc', '#16a34acc'],
-                    borderColor: ['#ef4444', '#16a34a'],
+                    backgroundColor: [C.alpha(C.status('danger'), 0.8), C.alpha(C.status('success'), 0.8)],
+                    borderColor: [C.status('danger'), C.status('success')],
                     borderWidth: 2,
                     hoverOffset: 6
                 }]
@@ -326,7 +323,7 @@
                 responsive: true, maintainAspectRatio: false,
                 cutout: '62%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 11 } } },
+                    legend: { position: 'bottom' },
                     tooltip: {
                         callbacks: {
                             label: ctx => {
@@ -338,57 +335,60 @@
                     }
                 }
             }
-        });
+        }));
 
         // ── Type Distribution Doughnut ──
         const tLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(typeLabels));
         const tCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(typeCounts));
-        const tColors = tLabels.map(l => typeColorMap[l] || '#8b5cf6');
-        new Chart(document.getElementById('typePieChart'), {
-            type: 'doughnut',
-            data: {
-                labels: tLabels,
-                datasets: [{
-                    data: tCounts,
-                    backgroundColor: tColors.map(c => c + 'cc'),
-                    borderColor: tColors,
-                    borderWidth: 2,
-                    hoverOffset: 6
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                cutout: '62%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 11 } } },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => {
-                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                const pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
-                                return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
+        CafeCharts.make('typePieChart', C => {
+            const typeColorMap = { 'Info': C.status('info'), 'Success': C.status('success'), 'Warning': C.status('warning'), 'Error': C.status('danger') };
+            const tColors = tLabels.map(l => typeColorMap[l] || C.color(7));
+            return {
+                type: 'doughnut',
+                data: {
+                    labels: tLabels,
+                    datasets: [{
+                        data: tCounts,
+                        backgroundColor: tColors.map(c => C.alpha(c, 0.8)),
+                        borderColor: tColors,
+                        borderWidth: 2,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '62%',
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
+                                    return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
+                                }
                             }
                         }
                     }
                 }
-            }
+            };
         });
 
         // ── 7-Day Trend Line ──
         const trLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(trendLabels));
         const trCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(trendCounts));
-        new Chart(document.getElementById('trendChart'), {
+        CafeCharts.make('trendChart', C => ({
             type: 'line',
             data: {
                 labels: trLabels,
                 datasets: [{
                     label: 'Notifications',
                     data: trCounts,
-                    borderColor: '#6366f1',
-                    backgroundColor: 'rgba(99,102,241,0.08)',
+                    borderColor: C.status('info'),
+                    backgroundColor: C.alpha(C.status('info'), 0.08),
                     borderWidth: 2.5,
-                    pointBackgroundColor: '#6366f1',
-                    pointBorderColor: '#fff',
+                    pointBackgroundColor: C.status('info'),
+                    pointBorderColor: C.surface(),
                     pointBorderWidth: 2,
                     pointRadius: 4,
                     pointHoverRadius: 6,
@@ -398,15 +398,12 @@
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
-                    x: { ticks: { font: { size: 10 } }, grid: { display: false } }
-                },
+                scales: C.scales({ precision: 0 }),
                 plugins: {
                     legend: { display: false },
                     tooltip: { callbacks: { label: ctx => ` ${ctx.raw} notifications` } }
                 }
             }
-        });
+        }));
     </script>
 }

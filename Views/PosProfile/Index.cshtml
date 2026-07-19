@@ -21,7 +21,7 @@
                     <td>@(p.PaperSize == "Thermal80" ? "80mm thermal" : "A5")</td>
                     <td style="text-align:center;">@(p.ShowLogo ? "✓" : "—")</td><td style="text-align:center;">@(p.ShowTaxBreakdown ? "✓" : "—")</td>
                     <td style="text-align:center;">@(p.IsDefault ? "<span class=\"badge badge-accent\">Default</span>" : "")</td>
-                    <td><div style="display:flex;gap:0.4rem;"><button class="btn btn-ghost btn-sm" onclick="ppEditRow(this)"><i class="fas fa-edit"></i></button>@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="ppDel(@p.Id)"><i class="fas fa-trash"></i></button> }</div></td>
+                    <td><div style="display:flex;gap:0.4rem;"><button class="btn btn-ghost btn-sm" onclick="ppEditRow(this)"><i class="fas fa-edit"></i></button>@if (isOwner) { <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="ppDel(@p.Id)"><i class="fas fa-trash"></i></button> }</div></td>
                 </tr>
             }
         </tbody>

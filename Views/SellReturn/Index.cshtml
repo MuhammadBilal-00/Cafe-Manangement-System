@@ -20,7 +20,7 @@
                     <td style="font-weight:600;">@r.ReturnNumber</td><td>@r.Branch?.Name</td><td style="text-align:center;">@r.Lines.Count</td>
                     <td style="text-align:right;">Rs. @r.TotalAmount.ToString("N0")</td><td><span class="caption">@r.Reason</span></td>
                     <td style="text-align:center;"><span class="badge @b.Item1">@b.Item2</span></td>
-                    <td>@if (r.Status == "Pending"){<div style="display:flex;gap:0.4rem;"><button class="btn btn-primary btn-sm" onclick="srApprove(@r.Id)">Approve</button><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="srReject(@r.Id)">Reject</button></div>}</td>
+                    <td>@if (r.Status == "Pending"){<div style="display:flex;gap:0.4rem;"><button class="btn btn-primary btn-sm" onclick="srApprove(@r.Id)">Approve</button><button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="srReject(@r.Id)">Reject</button></div>}</td>
                 </tr>
             }
         </tbody>
@@ -53,7 +53,7 @@ let items = [], lines = [];
 const money = v => 'Rs. ' + Math.round(v).toLocaleString();
 async function srLoad() { items = await fetch('/SellReturn/GetItems?branchId=' + document.getElementById('srBranch').value).then(r => r.json()); document.getElementById('srItem').innerHTML = items.map(i => `<option value="${i.id}" data-cost="${i.cost}">${i.name} (${i.unit})</option>`).join(''); }
 document.addEventListener('change', e => { if (e.target.id === 'srItem') document.getElementById('srVal').value = e.target.selectedOptions[0].dataset.cost; });
-function render() { const m = Object.fromEntries(items.map(i => [i.id, i])); document.getElementById('srLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${l.quantity}× ${m[l.inventoryItemId]?.name} @@ ${money(l.unitValue)}</span><a href="javascript:void(0)" onclick="srDel(${x})" style="color:#dc2626;">×</a></div>`).join(''); document.getElementById('srTot').textContent = 'Credit ' + money(lines.reduce((s, l) => s + l.quantity * l.unitValue, 0)); }
+function render() { const m = Object.fromEntries(items.map(i => [i.id, i])); document.getElementById('srLines').innerHTML = lines.map((l, x) => `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>${l.quantity}× ${m[l.inventoryItemId]?.name} @@ ${money(l.unitValue)}</span><a href="javascript:void(0)" onclick="srDel(${x})" style="color:var(--danger);">×</a></div>`).join(''); document.getElementById('srTot').textContent = 'Credit ' + money(lines.reduce((s, l) => s + l.quantity * l.unitValue, 0)); }
 window.srNew = async () => { lines = []; render(); await srLoad(); document.getElementById('srModal').style.display = 'flex'; };
 window.srAdd = () => { const id = parseInt(document.getElementById('srItem').value); const q = parseFloat(document.getElementById('srQty').value); const v = parseFloat(document.getElementById('srVal').value) || 0; if (!id || !(q > 0)) return; lines.push({ inventoryItemId: id, quantity: q, unitValue: v }); render(); };
 window.srDel = i => { lines.splice(i, 1); render(); };

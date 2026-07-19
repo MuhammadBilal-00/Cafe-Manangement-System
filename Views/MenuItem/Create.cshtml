@@ -144,23 +144,23 @@
 
                             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
                                 <label class="flex items-center gap-2 p-3 rounded-lg"
-                                       style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);cursor:pointer;">
-                                    <input asp-for="IsVegetarian" type="checkbox" style="accent-color:#22c55e;" />
+                                       style="background:rgba(34,197,94,0.06);border:1px solid var(--success-light);cursor:pointer;">
+                                    <input asp-for="IsVegetarian" type="checkbox" style="accent-color:var(--success);" />
                                     <span class="text-sm font-medium">Vegetarian</span>
                                 </label>
                                 <label class="flex items-center gap-2 p-3 rounded-lg"
-                                       style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);cursor:pointer;">
-                                    <input asp-for="IsVegan" type="checkbox" style="accent-color:#22c55e;" />
+                                       style="background:rgba(34,197,94,0.06);border:1px solid var(--success-light);cursor:pointer;">
+                                    <input asp-for="IsVegan" type="checkbox" style="accent-color:var(--success);" />
                                     <span class="text-sm font-medium">Vegan</span>
                                 </label>
                                 <label class="flex items-center gap-2 p-3 rounded-lg"
                                        style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);cursor:pointer;">
-                                    <input asp-for="IsGlutenFree" type="checkbox" style="accent-color:#f59e0b;" />
+                                    <input asp-for="IsGlutenFree" type="checkbox" style="accent-color:var(--warning);" />
                                     <span class="text-sm font-medium">Gluten Free</span>
                                 </label>
                                 <label class="flex items-center gap-2 p-3 rounded-lg"
                                        style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);cursor:pointer;">
-                                    <input asp-for="IsDairyFree" type="checkbox" style="accent-color:#0ea5e9;" />
+                                    <input asp-for="IsDairyFree" type="checkbox" style="accent-color:var(--info);" />
                                     <span class="text-sm font-medium">Dairy Free</span>
                                 </label>
                                 <label class="flex items-center gap-2 p-3 rounded-lg"
@@ -170,7 +170,7 @@
                                 </label>
                                 <label class="flex items-center gap-2 p-3 rounded-lg"
                                        style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);cursor:pointer;">
-                                    <input asp-for="IsSpicy" type="checkbox" id="IsSpicyCheck" style="accent-color:#ef4444;" />
+                                    <input asp-for="IsSpicy" type="checkbox" id="IsSpicyCheck" style="accent-color:var(--danger);" />
                                     <span class="text-sm font-medium">Spicy</span>
                                 </label>
                             </div>
@@ -197,13 +197,13 @@
 
                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
                                 <label class="flex items-center gap-2 p-3 rounded-lg"
-                                       style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);cursor:pointer;">
-                                    <input asp-for="Availability" type="checkbox" checked style="accent-color:#22c55e;" />
+                                       style="background:rgba(34,197,94,0.06);border:1px solid var(--success-light);cursor:pointer;">
+                                    <input asp-for="Availability" type="checkbox" checked style="accent-color:var(--success);" />
                                     <span class="text-sm font-medium">Available</span>
                                 </label>
                                 <label class="flex items-center gap-2 p-3 rounded-lg"
-                                       style="background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.12);cursor:pointer;">
-                                    <input asp-for="IsFeatured" type="checkbox" style="accent-color:#d4af37;" />
+                                       style="background:rgba(212,175,55,0.06);border:1px solid var(--accent-light);cursor:pointer;">
+                                    <input asp-for="IsFeatured" type="checkbox" style="accent-color:var(--accent);" />
                                     <span class="text-sm font-medium">Featured</span>
                                 </label>
                                 <label class="flex items-center gap-2 p-3 rounded-lg"

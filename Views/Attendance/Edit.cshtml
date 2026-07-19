@@ -64,7 +64,7 @@
     <div class="card card-accent-warning mb-6">
         <div class="card-body card-body-compact">
             <p class="caption" style="margin:0;">
-                <i class="fas fa-info-circle" style="color:#f59e0b; margin-right:0.5rem;"></i>
+                <i class="fas fa-info-circle" style="color:var(--warning); margin-right:0.5rem;"></i>
                 In Auto mode, status is <strong>recalculated from times</strong>. In Manual mode, your <strong>selected status is saved directly</strong>.
             </p>
         </div>
@@ -111,7 +111,7 @@
                                 <strong>Half-Day</strong> (4–8h) &bull; <strong>Absent</strong> (&lt;4h or no times)
                                 @if (!isManualMode && noTimes)
                                 {
-                                    <br /><span style="color:#f59e0b;"><i class="fas fa-exclamation-triangle" style="margin-right:0.25rem;"></i>No times recorded yet — add times or switch to manual.</span>
+                                    <br /><span style="color:var(--warning);"><i class="fas fa-exclamation-triangle" style="margin-right:0.25rem;"></i>No times recorded yet — add times or switch to manual.</span>
                                 }
                             </p>
                         </div>

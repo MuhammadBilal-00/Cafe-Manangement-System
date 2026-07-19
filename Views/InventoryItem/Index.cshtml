@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Cafe.Models.InventoryItem>
+@model IEnumerable<Cafe.Models.InventoryItem>
 @{
     ViewData["Title"] = "Inventory Management";
     var branches = ViewBag.Branches as List<Cafe.Models.Branch> ?? new List<Cafe.Models.Branch>();
@@ -50,14 +50,14 @@
         <span class="kpi-value">@branches.Count</span>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:#fef3c7;color:#d97706;">
+        <div class="kpi-icon" style="background:#fef3c7;color:var(--warning);">
             <i class="fas fa-exclamation-triangle"></i>
         </div>
         <span class="kpi-label">Need Reorder</span>
         <span class="kpi-value">@needReorder</span>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:#dcfce7;color:#16a34a;">
+        <div class="kpi-icon" style="background:#dcfce7;color:var(--success);">
             <i class="fas fa-dollar-sign"></i>
         </div>
         <span class="kpi-label">Total Value</span>
@@ -73,7 +73,7 @@
             <span>@healthy% OK</span>
         </div>
         <div style="height:6px;border-radius:3px;background:var(--border-light);overflow:hidden;">
-            <div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#10b981,var(--accent));width:@(healthy)%;transition:width 0.6s;"></div>
+            <div style="height:100%;border-radius:3px;background:linear-gradient(90deg,var(--success),var(--accent));width:@(healthy)%;transition:width 0.6s;"></div>
         </div>
     </div>
 </div>
@@ -139,12 +139,12 @@
                                 <p style="font-weight:700;font-size:1.1rem;color:var(--text-primary);">@items.Count</p>
                             </div>
                             <div style="text-align:center;">
-                                <span class="caption" style="font-size:0.65rem;text-transform:uppercase;color:#d97706;">Reorder</span>
-                                <p style="font-weight:700;font-size:1.1rem;color:#d97706;">@branchReorder</p>
+                                <span class="caption" style="font-size:0.65rem;text-transform:uppercase;color:var(--warning);">Reorder</span>
+                                <p style="font-weight:700;font-size:1.1rem;color:var(--warning);">@branchReorder</p>
                             </div>
                             <div style="text-align:center;">
-                                <span class="caption" style="font-size:0.65rem;text-transform:uppercase;color:#16a34a;">Value</span>
-                                <p style="font-weight:700;font-size:1.1rem;color:#16a34a;">$@branchValue.ToString("N0")</p>
+                                <span class="caption" style="font-size:0.65rem;text-transform:uppercase;color:var(--success);">Value</span>
+                                <p style="font-weight:700;font-size:1.1rem;color:var(--success);">$@branchValue.ToString("N0")</p>
                             </div>
                         </div>
                     </div>
@@ -188,7 +188,7 @@ else
     <div style="background:#fff;border-radius:var(--radius-card);max-width:420px;width:100%;padding:2rem;box-shadow:0 24px 60px rgba(0,0,0,0.2);position:relative;">
         <button onclick="closeRestockModal()" style="position:absolute;top:1rem;right:1rem;background:var(--bg-body);border:1px solid var(--border-light);border-radius:50%;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--text-tertiary);">×</button>
         <div style="text-align:center;margin-bottom:1.5rem;">
-            <div style="width:48px;height:48px;background:linear-gradient(135deg,#10b981,#06b6d4);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem;">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--success),#06b6d4);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem;">
                 <i class="fas fa-box" style="color:#fff;font-size:1.25rem;"></i>
             </div>
             <h2 style="font-weight:700;font-size:1.15rem;color:var(--text-primary);">Restock Item</h2>
@@ -280,7 +280,7 @@ else
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.style.cssText = 'pointer-events:auto;margin-bottom:0.5rem;padding:0.75rem 1rem;border-radius:12px;font-size:0.85rem;font-weight:600;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,0.15);transform:translateX(120%);transition:transform 0.3s;';
-        toast.style.background = type === 'success' ? '#10b981' : '#ef4444';
+        toast.style.background = type === 'success' ? 'var(--success)' : 'var(--danger)';
         toast.textContent = message;
         container.appendChild(toast);
         requestAnimationFrame(() => toast.style.transform = 'translateX(0)');

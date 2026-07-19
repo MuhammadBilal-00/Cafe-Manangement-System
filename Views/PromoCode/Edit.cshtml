@@ -22,14 +22,14 @@
                 <input type="hidden" asp-for="CreatedAt" />
                 <input type="hidden" asp-for="TimesUsed" />
 
-                <div asp-validation-summary="ModelOnly" class="caption" style="color:#dc2626;"></div>
+                <div asp-validation-summary="ModelOnly" class="caption" style="color:var(--danger);"></div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Code *</label>
                         <input asp-for="Code" id="codeInput" class="form-control" required
                                style="font-family:ui-monospace,monospace; text-transform:uppercase; letter-spacing:0.5px;" />
-                        <span asp-validation-for="Code" class="caption" style="color:#dc2626;"></span>
+                        <span asp-validation-for="Code" class="caption" style="color:var(--danger);"></span>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Description</label>
@@ -48,7 +48,7 @@
                     <div class="form-group">
                         <label class="form-label" id="valueLabel">Discount Value *</label>
                         <input asp-for="DiscountValue" id="discountValue" type="number" step="0.01" min="0" class="form-control" required oninput="updatePreview()" />
-                        <span asp-validation-for="DiscountValue" class="caption" style="color:#dc2626;"></span>
+                        <span asp-validation-for="DiscountValue" class="caption" style="color:var(--danger);"></span>
                     </div>
                 </div>
 
@@ -71,7 +71,7 @@
                     <div class="form-group">
                         <label class="form-label">Valid Until *</label>
                         <input asp-for="ValidUntil" type="date" class="form-control" required />
-                        <span asp-validation-for="ValidUntil" class="caption" style="color:#dc2626;"></span>
+                        <span asp-validation-for="ValidUntil" class="caption" style="color:var(--danger);"></span>
                     </div>
                 </div>
 

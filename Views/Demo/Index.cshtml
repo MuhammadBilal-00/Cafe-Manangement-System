@@ -28,7 +28,7 @@ async function runSeed() {
         const d = await fetch('/Demo/Seed', { method: 'POST', headers: { 'RequestVerificationToken': _tok } }).then(r => r.json());
         const ul = document.getElementById('seedLog');
         ul.innerHTML = (d.log || []).map(l => {
-            const color = l.startsWith('✓') ? '#16a34a' : l.startsWith('✗') ? '#dc2626' : 'var(--text-secondary)';
+            const color = l.startsWith('✓') ? 'var(--success)' : l.startsWith('✗') ? 'var(--danger)' : 'var(--text-secondary)';
             return `<li style="color:${color};">${l}</li>`;
         }).join('');
         document.getElementById('seedResult').style.display = 'block';

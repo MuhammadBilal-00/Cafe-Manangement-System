@@ -148,12 +148,12 @@
             html += `<button onclick="reprintKot(${o.id})" class="btn btn-ghost btn-sm" title="Print KOT"><i class="fas fa-utensils"></i> KOT</button>`;
             if (step) {
                 html += `<button onclick="updateOrderStatus(${o.id}, '${step.next}')" class="btn btn-sm"
-                                 style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;" title="Advance to ${step.next}">
+                                 style="background:#dcfce7;color:var(--success);border:1px solid #bbf7d0;" title="Advance to ${step.next}">
                              <i class="fas ${step.icon}"></i> ${step.label}</button>`;
             }
             if (!terminal) {
                 html += `<button onclick="cancelOrder(${o.id})" class="btn btn-sm"
-                                 style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">Cancel</button>`;
+                                 style="background:#fee2e2;color:var(--danger);border:1px solid #fecaca;">Cancel</button>`;
             }
             return html;
         }
@@ -193,7 +193,7 @@
                     }
                 })
                 .catch(() => {
-                    tbody.innerHTML = '<tr><td colspan="8" style="padding:2.5rem;text-align:center;color:var(--text-tertiary);"><i class="fas fa-triangle-exclamation" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;color:#d97706;"></i>Could not load orders. <button class="btn btn-ghost btn-sm" onclick="loadOrders(currentPage)">Retry</button></td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="padding:2.5rem;text-align:center;color:var(--text-tertiary);"><i class="fas fa-triangle-exclamation" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;color:var(--warning);"></i>Could not load orders. <button class="btn btn-ghost btn-sm" onclick="loadOrders(currentPage)">Retry</button></td></tr>';
                 });
         }
 

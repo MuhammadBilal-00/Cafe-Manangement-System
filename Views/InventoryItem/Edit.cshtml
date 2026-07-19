@@ -171,7 +171,7 @@
             }
             <div style="margin-top:1rem;text-align:right;">
                 <span style="font-size:0.65rem;text-transform:uppercase;color:rgba(255,255,255,0.5);">Total Value</span>
-                <p style="font-weight:700;font-size:1.25rem;color:#10b981;">@((Model.Quantity * Model.UnitPrice).ToString("C0"))</p>
+                <p style="font-weight:700;font-size:1.25rem;color:var(--success);">@((Model.Quantity * Model.UnitPrice).ToString("C0"))</p>
             </div>
             @if (Model.Supplier != null)
             {

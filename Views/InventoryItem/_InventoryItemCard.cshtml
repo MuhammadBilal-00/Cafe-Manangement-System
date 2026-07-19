@@ -1,4 +1,4 @@
-﻿@model Cafe.Models.InventoryItem
+@model Cafe.Models.InventoryItem
 @{
     string stockStatus;
     if (Model.Quantity == 0) stockStatus = "critical";
@@ -64,7 +64,7 @@
                         <div style="margin-top:auto;padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center;">
                             <button type="button"
                                     onclick="openRestockModal('@Model.Id', '@Model.Name.Replace("'", "\\'")', '@Model.Unit')"
-                                    class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;">
+                                    class="btn btn-sm" style="background:#dcfce7;color:var(--success);border:1px solid #bbf7d0;">
                                 <i class="fas fa-plus"></i> Restock
                             </button>
                             <div style="display:flex;gap:0.4rem;">
@@ -73,7 +73,7 @@
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <a href="@Url.Action("Delete", "InventoryItem", new { id = Model.Id })" class="btn btn-ghost btn-sm"
-                                       style="color:#dc2626;" title="Delete">
+                                       style="color:var(--danger);" title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </a>
                             </div>

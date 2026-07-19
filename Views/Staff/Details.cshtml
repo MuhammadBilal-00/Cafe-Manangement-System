@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h2 style="font-size:1.4rem;font-weight:700;">@Model.User.Name</h2>
-                    <p style="color:#94a3b8;margin-top:2px;">@Model.StaffRole?.RoleName &middot; @Model.EmployeeId</p>
+                    <p style="color:var(--text-tertiary);margin-top:2px;">@Model.StaffRole?.RoleName &middot; @Model.EmployeeId</p>
                 </div>
             </div>
             <div class="text-right">
@@ -40,7 +40,7 @@
                 {
                     <span class="badge badge-neutral">Inactive</span>
                 }
-                <p style="color:#94a3b8;font-size:12px;margin-top:6px;">Hired @Model.HireDate.ToString("MMM dd, yyyy")</p>
+                <p style="color:var(--text-tertiary);font-size:12px;margin-top:6px;">Hired @Model.HireDate.ToString("MMM dd, yyyy")</p>
             </div>
         </div>
     </div>
@@ -82,21 +82,21 @@
     <div class="card-body">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div class="kpi-card">
-                <div class="kpi-icon" style="background:rgba(212,175,55,0.10);color:#d4af37;">
+                <div class="kpi-icon" style="background:var(--accent-light);color:var(--accent);">
                     <i class="fas fa-star"></i>
                 </div>
                 <div class="kpi-label">Rating</div>
                 <div class="kpi-value">@(Model.PerformanceRating?.ToString("0.0") ?? "N/A")<span style="font-size:14px;color:var(--text-tertiary);">/5</span></div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon" style="background:rgba(34,197,94,0.10);color:#22c55e;">
+                <div class="kpi-icon" style="background:rgba(34,197,94,0.10);color:var(--success);">
                     <i class="fas fa-calendar-days"></i>
                 </div>
                 <div class="kpi-label">Scheduled Shifts</div>
                 <div class="kpi-value">@Model.Schedules.Count</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon" style="background:rgba(99,102,241,0.10);color:#6366f1;">
+                <div class="kpi-icon" style="background:rgba(99,102,241,0.10);color:var(--info);">
                     <i class="fas fa-wallet"></i>
                 </div>
                 <div class="kpi-label">Salary Records</div>

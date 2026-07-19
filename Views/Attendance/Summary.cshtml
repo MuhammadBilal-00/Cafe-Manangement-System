@@ -89,22 +89,22 @@
                     }
                     @foreach (var s in Model.Summaries)
                     {
-                        var pctColor = s.AttendancePercentage >= 90 ? "#16a34a" :
-                                       s.AttendancePercentage >= 70 ? "#ca8a04" : "#dc2626";
+                        var pctColor = s.AttendancePercentage >= 90 ? "var(--success)" :
+                                       s.AttendancePercentage >= 70 ? "#ca8a04" : "var(--danger)";
                         <tr>
                             <td style="font-weight:500;">@s.StaffName</td>
                             <td class="caption">@s.BranchName</td>
                             <td class="caption">@s.Role</td>
                             <td style="text-align:center;">@s.TotalWorkingDays</td>
-                            <td style="text-align:center; color:#16a34a; font-weight:600;">@s.DaysPresent</td>
-                            <td style="text-align:center; color:@(s.DaysAbsent > 0 ? "#dc2626" : "var(--text-tertiary)"); font-weight:600;">@s.DaysAbsent</td>
+                            <td style="text-align:center; color:var(--success); font-weight:600;">@s.DaysPresent</td>
+                            <td style="text-align:center; color:@(s.DaysAbsent > 0 ? "var(--danger)" : "var(--text-tertiary)"); font-weight:600;">@s.DaysAbsent</td>
                             <td style="text-align:center; color:@(s.DaysLate > 0 ? "#ca8a04" : "var(--text-tertiary)"); font-weight:600;">@s.DaysLate</td>
                             <td style="text-align:center; color:@(s.DaysHalfDay > 0 ? "#ea580c" : "var(--text-tertiary)"); font-weight:600;">@s.DaysHalfDay</td>
                             <td style="text-align:center; color:@(s.DaysPaidLeave > 0 ? "#9333ea" : "var(--text-tertiary)");">@(s.DaysPaidLeave > 0 ? s.DaysPaidLeave.ToString() : "—")</td>
-                            <td style="text-align:center; color:@(s.DaysSickLeave > 0 ? "#dc2626" : "var(--text-tertiary)");">@(s.DaysSickLeave > 0 ? s.DaysSickLeave.ToString() : "—")</td>
-                            <td style="text-align:center; color:@(s.DaysCasualLeave > 0 ? "#dc2626" : "var(--text-tertiary)");">@(s.DaysCasualLeave > 0 ? s.DaysCasualLeave.ToString() : "—")</td>
-                            <td style="text-align:center; color:@(s.DaysHoliday > 0 ? "#10b981" : "var(--text-tertiary)");">@(s.DaysHoliday > 0 ? s.DaysHoliday.ToString() : "—")</td>
-                            <td style="text-align:center; color:@(s.DaysWFH > 0 ? "#3b82f6" : "var(--text-tertiary)");">@(s.DaysWFH > 0 ? s.DaysWFH.ToString() : "—")</td>
+                            <td style="text-align:center; color:@(s.DaysSickLeave > 0 ? "var(--danger)" : "var(--text-tertiary)");">@(s.DaysSickLeave > 0 ? s.DaysSickLeave.ToString() : "—")</td>
+                            <td style="text-align:center; color:@(s.DaysCasualLeave > 0 ? "var(--danger)" : "var(--text-tertiary)");">@(s.DaysCasualLeave > 0 ? s.DaysCasualLeave.ToString() : "—")</td>
+                            <td style="text-align:center; color:@(s.DaysHoliday > 0 ? "var(--success)" : "var(--text-tertiary)");">@(s.DaysHoliday > 0 ? s.DaysHoliday.ToString() : "—")</td>
+                            <td style="text-align:center; color:@(s.DaysWFH > 0 ? "var(--info)" : "var(--text-tertiary)");">@(s.DaysWFH > 0 ? s.DaysWFH.ToString() : "—")</td>
                             <td style="text-align:center; @(s.TotalOvertimeHours > 0 ? "color:var(--accent); font-weight:600;" : "color:var(--text-tertiary);")">@(s.TotalOvertimeHours > 0 ? $"{s.TotalOvertimeHours:F1}h" : "—")</td>
                             <td style="text-align:center; font-weight:700; color:@pctColor;">@s.AttendancePercentage%</td>
                         </tr>

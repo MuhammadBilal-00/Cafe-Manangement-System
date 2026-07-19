@@ -23,7 +23,7 @@
     <div class="card card-accent mb-6">
         <div class="card-body flex items-center justify-between flex-wrap gap-4">
             <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div class="kpi-icon" style="background:rgba(212,175,55,0.1); color:var(--accent); width:40px; height:40px; font-size:1rem;"><i class="fas fa-file-contract"></i></div>
+                <div class="kpi-icon" style="background:var(--accent-light); color:var(--accent); width:40px; height:40px; font-size:1rem;"><i class="fas fa-file-contract"></i></div>
                 <div>
                     <p class="body-text" style="font-weight:600; margin:0;">Active Policy: @Model.ActivePolicy.Name</p>
                     <p class="caption" style="margin:0;">
@@ -44,7 +44,7 @@ else if (isOwner)
 {
     <div class="card card-accent-warning mb-6">
         <div class="card-body card-body-compact">
-            <p class="caption" style="margin:0;"><i class="fas fa-exclamation-triangle" style="color:#f59e0b; margin-right:0.5rem;"></i> No active salary policy found. <a asp-controller="SalaryPolicy" asp-action="Create" style="color:var(--accent); text-decoration:underline; font-weight:600;">Create one</a> before generating salaries.</p>
+            <p class="caption" style="margin:0;"><i class="fas fa-exclamation-triangle" style="color:var(--warning); margin-right:0.5rem;"></i> No active salary policy found. <a asp-controller="SalaryPolicy" asp-action="Create" style="color:var(--accent); text-decoration:underline; font-weight:600;">Create one</a> before generating salaries.</p>
         </div>
     </div>
 }
@@ -52,20 +52,20 @@ else if (isOwner)
 <!-- KPI Cards -->
 <div class="mb-6" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.25rem;">
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-money-bill-wave"></i></div>
+        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:var(--info);"><i class="fas fa-money-bill-wave"></i></div>
         <div class="kpi-label">Total Base Salary</div>
         <div class="kpi-value">Rs. @Model.TotalBaseSalary.ToString("N0")</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-gift"></i></div>
+        <div class="kpi-icon" style="background:var(--success-light); color:var(--success);"><i class="fas fa-gift"></i></div>
         <div class="kpi-label">Total Earnings</div>
-        <div class="kpi-value" style="color:#16a34a;">+ Rs. @Model.TotalBonuses.ToString("N0")</div>
+        <div class="kpi-value" style="color:var(--success);">+ Rs. @Model.TotalBonuses.ToString("N0")</div>
         <p class="caption" style="margin:0;">OT: @Model.TotalOvertimePay.ToString("N0") | Bonus: @Model.TotalAttendanceBonus.ToString("N0")</p>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(239,68,68,0.1); color:#dc2626;"><i class="fas fa-minus-circle"></i></div>
+        <div class="kpi-icon" style="background:var(--danger-light); color:var(--danger);"><i class="fas fa-minus-circle"></i></div>
         <div class="kpi-label">Total Deductions</div>
-        <div class="kpi-value" style="color:#dc2626;">- Rs. @Model.TotalDeductions.ToString("N0")</div>
+        <div class="kpi-value" style="color:var(--danger);">- Rs. @Model.TotalDeductions.ToString("N0")</div>
     </div>
     <div class="kpi-card">
         <div class="kpi-icon" style="background:rgba(147,51,234,0.1); color:#9333ea;"><i class="fas fa-wallet"></i></div>
@@ -168,8 +168,8 @@ else if (isOwner)
                     }
                     @foreach (var r in Model.Records)
                     {
-                        var pctColor = r.AttendancePercentage >= 90 ? "#16a34a" :
-                                       r.AttendancePercentage >= 70 ? "#ca8a04" : "#dc2626";
+                        var pctColor = r.AttendancePercentage >= 90 ? "var(--success)" :
+                                       r.AttendancePercentage >= 70 ? "#ca8a04" : "var(--danger)";
                         var wfBadge = r.Status == "Paid" ? "badge badge-accent" :
                                       r.Status == "Finalized" ? "badge badge-success" : "badge badge-neutral";
                         var pyBadge = r.PaymentStatus == "Paid" ? "badge badge-success" : "badge badge-warning";
@@ -179,8 +179,8 @@ else if (isOwner)
                             <td style="text-align:right;">Rs. @r.BaseSalary.ToString("N0")</td>
                             <td style="text-align:center;">@r.DaysPresent/@r.TotalWorkingDays</td>
                             <td style="text-align:center; font-weight:700; color:@pctColor;">@r.AttendancePercentage%</td>
-                            <td style="text-align:right; color:#16a34a;">@(r.BonusAmount > 0 ? $"+{r.BonusAmount:N0}" : "-")</td>
-                            <td style="text-align:right; color:#dc2626;">@(r.TotalDeductions > 0 ? $"-{r.TotalDeductions:N0}" : "-")</td>
+                            <td style="text-align:right; color:var(--success);">@(r.BonusAmount > 0 ? $"+{r.BonusAmount:N0}" : "-")</td>
+                            <td style="text-align:right; color:var(--danger);">@(r.TotalDeductions > 0 ? $"-{r.TotalDeductions:N0}" : "-")</td>
                             <td style="text-align:right; font-weight:700;">Rs. @r.FinalSalary.ToString("N0")</td>
                             <td style="text-align:center;"><span class="@wfBadge">@r.Status</span></td>
                             <td style="text-align:center;"><span class="@pyBadge">@r.PaymentStatus</span></td>
@@ -218,12 +218,12 @@ else if (isOwner)
                                     {
                                         <form asp-action="Unlock" asp-route-id="@r.Id" method="post" style="display:inline;" data-confirm="Unlock this salary record for editing?">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-ghost btn-sm" title="Unlock" style="color:#f59e0b;"><i class="fas fa-unlock"></i></button>
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Unlock" style="color:var(--warning);"><i class="fas fa-unlock"></i></button>
                                         </form>
                                     }
                                     @if (r.Status == "Finalized" && r.PaymentStatus == "Pending")
                                     {
-                                        <a asp-action="MarkPaid" asp-route-id="@r.Id" class="btn btn-ghost btn-sm" title="Mark Paid" style="color:#16a34a;">
+                                        <a asp-action="MarkPaid" asp-route-id="@r.Id" class="btn btn-ghost btn-sm" title="Mark Paid" style="color:var(--success);">
                                             <i class="fas fa-check-circle"></i>
                                         </a>
                                     }
@@ -264,7 +264,7 @@ else if (isOwner)
                     <input type="hidden" name="year" value="@Model.Year" />
                     <input type="hidden" name="month" value="@Model.Month" />
                     <input type="hidden" name="branchId" value="@Model.BranchId" />
-                    <button type="submit" class="btn btn-primary" style="background:#16a34a; border-color:#16a34a;"><i class="fas fa-check-double" style="margin-right:0.5rem;"></i> Mark All Paid</button>
+                    <button type="submit" class="btn btn-primary" style="background:var(--success); border-color:var(--success);"><i class="fas fa-check-double" style="margin-right:0.5rem;"></i> Mark All Paid</button>
                 </form>
             }
             <a asp-action="ExportCsv" asp-route-year="@Model.Year" asp-route-month="@Model.Month" asp-route-branchId="@Model.BranchId"

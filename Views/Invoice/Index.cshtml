@@ -31,24 +31,24 @@
 <!-- KPI Cards -->
 <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:2rem;">
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(99,102,241,0.1); color:#6366f1;"><i class="fas fa-file-invoice"></i></div>
+        <div class="kpi-icon" style="background:var(--info-light); color:var(--info);"><i class="fas fa-file-invoice"></i></div>
         <div class="kpi-label">Total Bills</div>
         <div class="kpi-value">@ViewBag.TotalBills</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-coins"></i></div>
+        <div class="kpi-icon" style="background:var(--success-light); color:var(--success);"><i class="fas fa-coins"></i></div>
         <div class="kpi-label">Collected</div>
-        <div class="kpi-value" style="color:#16a34a;">Rs. @(((decimal)ViewBag.Collected).ToString("N0"))</div>
+        <div class="kpi-value" style="color:var(--success);">Rs. @(((decimal)ViewBag.Collected).ToString("N0"))</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-circle-check"></i></div>
+        <div class="kpi-icon" style="background:var(--success-light); color:var(--success);"><i class="fas fa-circle-check"></i></div>
         <div class="kpi-label">Paid</div>
         <div class="kpi-value">@ViewBag.PaidCount</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(217,119,6,0.12); color:#d97706;"><i class="fas fa-hourglass-half"></i></div>
+        <div class="kpi-icon" style="background:rgba(217,119,6,0.12); color:var(--warning);"><i class="fas fa-hourglass-half"></i></div>
         <div class="kpi-label">Pending</div>
-        <div class="kpi-value" style="color:#d97706;">@ViewBag.PendingCount</div>
+        <div class="kpi-value" style="color:var(--warning);">@ViewBag.PendingCount</div>
     </div>
 </div>
 
@@ -140,7 +140,7 @@
                             <td style="text-align:right;">
                                 @if (inv.TotalDiscount > 0)
                                 {
-                                    <span style="color:#16a34a; font-weight:600;">− Rs. @inv.TotalDiscount.ToString("N0")</span>
+                                    <span style="color:var(--success); font-weight:600;">− Rs. @inv.TotalDiscount.ToString("N0")</span>
                                 }
                                 else
                                 {
@@ -172,7 +172,7 @@
                                     {
                                         <form asp-action="MarkPaid" asp-route-id="@inv.Id" method="post" style="display:inline;">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;" title="Confirm payment">
+                                            <button type="submit" class="btn btn-sm" style="background:#dcfce7;color:var(--success);border:1px solid #bbf7d0;" title="Confirm payment">
                                                 <i class="fas fa-check"></i> Mark Paid
                                             </button>
                                         </form>
@@ -181,7 +181,7 @@
                                     {
                                         <form asp-action="MarkFailed" asp-route-id="@inv.Id" method="post" style="display:inline;">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-ghost btn-sm" style="color:#dc2626;" title="Mark failed"><i class="fas fa-xmark"></i></button>
+                                            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger);" title="Mark failed"><i class="fas fa-xmark"></i></button>
                                         </form>
                                     }
                                 </div>

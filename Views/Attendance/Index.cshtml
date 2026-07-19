@@ -65,14 +65,14 @@
                 <span class="caption" style="color:var(--text-tertiary);">@Model.TodayTotalStaff total active staff</span>
             </div>
             <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.75rem;">
-                <div style="background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:0.625rem; padding:0.875rem; text-align:center;">
-                    <i class="fas fa-check-circle" style="color:#16a34a; font-size:1.25rem; margin-bottom:0.3rem;"></i>
-                    <div style="font-size:1.5rem; font-weight:700; color:#16a34a;">@Model.TodayCheckedIn</div>
+                <div style="background:var(--success-light); border:1px solid rgba(34,197,94,0.2); border-radius:0.625rem; padding:0.875rem; text-align:center;">
+                    <i class="fas fa-check-circle" style="color:var(--success); font-size:1.25rem; margin-bottom:0.3rem;"></i>
+                    <div style="font-size:1.5rem; font-weight:700; color:var(--success);">@Model.TodayCheckedIn</div>
                     <div class="caption">Checked In</div>
                 </div>
-                <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:0.625rem; padding:0.875rem; text-align:center;">
-                    <i class="fas fa-times-circle" style="color:#dc2626; font-size:1.25rem; margin-bottom:0.3rem;"></i>
-                    <div style="font-size:1.5rem; font-weight:700; color:#dc2626;">@Model.TodayAbsent</div>
+                <div style="background:var(--danger-light); border:1px solid rgba(239,68,68,0.2); border-radius:0.625rem; padding:0.875rem; text-align:center;">
+                    <i class="fas fa-times-circle" style="color:var(--danger); font-size:1.25rem; margin-bottom:0.3rem;"></i>
+                    <div style="font-size:1.5rem; font-weight:700; color:var(--danger);">@Model.TodayAbsent</div>
                     <div class="caption">Not Marked</div>
                 </div>
                 <div style="background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.2); border-radius:0.625rem; padding:0.875rem; text-align:center;">
@@ -93,14 +93,14 @@
 <!-- KPI Summary Cards (filtered results) -->
 <div class="mb-6" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem;">
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-check-circle"></i></div>
+        <div class="kpi-icon" style="background:var(--success-light); color:var(--success);"><i class="fas fa-check-circle"></i></div>
         <div class="kpi-label">Present</div>
-        <div class="kpi-value" style="color:#16a34a;">@Model.TotalPresent</div>
+        <div class="kpi-value" style="color:var(--success);">@Model.TotalPresent</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(239,68,68,0.1); color:#dc2626;"><i class="fas fa-times-circle"></i></div>
+        <div class="kpi-icon" style="background:var(--danger-light); color:var(--danger);"><i class="fas fa-times-circle"></i></div>
         <div class="kpi-label">Absent</div>
-        <div class="kpi-value" style="color:#dc2626;">@Model.TotalAbsent</div>
+        <div class="kpi-value" style="color:var(--danger);">@Model.TotalAbsent</div>
     </div>
     <div class="kpi-card">
         <div class="kpi-icon" style="background:rgba(234,179,8,0.1); color:#ca8a04;"><i class="fas fa-clock"></i></div>
@@ -119,19 +119,19 @@
         <p class="caption" style="margin:0; font-size:0.65rem;">PL:@Model.TotalPaidLeave SL:@Model.TotalSickLeave CL:@Model.TotalCasualLeave</p>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-laptop-house"></i></div>
+        <div class="kpi-icon" style="background:rgba(59,130,246,0.1); color:var(--info);"><i class="fas fa-laptop-house"></i></div>
         <div class="kpi-label">WFH</div>
-        <div class="kpi-value" style="color:#3b82f6;">@Model.TotalWFH</div>
+        <div class="kpi-value" style="color:var(--info);">@Model.TotalWFH</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(212,175,55,0.1); color:var(--accent);"><i class="fas fa-bolt"></i></div>
+        <div class="kpi-icon" style="background:var(--accent-light); color:var(--accent);"><i class="fas fa-bolt"></i></div>
         <div class="kpi-label">Overtime</div>
         <div class="kpi-value" style="color:var(--accent);">@Model.TotalOvertime</div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-icon" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="fas fa-star"></i></div>
+        <div class="kpi-icon" style="background:rgba(16,185,129,0.1); color:var(--success);"><i class="fas fa-star"></i></div>
         <div class="kpi-label">Holiday</div>
-        <div class="kpi-value" style="color:#10b981;">@Model.TotalHoliday</div>
+        <div class="kpi-value" style="color:var(--success);">@Model.TotalHoliday</div>
     </div>
 </div>
 

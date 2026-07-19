@@ -108,13 +108,13 @@
                                             @Html.AntiForgeryToken()
                                             @if (u.IsActive)
                                             {
-                                                <button type="submit" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;" title="Deactivate — blocks sign-in, keeps data">
+                                                <button type="submit" class="btn btn-sm" style="background:#fee2e2;color:var(--danger);border:1px solid #fecaca;" title="Deactivate — blocks sign-in, keeps data">
                                                     <i class="fas fa-user-slash"></i> Deactivate
                                                 </button>
                                             }
                                             else
                                             {
-                                                <button type="submit" class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;" title="Reactivate">
+                                                <button type="submit" class="btn btn-sm" style="background:#dcfce7;color:var(--success);border:1px solid #bbf7d0;" title="Reactivate">
                                                     <i class="fas fa-user-check"></i> Activate
                                                 </button>
                                             }

@@ -19,7 +19,7 @@
                     <td style="font-weight:600;">@d.Staff?.User?.Name</td><td>@d.Title</td><td>@d.DocType</td>
                     <td>@if (d.ExpiresAt.HasValue){<span class="badge @(expiring ? "badge-danger" : "badge-neutral")">@d.ExpiresAt.Value.ToString("dd MMM yyyy")</span>}else{<span class="caption">—</span>}</td>
                     <td>@if (!string.IsNullOrEmpty(d.FileUrl)){<a href="@d.FileUrl" target="_blank" class="btn btn-ghost btn-sm"><i class="fas fa-file"></i></a>}</td>
-                    <td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="edDel(@d.Id)"><i class="fas fa-trash"></i></button></td>
+                    <td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="edDel(@d.Id)"><i class="fas fa-trash"></i></button></td>
                 </tr>
             }
         </tbody>

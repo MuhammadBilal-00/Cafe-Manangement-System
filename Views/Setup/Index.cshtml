@@ -5,7 +5,7 @@
     int staffCount = ViewBag.StaffCount ?? 0;
     int catCount = ViewBag.CategoryCount ?? 0;
 
-    (string,string) Step(bool done) => done ? ("#16a34a", "fa-circle-check") : ("var(--text-tertiary)", "fa-circle");
+    (string,string) Step(bool done) => done ? ("var(--success)", "fa-circle-check") : ("var(--text-tertiary)", "fa-circle");
 }
 
 <div style="max-width:820px;margin:0 auto;">
