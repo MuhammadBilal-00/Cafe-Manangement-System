@@ -18,7 +18,7 @@
         tailwind.config = {
         theme: {
         extend: {
-        colors: { accent: '#d4af37', sidebar: '#1e2a3a' },
+        colors: { accent: '#b8912c', sidebar: '#1e2a3a' },
         fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
         borderRadius: { card: '20px' },
         }
@@ -30,7 +30,7 @@
         transition: color 0.15s, transform 0.15s;
         }
         .stars button.active {
-        color: #d4af37;
+        color: #b8912c;
         }
         .stars button:hover {
         transform: scale(1.15);
@@ -38,7 +38,7 @@
     </style>
 </head>
 
-<body class="font-sans bg-[#f5f3f0] text-[#1a1a2e] min-h-screen flex items-center justify-center p-6">
+<body class="font-sans bg-[#eef1f4] text-[#1a1a2e] min-h-screen flex items-center justify-center p-6">
     <div
         class="max-w-[440px] w-full bg-white rounded-card p-8 shadow-[0_20px_60px_rgba(0,0,0,0.08)] border border-black/5 transition-shadow duration-300 hover:shadow-[0_24px_64px_rgba(0,0,0,0.1)]">
 
@@ -78,7 +78,7 @@
                     <label
                     class="block text-[0.7rem] font-semibold uppercase tracking-wider text-gray-500 mb-1.5">Category</label>
                     <select name="category"
-                            class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-sans bg-[#faf9f7] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/10">
+                            class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-sans bg-[#f6f8fa] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/10">
                         <option value="Service">Service</option>
                         <option value="Food">Food</option>
                         <option value="Drinks">Drinks</option>
@@ -91,7 +91,7 @@
                     <label
                     class="block text-[0.7rem] font-semibold uppercase tracking-wider text-gray-500 mb-1.5">Branch</label>
                     <select name="branchId"
-                            class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-sans bg-[#faf9f7] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/10">
+                            class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-sans bg-[#f6f8fa] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/10">
                         <option value="">Select branch</option>
                         @foreach (var b in branches)
                         {
@@ -104,11 +104,11 @@
                     <label class="block text-[0.7rem] font-semibold uppercase tracking-wider text-gray-500 mb-1.5">Your
                         Feedback</label>
                         <textarea name="comments" rows="4" placeholder="Tell us what went well or what we can improve..."
-                                  class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-sans bg-[#faf9f7] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/10 resize-y min-h-[80px]"></textarea>
+                                  class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-sans bg-[#f6f8fa] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/10 resize-y min-h-[80px]"></textarea>
                     </div>
 
                     <button type="submit"
-                            class="w-full py-3 border-none rounded-xl bg-gradient-to-br from-accent to-[#b8860b] text-white font-semibold text-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(212,175,55,0.3)]">Submit
+                            class="w-full py-3 border-none rounded-xl bg-gradient-to-br from-accent to-[#b8860b] text-white font-semibold text-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(184,145,44,0.3)]">Submit
                         Feedback</button>
                     </form>
                 </div>

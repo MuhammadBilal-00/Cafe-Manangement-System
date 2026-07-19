@@ -14,16 +14,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // Literal hexes (not var()) so Tailwind opacity modifiers like
+        // bg-accent/15 keep working; values mirror the light theme tokens.
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        accent: { DEFAULT: '#d4af37', hover: '#c5a028', light: 'rgba(212,175,55,0.10)' },
-                        surface: { DEFAULT: '#ffffff', alt: '#faf9f7' },
-                        body: '#f5f3f0',
-                        sidebar: '#1e2a3a',
+                        accent: { DEFAULT: '#b8912c', hover: '#a37f24', light: 'rgba(184,145,44,0.12)' },
+                        surface: { DEFAULT: '#ffffff', alt: '#f6f8fa' },
+                        body: '#eef1f4',
+                        sidebar: '#101215',
                     },
                     fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                 }
@@ -36,12 +39,12 @@
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             display: flex;
-            background: #f5f3f0;
-            color: #1a1a1a;
+            background: var(--bg-body);
+            color: var(--text-primary);
         }
         .split-left {
             flex: 1;
-            background: linear-gradient(135deg, #1e2a3a 0%, #2d3e50 50%, #1e2a3a 100%);
+            background: linear-gradient(135deg, #101215 0%, #1c2026 50%, #101215 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -57,7 +60,7 @@
             right: -50%;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%);
+            background: radial-gradient(circle, var(--accent-lighter) 0%, transparent 70%);
             border-radius: 50%;
         }
 

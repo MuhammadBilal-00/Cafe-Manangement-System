@@ -5,7 +5,63 @@
     int staffCount = ViewBag.StaffCount ?? 0;
     int catCount = ViewBag.CategoryCount ?? 0;
 
-    (string,string) Step(bool done) => done ? ("var(--success)", "fa-circle-check") : ("var(--text-tertiary)", "fa-circle");
+    var steps = new[]
+    {
+        new { Done = hasBranch, Title = "Complete your branch details", Sub = "Add location, hours and contact info.",
+              Controller = "Branch", Action = "Index" },
+        new { Done = menuCount > 0, Title = "Build your menu", Sub = $"{menuCount} item(s) across {catCount} categories. Import below or add manually.",
+              Controller = "MenuItem", Action = "Index" },
+        new { Done = staffCount > 0, Title = "Add your team", Sub = $"{staffCount} staff member(s) added.",
+              Controller = "Staff", Action = "Index" }
+    };
+    int doneCount = steps.Count(s => s.Done);
+    int pct = (int)Math.Round(doneCount * 100.0 / steps.Length);
+}
+
+@section Styles {
+<style>
+/* Onboarding stepper: numbered circles + connector line */
+.setup-stepper { display: flex; flex-direction: column; }
+.setup-step { display: flex; gap: 1rem; position: relative; padding-bottom: 1.6rem; }
+.setup-step:last-child { padding-bottom: 0; }
+.setup-step::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 19px;
+    top: 40px;
+    bottom: 4px;
+    width: 2px;
+    background: var(--border);
+}
+.setup-step:last-child::before { display: none; }
+.setup-step.done::before { background: var(--success); }
+.setup-step-dot {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+    background: var(--bg-inset); color: var(--text-tertiary);
+    border: 2px solid var(--border);
+    position: relative; z-index: 1;
+    transition: all var(--transition-base);
+}
+.setup-step.done .setup-step-dot {
+    background: var(--success); border-color: var(--success); color: #fff;
+}
+.setup-step.next .setup-step-dot {
+    background: var(--accent-light); border-color: var(--accent); color: var(--accent);
+}
+.setup-step-body {
+    flex: 1; display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap; padding-top: 6px;
+}
+.setup-progress-track {
+    height: 8px; border-radius: var(--radius-full); background: var(--bg-inset); overflow: hidden;
+}
+.setup-progress-fill {
+    height: 100%; border-radius: var(--radius-full); background: var(--success);
+    transition: width 600ms cubic-bezier(0.4,0,0.2,1);
+}
+</style>
 }
 
 <div style="max-width:820px;margin:0 auto;">
@@ -14,32 +70,50 @@
         <p class="body-text" style="margin-top:0.25rem;">A few quick steps to get your restaurant live.</p>
     </div>
 
-    <!-- Checklist -->
+    <!-- Progress -->
     <div class="card mb-6">
-        <div class="card-body" style="display:flex;flex-direction:column;gap:0.9rem;">
-            @{ var s1 = Step(hasBranch); var s2 = Step(menuCount > 0); var s3 = Step(staffCount > 0); }
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
-                <div style="display:flex;align-items:center;gap:0.75rem;">
-                    <i class="fas @s1.Item2" style="color:@s1.Item1;font-size:1.2rem;"></i>
-                    <div><div style="font-weight:600;">Complete your branch details</div><div class="caption">Add location, hours and contact info.</div></div>
-                </div>
-                <a asp-controller="Branch" asp-action="Index" class="btn btn-secondary btn-sm">Open</a>
+        <div class="card-body" style="padding:1.2rem 1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+                <span style="font-weight:700;font-size:0.9rem;">Setup progress</span>
+                <span class="num" style="font-weight:700;font-size:0.9rem;color:@(pct == 100 ? "var(--success)" : "var(--text-secondary)");">@doneCount of @steps.Length · @pct%</span>
             </div>
-            <div class="divider"></div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
-                <div style="display:flex;align-items:center;gap:0.75rem;">
-                    <i class="fas @s2.Item2" style="color:@s2.Item1;font-size:1.2rem;"></i>
-                    <div><div style="font-weight:600;">Build your menu</div><div class="caption">@menuCount item(s) across @catCount categories. Import below or add manually.</div></div>
-                </div>
-                <a asp-controller="MenuItem" asp-action="Index" class="btn btn-secondary btn-sm">Open</a>
+            <div class="setup-progress-track">
+                <div class="setup-progress-fill" style="width:@pct%;"></div>
             </div>
-            <div class="divider"></div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
-                <div style="display:flex;align-items:center;gap:0.75rem;">
-                    <i class="fas @s3.Item2" style="color:@s3.Item1;font-size:1.2rem;"></i>
-                    <div><div style="font-weight:600;">Add your team</div><div class="caption">@staffCount staff member(s) added.</div></div>
-                </div>
-                <a asp-controller="Staff" asp-action="Index" class="btn btn-secondary btn-sm">Open</a>
+        </div>
+    </div>
+
+    <!-- Stepper -->
+    <div class="card mb-6">
+        <div class="card-body" style="padding:1.6rem 1.5rem;">
+            <div class="setup-stepper">
+                @{ bool nextMarked = false; }
+                @for (int i = 0; i < steps.Length; i++)
+                {
+                    var s = steps[i];
+                    var isNext = !s.Done && !nextMarked;
+                    if (isNext) { nextMarked = true; }
+                    <div class="setup-step @(s.Done ? "done" : "") @(isNext ? "next" : "")">
+                        <div class="setup-step-dot">
+                            @if (s.Done)
+                            {
+                                <i class="fas fa-check"></i>
+                            }
+                            else
+                            {
+                                @(i + 1)
+                            }
+                        </div>
+                        <div class="setup-step-body">
+                            <div>
+                                <div style="font-weight:600;">@s.Title</div>
+                                <div class="caption">@s.Sub</div>
+                            </div>
+                            <a asp-controller="@s.Controller" asp-action="@s.Action"
+                               class="btn @(isNext ? "btn-primary" : "btn-secondary") btn-sm">@(s.Done ? "Review" : "Open")</a>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>

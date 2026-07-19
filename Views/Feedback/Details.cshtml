@@ -17,7 +17,7 @@
         tailwind.config = {
         theme: {
         extend: {
-        colors: { accent: '#d4af37', sidebar: '#1e2a3a' },
+        colors: { accent: '#b8912c', sidebar: '#1e2a3a' },
         fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
         borderRadius: { card: '20px' },
         }
@@ -25,7 +25,7 @@
         }
     </script>
 </head>
-<body class="font-sans bg-[#f5f3f0] text-[#1a1a2e] min-h-screen py-8 px-4">
+<body class="font-sans bg-[#eef1f4] text-[#1a1a2e] min-h-screen py-8 px-4">
     <div class="max-w-[640px] mx-auto">
         <a href="@Url.Action("Index", "Feedback")"
                class="inline-flex items-center gap-1.5 text-xs text-gray-500 no-underline mb-6 transition-colors duration-200 hover:text-[#1a1a2e]">←
@@ -84,7 +84,7 @@
                                 <label
                                 class="block text-[0.65rem] font-semibold uppercase tracking-wider text-gray-500 mb-1">Status</label>
                                 <select name="status"
-                                        class="w-full px-2.5 py-2 rounded-[10px] border border-gray-200 text-xs font-sans bg-[#faf9f7] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/15">
+                                        class="w-full px-2.5 py-2 rounded-[10px] border border-gray-200 text-xs font-sans bg-[#f6f8fa] transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/15">
                                     <option value="Open"
                                             selected="@(Model.Status == FeedbackStatus.Open ? "selected" : null)">Open</option>
                                     <option value="InProgress"
@@ -102,7 +102,7 @@
                                     class="block text-[0.65rem] font-semibold uppercase tracking-wider text-gray-500 mb-1">Staff
                                     Note</label>
                                     <textarea name="staffNote" rows="2"
-                                              class="w-full px-2.5 py-2 rounded-[10px] border border-gray-200 text-xs font-sans bg-[#faf9f7] resize-y transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/15">@Model.StaffNote</textarea>
+                                              class="w-full px-2.5 py-2 rounded-[10px] border border-gray-200 text-xs font-sans bg-[#f6f8fa] resize-y transition-all duration-200 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/15">@Model.StaffNote</textarea>
                                 </div>
 
                                 <div class="flex gap-2 items-center">

@@ -1956,3 +1956,32 @@ form.card:hover {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ── Print: document only, no app chrome ───────────────────── */
+@media print {
+  .sidebar,
+  .sidebar-overlay,
+  .top-header,
+  .app-footer,
+  .no-print {
+    display: none !important;
+  }
+
+  .main-wrapper {
+    margin-inline-start: 0 !important;
+  }
+
+  .page-content {
+    padding: 0 !important;
+    animation: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+}
