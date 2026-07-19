@@ -55,6 +55,8 @@ window.CafeCharts = (function () {
         return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
 
+    var animDefaults = null; // Chart's original animation config object
+
     function applyDefaults() {
         if (typeof Chart === 'undefined') return;
         var i = ink();
@@ -63,7 +65,20 @@ window.CafeCharts = (function () {
         d.font.size = 11;
         d.color = i.tick;
         d.borderColor = i.grid;
-        d.animation = rebuilding || reducedMotion() ? false : { duration: 600, easing: 'easeOutQuart' };
+        // Never REPLACE Chart.defaults.animation with a plain object — that
+        // strips the built-in property interpolators and crashes tooltip
+        // color animations on hover ("this._fn is not a function").
+        // Mutate the original config, or disable animation outright.
+        if (animDefaults === null && d.animation && typeof d.animation === 'object') {
+            animDefaults = d.animation;
+        }
+        if (rebuilding || reducedMotion()) {
+            d.animation = false;
+        } else if (animDefaults) {
+            animDefaults.duration = 600;
+            animDefaults.easing = 'easeOutQuart';
+            d.animation = animDefaults;
+        }
 
         d.elements.line.borderWidth = 2;
         d.elements.line.tension = 0.35;
@@ -94,6 +109,11 @@ window.CafeCharts = (function () {
     function scales(opts) {
         var i = ink();
         var o = opts || {};
+        var yTicks = { color: i.tick };
+        // Only set keys when provided — an explicit `undefined` would
+        // clobber Chart.js' default tick formatter (`this._fn` crash).
+        if (o.precision != null) yTicks.precision = o.precision;
+        if (o.yTicks) yTicks.callback = o.yTicks;
         return {
             x: {
                 grid: { display: false },
@@ -104,7 +124,7 @@ window.CafeCharts = (function () {
                 beginAtZero: true,
                 grid: { color: i.grid },
                 border: { display: false },
-                ticks: { color: i.tick, precision: o.precision, callback: o.yTicks }
+                ticks: yTicks
             }
         };
     }

@@ -1,0 +1,50 @@
+@model Cafe.Models.ViewModels.KpiCardVm
+@{
+    var tintClass = Model.Tint switch
+    {
+        "accent"  => "kpi-tint-accent",
+        "success" => "kpi-tint-success",
+        "warning" => "kpi-tint-warning",
+        "danger"  => "kpi-tint-danger",
+        "info"    => "kpi-tint-info",
+        _         => ""
+    };
+    var trendClass = Model.TrendDirection switch
+    {
+        "up"   => "trend-up",
+        "down" => "trend-down",
+        _      => "trend-neutral"
+    };
+
+    void Inner()
+    {
+        <div class="kpi-v3-top">
+            <span class="kpi-icon-chip"><i class="fas @Model.Icon"></i></span>
+            @if (!string.IsNullOrEmpty(Model.TrendText))
+            {
+                <span class="trend-chip @trendClass">
+                    @if (Model.TrendDirection == "up") { <i class="fas fa-arrow-trend-up"></i> }
+                    else if (Model.TrendDirection == "down") { <i class="fas fa-arrow-trend-down"></i> }
+                    @Model.TrendText
+                </span>
+            }
+        </div>
+        @if (Model.Countup)
+        {
+            <div class="kpi-v3-value num" data-countup>@Model.Value</div>
+        }
+        else
+        {
+            <div class="kpi-v3-value num">@Model.Value</div>
+        }
+        <div class="kpi-v3-label">@Model.Label</div>
+    }
+}
+@if (string.IsNullOrEmpty(Model.Href))
+{
+    <div class="kpi-card-v3 @tintClass">@{ Inner(); }</div>
+}
+else
+{
+    <a class="kpi-card-v3 @tintClass" href="@Model.Href">@{ Inner(); }</a>
+}
