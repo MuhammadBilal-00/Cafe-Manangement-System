@@ -185,17 +185,6 @@
 @section Scripts {
 <script>
 (function() {
-    const tip = {
-        backgroundColor: 'rgba(15,23,42,0.96)',
-        titleColor: '#64748b',
-        bodyColor: '#f1f5f9',
-        bodyFont: { weight: '700', size: 12 },
-        padding: 12,
-        cornerRadius: 10,
-        borderColor: 'rgba(255,255,255,0.06)',
-        borderWidth: 1
-    };
-
     @if (Model.MonthlyTrends.Any())
     {
         <text>
@@ -204,65 +193,64 @@
             const revData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(trendRev));
             const expData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(trendExp));
 
-            const ctx = document.getElementById('monthlyTrendChart')?.getContext('2d');
-            if (!ctx) return;
+            CafeCharts.make('monthlyTrendChart', C => {
+                const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+                const up = C.status('success'), down = C.status('danger');
 
-            const revGrad = ctx.createLinearGradient(0, 0, 0, 300);
-            revGrad.addColorStop(0, 'rgba(34,197,94,0.28)');
-            revGrad.addColorStop(1, 'rgba(34,197,94,0)');
+                const revGrad = ctx.createLinearGradient(0, 0, 0, 300);
+                revGrad.addColorStop(0, C.alpha(up, 0.24));
+                revGrad.addColorStop(1, C.alpha(up, 0));
 
-            const expGrad = ctx.createLinearGradient(0, 0, 0, 300);
-            expGrad.addColorStop(0, 'rgba(239,68,68,0.18)');
-            expGrad.addColorStop(1, 'rgba(239,68,68,0)');
+                const expGrad = ctx.createLinearGradient(0, 0, 0, 300);
+                expGrad.addColorStop(0, C.alpha(down, 0.14));
+                expGrad.addColorStop(1, C.alpha(down, 0));
 
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [
-                        {
-                            label: 'Revenue',
-                            data: revData,
-                            borderColor: '#22c55e',
-                            backgroundColor: revGrad,
-                            fill: true,
-                            tension: 0.42,
-                            borderWidth: 2.5,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#22c55e',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                            pointHoverRadius: 6
-                        },
-                        {
-                            label: 'Expenses',
-                            data: expData,
-                            borderColor: '#ef4444',
-                            backgroundColor: expGrad,
-                            fill: true,
-                            tension: 0.42,
-                            borderWidth: 2,
-                            borderDash: [5, 4],
-                            pointRadius: 3,
-                            pointBackgroundColor: '#ef4444',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                            pointHoverRadius: 5
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        tooltip: { ...tip, displayColors: true, callbacks: { label: c => ' ' + c.dataset.label + ': Rs. ' + c.raw.toLocaleString() } },
-                        legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 }, padding: 16 } }
+                return {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Revenue',
+                                data: revData,
+                                borderColor: up,
+                                backgroundColor: revGrad,
+                                fill: true,
+                                tension: 0.42,
+                                borderWidth: 2.5,
+                                pointRadius: 4,
+                                pointBackgroundColor: up,
+                                pointBorderColor: C.surface(),
+                                pointBorderWidth: 2,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: 'Expenses',
+                                data: expData,
+                                borderColor: down,
+                                backgroundColor: expGrad,
+                                fill: true,
+                                tension: 0.42,
+                                borderWidth: 2,
+                                borderDash: [5, 4],
+                                pointRadius: 3,
+                                pointBackgroundColor: down,
+                                pointBorderColor: C.surface(),
+                                pointBorderWidth: 2,
+                                pointHoverRadius: 5
+                            }
+                        ]
                     },
-                    scales: {
-                        x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
-                        y: { ticks: { callback: v => 'Rs. ' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: { displayColors: true, callbacks: { label: c => ' ' + c.dataset.label + ': Rs. ' + c.raw.toLocaleString() } },
+                            legend: { position: 'top' }
+                        },
+                        scales: C.scales({ maxRotation: 45, yTicks: v => 'Rs. ' + v.toLocaleString() })
                     }
-                }
+                };
             });
         })();
         </text>
@@ -274,21 +262,24 @@
         (function() {
             const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(catLabels));
             const data   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(catAmounts));
-            const colorMap = { Utilities:'#eab308', Maintenance:'#3b82f6', Supplies:'#22c55e', Rent:'#8b5cf6', Bills:'#ef4444', Marketing:'#ec4899', General:'#6b7280' };
-            const colors = labels.map(l => colorMap[l] || '#9ca3af');
 
-            new Chart(document.getElementById('expenseCategoryChart'), {
-                type: 'doughnut',
-                data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: 'var(--bg-surface)', borderWidth: 3, hoverOffset: 10 }] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '62%',
-                    plugins: {
-                        tooltip: { ...tip, callbacks: { label: c => ' ' + c.label + ': Rs. ' + c.raw.toLocaleString() } },
-                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 }, padding: 10 } }
+            CafeCharts.make('expenseCategoryChart', C => {
+                // Stable category → series-slot mapping (order = CVD-safe palette order)
+                const slotMap = { Utilities: 4, Maintenance: 1, Supplies: 5, Rent: 7, Bills: 8, Marketing: 3, General: 6 };
+                const colors = labels.map(l => slotMap[l] ? C.color(slotMap[l]) : C.ink().tick);
+                return {
+                    type: 'doughnut',
+                    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: C.surface(), borderWidth: 3, hoverOffset: 10 }] },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '62%',
+                        plugins: {
+                            tooltip: { callbacks: { label: c => ' ' + c.label + ': Rs. ' + c.raw.toLocaleString() } },
+                            legend: { position: 'bottom' }
+                        }
                     }
-                }
+                };
             });
         })();
         </text>
@@ -302,28 +293,25 @@
             const revData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(brRev));
             const expData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(brExp));
 
-            new Chart(document.getElementById('branchPLChart'), {
+            CafeCharts.make('branchPLChart', C => ({
                 type: 'bar',
                 data: {
                     labels,
                     datasets: [
-                        { label: 'Revenue',  data: revData, backgroundColor: 'rgba(34,197,94,0.75)',  borderRadius: 6 },
-                        { label: 'Expenses', data: expData, backgroundColor: 'rgba(239,68,68,0.65)', borderRadius: 6 }
+                        { label: 'Revenue',  data: revData, backgroundColor: C.alpha(C.status('success'), 0.75), borderRadius: 6 },
+                        { label: 'Expenses', data: expData, backgroundColor: C.alpha(C.status('danger'), 0.65), borderRadius: 6 }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        tooltip: { ...tip, displayColors: true, callbacks: { label: c => ' ' + c.dataset.label + ': Rs. ' + c.raw.toLocaleString() } },
-                        legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 }, padding: 16 } }
+                        tooltip: { displayColors: true, callbacks: { label: c => ' ' + c.dataset.label + ': Rs. ' + c.raw.toLocaleString() } },
+                        legend: { position: 'top' }
                     },
-                    scales: {
-                        x: { ticks: { font: { size: 11 } }, grid: { display: false } },
-                        y: { ticks: { callback: v => 'Rs. ' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }
-                    }
+                    scales: C.scales({ yTicks: v => 'Rs. ' + v.toLocaleString() })
                 }
-            });
+            }));
         })();
         </text>
     }

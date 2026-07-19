@@ -64,8 +64,9 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-    <!-- Chart.js -->
+    <!-- Chart.js + theme-aware runtime -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="~/js/charts.js" asp-append-version="true"></script>
 
     <style>
 /* ── Skeleton Loader ── */
@@ -1074,7 +1075,7 @@
                         h += `<a href="javascript:void(0)" onclick="clickNotif(${n.id}, '${n.redirectUrl || ''}')"
                             style="display:flex;align-items:flex-start;gap:0.65rem;padding:0.7rem 1.1rem;border-bottom:1px solid var(--border-light);text-decoration:none;background:${bg};border-left:${bl};transition:all 0.2s;"
                             onmouseenter="this.style.background='var(--bg-surface-hover)';this.style.paddingLeft='1.3rem'"
-                            onmouseleave="this.style.background='${bg}';this.style.paddingLeft='1.1rem'">`;
+                            onmouseleave="this.style.background='${bg}';this.style.paddingLeft='1.1rem'">
                             <div style="width:34px;height:34px;border-radius:10px;background:${typeBg(n.type)};color:${c};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.78rem;">
                                 <i class="${n.icon || 'fas fa-info-circle'}"></i>
                             </div>

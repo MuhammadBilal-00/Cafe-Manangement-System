@@ -214,20 +214,7 @@
 @section Scripts {
 <script>
 (function() {
-    const palette = ['#d4af37','#22c55e','#3b82f6','#ef4444','#8b5cf6','#ec4899','#f97316','#06b6d4','#14b8a6','#6366f1'];
-    const tip = {
-        backgroundColor: 'rgba(15,23,42,0.96)',
-        titleColor: '#64748b',
-        bodyColor: '#f1f5f9',
-        bodyFont: { weight: '700', size: 12 },
-        padding: 12,
-        cornerRadius: 10,
-        displayColors: false,
-        borderColor: 'rgba(255,255,255,0.06)',
-        borderWidth: 1
-    };
-
-    // Daily Revenue Line Chart — gold gradient
+    // Daily Revenue Line Chart — accent gradient
     @if (daily.Any())
     {
         <text>
@@ -235,40 +222,38 @@
             const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(daily.Select(d => ((DateTime)d.Date).ToString("dd MMM")).ToArray()));
             const data   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(daily.Select(d => Math.Round((decimal)d.Revenue, 2)).ToArray()));
 
-            const ctx = document.getElementById('dailyRevenueChart')?.getContext('2d');
-            if (!ctx) return;
+            CafeCharts.make('dailyRevenueChart', C => {
+                const ctx = document.getElementById('dailyRevenueChart').getContext('2d');
+                const line = C.emphasis();
+                const grad = ctx.createLinearGradient(0, 0, 0, 340);
+                grad.addColorStop(0, C.alpha(line, 0.14));
+                grad.addColorStop(1, C.alpha(line, 0));
 
-            const grad = ctx.createLinearGradient(0, 0, 0, 340);
-            grad.addColorStop(0, 'rgba(212,175,55,0.38)');
-            grad.addColorStop(1, 'rgba(212,175,55,0)');
-
-            new Chart(ctx, {
-                type: 'line',
-                data: { labels, datasets: [{
-                    label: 'Revenue',
-                    data,
-                    borderColor: '#d4af37',
-                    backgroundColor: grad,
-                    fill: true,
-                    tension: 0.45,
-                    borderWidth: 2.5,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#d4af37',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointHoverRadius: 6
-                }] },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { ...tip, callbacks: { label: c => 'Revenue: $' + c.raw.toLocaleString() } }
-                    },
-                    scales: {
-                        x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
-                        y: { ticks: { callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }
+                return {
+                    type: 'line',
+                    data: { labels, datasets: [{
+                        label: 'Revenue',
+                        data,
+                        borderColor: line,
+                        backgroundColor: grad,
+                        fill: true,
+                        tension: 0.45,
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: line,
+                        pointBorderColor: C.surface(),
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6
+                    }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: c => 'Revenue: $' + c.raw.toLocaleString() } }
+                        },
+                        scales: C.scales({ maxRotation: 45, yTicks: v => '$' + v.toLocaleString() })
                     }
-                }
+                };
             });
         })();
         </text>
@@ -281,53 +266,53 @@
         (function() {
             const names = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branchRevenue.Select(b => ((Cafe.Models.Branch)b.Branch).Name).ToArray()));
             const revs  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(branchRevenue.Select(b => Math.Round((decimal)b.Revenue, 2)).ToArray()));
-            const maxRev = Math.max(...revs);
-            const colors = revs.map(v => v === maxRev ? '#d4af37' : 'rgba(212,175,55,0.28)');
 
-            const ctx = document.getElementById('branchRevenueBarChart')?.getContext('2d');
-            if (!ctx) return;
-            new Chart(ctx, {
-                type: 'bar',
-                data: { labels: names, datasets: [{ label: 'Revenue', data: revs, backgroundColor: colors, borderRadius: 7 }] },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { ...tip, callbacks: { label: c => 'Revenue: $' + c.raw.toLocaleString() } }
-                    },
-                    scales: {
-                        x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
-                        y: { ticks: { callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }
+            CafeCharts.make('branchRevenueBarChart', C => {
+                const maxRev = Math.max(...revs);
+                const colors = revs.map(v => v === maxRev ? C.accent() : C.alpha(C.accent(), 0.28));
+                return {
+                    type: 'bar',
+                    data: { labels: names, datasets: [{ label: 'Revenue', data: revs, backgroundColor: colors, borderRadius: 7 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: c => 'Revenue: $' + c.raw.toLocaleString() } }
+                        },
+                        scales: C.scales({ maxRotation: 45, yTicks: v => '$' + v.toLocaleString() })
                     }
-                }
+                };
             });
         })();
         </text>
     }
 
-    // Status Breakdown Doughnut
+    // Status Breakdown Doughnut — statuses use semantic tokens
     @if (statusBreakdown.Any())
     {
         <text>
         (function() {
             const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(statusBreakdown.Select(s => (string)s.Status).ToArray()));
             const counts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(statusBreakdown.Select(s => (int)s.Count).ToArray()));
-            const colorMap = { Completed:'#22c55e', Pending:'#f59e0b', Preparing:'#6366f1', Ready:'#d4af37', Cancelled:'#ef4444' };
-            const colors = labels.map(s => colorMap[s] || '#9ca3af');
 
-            const ctx = document.getElementById('statusDoughnutChart')?.getContext('2d');
-            if (!ctx) return;
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: { labels, datasets: [{ data: counts, backgroundColor: colors, borderColor: 'var(--bg-surface)', borderWidth: 3, hoverOffset: 10 }] },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 }, padding: 10 } },
-                        tooltip: { ...tip, callbacks: { label: c => ' ' + c.label + ': ' + c.raw + ' orders' } }
+            CafeCharts.make('statusDoughnutChart', C => {
+                const colorMap = {
+                    Completed: C.status('success'), Pending: C.status('warning'),
+                    Preparing: C.status('info'), Ready: C.accent(), Cancelled: C.status('danger')
+                };
+                const colors = labels.map(s => colorMap[s] || C.ink().tick);
+                return {
+                    type: 'doughnut',
+                    data: { labels, datasets: [{ data: counts, backgroundColor: colors, borderColor: C.surface(), borderWidth: 3, hoverOffset: 10 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + c.raw + ' orders' } }
+                        }
                     }
-                }
+                };
             });
         })();
         </text>

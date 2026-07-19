@@ -282,7 +282,6 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
         // ── Target Field Toggle ──
         function toggleTargetFields() {
@@ -292,41 +291,39 @@
             document.getElementById('fieldBranch').style.display = type === 'branch' ? '' : 'none';
         }
 
-        // ── Shared Chart Helpers ──
-        const typeColorMap = { 'Info': '#6366f1', 'Success': '#16a34a', 'Warning': '#d97706', 'Error': '#dc2626' };
-        const palette = ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6'];
-
-        function makeDoughnut(canvasId, labels, data, colors) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors.map(c => c + 'cc'),
-                        borderColor: colors,
-                        borderWidth: 2,
-                        hoverOffset: 6
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 9, padding: 8, font: { size: 10 } } },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => {
-                                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                    const pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
-                                    return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
+        // ── Shared doughnut recipe over the theme runtime ──
+        function makeDoughnut(canvasId, labels, data, colorFn) {
+            CafeCharts.make(canvasId, C => {
+                const colors = colorFn(C);
+                return {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors.map(c => C.alpha(c, 0.8)),
+                            borderColor: colors,
+                            borderWidth: 2,
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                        const pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
+                                        return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
+                                    }
                                 }
                             }
                         }
                     }
-                }
+                };
             });
         }
 
@@ -334,34 +331,36 @@
         makeDoughnut('emailPieChart',
             ['Sent', 'Pending', 'Failed'],
             [@emailSent, @emailPending, @emailFailed],
-            ['#16a34a', '#d97706', '#dc2626']
+            C => [C.status('success'), C.status('warning'), C.status('danger')]
         );
 
         // ── 2. Notification Type Distribution ──
         const ntLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(notifTypeLabels));
         const ntCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(notifTypeCounts));
-        const ntColors = ntLabels.map(l => typeColorMap[l] || '#8b5cf6');
-        makeDoughnut('typePieChart', ntLabels, ntCounts, ntColors);
+        makeDoughnut('typePieChart', ntLabels, ntCounts, C => {
+            const typeColorMap = { 'Info': C.status('info'), 'Success': C.status('success'), 'Warning': C.status('warning'), 'Error': C.status('danger') };
+            return ntLabels.map(l => typeColorMap[l] || C.color(7));
+        });
 
         // ── 3. Target Audience Distribution ──
         const tgtLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(targetLabels));
         const tgtCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(targetCounts));
         makeDoughnut('targetPieChart', tgtLabels, tgtCounts,
-            ['#3b82f6', '#8b5cf6', '#f59e0b', '#6366f1']
+            C => tgtLabels.map((_, i) => C.color((i % 8) + 1))
         );
 
         // ── 4. Email Volume Trend ──
         const etLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(emailTrendLabels));
         const etCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(emailTrendCounts));
-        new Chart(document.getElementById('emailTrendChart'), {
+        CafeCharts.make('emailTrendChart', C => ({
             type: 'bar',
             data: {
                 labels: etLabels,
                 datasets: [{
                     label: 'Emails',
                     data: etCounts,
-                    backgroundColor: 'rgba(236,72,153,0.65)',
-                    borderColor: '#ec4899',
+                    backgroundColor: C.alpha(C.color(3), 0.65),
+                    borderColor: C.color(3),
                     borderWidth: 1.5,
                     borderRadius: 6,
                     borderSkipped: false
@@ -369,15 +368,12 @@
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
-                    x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
-                },
+                scales: C.scales({ maxRotation: 45, precision: 0 }),
                 plugins: {
                     legend: { display: false },
                     tooltip: { callbacks: { label: ctx => ` ${ctx.raw} emails` } }
                 }
             }
-        });
+        }));
     </script>
 }

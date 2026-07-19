@@ -535,121 +535,103 @@ document.addEventListener('DOMContentLoaded', function () {
     const pending    = @pendingOrders;
     const inProgress = @inProgressOrders;
 
-    // Shared dark tooltip config
-    const darkTip = {
-        backgroundColor: '#0f172a',
-        titleColor: '#64748b',
-        bodyColor: '#fff',
-        bodyFont: { weight: '700', size: 13 },
-        padding: 12,
-        cornerRadius: 10,
-        displayColors: false
-    };
-
     // ─── 1. Hero Donut ────────────────────────────────────────────
-    (function() {
-        const ctx = document.getElementById('heroDonut')?.getContext('2d');
-        if (!ctx) return;
+    CafeCharts.make('heroDonut', C => {
         const hasData = completed + pending + inProgress > 0;
-        new Chart(ctx, {
+        return {
             type: 'doughnut',
             data: {
                 labels: ['Completed', 'Pending', 'In Progress'],
                 datasets: [{
                     data: hasData ? [completed, pending, inProgress] : [1],
-                    backgroundColor: hasData ? ['#22c55e', '#d4af37', '#3b82f6'] : ['rgba(255,255,255,0.1)'],
-                    borderColor: '#16213e',
+                    backgroundColor: hasData
+                        ? [C.status('success'), C.status('warning'), C.status('info')]
+                        : [C.alpha(C.ink().tick, 0.25)],
+                    borderColor: C.css('--surface-contrast'),
                     borderWidth: 4,
                     hoverOffset: 6
                 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false, cutout: '70%',
-                plugins: { legend: { display: false }, tooltip: { ...darkTip, displayColors: true } }
+                plugins: { legend: { display: false }, tooltip: { displayColors: true } }
             }
-        });
-    })();
+        };
+    });
 
-    // ─── 2. Weekly Trend Line (dark, gradient fill) ───────────────
-    (function() {
-        const ctx = document.getElementById('weeklyTrend')?.getContext('2d');
-        if (!ctx || !orderSpark.length) return;
+    // ─── 2. Weekly Trend Line (gradient fill) ─────────────────────
+    if (orderSpark.length) CafeCharts.make('weeklyTrend', C => {
+        const ctx = document.getElementById('weeklyTrend').getContext('2d');
+        const line = C.accent();
         const grad = ctx.createLinearGradient(0, 0, 0, 220);
-        grad.addColorStop(0, 'rgba(212,175,55,0.42)');
-        grad.addColorStop(0.6, 'rgba(212,175,55,0.10)');
-        grad.addColorStop(1, 'rgba(212,175,55,0.00)');
-        new Chart(ctx, {
+        grad.addColorStop(0, C.alpha(line, 0.35));
+        grad.addColorStop(0.6, C.alpha(line, 0.08));
+        grad.addColorStop(1, C.alpha(line, 0));
+        return {
             type: 'line',
             data: {
                 labels: sparkLabels,
                 datasets: [{
                     label: 'Orders',
                     data: orderSpark,
-                    borderColor: '#d4af37',
+                    borderColor: line,
                     backgroundColor: grad,
                     tension: 0.45,
                     fill: true,
                     borderWidth: 2.5,
-                    pointBackgroundColor: '#d4af37',
-                    pointBorderColor: '#16213e',
+                    pointBackgroundColor: line,
+                    pointBorderColor: C.css('--surface-contrast'),
                     pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 8
+                    pointRadius: 4,
+                    pointHoverRadius: 7
                 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { display: false }, tooltip: { ...darkTip, callbacks: { label: c => c.parsed.y + ' orders' } } },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.06)', drawBorder: false }, ticks: { color: '#475569', font: { size: 11 } } },
-                    x: { grid: { display: false }, ticks: { color: '#475569', font: { size: 11 } } }
-                }
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + ' orders' } } },
+                scales: { y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.14)' }, border: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } },
+                          x: { grid: { display: false }, border: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } } }
             }
-        });
-    })();
+        };
+    });
 
     // ─── 3. Order Status Donut (light card) ──────────────────────
-    (function() {
-        const ctx = document.getElementById('orderStatusDonut')?.getContext('2d');
-        if (!ctx) return;
+    CafeCharts.make('orderStatusDonut', C => {
         const hasData = completed + pending + inProgress > 0;
-        new Chart(ctx, {
+        return {
             type: 'doughnut',
             data: {
                 labels: ['Completed', 'Pending', 'In Progress'],
                 datasets: [{
                     data: hasData ? [completed, pending, inProgress] : [1],
-                    backgroundColor: hasData ? ['#22c55e', '#d4af37', '#3b82f6'] : ['#e2e8f0'],
-                    borderColor: '#fff',
+                    backgroundColor: hasData
+                        ? [C.status('success'), C.status('warning'), C.status('info')]
+                        : [C.css('--bg-inset')],
+                    borderColor: C.surface(),
                     borderWidth: 3,
                     hoverOffset: 5
                 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: true, cutout: '65%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { backgroundColor: '#1e293b', titleColor: '#94a3b8', bodyColor: '#fff', bodyFont: { weight: '700' }, padding: 10, cornerRadius: 8, displayColors: true }
-                }
+                plugins: { legend: { display: false }, tooltip: { displayColors: true } }
             }
-        });
-    })();
+        };
+    });
 
     // ─── 4. Monthly Revenue Bar ───────────────────────────────────
-    (function() {
-        const ctx = document.getElementById('monthlyRevBar')?.getContext('2d');
-        if (!ctx) return;
+    CafeCharts.make('monthlyRevBar', C => {
         const maxVal = Math.max(...chartData, 1);
-        new Chart(ctx, {
+        return {
             type: 'bar',
             data: {
                 labels: chartLabels,
                 datasets: [{
                     label: 'Revenue',
                     data: chartData,
-                    backgroundColor: chartData.map(v => v >= maxVal ? '#d4af37' : 'rgba(212,175,55,0.22)'),
-                    hoverBackgroundColor: '#d4af37',
+                    backgroundColor: chartData.map(v => v >= maxVal ? C.accent() : C.alpha(C.accent(), 0.22)),
+                    hoverBackgroundColor: C.accent(),
                     borderRadius: 6,
                     borderSkipped: false
                 }]
@@ -657,27 +639,21 @@ document.addEventListener('DOMContentLoaded', function () {
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false }, tooltip: {
-                    backgroundColor: '#1e293b', titleColor: '#94a3b8', bodyColor: '#fff',
-                    bodyFont: { weight: '700' }, padding: 10, cornerRadius: 8,
                     callbacks: { label: c => 'Rs. ' + c.parsed.y.toLocaleString() }
                 }},
-                scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
-                        ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => v >= 1000 ? 'Rs.' + (v/1000).toFixed(0) + 'k' : 'Rs.' + v } },
-                    x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
-                }
+                scales: C.scales({ yTicks: v => v >= 1000 ? 'Rs.' + (v/1000).toFixed(0) + 'k' : 'Rs.' + v })
             }
-        });
-    })();
+        };
+    });
 
     // ─── 5. Daily Attendance Bar (gradient green) ─────────────────
-    (function() {
-        const ctx = document.getElementById('attendBar')?.getContext('2d');
-        if (!ctx || !attendSpark.length) return;
+    if (attendSpark.length) CafeCharts.make('attendBar', C => {
+        const ctx = document.getElementById('attendBar').getContext('2d');
+        const green = C.status('success');
         const grad = ctx.createLinearGradient(0, 0, 0, 170);
-        grad.addColorStop(0, 'rgba(34,197,94,0.80)');
-        grad.addColorStop(1, 'rgba(34,197,94,0.12)');
-        new Chart(ctx, {
+        grad.addColorStop(0, C.alpha(green, 0.8));
+        grad.addColorStop(1, C.alpha(green, 0.12));
+        return {
             type: 'bar',
             data: {
                 labels: sparkLabels,
@@ -685,7 +661,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     label: 'Present',
                     data: attendSpark,
                     backgroundColor: grad,
-                    hoverBackgroundColor: '#22c55e',
+                    hoverBackgroundColor: green,
                     borderRadius: 6,
                     borderSkipped: false
                 }]
@@ -693,17 +669,12 @@ document.addEventListener('DOMContentLoaded', function () {
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false }, tooltip: {
-                    backgroundColor: '#1e293b', titleColor: '#94a3b8', bodyColor: '#fff',
-                    bodyFont: { weight: '700' }, padding: 10, cornerRadius: 8,
                     callbacks: { label: c => c.parsed.y + ' staff present' }
                 }},
-                scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-                    x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
-                }
+                scales: C.scales()
             }
-        });
-    })();
+        };
+    });
 });
 </script>
 }

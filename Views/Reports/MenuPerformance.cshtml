@@ -373,75 +373,69 @@ else
             const topRevData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(topSellers.Select(x => Math.Round(x.Revenue, 2)).ToArray()));
             const topQtyData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(topSellers.Select(x => x.QuantitySold).ToArray()));
 
-            const barCtx = document.getElementById('topItemsBarChart')?.getContext('2d');
-            if (barCtx) {
-                new Chart(barCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: topLabels,
-                        datasets: [
-                            {
-                                label: 'Revenue ($)',
-                                data: topRevData,
-                                backgroundColor: 'rgba(212,175,55,0.75)',
-                                borderColor: '#d4af37',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                yAxisID: 'y'
-                            },
-                            {
-                                label: 'Qty Sold',
-                                data: topQtyData,
-                                backgroundColor: 'rgba(99,102,241,0.55)',
-                                borderColor: '#6366f1',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                yAxisID: 'y1'
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(ctx) {
-                                        if (ctx.dataset.yAxisID === 'y') return 'Revenue: $' + ctx.raw.toLocaleString();
-                                        return 'Qty Sold: ' + ctx.raw;
-                                    }
+            CafeCharts.make('topItemsBarChart', C => ({
+                type: 'bar',
+                data: {
+                    labels: topLabels,
+                    datasets: [
+                        {
+                            label: 'Revenue ($)',
+                            data: topRevData,
+                            backgroundColor: C.alpha(C.accent(), 0.75),
+                            borderColor: C.accent(),
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Qty Sold',
+                            data: topQtyData,
+                            backgroundColor: C.alpha(C.color(1), 0.55),
+                            borderColor: C.color(1),
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    if (ctx.dataset.yAxisID === 'y') return 'Revenue: $' + ctx.raw.toLocaleString();
+                                    return 'Qty Sold: ' + ctx.raw;
                                 }
                             }
-                        },
-                        scales: {
-                            x: { ticks: { maxRotation: 45, font: { size: 10 } }, grid: { display: false } },
-                            y: { position: 'left', title: { display: true, text: 'Revenue ($)' }, ticks: { callback: v => '$' + v.toLocaleString() } },
-                            y1: { position: 'right', title: { display: true, text: 'Quantity' }, grid: { drawOnChartArea: false } }
                         }
+                    },
+                    scales: {
+                        x: { ticks: { maxRotation: 45, color: C.ink().tick }, grid: { display: false }, border: { color: C.ink().axis } },
+                        y: { position: 'left', title: { display: true, text: 'Revenue ($)', color: C.ink().tick }, ticks: { callback: v => '$' + v.toLocaleString(), color: C.ink().tick }, grid: { color: C.ink().grid }, border: { display: false } },
+                        y1: { position: 'right', title: { display: true, text: 'Quantity', color: C.ink().tick }, ticks: { color: C.ink().tick }, grid: { drawOnChartArea: false }, border: { display: false } }
                     }
-                });
-            }
+                }
+            }));
 
             // ===== Chart.js — Category Pie =====
             const catLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cats.Select(x => x.CategoryName).ToArray()));
             const catData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cats.Select(x => Math.Round(x.Revenue, 2)).ToArray()));
             const dbColors = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cats.Select(x => x.Color ?? "").ToArray()));
 
-            // Distinct color palette fallback when DB colors are missing/identical
-            const palette = ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6','#f97316','#06b6d4','#84cc16','#e11d48','#a855f7','#0ea5e9','#facc15'];
-            const catColors = dbColors.map((c, i) => (c && c.length > 3) ? c : palette[i % palette.length]);
-
-            const pieCtx = document.getElementById('categoryPieChart')?.getContext('2d');
-            if (pieCtx) {
-                new Chart(pieCtx, {
+            CafeCharts.make('categoryPieChart', C => {
+                // DB category colors win; theme palette fills the gaps
+                const catColors = dbColors.map((c, i) => (c && c.length > 3) ? c : C.color((i % 8) + 1));
+                return {
                     type: 'doughnut',
                     data: {
                         labels: catLabels,
                         datasets: [{
                             data: catData,
-                            backgroundColor: catColors.map(c => c + 'cc'),
+                            backgroundColor: catColors.map(c => C.alpha(c, 0.8)),
                             borderColor: catColors,
                             borderWidth: 2,
                             hoverOffset: 8
@@ -451,7 +445,7 @@ else
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { position: 'right', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
+                            legend: { position: 'right' },
                             tooltip: {
                                 callbacks: {
                                     label: function(ctx) {
@@ -463,8 +457,8 @@ else
                             }
                         }
                     }
-                });
-            }
+                };
+            });
         })();
         </text>
     }
