@@ -26,7 +26,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Cafe Management</title>
 
-    <!-- Design System -->
+    <!-- Design System (tokens first: themes + variables, then components) -->
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/design-system.css" asp-append-version="true" />
 
     <!-- Tailwind CSS (utility support) -->
@@ -36,10 +37,10 @@
             theme: {
                 extend: {
                     colors: {
-                        accent: { DEFAULT: '#d4af37', hover: '#c5a028', light: 'rgba(212,175,55,0.10)' },
-                        surface: { DEFAULT: '#ffffff', alt: '#faf9f7', hover: '#fafaf8' },
-                        body: '#f5f3f0',
-                        sidebar: '#1e2a3a',
+                        accent: { DEFAULT: 'var(--accent)', hover: 'var(--accent-hover)', light: 'var(--accent-light)' },
+                        surface: { DEFAULT: 'var(--bg-surface)', alt: 'var(--bg-surface-alt)', hover: 'var(--bg-surface-hover)' },
+                        body: 'var(--bg-body)',
+                        sidebar: 'var(--sidebar-bg)',
                     },
                     fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                     borderRadius: { card: '16px', 'card-lg': '20px' },
@@ -92,16 +93,24 @@
 </style>
     @await RenderSectionAsync("Styles", required: false)
     <!-- Theme init — runs immediately to prevent flash of wrong theme -->
-    <script>(function(){var t=localStorage.getItem('cafetheme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <script>(function(){var v=['light','coffee','slate','dark','midnight'];var t=localStorage.getItem('cafetheme');if(v.indexOf(t)<0)t='light';document.documentElement.setAttribute('data-theme',t);})();</script>
 
-    <!-- Per-tenant white-label branding: overrides design-system variables (no per-tenant CSS) -->
-    <style>
-        :root {
-            --accent: @brand.PrimaryColor;
-            --accent-hover: @brand.PrimaryColor;
-        }
-        .sidebar { background: @brand.SidebarColor; }
-    </style>
+    <!-- Per-tenant white-label branding: overrides design-system variables (no per-tenant CSS).
+         Emitted only for values the tenant actually customized, so the themes' own
+         accent/sidebar apply otherwise (this inline block outranks every [data-theme]). -->
+    @if (brand.PrimaryColor != "#d4af37" || brand.SidebarColor != "#1e2a3a")
+    {
+        <style>
+            @if (brand.PrimaryColor != "#d4af37")
+            {
+                <text>:root, [data-theme] { --accent: @brand.PrimaryColor; }</text>
+            }
+            @if (brand.SidebarColor != "#1e2a3a")
+            {
+                <text>.sidebar { background: @brand.SidebarColor; }</text>
+            }
+        </style>
+    }
 </head>
 <body>
     @* Pages send this via a "RequestVerificationToken" header on JSON/fetch POSTs.
@@ -544,9 +553,11 @@
                             }
                         </div>
                     </div>
-                    <button class="header-icon-btn" id="themeToggle" data-tooltip="Toggle theme" onclick="toggleTheme()">
-                        <i class="fas fa-moon" id="themeIcon"></i>
-                    </button>
+                    <div style="position:relative;" id="themeMenu">
+                        <button class="header-icon-btn" id="themeToggle" data-tooltip="Theme" aria-haspopup="menu" aria-expanded="false">
+                            <i class="fas fa-sun" id="themeIcon"></i>
+                        </button>
+                    </div>
                     <button class="header-icon-btn" data-tooltip="Search" id="globalSearchBtn">
                         <i class="fas fa-magnifying-glass"></i>
                     </button>
@@ -634,6 +645,7 @@
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/actioncard.js"></script>
+    <script src="~/js/ui.js" asp-append-version="true"></script>
     <script>
         // ── Sidebar: collapsed by default, expand on hover ──
         (function() {
@@ -786,21 +798,7 @@
             });
         })();
 
-        // ── Theme Toggle ──
-        (function() {
-            const t = document.documentElement.getAttribute('data-theme') || 'light';
-            const icon = document.getElementById('themeIcon');
-            if (icon) icon.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-
-            window.toggleTheme = function() {
-                const h = document.documentElement;
-                const next = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                h.setAttribute('data-theme', next);
-                localStorage.setItem('cafetheme', next);
-                const ico = document.getElementById('themeIcon');
-                if (ico) ico.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            };
-        })();
+        // ── Theme engine lives in ~/js/ui.js (UI.setTheme + picker popover) ──
 
         // ── Submit Spinner — disable buttons and show spinner on form submit ──
         (function() {

@@ -1,0 +1,413 @@
+/* ============================================================
+   CAFE MANAGEMENT SYSTEM — DESIGN TOKENS (UI v3)
+   Single source of truth for color, space, radius, elevation,
+   type and chart palettes. Loaded BEFORE design-system.css.
+
+   Themes: light (default) · coffee · slate · dark · midnight
+   Mechanism: [data-theme="X"] on <html> overrides the same
+   custom properties; components never hardcode values.
+   Tenant white-label branding overrides --accent and .sidebar
+   background via an inline <style> in _Layout — only when the
+   tenant saved non-default values, so themes win otherwise.
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* ── Surfaces ── */
+  --bg-body: #eef1f4;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f7f9fb;
+  --bg-surface-alt: #f6f8fa;
+  --bg-inset: #e7ebef;
+  --surface-tint: #e3ebf2;        /* tinted KPI / feature cards */
+  --surface-tint-2: #dae3ec;      /* deeper tint for hover / secondary */
+  --surface-contrast: #101215;    /* dark "hero" rail cards */
+  --surface-contrast-text: #f5f7fa;
+  --surface-contrast-muted: rgba(245,247,250,0.55);
+  --surface-pop: #ffffff;         /* menus, popovers */
+  --surface-overlay: rgba(16,18,21,0.45); /* modal scrim */
+
+  /* ── Sidebar ── */
+  --sidebar-bg: #101215;
+  --sidebar-bg-hover: rgba(255,255,255,0.07);
+  --sidebar-bg-active: rgba(184,145,44,0.16);
+  --sidebar-text: #9aa4b2;
+  --sidebar-text-active: #e2c05c;
+  --sidebar-text-hover: #e8edf3;
+  --sidebar-border: rgba(255,255,255,0.07);
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --sidebar-inset: 12px;          /* gap between rail and viewport */
+  --sidebar-radius: 24px;
+  --sidebar-shadow: 0 12px 40px rgba(16,18,21,0.18);
+
+  /* ── Accent / Brand (tenant-overridable root) ── */
+  --accent: #b8912c;
+  --accent-hover: #a37f24;                 /* re-derived via color-mix below */
+  --accent-light: rgba(184,145,44,0.12);
+  --accent-lighter: rgba(184,145,44,0.06);
+  --ring: rgba(184,145,44,0.35);
+  --text-on-accent: #ffffff;
+
+  /* ── Text ── */
+  --text-primary: #171a1f;
+  --text-secondary: #5c6675;
+  --text-tertiary: #8b95a3;
+  --text-disabled: #b4bcc7;
+
+  /* ── Borders ── */
+  --border: #e2e7ed;
+  --border-light: #edf0f4;
+  --border-strong: #cdd5de;
+
+  /* ── Semantic ── */
+  --success: #22c55e;
+  --success-light: rgba(34,197,94,0.10);
+  --warning: #f59e0b;
+  --warning-light: rgba(245,158,11,0.10);
+  --danger: #ef4444;
+  --danger-light: rgba(239,68,68,0.10);
+  --info: #6366f1;
+  --info-light: rgba(99,102,241,0.10);
+
+  /* ── Elevation (soft, reference-style) ── */
+  --shadow-xs: 0 1px 2px rgba(16,18,21,0.04);
+  --shadow-sm: 0 1px 3px rgba(16,18,21,0.05), 0 1px 2px rgba(16,18,21,0.03);
+  --shadow-md: 0 6px 16px rgba(16,18,21,0.05);
+  --shadow-lg: 0 12px 32px rgba(16,18,21,0.07);
+  --shadow-xl: 0 24px 64px rgba(16,18,21,0.09);
+  --shadow-card: 0 1px 2px rgba(16,18,21,0.03), 0 8px 24px rgba(16,18,21,0.04);
+  --shadow-card-hover: 0 2px 6px rgba(16,18,21,0.05), 0 16px 40px rgba(16,18,21,0.08);
+  --shadow-pop: 0 8px 28px rgba(16,18,21,0.12);
+  --shadow-modal: 0 24px 80px rgba(16,18,21,0.22);
+
+  /* ── Radii (rounder per UI v3) ── */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
+  --radius-card: 20px;
+  --radius-card-lg: 24px;
+  --radius-full: 9999px;
+
+  /* ── Spacing scale ── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ── Transitions ── */
+  --transition-fast: 150ms cubic-bezier(0.4,0,0.2,1);
+  --transition-base: 250ms cubic-bezier(0.4,0,0.2,1);
+  --transition-slow: 350ms cubic-bezier(0.4,0,0.2,1);
+
+  /* ── Typography scale ── */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2rem;
+  --text-display: 2.375rem;
+
+  /* ── Layout ── */
+  --content-pad: 28px;
+  --table-row-py: 12px;           /* .table-dense swaps this */
+
+  /* ── Charts (Chart.js reads these via CafeCharts) ── */
+  --chart-1: #2a78d6;
+  --chart-2: #008300;
+  --chart-3: #e87ba4;
+  --chart-4: #eda100;
+  --chart-5: #1baf7a;
+  --chart-6: #eb6834;
+  --chart-7: #4a3aa7;
+  --chart-8: #e34948;
+  --chart-emphasis: #171a1f;      /* hero single-series line (near-ink) */
+  --chart-compare: #a9c4dd;       /* prior-period companion series */
+  --chart-grid: #e5e9ef;
+  --chart-axis: #c4ccd6;
+  --chart-tick: #8b95a3;
+  --chart-tooltip-bg: #171a1f;
+  --chart-tooltip-text: #f5f7fa;
+  --chart-up: #22c55e;
+  --chart-down: #ef4444;
+}
+
+/* ════════════════════════════════════════════════════════════
+   COFFEE — the original warm-beige identity, evolved
+   ════════════════════════════════════════════════════════════ */
+[data-theme="coffee"] {
+  color-scheme: light;
+
+  --bg-body: #f5f3f0;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #fafaf8;
+  --bg-surface-alt: #faf9f7;
+  --bg-inset: #f0eeeb;
+  --surface-tint: #f3ede1;
+  --surface-tint-2: #ece4d4;
+  --surface-contrast: #16213e;
+  --surface-contrast-text: #f5f4ef;
+  --surface-contrast-muted: rgba(245,244,239,0.55);
+  --surface-pop: #ffffff;
+  --surface-overlay: rgba(26,22,15,0.45);
+
+  --sidebar-bg: #1e2a3a;
+  --sidebar-bg-active: rgba(212,175,55,0.14);
+  --sidebar-text: #94a3b8;
+  --sidebar-text-active: #d4af37;
+  --sidebar-text-hover: #e2e8f0;
+
+  --accent: #d4af37;
+  --accent-hover: #c5a028;
+  --accent-light: rgba(212,175,55,0.12);
+  --accent-lighter: rgba(212,175,55,0.06);
+  --ring: rgba(212,175,55,0.35);
+
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-disabled: #c3c8d0;
+
+  --border: #e8e5e0;
+  --border-light: #f0eeeb;
+  --border-strong: #d6d1c8;
+
+  --chart-emphasis: #2a2118;
+  --chart-compare: #cdbfa4;
+  --chart-grid: #eae5dc;
+  --chart-axis: #d6cfc2;
+  --chart-tick: #9a9284;
+  --chart-tooltip-bg: #2a2118;
+  --chart-tooltip-text: #f5f4ef;
+}
+
+/* ════════════════════════════════════════════════════════════
+   SLATE — professional gray-blue
+   ════════════════════════════════════════════════════════════ */
+[data-theme="slate"] {
+  color-scheme: light;
+
+  --bg-body: #e8ecf1;
+  --bg-surface: #f9fafc;
+  --bg-surface-hover: #f2f5f9;
+  --bg-surface-alt: #f4f7fa;
+  --bg-inset: #dfe5ec;
+  --surface-tint: #dfe6ee;
+  --surface-tint-2: #d5deea;
+  --surface-contrast: #1b2534;
+  --surface-contrast-text: #f2f5f9;
+  --surface-contrast-muted: rgba(242,245,249,0.55);
+  --surface-pop: #ffffff;
+  --surface-overlay: rgba(18,24,33,0.45);
+
+  --sidebar-bg: #1b2534;
+  --sidebar-bg-active: rgba(76,107,214,0.18);
+  --sidebar-text: #8fa0b5;
+  --sidebar-text-active: #8fa8ef;
+  --sidebar-text-hover: #e4eaf2;
+
+  --accent: #4c6bd6;
+  --accent-hover: #4059c0;
+  --accent-light: rgba(76,107,214,0.12);
+  --accent-lighter: rgba(76,107,214,0.06);
+  --ring: rgba(76,107,214,0.35);
+
+  --text-primary: #1c2430;
+  --text-secondary: #5b6878;
+  --text-tertiary: #8794a5;
+  --text-disabled: #b0bac7;
+
+  --border: #d9e0e8;
+  --border-light: #e5eaf0;
+  --border-strong: #c3cdd9;
+
+  --chart-emphasis: #1c2430;
+  --chart-compare: #a2b6d0;
+  --chart-grid: #dbe2ea;
+  --chart-axis: #c3cdd9;
+  --chart-tick: #8794a5;
+  --chart-tooltip-bg: #1c2430;
+  --chart-tooltip-text: #f2f5f9;
+}
+
+/* ════════════════════════════════════════════════════════════
+   DARK — refined
+   ════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-body: #121519;
+  --bg-surface: #1a1e24;
+  --bg-surface-hover: #20262e;
+  --bg-surface-alt: #171b21;
+  --bg-inset: #0e1114;
+  --surface-tint: #20262e;
+  --surface-tint-2: #262d37;
+  --surface-contrast: #f2f4f7;    /* inverts: light card pops on dark canvas */
+  --surface-contrast-text: #14171b;
+  --surface-contrast-muted: rgba(20,23,27,0.6);
+  --surface-pop: #20262e;
+  --surface-overlay: rgba(0,0,0,0.6);
+
+  --sidebar-bg: #0d0f13;
+  --sidebar-bg-hover: rgba(255,255,255,0.06);
+  --sidebar-bg-active: rgba(224,188,78,0.14);
+  --sidebar-text: #8f99a8;
+  --sidebar-text-active: #e0bc4e;
+  --sidebar-text-hover: #e9edf2;
+  --sidebar-shadow: 0 12px 40px rgba(0,0,0,0.5);
+
+  --accent: #e0bc4e;
+  --accent-hover: #d0ac3e;
+  --accent-light: rgba(224,188,78,0.15);
+  --accent-lighter: rgba(224,188,78,0.08);
+  --ring: rgba(224,188,78,0.35);
+  --text-on-accent: #17140a;
+
+  --text-primary: #e9edf2;
+  --text-secondary: #9ba5b4;
+  --text-tertiary: #6f7987;
+  --text-disabled: #4d5665;
+
+  --border: rgba(255,255,255,0.08);
+  --border-light: rgba(255,255,255,0.05);
+  --border-strong: rgba(255,255,255,0.14);
+
+  --success-light: rgba(34,197,94,0.15);
+  --warning-light: rgba(245,158,11,0.15);
+  --danger-light: rgba(239,68,68,0.15);
+  --info-light: rgba(99,102,241,0.15);
+
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.5);
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.03) inset;
+  --shadow-card-hover: 0 8px 24px rgba(0,0,0,0.35);
+  --shadow-pop: 0 8px 28px rgba(0,0,0,0.5);
+  --shadow-modal: 0 24px 80px rgba(0,0,0,0.6);
+
+  --chart-1: #4a90e8;
+  --chart-2: #3fa34d;
+  --chart-3: #e06c94;
+  --chart-4: #d99a1e;
+  --chart-5: #2cc08a;
+  --chart-6: #e8703f;
+  --chart-7: #8f83e8;
+  --chart-8: #e66767;
+  --chart-emphasis: #eef1f5;
+  --chart-compare: #55677e;
+  --chart-grid: rgba(255,255,255,0.07);
+  --chart-axis: rgba(255,255,255,0.12);
+  --chart-tick: #8f99a8;
+  --chart-tooltip-bg: #f2f4f7;
+  --chart-tooltip-text: #171a1f;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MIDNIGHT — near-black, high contrast
+   ════════════════════════════════════════════════════════════ */
+[data-theme="midnight"] {
+  color-scheme: dark;
+
+  --bg-body: #07090c;
+  --bg-surface: #0e1116;
+  --bg-surface-hover: #141920;
+  --bg-surface-alt: #0b0e12;
+  --bg-inset: #05070a;
+  --surface-tint: #131822;
+  --surface-tint-2: #182030;
+  --surface-contrast: #f5f7fa;
+  --surface-contrast-text: #0d1014;
+  --surface-contrast-muted: rgba(13,16,20,0.6);
+  --surface-pop: #141920;
+  --surface-overlay: rgba(0,0,0,0.7);
+
+  --sidebar-bg: #0a0d12;
+  --sidebar-bg-hover: rgba(255,255,255,0.07);
+  --sidebar-bg-active: rgba(234,198,81,0.15);
+  --sidebar-text: #98a2b1;
+  --sidebar-text-active: #eac651;
+  --sidebar-text-hover: #f2f5f9;
+  --sidebar-border: rgba(255,255,255,0.10);
+  --sidebar-shadow: 0 12px 40px rgba(0,0,0,0.7);
+
+  --accent: #eac651;
+  --accent-hover: #dcb63e;
+  --accent-light: rgba(234,198,81,0.15);
+  --accent-lighter: rgba(234,198,81,0.08);
+  --ring: rgba(234,198,81,0.38);
+  --text-on-accent: #17140a;
+
+  --text-primary: #f2f5f9;
+  --text-secondary: #a3adbd;
+  --text-tertiary: #707c8d;
+  --text-disabled: #495362;
+
+  --border: rgba(255,255,255,0.10);
+  --border-light: rgba(255,255,255,0.06);
+  --border-strong: rgba(255,255,255,0.18);
+
+  --success-light: rgba(34,197,94,0.16);
+  --warning-light: rgba(245,158,11,0.16);
+  --danger-light: rgba(239,68,68,0.16);
+  --info-light: rgba(99,102,241,0.16);
+
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.45);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.55);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.65);
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset;
+  --shadow-card-hover: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-pop: 0 8px 28px rgba(0,0,0,0.6);
+  --shadow-modal: 0 24px 80px rgba(0,0,0,0.75);
+
+  --chart-1: #5599f0;
+  --chart-2: #47ad55;
+  --chart-3: #e97ba0;
+  --chart-4: #e2a52c;
+  --chart-5: #35ca93;
+  --chart-6: #ee7c4c;
+  --chart-7: #9b90ee;
+  --chart-8: #ee7575;
+  --chart-emphasis: #f5f7fa;
+  --chart-compare: #4b5d75;
+  --chart-grid: rgba(255,255,255,0.09);
+  --chart-axis: rgba(255,255,255,0.14);
+  --chart-tick: #98a2b1;
+  --chart-tooltip-bg: #f5f7fa;
+  --chart-tooltip-text: #171a1f;
+}
+
+/* ════════════════════════════════════════════════════════════
+   Accent derivations — recompute from --accent so tenant
+   white-label overrides propagate to every tint/focus ring.
+   Placed last so it wins over the per-theme static fallbacks.
+   ════════════════════════════════════════════════════════════ */
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  :root, [data-theme] {
+    --accent-hover: color-mix(in srgb, var(--accent) 86%, #000);
+    --accent-light: color-mix(in srgb, var(--accent) 12%, transparent);
+    --accent-lighter: color-mix(in srgb, var(--accent) 6%, transparent);
+    --ring: color-mix(in srgb, var(--accent) 35%, transparent);
+    --sidebar-bg-active: color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+}
+
+/* ── Numeric utility — KPI values, tabular data ── */
+.num { font-variant-numeric: tabular-nums lining-nums; }
