@@ -509,6 +509,17 @@ This project is open source and available under the [MIT License](LICENSE).
 
 For support, please open an issue on GitHub or contact the repository maintainer.
 
+## 🧩 More Projects by Muhammad Bilal
+
+- [Multimodal-Cognitive-Overload-Detection](https://github.com/MuhammadBilal-00/Multimodal-Cognitive-Overload-Detection)
+- [Education-Consultant-AI-Bot](https://github.com/MuhammadBilal-00/Education-Consultant-AI-Bot)
+- [F1-Oracle-AI](https://github.com/MuhammadBilal-00/F1-Oracle-AI)
+- [Heart-Disease-Predictor](https://github.com/MuhammadBilal-00/Heart-Disease-Predictor)
+- [Task-Manager-React](https://github.com/MuhammadBilal-00/Task-Manager-React)
+- [Library-Management-System](https://github.com/MuhammadBilal-00/Library-Management-System)
+- [Customer-Registration-](https://github.com/MuhammadBilal-00/Customer-Registration-)
+- [SaaS-Valuation-Predictor](https://github.com/MuhammadBilal-00/SaaS-Valuation-Predictor)
+
 ## 🎯 Future Enhancements
 
 Potential features for future releases:
